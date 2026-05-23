@@ -1,0 +1,80 @@
+---
+title: "Miscellaneous"
+description: "Miscellaneous topics in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Miscellaneous"]
+slug: "c-miscellaneous"
+author: "Abhishek Sharma"
+order: 17
+---
+
+In this section, we will cover some miscellaneous topics in C programming that are essential for a comprehensive understanding of the language. These topics include:
+
+1. **Command line arguments**: C programs can accept input from the command line, allowing users to pass arguments when executing the program.
+
+2. **C Graphics**: C provides libraries such as `graphics.h` for creating graphical applications, although it is not part of the standard library and may not be available on all platforms.
+
+3. **Embedded C**: C is widely used in embedded systems programming, where it is used to write software for microcontrollers and other hardware devices.
+
+## Command Line Arguments in C
+Command line arguments allow users to provide input to a C program when it is executed. The `main` function can be defined to accept two parameters: `argc` (argument count) and `argv` (argument vector). `argc` is an integer that represents the number of command line arguments, while `argv` is an array of strings (character pointers) that holds the actual arguments.
+Here is an example of a C program that uses command line arguments:
+```c
+#include <stdio.h>
+int main(int argc, char *argv[]) {
+    printf("Number of arguments: %d\n", argc);
+    for (int i = 0; i < argc; i++) {
+        printf("Argument %d: %s\n", i, argv[i]);
+    }
+    return 0;
+}
+```
+In this example, the program prints the number of command line arguments and lists each argument. When you run this program from the command line, you can pass arguments like this:
+```bash
+./program arg1 arg2 arg3
+```
+This will output:
+```bash
+Number of arguments: 4
+Argument 0: ./program
+Argument 1: arg1
+Argument 2: arg2
+Argument 3: arg3
+```
+Note that `argv[0]` is the name of the program itself, and the subsequent arguments are the ones passed by the user.
+
+## C Graphics
+C graphics programming can be done using various libraries, such as `graphics.h`, which provides functions for drawing shapes, handling colors, and managing the graphical window. However, `graphics.h` is not part of the C standard library and may not be available on all platforms. For modern graphics programming in C, you can use libraries like SDL (Simple DirectMedia Layer) or OpenGL, which offer more advanced features and better performance.
+Example of using `graphics.h` to draw a simple rectangle:
+```c
+#include <graphics.h>
+int main() {
+    int gd = DETECT, gm;
+    initgraph(&gd, &gm, "C:\\Turboc3\\BGI");
+    rectangle(100, 100, 200, 200);
+    getch();
+    closegraph();
+    return 0;
+}
+```
+In this example, we initialize the graphics mode, draw a rectangle with specified coordinates, wait for a key press, and then close the graphics window. Note that the path to the BGI driver may need to be adjusted based on your system configuration.
+
+## Embedded C
+Embedded C is a set of language extensions for the C programming language that allows developers to write software for embedded systems. Embedded C provides features that are specifically designed for programming microcontrollers and other hardware devices, such as direct access to hardware registers, support for fixed-point arithmetic, and the ability to handle interrupts. It is widely used in industries such as automotive, aerospace, and consumer electronics for developing firmware and other low-level software that interacts directly with hardware components.
+Example of a simple embedded C program to toggle an LED connected to a microcontroller:
+```c
+#include <avr/io.h>
+#include <util/delay.h>
+int main(void) {
+    DDRB |= (1 << DDB0); // Set PB0 as an output
+    while (1) {
+        PORTB ^= (1 << PORTB0); // Toggle the LED
+        _delay_ms(1000); // Wait for 1 second
+    }
+    return 0;
+}
+```
+In this example, we configure pin PB0 as an output and then enter an infinite loop where we toggle the state of the LED connected to that pin every second. This is a common pattern in embedded programming, where the program runs indefinitely and interacts with hardware components based on certain conditions or timing.
+
+In conclusion, C programming encompasses a wide range of topics beyond just variables and data types. Command line arguments, graphics programming, and embedded C are just a few examples of the miscellaneous topics that are essential for a well-rounded understanding of the language. By exploring these topics, you can enhance your skills as a C programmer and expand your capabilities in various application domains.

@@ -1,0 +1,72 @@
+---
+title: "Operators"
+description: "Operators in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Programming Basics", "Operators"]
+slug: "c-operators"
+author: "Abhishek Sharma"
+order: 4
+---
+
+Operators are special symbols in C that perform specific operations on one or more operands. They are used to manipulate data and variables in a program. C provides a wide range of operators, which can be categorized into several types:
+
+1. **Arithmetic Operators**: These operators are used to perform basic mathematical operations such as addition, subtraction, multiplication, division, and modulus. For example:
+   - `+` (Addition)
+   - `-` (Subtraction)
+   - `*` (Multiplication)
+   - `/` (Division)
+   - `%` (Modulus)
+
+2. **Relational Operators**: These operators are used to compare two values and return a boolean result (true or false). For example:
+   - `==` (Equal to)
+   - `!=` (Not equal to)
+   - `>` (Greater than)
+   - `<` (Less than)
+   - `>=` (Greater than or equal to)
+   - `<=` (Less than or equal to)
+
+3. **Logical Operators**: These operators are used to combine multiple conditions. For example:
+   - `&&` (Logical AND)
+   - `||` (Logical OR)
+   - `!` (Logical NOT)
+
+4. **Bitwise Operators**: These operators are used to perform bit-level operations on integers. For example:
+   - `&` (Bitwise AND)
+   - `|` (Bitwise OR)
+   - `^` (Bitwise XOR)
+   - `~` (Bitwise NOT)
+   - `<<` (Left shift)
+   - `>>` (Right shift)
+
+5. **Assignment Operators**: These operators are used to assign values to variables. For example:
+   - `=` (Simple assignment)
+   - `+=` (Add and assign)
+   - `-=` (Subtract and assign)
+   - `*=` (Multiply and assign)
+   - `/=` (Divide and assign)
+   - `%=` (Modulus and assign)
+
+6. **Increment and Decrement Operators**: These operators are used to increase or decrease the value of a variable by 1. For example:
+   - `++` (Increment)
+   - `--` (Decrement)
+
+7. **Ternary Operator**: This operator is a shorthand for an if-else statement. It takes three operands and is used to evaluate a condition and return one of two values. For example:
+   ```c
+   condition ? value_if_true : value_if_false;
+   ```
+
+8. **Comma Operator**: This operator is used to separate multiple expressions where only one expression is expected. It evaluates each expression from left to right and returns the value of the last expression. For example:
+   ```c
+   int a = (1, 2, 3); // a will be assigned the value 3
+   ```
+
+9. **Sizeof Operator**: This operator is used to determine the size of a data type or a variable in bytes. For example:
+   ```c
+   int size = sizeof(int); // size will be assigned the size of an integer in bytes
+   ```
+
+## Operator Precedence and Associativity
+In C, operators have a defined precedence that determines the order in which they are evaluated in an expression. For example, multiplication and division have higher precedence than addition and subtraction. If two operators have the same precedence, their associativity determines the order of evaluation. For example, the assignment operator `=` has right-to-left associativity, while the arithmetic operators have left-to-right associativity.
+
+Understanding and using these operators effectively is crucial for writing efficient and functional C programs. Each operator has its own precedence and associativity rules, which determine the order of evaluation in complex expressions.

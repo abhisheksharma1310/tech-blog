@@ -1,0 +1,207 @@
+---
+title: "Pointers"
+description: "Pointers in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Programming Basics", "Pointers"]
+slug: "c-pointers"
+author: "Abhishek Sharma"
+order: 14
+---
+
+Pointers in C programming are a powerful feature that allows you to work with memory addresses directly. A pointer is a variable that stores the memory address of another variable.
+
+This means that instead of holding a value, a pointer holds the location in memory where a value is stored. Pointers are used for various purposes, such as dynamic memory allocation, passing arguments to functions by reference, and creating complex data structures like linked lists and trees.
+
+To declare a pointer in C, you use the `*` operator. For example, to declare a pointer to an integer, you would write:
+```c
+int *ptr;
+```
+In this example, `ptr` is a pointer to an integer.
+
+You can also initialize a pointer to point to a specific variable. For example:
+```c
+int x = 10;
+int *ptr = &x;
+```
+In this case, `ptr` is initialized to point to the memory address of the variable `x`. The `&` operator is used to get the address of the variable `x`. You can access the value stored at the memory address that a pointer points to using the dereference operator `*`. For example:
+```c
+int x = 10;
+int *ptr = &x;
+printf("Value of x: %d\n", *ptr); // Output: Value of x: 10
+```
+In this example, `*ptr` dereferences the pointer `ptr` and gives you the value stored at the memory address it points to, which is the value of `x`. You can also modify the value at the memory address through the pointer. For example:
+```c
+int x = 10;
+int *ptr = &x;
+*ptr = 20;
+printf("Value of x: %d\n", x); // Output: Value of x: 20
+```
+In this case, we assign a new value `20` to the location that `ptr` points to, which effectively changes the value of `x` to `20`. Pointers are a fundamental aspect of C programming and provide a lot of flexibility and control over memory management.
+
+However, they also require careful handling to avoid issues such as memory leaks, dangling pointers, and segmentation faults.
+
+Always ensure that you initialize pointers before using them and that you free any dynamically allocated memory when it is no longer needed. 
+
+Additionally, C provides various pointer arithmetic operations that allow you to navigate through arrays and other data structures using pointers, making them an essential tool for efficient programming in C.
+
+## Here are some examples of common pointer operations in C:
+### Pointer Arithmetic
+```c
+#include <stdio.h>
+int main() {
+    int arr[] = {10, 20, 30, 40, 50};
+    int *ptr = arr; // Point to the first element of the array
+    printf("First element: %d\n", *ptr); // Output: First element: 10
+    ptr++; // Move the pointer to the next element
+    printf("Second element: %d\n", *ptr); // Output: Second element: 20
+    ptr += 2; // Move the pointer two elements ahead
+    printf("Fourth element: %d\n", *ptr); // Output: Fourth element: 40
+    return 0;
+}
+```
+In this example, we demonstrate pointer arithmetic by moving the pointer `ptr` through the elements of the array `arr`. We start by pointing to the first element of the array and then use the `++` operator to move to the next element and the `+=` operator to move two elements ahead.
+This allows us to access different elements of the array using the pointer.
+### Dynamic Memory Allocation
+```c
+#include <stdio.h>
+#include <stdlib.h>
+int main() {
+    int *ptr = (int *)malloc(sizeof(int)); // Allocate memory for an integer
+    if (ptr == NULL) {
+        printf("Memory allocation failed\n");
+        return 1;
+    }
+    *ptr = 42; // Assign a value to the allocated memory
+    printf("Value: %d\n", *ptr); // Output: Value: 42
+    free(ptr); // Free the allocated memory
+    return 0;
+}
+```
+In this example, we use the `malloc` function from the `<stdlib.h>` library to dynamically allocate memory for an integer. We check if the memory allocation was successful by verifying if `ptr` is not `NULL`. We then assign a value to the allocated memory and print it.
+
+Finally, we use the `free` function to release the allocated memory back to the system, which is crucial to prevent memory leaks in C programming.
+
+### Pointers and Arrays
+```c
+#include <stdio.h>
+int main() {
+    int arr[] = {1, 2, 3, 4, 5};
+    int *ptr = arr; // Point to the first element of the array
+    for (int i = 0; i < 5; i++) {
+        printf("%d ", *ptr); // Output: 1 2 3 4 5
+        printf("%d ", arr[i]); // Output: 1 2 3 4 5
+        ptr++; // Move the pointer to the next element
+    }
+    printf("\n");
+    return 0;
+}
+```
+In this example, we demonstrate how pointers can be used to iterate through an array. We initialize a pointer to point to the first element of the array `arr` and then use a loop to print each element of the array by dereferencing the pointer.
+
+We increment the pointer in each iteration to move to the next element of the array. This is a common technique in C programming for working with arrays using pointers, and it can be more efficient than using array indexing in certain cases.
+
+However, it's important to ensure that you do not access elements beyond the bounds of the array when using pointers, as this can lead to undefined behavior.
+
+Always make sure to check the size of the array and the pointer's position before dereferencing it to avoid potential issues.
+
+### Passing Pointers to Functions
+```c
+#include <stdio.h>
+void increment(int *num) {
+    (*num)++; // Increment the value at the memory address pointed to by num
+}
+int main() {
+    int x = 5;
+    printf("Before increment: %d\n", x); // Output: Before increment: 5
+    increment(&x); // Pass the address of x to the function
+    printf("After increment: %d\n", x); // Output: After increment: 6
+    return 0;
+}
+```
+In this example, we define a function `increment` that takes a pointer to an integer as an argument. The function increments the value at the memory address pointed to by `num`. In the `main` function, we declare an integer `x`, print its value before incrementing, and then call the `increment` function, passing the address of `x` using the `&` operator. After the function call, we print the value of `x` again to see the change, demonstrating how passing a pointer allows us to modify the original variable in the calling function.
+
+### Pointers to string
+```c
+#include <stdio.h>
+int main() {
+    char *str = "Hello, World!"; // Pointer to a string literal
+    printf("%s\n", str); // Output: Hello, World!
+    return 0;
+}
+```
+In this example, we declare a pointer `str` that points to a string literal "Hello, World!". We then use the `printf` function with the `%s` format specifier to print the string pointed to by `str`.
+
+This demonstrates how pointers can be used to work with strings in C programming. It's important to note that string literals are stored in read-only memory, so you should not attempt to modify the string through the pointer, as this can lead to undefined behavior.
+
+If you need to modify a string, you should use a character array instead of a pointer to a string literal. For example:
+```c
+#include <stdio.h>
+#include <string.h>
+int main() {
+    char str[20] = "Hello, World!"; // Character array to hold the string
+    printf("%s\n", str); // Output: Hello, World!
+    strcpy(str, "Hi there!"); // Modify the string using strcpy
+    printf("%s\n", str); // Output: Hi there!
+    return 0;
+}
+```
+In this example, we declare a character array `str` that can hold up to 20 characters and initialize it with the string "Hello, World!". We then use the `strcpy` function from the `<string.h>` library to modify the string to "Hi there!" and print the modified string to the console.
+
+This demonstrates how to work with modifiable strings in C using character arrays and pointers. Always ensure that the character array is large enough to hold the string you want to store, including the null terminator, to avoid buffer overflow issues.
+
+### Pointers to Structures
+```c
+#include <stdio.h>
+struct Point {
+    int x;
+    int y;
+};
+int main() {
+    struct Point p1 = {10, 20};
+    struct Point *ptr = &p1; // Pointer to the structure
+    printf("Point p1: (%d, %d)\n", ptr->x, ptr->y); // Output: Point p1: (10, 20)
+    ptr->x = 30; // Modify the x coordinate through the pointer
+    ptr->y = 40; // Modify the y coordinate through the pointer
+    printf("Modified Point p1: (%d, %d)\n", ptr->x, ptr->y); // Output: Modified Point p1: (30, 40)
+    return 0;
+}    
+```
+In this example, we define a structure `Point` that contains two integer members, `x` and `y`. We create an instance of the structure `p1` and initialize it with values. We then declare a pointer `ptr` that points to the structure `p1`. We use the arrow operator `->` to access the members of the structure through the pointer.
+
+We print the original values of `p1`, modify the `x` and `y` coordinates through the pointer, and print the modified values to demonstrate how pointers can be used to access and modify the members of a structure in C programming.
+
+### Pointers to Functions
+```c
+#include <stdio.h>
+void greet() {
+    printf("Hello, World!\n");
+}
+int main() {
+    void (*funcPtr)() = greet; // Pointer to the function greet
+    funcPtr(); // Call the function through the pointer
+    return 0;
+}
+```
+In this example, we define a function `greet` that prints a greeting message to the console. We then declare a function pointer `funcPtr` that can point to a function with the same signature as `greet`.
+
+We assign the address of the `greet` function to `funcPtr` and call the function through the pointer. This demonstrates how function pointers can be used to call functions indirectly in C programming, which can be useful for implementing callback functions and dynamic function calls.
+
+### Pointers to Pointers
+```c
+#include <stdio.h>
+int main() {
+    int x = 10;
+    int *ptr = &x; // Pointer to an integer
+    int **ptrToPtr = &ptr; // Pointer to a pointer
+    printf("Value of x: %d\n", **ptrToPtr); // Output: Value of x: 10
+    **ptrToPtr = 20; // Modify the value of x through the pointer to pointer
+    printf("Modified value of x: %d\n", x); // Output: Modified value of x: 20
+    return 0;
+}
+```
+In this example, we declare an integer `x` and a pointer `ptr` that points to `x`. We then declare a pointer to a pointer `ptrToPtr` that points to `ptr`. We use the double dereference operator `**` to access the value of `x` through the pointer to pointer.
+
+We print the original value of `x`, modify it through the pointer to pointer, and print the modified value to demonstrate how pointers to pointers can be used to access and modify values in C programming. This technique is often used in situations where you need to pass a pointer to a function that needs to modify the pointer itself, such as when allocating memory for a pointer in a function.
+
+Pointers are an essential part of C programming and provide a powerful way to manage memory and create complex data structures. However, they also require careful handling to avoid common pitfalls such as dereferencing null pointers, memory leaks, and buffer overflows. Always ensure that you initialize pointers before using them, check for null pointers before dereferencing, and free any dynamically allocated memory when it is no longer needed to maintain the stability and security of your C programs.

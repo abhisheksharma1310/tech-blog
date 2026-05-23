@@ -1,0 +1,30 @@
+---
+const {
+  title,
+  description,
+  canonical,
+  image,
+  type = 'article'
+} = Astro.props as {
+  title: string;
+  description: string;
+  canonical?: string;
+  image?: string;
+  type?: string;
+};
+
+const site = Astro.site ?? 'https://astro-tech-blog.example.com';
+const url = canonical ?? `${site}${Astro.url.pathname}`;
+---
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={url} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:type" content={type} />
+<meta property="og:url" content={url} />
+{image ? <meta property="og:image" content={image} /> : null}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="robots" content="index, follow" />

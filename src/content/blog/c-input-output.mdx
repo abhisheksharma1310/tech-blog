@@ -1,0 +1,88 @@
+---
+title: "Input and Output"
+description: "Input and output operations in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Programming Basics", "Input", "Output"]
+slug: "c-input-output"
+author: "Abhishek Sharma"
+order: 10
+---
+
+Input and output operations are essential in C programming for interacting with the user and displaying results. C provides a standard library called `stdio.h` that contains functions for performing input and output operations.
+
+## Standard Input and Output
+The most commonly used functions for input and output in C are `printf` for output and `scanf` for input.
+
+### Output with printf
+The `printf` function is used to print formatted output to the console. It takes a format string as its first argument, which specifies how the output should be formatted, followed by a variable number of arguments that correspond to the format specifiers in the format string. For example:
+```c
+#include <stdio.h>
+int main() {
+    int num = 10;
+    printf("The value of num is: %d\n", num);
+    return 0;
+}
+```
+In this example, the `printf` function is used to print the value of the variable `num` to the console. The format specifier `%d` is used to indicate that the value being printed is an integer. The `\n` at the end of the format string is a newline character that moves the cursor to the next line after printing the output.
+
+### Other output functions
+In addition to `printf`, C also provides other functions for output, such as `puts` and `putchar`. The `puts` function is used to print a string followed by a newline character, while the `putchar` function is used to print a single character. For example:
+```c
+#include <stdio.h>
+int main() {
+    puts("Hello, World!");
+    putchar('A');
+    return 0;
+}
+```
+In this example, the `puts` function is used to print the string "Hello, World!" followed by a newline, and the `putchar` function is used to print the character 'A' to the console. These functions can be useful for simple output operations, but `printf` is more versatile and allows for more complex formatting of output.
+
+### Input with scanf
+The `scanf` function is used to read formatted input from the user. It takes a format string as its first argument, which specifies the format of the input, followed by a variable number of arguments that correspond to the format specifiers in the format string. The arguments for `scanf` should be pointers to the variables where the input values will be stored. For example:
+```c
+#include <stdio.h>
+int main() {
+    int num;
+    printf("Enter a number: ");
+    scanf("%d", &num);
+    printf("You entered: %d\n", num);
+    return 0;
+}
+```
+In this example, the `scanf` function is used to read an integer input from the user and store it in the variable `num`. The format specifier `%d` is used to indicate that the input is an integer, and the `&` operator is used to pass the address of the variable `num` to `scanf`, allowing it to store the input value in that variable. After reading the input, we use `printf` to display the value entered by the user.
+
+### Other input functions
+In addition to `scanf`, C also provides other functions for input, such as `gets` and `getchar`. The `gets` function is used to read a string input from the user, while the `getchar` function is used to read a single character. However, it's important to note that the `gets` function is considered unsafe and should be avoided, as it can lead to buffer overflow vulnerabilities. Instead, you can use `fgets` for reading strings safely. For example:
+```c
+#include <stdio.h>
+int main() {
+    char str[100];
+    printf("Enter a string: ");
+    fgets(str, sizeof(str), stdin);
+    printf("You entered: %s\n", str);
+    return 0;
+}
+```
+In this example, we use `fgets` to read a string input from the user and store it in the character array `str`. The `sizeof(str)` argument specifies the maximum number of characters to read, preventing buffer overflow. The `stdin` argument indicates that the input should be read from the standard input (the console). After reading the input, we use `printf` to display the string entered by the user. Using `fgets` is a safer alternative to `gets` for reading strings in C programming.
+
+## File Input and Output
+In addition to standard input and output, C also provides functions for performing file input and output operations. The `stdio.h` library includes functions such as `fopen`, `fclose`, `fread`, `fwrite`, `fprintf`, and `fscanf` for working with files. For example, to write to a file, you can use the following code:
+```c
+#include <stdio.h>
+int main() {
+    FILE *file = fopen("output.txt", "w");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return 1;
+    }
+    fprintf(file, "Hello, World!\n");
+    fclose(file);
+    return 0;
+}
+```
+In this example, we use the `fopen` function to open a file named `output.txt` in write mode (`"w"`). If the file is successfully opened, we use the `fprintf` function to write a string to the file, and then we close the file using the `fclose` function.
+If there is an error opening the file, we print an error message and return a non-zero value to indicate that the program did not execute successfully.
+File input and output operations are crucial for tasks such as reading data from files, writing results to files, and managing persistent data in C programming.
+
+In summary, input and output operations in C programming are essential for interacting with the user and managing data. The `printf` and `scanf` functions allow you to perform standard input and output operations, while the file I/O functions enable you to work with files for reading and writing data. Understanding how to use these functions effectively is crucial for developing robust C programs that can handle user input and manage data efficiently.

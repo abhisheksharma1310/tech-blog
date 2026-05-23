@@ -1,0 +1,97 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SEO from "../../components/SEO.astro";
+import { getPosts, getPost } from "../../data/posts";
+
+export async function getStaticPaths() {
+  return getPosts().map((post) => ({ params: { slug: post.slug } }));
+}
+
+const posts = getPosts();
+const slug = Astro.params.slug as string;
+const post = getPost(slug);
+
+if (!post) {
+  throw new Error(`Post not found: ${slug}`);
+}
+
+const { frontmatter, Content } = post;
+const title = `${frontmatter.title} · Astro Tech Blog`;
+const description = frontmatter.description;
+
+const categoryKey = (post) => post.frontmatter.category.join('|');
+const currentCategoryKey = categoryKey(post);
+const sameCategoryPosts = posts.filter((item) => categoryKey(item) === currentCategoryKey);
+const currentIndex = sameCategoryPosts.findIndex((item) => item.slug === slug);
+const previousPost = currentIndex > 0 ? sameCategoryPosts[currentIndex - 1] : null;
+const nextPost = currentIndex < sameCategoryPosts.length - 1 ? sameCategoryPosts[currentIndex + 1] : null;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  posts={posts}
+  activeSlug={slug}
+>
+  <SEO
+    title={title}
+    description={description}
+    canonical={`https://astro-tech-blog.example.com${post.url}`}
+  />
+  <article class="post-article">
+    <h1>{frontmatter.title}</h1>
+    <div class="post-meta">
+      <span class="category">{frontmatter.category.join(" / ")}</span>
+      <!-- <span class="date">{new Date(frontmatter.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span> -->
+      <!-- <span class="tags">
+        {
+          frontmatter.tags.map((tag) => (
+            <span key={tag} className="tag">
+              {tag}
+            </span>
+          ))
+        }
+      </span> -->
+    </div>
+    {
+      Content ? (
+        <Content />
+      ) : (
+        <div
+          class="post-empty-debug"
+          style="background:#fff6f6;border:1px solid #fca5a5;padding:1rem;border-radius:.5rem;margin-top:1rem;"
+        >
+          <strong>Debug:</strong> Content component is missing or failed to
+          load.
+          <pre style="white-space:pre-wrap;margin-top:.5rem">
+            {JSON.stringify(
+              {
+                slug: post.slug,
+                frontmatter: post.frontmatter,
+                contentType: typeof post.Content,
+              },
+              null,
+              2,
+            )}
+          </pre>
+        </div>
+      )
+    }
+
+    <nav class="post-navigation" aria-label="Post navigation">
+      {previousPost ? (
+        <a href={previousPost.url} class="post-navigation-link prev">
+          <span>← Previous</span>
+          <strong>{previousPost.frontmatter.title}</strong>
+        </a>
+      ) : <div />}
+
+      {nextPost ? (
+        <a href={nextPost.url} class="post-navigation-link next">
+          <span>Next →</span>
+          <strong>{nextPost.frontmatter.title}</strong>
+        </a>
+      ) : <div />}
+    </nav>
+  </article>
+</BaseLayout>

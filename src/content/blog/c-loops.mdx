@@ -1,0 +1,107 @@
+---
+title: "Loops"
+description: "Loops in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Programming Basics", "Loops"]
+slug: "c-loops"
+author: "Abhishek Sharma"
+order: 6
+---
+
+Loops are a fundamental programming construct that allow you to execute a block of code repeatedly based on a specified condition. In C programming, there are three main types of loops: `for`, `while`, and `do-while`. Each type of loop serves a different purpose and can be used in various scenarios.
+
+1. **for loop**: The `for` loop is typically used when you know in advance how many times you want to execute a block of code. It consists of three parts: initialization, condition, and increment/decrement. For example:
+   ```c
+   for (int i = 0; i < 5; i++) {
+       printf("i: %d\n", i);
+   }
+   ```
+   In this example, the loop will execute 5 times, printing the value of `i` from 0 to 4.
+
+2. **while loop**: The `while` loop is used when you want to execute a block of code as long as a specified condition is true. The condition is evaluated before the execution of the loop body. For example:
+   ```c
+   int i = 0;
+   while (i < 5) {
+       printf("i: %d\n", i);
+       i++;
+   }
+   ```
+   In this example, the loop will also execute 5 times, printing the value of `i` from 0 to 4, but the condition is checked before the loop body is executed.
+
+3. **do-while loop**: The `do-while` loop is similar to the `while` loop, but the condition is evaluated after the execution of the loop body. This means that the loop will execute at least once, even if the condition is false. For example:
+   ```c
+   int i = 0;
+   do {
+       printf("i: %d\n", i);
+       i++;
+   } while (i < 5);
+   ```
+   In this example, the loop will execute 5 times, printing the value of `i` from 0 to 4, but the loop body is executed at least once regardless of the initial value of `i`.
+
+## Nested Loops
+C also allows you to use nested loops, which are loops inside other loops. This can be useful for iterating over multi-dimensional data structures, such as arrays. For example:
+```c
+for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+        printf("i: %d, j: %d\n", i, j);
+    }
+}
+```
+In this example, the outer loop iterates 3 times, and for each iteration of the outer loop, the inner loop also iterates 3 times, resulting in a total of 9 iterations, printing the values of `i` and `j` from 0 to 2. Nested loops can be used for various applications, such as processing multi-dimensional arrays, generating patterns, and more. However, it's important to be mindful of the performance implications of nested loops, as they can lead to increased time complexity if not used carefully.
+
+## Infinite Loops
+An infinite loop is a loop that continues to execute indefinitely because the loop's exit condition is never met. This can happen if the condition is always true or if there is no condition at all. For example:
+```c
+while (1) {
+    printf("This is an infinite loop.\n");
+}
+```
+
+In this example, the condition `1` is always true, so the loop will continue to execute indefinitely, printing "This is an infinite loop." to the console. Infinite loops can be useful in certain scenarios, such as in event-driven programming or when waiting for user input, but they should be used with caution to avoid unintended consequences, such as consuming excessive CPU resources or causing the program to become unresponsive. Always ensure that there is a way to break out of an infinite loop when necessary, such as by using a `break` statement or by implementing a condition that can eventually become false.
+
+## Breaking out of loops
+In C, you can use the `break` statement to exit a loop prematurely when a certain condition is met. This can be useful for improving performance or for handling specific cases within a loop. For example:
+```c
+for (int i = 0; i < 10; i++) {
+    if (i == 5) {
+        break; // Exit the loop when i is 5
+    }
+    printf("i: %d\n", i);
+}
+```
+In this example, the loop will print the values of `i` from 0 to 4, and when `i` reaches 5, the `break` statement will be executed, causing the loop to exit immediately. The output will be:
+```
+i: 0
+i: 1
+i: 2
+i: 3
+i: 4
+```
+The `break` statement can be used in any type of loop (`for`, `while`, or `do-while`) and can also be used to exit from nested loops by using labels. For example:
+```c
+for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+        if (i == 1 && j == 1) {
+            break; // Exit the inner loop when i is 1 and j is 1
+        }
+        printf("i: %d, j: %d\n", i, j);
+    }
+}
+```
+In this example, the inner loop will exit when `i` is 1 and `j` is 1, but the outer loop will continue to execute. The output will be:
+```
+i: 0, j: 0
+i: 0, j: 1
+i: 0, j: 2
+i: 1, j: 0
+i: 1, j: 1
+i: 1, j: 2
+i: 2, j: 0
+i: 2, j: 1
+i: 2, j: 2
+```
+In this case, the inner loop will exit when `i` is 1 and `j` is 1, but the outer loop will continue to execute, resulting in the output shown above.
+
+## Conclusion
+Loops are an essential part of programming in C, allowing you to execute a block of code multiple times based on a specified condition. Understanding how to use `for`, `while`, and `do-while` loops effectively can help you write more efficient and readable code. Additionally, being aware of nested loops and infinite loops can help you avoid common pitfalls and improve the performance of your programs. As you continue to learn and practice C programming, you'll find that loops are a powerful tool for solving a wide variety of programming problems.

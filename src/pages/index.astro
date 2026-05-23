@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/SEO.astro';
+import ArticleCard from '../components/ArticleCard.tsx';
+import { getPosts } from '../data/posts';
+
+const posts = getPosts();
+const title = 'Astro Tech Blog';
+const description = 'A simple technology blog for Web Development, Cloud Computing, Embedded/IoT, DevOps, and Aptitude written with Astro + React.';
+---
+<BaseLayout title={title} description={description} posts={posts}>
+  <SEO title={title} description={description} />
+  <section class="hero" id="articles">
+    <h2>Read technology articles with clear structure and fast loading.</h2>
+    <p>Explore posts on web development, cloud architecture, embedded systems, DevOps best practices, and aptitude guidance. The site is built for SEO and static deployment on Cloudflare Pages.</p>
+  </section>
+  <section class="post-grid">
+    {posts.map((post) => (
+      <ArticleCard key={post.slug} post={post} />
+    ))}
+  </section>
+</BaseLayout>

@@ -1,0 +1,65 @@
+---
+title: "Arrays"
+description: "Arrays in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Programming Basics", "Arrays"]
+slug: "c-arrays"
+author: "Abhishek Sharma"
+order: 7
+---
+
+Arrays are a fundamental data structure in C programming that allow you to store and manage collections of data. An array is a contiguous block of memory that holds a fixed number of elements of the same type. Each element in the array can be accessed using an index, which starts at 0 for the first element.
+
+## Declaring and Initializing Arrays
+To declare an array in C, you specify the type of the elements and the number of elements in the array. For example, to declare an array of integers that can hold 5 elements, you can use the following syntax:
+```c
+int myArray[5];
+```
+This declaration creates an array named `myArray` that can hold 5 integers. The elements of the array are uninitialized and may contain garbage values until you assign values to them. You can also initialize an array at the time of declaration. For example:
+```c
+int myArray[5] = {1, 2, 3, 4, 5};
+```
+In this example, the array `myArray` is initialized with the values 1, 2, 3, 4, and 5. If you provide fewer initializers than the size of the array, the remaining elements will be initialized to 0. For example:
+```c
+int myArray[5] = {1, 2};
+```
+In this case, `myArray[0]` will be 1, `myArray[1]` will be 2, and `myArray[2]`, `myArray[3]`, and `myArray[4]` will be initialized to 0.
+
+## Accessing Array Elements
+You can access individual elements of an array using their index. The index is specified in square brackets after the array name. For example:
+```c
+int myArray[5] = {1, 2, 3, 4, 5};
+printf("%d\n", myArray[0]); // Output: 1
+printf("%d\n", myArray[1]); // Output: 2
+printf("%d\n", myArray[2]); // Output: 3
+printf("%d\n", myArray[3]); // Output: 4
+printf("%d\n", myArray[4]); // Output: 5    
+```
+In this example, we access each element of the array `myArray` using its index and print its value to the console. Remember that array indices start at 0, so `myArray[0]` refers to the first element, `myArray[1]` refers to the second element, and so on.
+
+## Multidimensional Arrays
+C also supports multidimensional arrays, which are arrays of arrays. The most common type of multidimensional array is the two-dimensional array, which can be thought of as a table or matrix. To declare a two-dimensional array, you specify the number of rows and columns. For example:
+```c
+int myMatrix[3][4];
+```
+This declaration creates a two-dimensional array named `myMatrix` with 3 rows and 4 columns. You can initialize a two-dimensional array at the time of declaration as well. For example:
+```c
+int myMatrix[3][4] = {
+    {1, 2, 3, 4},
+    {5, 6, 7, 8},
+    {9, 10, 11, 12}
+};
+```
+In this example, `myMatrix` is initialized with values from 1 to 12 arranged in a 3x4 matrix. You can access elements of a two-dimensional array using two indices: one for the row and one for the column. For example:
+```c
+printf("%d\n", myMatrix[0][0]); // Output: 1
+printf("%d\n", myMatrix[1][2]); // Output: 7
+printf("%d\n", myMatrix[2][3]); // Output: 12
+```
+In this example, we access specific elements of the `myMatrix` array using their row and column indices. `myMatrix[0][0]` refers to the element in the first row and first column, `myMatrix[1][2]` refers to the element in the second row and third column, and `myMatrix[2][3]` refers to the element in the third row and fourth column. Multidimensional arrays can be useful for representing complex data structures, such as grids, tables, and more. However, they can also consume a lot of memory if not used carefully, so it's important to consider the size of the array and the amount of memory it will require when working with large multidimensional arrays.
+
+## Array Limitations
+While arrays are a powerful data structure, they have some limitations in C programming. One of the main limitations of arrays is that their size must be known at compile time, which means that you cannot create an array with a size that is determined at runtime. This can be a problem if you need to store a variable number of elements or if the size of the array is not known in advance. To work around this limitation, you can use dynamic memory allocation with pointers to create arrays that can grow or shrink at runtime, but this requires careful management of memory to avoid issues such as memory leaks and buffer overflows. Additionally, arrays in C do not have built-in bounds checking, which means that if you try to access an element outside the bounds of the array, you may encounter undefined behavior, such as accessing invalid memory or crashing the program. Therefore, it's important to always ensure that you are accessing elements within the bounds of the array to avoid potential issues.
+
+In summary, arrays are a fundamental data structure in C programming that allow you to store and manage collections of data. They can be one-dimensional or multidimensional, and they provide a way to access individual elements using indices. However, arrays have limitations, such as fixed size and lack of bounds checking, so it's important to use them carefully and consider alternative data structures when necessary.

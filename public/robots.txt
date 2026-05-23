@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://astro-tech-blog.example.com/sitemap.xml

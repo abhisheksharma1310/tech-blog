@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/SEO.astro';
+import { getPosts } from '../data/posts';
+
+const posts = getPosts();
+const title = 'Page Not Found · Astro Tech Blog';
+const description = 'The page you were looking for does not exist. Find the latest posts about web development, cloud, embedded IoT, DevOps, and aptitude.';
+---
+<BaseLayout title={title} description={description} posts={posts}>
+  <SEO title={title} description={description} />
+  <section class="hero">
+    <h2>404 — Page not found</h2>
+    <p>The page you are looking for doesn’t exist yet. Use the left navigation to explore posts or return to the homepage.</p>
+  </section>
+</BaseLayout>

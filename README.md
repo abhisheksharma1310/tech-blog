@@ -1,5 +1,7 @@
 # Astro Tech Blog
 
+Read this blog at [Tech-Blog](https://tech-blog-31y.pages.dev)
+
 A simple Astro blog scaffold with:
 
 - React component development

@@ -1,19 +1,154 @@
 ---
-title: "Cloud Computing Fundamentals"
-description: "An introduction to cloud deployment models, static site hosting, and the benefits of edge infrastructure."
+title: "Overview"
+description: "An introduction to cloud computing."
 date: "2026-05-22"
-category: ["Cloud Computing"]
+category: ["Cloud Computing",]
 tags: ["Cloud", "static", "deployment"]
 slug: "cloud-computing-overview"
 author: "Astro Tech"
 ---
 
-Cloud computing enables teams to deploy applications without managing physical servers. Static sites in particular are a perfect fit for Cloudflare Pages because they deliver speed and security without runtime complexity.
+## Cloud Computing
+Cloud computing is an on-demand delivery of compute, storage, database, networking, and many more services over the internet.
+On-demand delivery means you get it when you need it.
+It comes with pay-as-you go pricing.
 
-Key advantages of static deployment:
+### Compute
+Compute is the processing power of your machine. Depend on processor speed (ex. 2 Gzh). Number of physical and logical core of processor, Generation and type of processor etc.
 
-- Fast global delivery using CDN caching
-- Lower cost and simpler maintenance
-- Built-in SSL and DDoS protection
+### Storage
+Storage enables you to save data within a data storage service.
+You can store data such as videos, musics, documents, pictures etc.
+Data saved on an storage device will remain permanently until you delete it.
+To store data either temporarily or permanently on the cloud, you use cloud storage.
 
-For technology writers, choosing a static-first stack means your content is both SEO-friendly and easy to update.
+### Database
+When you arrange your data or information in certain rows and columns, it is called structured data.
+To store a huge amount of structured data, you need a special type of storage called database.
+Example of Databases are MySql, Oracle Cloud DB, Azure SQL, Google Cloud SQL, Amazon RDS etc.
+
+### Networking
+it is a service that provides connectivity among different services.
+
+## Cloud Deployment Models
+Different organizations have requirements, they want different levels of control on their cloud infrastructure.
+Each cloud deployment offers a different level of management, security and cost.
+
+There are three types of cloud deployment model.
+
+- Public Cloud
+- Private Cloud
+- Hybrid Cloud
+
+### Public Cloud
+A public cloud is a cloud computing infrastructure maintained and operated by a cloud service provide like AWS, Azure, GCP etc.
+Anyone can use the public cloud.
+The Cloud service providers are responsible for maintaining the physical infrastructure.
+
+### Private Cloud
+A private cloud is a cloud computing infrastructure that is specifically provisioned for a company.
+Cloud services are available to an organization and its users only.
+The physical infrastructure can be maintained either by the organization itself or by the third party.
+When a cloud computing infrastructure is available for a certain organization a and to their people internal only, this is called private cloud.
+Private cloud are more expensive than public clouds.
+Private clouds are used by organizations that want to run mission critical application due to security reasons.
+
+### Hybrid Cloud
+Hybrid means combination of two or more.
+A hybrid cloud is a cloud computing infrastructure that benefits from both public cloud and private cloud models and enables organizations to use both.
+Hybrid cloud combines a public cloud and a private cloud to allow data and applications to be shared between them.
+
+## Data Center
+A data center is physical space where organizations keep computer systems and related hardware that are required for their websites, apps or IT infrastructure.
+We can add more systems and hardware based on the growth.
+
+### Challenge with traditional data center
+
+- **Cost**: Setting up a data center needs a huge upfront investment in building hardware, cooling, power, ventilation equipment etc.
+- **Capacity Planing**: Data centers should always be ready to meet the demand. Most of the time we end up over provisioning the servers, which leads to a waste of our resources.
+- **Staffing and Technical skill sets**: To monitor the data centers and troubleshoot them during any issue, we need skilled staff which further leads to additional costs.
+
+### Components of a on-premises data centers
+- Application
+- Database
+- Runtime Environment
+- Middleware
+- OS
+- Virtualization
+- Servers
+- Storage
+- Networking
+
+## Cloud Computing Models
+- Iaas (Infrastructure as a service)
+- Paas (Platform as a service)
+- Saas (Software as a service) 
+
+### Iaas (Infrastructure as a service)
+This models provide fundamental building blocks for hosting applications such as networking, storage, servers and virtualization.
+So the developers focus on only application, database, runtime environment, middleware and os.
+
+### Paas (Platform as a service)
+In this model developers have to only think about applications and database.
+
+### Saas (Software as a service)
+In this model there is no need of any development.
+The final service is directly provided to the users.
+Like email, drive, etc.
+
+## Scalability
+Scalability is the ability of the system to scale.
+In this case scalability is the process of increasing or decreasing the compute power.
+Let assume you are running a application on virtual machine which is hosted in cloud.
+if more people access your application then there will be need to increase computing power of the virtual machine.
+To do this we have two way ***Vertical Scaling*** and ***Horizontal Scaling***.  
+
+### Vertical Scaling
+When we increase the cpu processing speed and memory then it is called vertical scaling.
+When er increase it is called ***Scale-up*** and when we decrease it is called ***Scale-down***.
+
+### Horizontal Scaling
+When we add more *virtual machines* instead of increasing cpu speed and memory it is called horizontal scaling.
+When we add more virtual machine it is called ***Scaling-out*** and when we decrease it is called ***Scaling-in***. 
+
+## Elasticity
+Elasticity is the ability of system to *scale dynamically*.
+Let's assume our application is working fine.
+but you can notice uses varies throughout the day.
+There is more uses in day time compare to night.
+Hence the ability to scaled the virtual machines based on the demand of the application is known as *elasticity*.
+
+If the system can scale automatically. it is known as ***Automatic Scaling***.
+
+## Agility
+Agility is the ability to react quickly.
+In this case agility means how quickly *resources allocated and deallocated* during scalability process.
+This process takes minute or seconds in cloud but in on-premises data centers can take days.
+
+## High Availability
+It is the ability of a system to operate continuously without failure for a designated period.
+For high availability there must be multiple virtual machines running so that whenever one machine stopped due to security patch update or any fault then there will be more to handle users requests.
+
+## Fault Tolerance
+Tolerance means the ability of a virtual machine to remain up and running during component and service failures.
+A fault-tolerant system takes care of any failure, repairs it and keep the application running.
+Fault tolerance refers to the ability of a system (computer, network, storage, etc) to continue operating without interruption when one or more of its component fail.
+
+## Advantages of using cloud computing
+When you use on-premises data center. It is not matter whether you use the full capacity of the data center or not, you have already invested the ***CAPEX*** amount and will have an ongoing ***OPEX*** amount.
+With cloud computing you will only have to pay monthly based on the resources you consume.
+
+### CAPEX
+The upfront investment in acquiring the physical space, hardware, and staff to setup a data center is called CAPEX capital expenses or fixed expenses. 
+
+### OPEX
+The investment in a technical team to keep the data center running is known as OPEX Operational expense or variable expense.
+
+
+
+
+
+
+
+
+

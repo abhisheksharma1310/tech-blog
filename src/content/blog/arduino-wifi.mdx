@@ -1,0 +1,500 @@
+---
+title: "Wi-Fi"
+description: "An introduction to Arduino Wi-Fi functions."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-Wi-Fi"
+author: "Abhishek Sharma"
+order: 7
+---
+
+# Wi-Fi
+
+Wi-Fi enables Arduino boards to connect to local networks and the internet, making them true IoT devices. Boards like the Arduino Uno WiFi Rev2, MKR WiFi 1010, Nano 33 IoT, and ESP32/ESP8266 have built-in Wi-Fi. The API described here follows the Arduino WiFi library (WiFiNINA for modern boards, ESP8266WiFi for ESP chips), with minor naming differences across platforms.
+
+## Wi-Fi Overview
+
+Before using any Wi-Fi functions, include the appropriate library and connect to a network. The typical flow:
+
+```cpp
+#include <WiFiNINA.h> // or <ESP8266WiFi.h> / <WiFi.h>
+
+const char ssid[] = "your-network-name";
+const char pass[] = "your-password";
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Check for Wi-Fi module
+  if (WiFi.status() == WL_NO_MODULE)
+  {
+    Serial.println("Wi-Fi module not found!");
+    while (true);
+  }
+
+  // Attempt connection
+  Serial.print("Connecting to ");
+  Serial.print(ssid);
+
+  while (WiFi.begin(ssid, pass) != WL_CONNECTED)
+  {
+    delay(1000);
+    Serial.print(".");
+  }
+
+  Serial.println("\nConnected!");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void loop()
+{
+  // Main program logic
+  delay(10000);
+}
+```
+
+Network status codes returned by `WiFi.status()`:
+- `WL_CONNECTED` — connected to a network
+- `WL_IDLE_STATUS` — idle (no connection in progress)
+- `WL_NO_SSID_AVAIL` — SSID not found
+- `WL_CONNECT_FAILED` — wrong password
+- `WL_DISCONNECTED` — disconnected
+- `WL_NO_MODULE` — no Wi-Fi hardware detected
+
+## WiFi Network
+
+The `WiFi` object provides network-level operations: scanning, connecting, and retrieving network information.
+
+```cpp
+#include <WiFiNINA.h>
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Scan for available networks
+  int networks = WiFi.scanNetworks();
+  Serial.print("Found ");
+  Serial.print(networks);
+  Serial.println(" networks:");
+
+  for (int i = 0; i < networks; i++)
+  {
+    Serial.print("  ");
+    Serial.print(WiFi.SSID(i));
+    Serial.print(" (");
+    Serial.print(WiFi.RSSI(i));
+    Serial.print(" dBm) ");
+    Serial.println(WiFi.encryptionType(i) == ENC_TYPE_NONE ? "Open" : "Secured");
+  }
+}
+
+void loop() {}
+```
+
+Key `WiFi` methods:
+- `begin(ssid, password)` — connect to a network
+- `beginAP(ssid, password)` — start as an access point
+- `scanNetworks()` — scan for visible networks (returns count)
+- `SSID(index)` — get SSID of a scanned network
+- `RSSI(index)` — signal strength in dBm
+- `localIP()` — get the assigned IP address
+- `macAddress(mac)` — get the MAC address
+- `disconnect()` — disconnect from the network
+
+## IPAddress
+
+`IPAddress` is a class that stores an IPv4 address (four bytes). It supports common operators and can be printed directly with `Serial.print()`.
+
+```cpp
+#include <WiFiNINA.h>
+
+const char ssid[] = "your-network-name";
+const char pass[] = "your-password";
+
+void setup()
+{
+  Serial.begin(9600);
+  WiFi.begin(ssid, pass);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
+  }
+
+  // Get local IP
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP: ");
+  Serial.println(ip);
+
+  // Define a static IP or remote server address
+  IPAddress gateway(192, 168, 1, 1);
+  IPAddress subnet(255, 255, 255, 0);
+  IPAddress serverIP(8, 8, 8, 8); // Google DNS
+
+  // Configure static IP if needed
+  WiFi.config(ip, gateway, subnet);
+
+  // Access individual octets
+  Serial.print("First octet: ");
+  Serial.println(ip[0]); // index 0-3
+}
+
+void loop() {}
+```
+
+`IPAddress` supports construction from four octets:
+- `IPAddress(192, 168, 1, 100)` — manual address
+- `IPAddress(0xFFFFFFFF)` — from a 32-bit integer (network byte order)
+- Comparison: `if (ip == IPAddress(192, 168, 1, 1))`
+- Access: `ip[0]`, `ip[1]`, `ip[2]`, `ip[3]`
+
+## WiFiClient
+
+`WiFiClient` creates a TCP client that connects to a remote server, sends data, and receives responses. It is used for HTTP requests, MQTT connections, and any TCP-based protocol.
+
+```cpp
+#include <WiFiNINA.h>
+
+const char ssid[] = "your-network-name";
+const char pass[] = "your-password";
+const char host[] = "api.example.com";
+const int port = 80;
+
+WiFiClient client;
+
+void setup()
+{
+  Serial.begin(9600);
+  WiFi.begin(ssid, pass);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
+  }
+
+  Serial.println("Connecting to server...");
+
+  if (client.connect(host, port))
+  {
+    Serial.println("Connected!");
+    // Send an HTTP GET request
+    client.println("GET /data HTTP/1.1");
+    client.print("Host: ");
+    client.println(host);
+    client.println("Connection: close");
+    client.println();
+  }
+  else
+  {
+    Serial.println("Connection failed.");
+  }
+}
+
+void loop()
+{
+  // Read server response
+  while (client.available())
+  {
+    char c = client.read();
+    Serial.write(c);
+  }
+
+  if (!client.connected())
+  {
+    Serial.println("\nDisconnected.");
+    client.stop();
+    while (true);
+  }
+}
+```
+
+Key `WiFiClient` methods:
+- `connect(host, port)` — connect to a TCP server (returns true/false)
+- `connected()` — check if the client is still connected
+- `available()` — number of bytes available to read
+- `read()` — read one byte
+- `read(buf, len)` — read into a buffer
+- `print()` / `println()` / `write()` — send data (inherited from `Print`)
+- `stop()` — close the connection
+- `setTimeout(timeout)` — set read timeout in milliseconds
+
+## WiFiServer
+
+`WiFiServer` creates a TCP server that listens for incoming client connections. Other devices on the same network can connect and exchange data.
+
+```cpp
+#include <WiFiNINA.h>
+
+const char ssid[] = "your-network-name";
+const char pass[] = "your-password";
+const int serverPort = 8080;
+
+WiFiServer server(serverPort);
+
+void setup()
+{
+  Serial.begin(9600);
+  WiFi.begin(ssid, pass);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
+  }
+
+  server.begin();
+  Serial.print("Server started at ");
+  Serial.print(WiFi.localIP());
+  Serial.print(":");
+  Serial.println(serverPort);
+}
+
+void loop()
+{
+  WiFiClient client = server.available(); // check for new clients
+
+  if (client)
+  {
+    Serial.println("New client connected!");
+
+    while (client.connected())
+    {
+      if (client.available())
+      {
+        String request = client.readStringUntil('\r');
+        client.println("HTTP/1.1 200 OK");
+        client.println("Content-Type: text/html");
+        client.println();
+        client.println("<!DOCTYPE html><html><body>");
+        client.print("<h1>Hello from Arduino!</h1>");
+        client.print("<p>Analog reading: ");
+        client.print(analogRead(A0));
+        client.println("</p></body></html>");
+        break;
+      }
+    }
+
+    client.stop();
+    Serial.println("Client disconnected.");
+  }
+}
+```
+
+Key `WiFiServer` methods:
+- `server(port)` — create a server on the given port
+- `begin()` — start listening for connections
+- `available()` — return the first client that has data (or a new connection)
+- `accept()` — accept a pending connection (returns `WiFiClient`)
+- `status()` — get server status
+- `write(data)` — send data to all connected clients
+
+## WiFiUDP
+
+`WiFiUDP` enables UDP (User Datagram Protocol) communication. UDP is connectionless and faster than TCP but does not guarantee delivery. It is used for NTP time sync, streaming, and discovery protocols.
+
+```cpp
+#include <WiFiNINA.h>
+#include <WiFiUdp.h>
+
+const char ssid[] = "your-network-name";
+const char pass[] = "your-password";
+const int localPort = 8888;
+
+WiFiUDP udp;
+
+// NTP server to query
+const char ntpServer[] = "pool.ntp.org";
+const int ntpPort = 123;
+const int NTP_PACKET_SIZE = 48;
+byte packetBuffer[NTP_PACKET_SIZE];
+
+void setup()
+{
+  Serial.begin(9600);
+
+  WiFi.begin(ssid, pass);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
+  }
+
+  udp.begin(localPort);
+  Serial.print("UDP listening on port ");
+  Serial.println(localPort);
+
+  // Send an NTP time request
+  sendNTPpacket(ntpServer);
+}
+
+void loop()
+{
+  int packetSize = udp.parsePacket();
+
+  if (packetSize)
+  {
+    Serial.print("Received ");
+    Serial.print(packetSize);
+    Serial.println(" bytes");
+
+    udp.read(packetBuffer, NTP_PACKET_SIZE);
+
+    // Extract timestamp from NTP response (bytes 40-43)
+    unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+    unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+    unsigned long secsSince1900 = highWord << 16 | lowWord;
+
+    // Convert to Unix time (seconds since 1970)
+    unsigned long epoch = secsSince1900 - 2208988800UL;
+
+    Serial.print("Unix time: ");
+    Serial.println(epoch);
+  }
+
+  delay(1000);
+}
+
+void sendNTPpacket(const char* server)
+{
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+
+  packetBuffer[0] = 0b11100011; // LI, Version, Mode
+  packetBuffer[1] = 0;          // Stratum
+  packetBuffer[2] = 6;          // Polling interval
+  packetBuffer[3] = 0xEC;       // Peer clock precision
+
+  packetBuffer[12] = 49;
+  packetBuffer[13] = 0x4E;
+  packetBuffer[14] = 49;
+  packetBuffer[15] = 52;
+
+  udp.beginPacket(server, ntpPort);
+  udp.write(packetBuffer, NTP_PACKET_SIZE);
+  udp.endPacket();
+}
+```
+
+**Simple UDP send/receive:**
+
+```cpp
+#include <WiFiNINA.h>
+#include <WiFiUdp.h>
+
+WiFiUDP udp;
+
+void setup()
+{
+  Serial.begin(9600);
+  udp.begin(8888);
+}
+
+void loop()
+{
+  // Broadcast a message every 5 seconds
+  udp.beginPacket(IPAddress(255, 255, 255, 255), 8888);
+  udp.print("Hello from Arduino!");
+  udp.endPacket();
+
+  // Check for incoming messages
+  int packetSize = udp.parsePacket();
+  if (packetSize)
+  {
+    char buffer[255];
+    int len = udp.read(buffer, 255);
+    buffer[len] = '\0';
+    Serial.print("Received: ");
+    Serial.println(buffer);
+    Serial.print("From: ");
+    Serial.println(udp.remoteIP());
+  }
+
+  delay(5000);
+}
+```
+
+Key `WiFiUDP` methods:
+- `begin(port)` — start UDP on a local port
+- `beginPacket(host, port)` — start a packet to a remote host (returns true/false)
+- `beginPacket(ip, port)` — start a packet to an `IPAddress`
+- `write(data)` / `print(data)` — add data to the packet
+- `endPacket()` — send the packet
+- `parsePacket()` — check for incoming packet (returns size or 0)
+- `read(buffer, len)` — read incoming packet data
+- `available()` — bytes available after parsing
+- `remoteIP()` / `remotePort()` — sender's address and port
+- `stop()` — close UDP
+
+## Complete Example: HTTP Weather Station Server
+
+This example reads an analog sensor, hosts a simple HTTP server, and serves a web page showing live sensor data to any browser on the network.
+
+```cpp
+#include <WiFiNINA.h>
+
+const char ssid[] = "your-network-name";
+const char pass[] = "your-password";
+const int port = 80;
+
+WiFiServer server(80);
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, pass);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
+    Serial.print(".");
+  }
+
+  server.begin();
+  Serial.print("Server: http://");
+  Serial.println(WiFi.localIP());
+}
+
+void loop()
+{
+  WiFiClient client = server.available();
+  if (!client)
+    return;
+
+  Serial.println("New client");
+  String request = "";
+
+  while (client.connected())
+  {
+    if (client.available())
+    {
+      char c = client.read();
+      request += c;
+
+      if (c == '\n')
+        break;
+    }
+  }
+
+  // Build HTML response
+  int sensorValue = analogRead(A0);
+  float voltage = sensorValue * (5.0 / 1023.0);
+
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: text/html");
+  client.println("Connection: close");
+  client.println();
+  client.println("<!DOCTYPE html><html><body>");
+  client.println("<h1>Arduino Weather Station</h1>");
+  client.print("<p>Sensor Value: ");
+  client.print(sensorValue);
+  client.print("</p><p>Voltage: ");
+  client.print(voltage);
+  client.println(" V</p>");
+  client.println("</body></html>");
+
+  client.stop();
+  Serial.println("Response sent");
+}
+```

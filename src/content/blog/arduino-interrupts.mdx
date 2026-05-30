@@ -1,0 +1,239 @@
+---
+title: "Interrupts"
+description: "An introduction to Arduino interrupts functions."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-interrupts"
+author: "Abhishek Sharma"
+order: 5
+---
+
+# Interrupts
+
+Interrupts allow the Arduino to respond to external events immediately, pausing the main program to run a special function called an Interrupt Service Routine (ISR). This enables real-time response to button presses, sensor triggers, or timer events without constantly polling (checking) a pin in `loop()`.
+
+## noInterrupts()
+
+`noInterrupts()` disables all interrupts globally. While interrupts are disabled, time-sensitive functions like `millis()`, `delay()`, and `micros()` will stop updating, and external interrupts will not trigger.
+
+```cpp
+void setup()
+{
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  noInterrupts(); // disable interrupts
+
+  // Perform a critical operation that must not be interrupted
+  // e.g., writing to a shared variable
+  Serial.println("Interrupts disabled - critical section");
+
+  interrupts(); // re-enable interrupts
+
+  delay(1000);
+}
+```
+
+Use `noInterrupts()` to protect critical sections of code where shared data is being modified. Keep critical sections as short as possible to avoid missing time-sensitive events.
+
+## interrupts()
+`interrupts()` re-enables interrupts after they have been disabled with `noInterrupts()`. Interrupts are enabled by default on Arduino.
+
+```cpp
+volatile unsigned long lastInterruptTime = 0;
+
+void setup()
+{
+  Serial.begin(9600);
+  attachInterrupt(digitalPinToInterrupt(2), onButtonPress, RISING);
+}
+
+void loop()
+{
+  // Critical section: safely read the value updated by ISR
+  noInterrupts();
+  unsigned long copy = lastInterruptTime;
+  interrupts();
+
+  Serial.print("Last interrupt at: ");
+  Serial.println(copy);
+  delay(500);
+}
+
+void onButtonPress()
+{
+  lastInterruptTime = millis();
+}
+```
+
+Always pair `noInterrupts()` with `interrupts()`. The `volatile` keyword is required for any variable modified inside an ISR to prevent the compiler from optimizing out the read.
+
+## attachInterrupt()
+
+`attachInterrupt()` configures an external interrupt on a specified pin. When the pin's state changes according to the configured mode, the Arduino pauses `loop()` and executes the attached ISR function.
+
+```cpp
+const int ledPin = 13;
+const int interruptPin = 2;
+
+volatile bool ledState = false;
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);
+  pinMode(interruptPin, INPUT_PULLUP);
+
+  // Attach interrupt: pin 2, ISR function, trigger on FALLING edge
+  attachInterrupt(digitalPinToInterrupt(interruptPin), toggleLED, FALLING);
+
+  Serial.begin(9600);
+  Serial.println("Press button on pin 2 to toggle LED");
+}
+
+void loop()
+{
+  // Main loop is free to do other work
+  digitalWrite(ledPin, ledState);
+}
+
+// ISR: keep it short and fast
+void toggleLED()
+{
+  ledState = !ledState; // toggle LED state
+
+  // Serial.println() should NOT be called inside an ISR
+}
+```
+
+`attachInterrupt(interruptNumber, ISR, mode)`:
+- `interruptNumber` — use `digitalPinToInterrupt(pin)` to convert a pin number
+- `ISR` — the function to run (must be `void` with no arguments)
+- `mode` — one of `LOW`, `CHANGE`, `RISING`, `FALLING`, or `HIGH` (board-dependent)
+
+Available interrupt pins: Uno/Nano: pins 2 and 3; Mega: 2, 3, 18, 19, 20, 21; Zero/Due: any digital pin.
+
+## detachInterrupt()
+
+`detachInterrupt()` removes an interrupt previously attached with `attachInterrupt()`. The pin returns to normal digital behavior.
+
+```cpp
+const int buttonPin = 2;
+const int ledPin = 13;
+
+volatile bool counting = true;
+volatile int count = 0;
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  attachInterrupt(digitalPinToInterrupt(buttonPin), onPress, FALLING);
+  Serial.begin(9600);
+  Serial.println("First press starts counting, second press stops");
+}
+
+void loop()
+{
+  if (counting)
+  {
+    digitalWrite(ledPin, HIGH);
+    // Simulate work in the main loop
+    delay(100);
+  }
+  else
+  {
+    digitalWrite(ledPin, LOW);
+    Serial.print("Final count: ");
+    Serial.println(count);
+    delay(1000);
+  }
+}
+
+void onPress()
+{
+  count++;
+
+  // Detach after 10 presses
+  if (count >= 10)
+  {
+    detachInterrupt(digitalPinToInterrupt(buttonPin));
+    counting = false;
+  }
+}
+```
+
+Use `detachInterrupt()` when you no longer need to respond to a signal, such as after a sensor reading is complete or to disable input during a specific program phase.
+
+## digitalPinToInterrupt()
+
+The digitalPinToInterrupt() function takes a pin as an argument, and returns the same pin if it can be used as an interrupt. For example, digitalPinToInterrupt(4) on an Arduino UNO will not work, as interrupts are only supported on pins 2 and 3.
+
+```cpp
+int pin = 2;
+
+void setup() {
+  Serial.begin(9600);
+  int checkPin = digitalPinToInterrupt(pin);
+
+  if (checkPin == -1) {
+    Serial.println("Not a valid interrupt pin!");
+  } else {
+    Serial.println("Valid interrupt pin.");
+  }
+}
+
+void loop() {
+}
+```
+
+## Complete Example: RPM Counter with Interrupts
+
+This example measures the RPM of a rotating object (e.g., a fan with a hall effect sensor) using an interrupt on pin 2. The main loop calculates and displays RPM every second without blocking.
+
+```cpp
+const int sensorPin = 2;
+
+volatile unsigned long pulseCount = 0;
+unsigned long previousMillis = 0;
+const long interval = 1000; // calculate RPM every 1 second
+float rpm = 0;
+
+void setup()
+{
+  pinMode(sensorPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(sensorPin), countPulse, FALLING);
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval)
+  {
+    previousMillis = currentMillis;
+
+    // Safely read the volatile variable
+    noInterrupts();
+    unsigned long count = pulseCount;
+    pulseCount = 0;
+    interrupts();
+
+    rpm = count * 60.0; // pulses per second * 60 seconds
+
+    Serial.print("Pulses: ");
+    Serial.print(count);
+    Serial.print("  RPM: ");
+    Serial.println(rpm);
+  }
+}
+
+void countPulse()
+{
+  pulseCount++;
+}
+```

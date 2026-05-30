@@ -1,0 +1,37 @@
+---
+title: "First Code"
+description: "Writing your first Arduino program."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming"]
+tags: ["Arduino",]
+slug: "arduino-first-code"
+author: "Abhishek Sharma"
+order: 3
+---
+
+# Writing Your First Arduino Program
+Now that you have set up your Arduino development environment, it's time to write your first Arduino program, also known as a sketch. A sketch is a simple program that runs on the Arduino board and controls its behavior. The Arduino IDE provides a basic structure for your sketch, which consists of two main functions: `setup()` and `loop()`. The `setup()` function is called once when the Arduino board is powered on or reset, and it is used to initialize variables, pin modes, and start using libraries. The `loop()` function is called repeatedly in a continuous loop and is where you write the main logic of your program.
+
+## The Blink Sketch
+The most common first program for Arduino is the "Blink" sketch, which blinks an LED on and off. This simple program is a great way to get familiar with the structure of an Arduino sketch and how to control the digital pins on the Arduino board. Here's how you can write the Blink sketch:
+```cpp
+// the setup function runs once when you press reset or power the board
+void setup() {
+  // initialize digital pin LED_BUILTIN as an output.
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  // turn the LED on (HIGH is the voltage level)
+  digitalWrite(LED_BUILTIN, HIGH);
+  // wait for a second
+  delay(1000);
+  // turn the LED off by making the voltage LOW
+  digitalWrite(LED_BUILTIN, LOW);
+  // wait for a second
+  delay(1000);
+}
+```
+
+In this sketch, the `setup()` function initializes the built-in LED pin as an output. The `loop()` function turns the LED on, waits for one second, turns it off, and then waits for another second before repeating the process. When you upload this sketch to your Arduino board, you should see the built-in LED start blinking on and off every second. This simple program demonstrates how to control the digital pins on the Arduino board and introduces you to the basic structure of an Arduino sketch. You can modify the delay times to make the LED blink faster or slower, or you can connect an external LED to a different pin and update the code accordingly to control it. The Blink sketch is just the beginning of what you can do with Arduino programming, and it serves as a foundation for more complex projects that you can create as you continue to learn and explore the capabilities of the Arduino platform.

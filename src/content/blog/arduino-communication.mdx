@@ -1,0 +1,406 @@
+---
+title: "Communication"
+description: "An introduction to Arduino communication functions."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-communication"
+author: "Abhishek Sharma"
+order: 6
+---
+
+# Communication
+
+Arduino supports several communication protocols for exchanging data with sensors, displays, other microcontrollers, and computers. The most commonly used are Serial (UART), I²C (Wire), and SPI.
+
+## Serial
+
+`Serial` communicates over UART (Universal Asynchronous Receiver/Transmitter) between the Arduino board and a computer or other serial devices. On most Arduino boards, `Serial` connects to the USB port for communication with the Serial Monitor.
+
+```cpp
+void setup()
+{
+  Serial.begin(9600); // initialize at 9600 baud
+}
+
+void loop()
+{
+  Serial.print("Hello, world! ");   // print without newline
+  Serial.println(millis());          // print with newline
+
+  if (Serial.available() > 0)
+  {
+    char incoming = Serial.read();   // read one byte
+    Serial.print("Received: ");
+    Serial.println(incoming);
+  }
+
+  delay(1000);
+}
+```
+
+Key `Serial` methods:
+- `begin(baud)` — start serial communication (common rates: 9600, 115200)
+- `print(val)` — print data as human-readable text
+- `println(val)` — print with a newline
+- `read()` — read one byte (returns -1 if none available)
+- `readString()` — read available bytes as a String
+- `available()` — return number of bytes available to read
+- `write(val)` — write raw binary data (one byte or a byte array)
+- `parseInt()` / `parseFloat()` — read the next integer or float from the buffer
+
+For boards with multiple UARTs (Mega, Due, Zero), additional serial ports are available: `Serial1`, `Serial2`, `Serial3`.
+
+## Print
+
+`Print` is the base class for Arduino's serial output. Both `Serial` and `SoftwareSerial` inherit from `Print`, which provides the `print()` and `println()` methods for converting data to text.
+
+```cpp
+void setup()
+{
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // print() and println() can handle many data types
+  Serial.print("Integer: ");
+  Serial.println(42);
+
+  Serial.print("Float: ");
+  Serial.println(3.14159, 2); // print with 2 decimal places
+
+  Serial.print("Hex: ");
+  Serial.println(255, HEX);   // prints "FF"
+
+  Serial.print("Binary: ");
+  Serial.println(5, BIN);     // prints "101"
+
+  delay(2000);
+}
+```
+
+`Print` provides the following formatting options via the second argument of `print()`/`println()`:
+- `DEC` (default) — decimal
+- `HEX` — hexadecimal
+- `OCT` — octal
+- `BIN` — binary
+- For floats: the second argument specifies the number of decimal places
+
+## Stream
+
+`Stream` is the base class for Arduino's character-based input/output streams. Both `Serial` and `Wire` inherit from it. It provides parsing and timeout utilities.
+
+```cpp
+void setup()
+{
+  Serial.begin(9600);
+  Serial.setTimeout(2000); // wait up to 2 seconds for input
+}
+
+void loop()
+{
+  if (Serial.available() > 0)
+  {
+    int number = Serial.parseInt(); // read an integer from the stream
+    float fraction = Serial.parseFloat(); // read a float
+
+    Serial.print("Parsed int: ");
+    Serial.println(number);
+    Serial.print("Parsed float: ");
+    Serial.println(fraction);
+
+    // Read until newline
+    String line = Serial.readStringUntil('\n');
+    Serial.print("Line: ");
+    Serial.println(line);
+  }
+}
+```
+
+Key `Stream` methods inherited by `Serial` and `Wire`:
+- `parseInt()` — read next integer, skipping non-digit characters
+- `parseFloat()` — read next float
+- `readString()` — read all available characters into a String
+- `readStringUntil(terminator)` — read until a specific character
+- `setTimeout(timeout)` — set the timeout for parsing (default 1000 ms)
+- `find(target)` — search for a string in the stream
+- `findUntil(target, terminator)` — search until a target or terminator
+
+## Wire
+
+`Wire` (I²C / Two-Wire Interface) allows communication with sensors, displays, and other I²C devices using two pins: SDA (data) and SCL (clock). Multiple devices can share the same bus, each with a unique address.
+
+**I²C Scanner — discover devices on the bus:**
+
+```cpp
+#include <Wire.h>
+
+void setup()
+{
+  Wire.begin();
+  Serial.begin(9600);
+  Serial.println("Scanning I2C bus...");
+}
+
+void loop()
+{
+  byte count = 0;
+
+  for (byte address = 1; address < 127; address++)
+  {
+    Wire.beginTransmission(address);
+    if (Wire.endTransmission() == 0)
+    {
+      Serial.print("Found device at 0x");
+      Serial.println(address, HEX);
+      count++;
+    }
+  }
+
+  Serial.print("Done. Found ");
+  Serial.print(count);
+  Serial.println(" device(s).");
+  delay(5000);
+}
+```
+
+**Write and read from an I²C sensor (e.g., MPU6050):**
+
+```cpp
+#include <Wire.h>
+
+const int MPU_ADDR = 0x68; // MPU6050 accelerometer/gyroscope address
+
+void setup()
+{
+  Wire.begin();
+  Serial.begin(9600);
+
+  // Wake up MPU6050
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x6B); // power management register
+  Wire.write(0);    // wake up (write 0)
+  Wire.endTransmission(true);
+}
+
+void loop()
+{
+  // Request data from the sensor
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x3B); // starting register for accelerometer data
+  Wire.endTransmission(false);
+
+  Wire.requestFrom(MPU_ADDR, 6); // read 6 bytes (accel X, Y, Z)
+
+  if (Wire.available() >= 6)
+  {
+    int accelX = Wire.read() << 8 | Wire.read();
+    int accelY = Wire.read() << 8 | Wire.read();
+    int accelZ = Wire.read() << 8 | Wire.read();
+
+    Serial.print("Accel: ");
+    Serial.print(accelX);
+    Serial.print(", ");
+    Serial.print(accelY);
+    Serial.print(", ");
+    Serial.println(accelZ);
+  }
+
+  delay(500);
+}
+```
+
+Key `Wire` methods:
+- `begin()` — join I²C bus as master (optional address for slave mode)
+- `beginTransmission(address)` — start transmission to a slave device
+- `write(data)` — queue bytes for transmission
+- `endTransmission(stop)` — send queued bytes (true = send stop, false = send restart)
+- `requestFrom(address, count)` — request bytes from a slave device
+- `available()` — number of bytes available to read
+- `read()` — read one byte
+
+## SPI
+
+SPI (Serial Peripheral Interface) is a synchronous serial communication protocol that uses four wires: MOSI (Master Out Slave In), MISO (Master In Slave Out), SCK (Serial Clock), and SS (Slave Select). It is faster than I²C and commonly used with displays, SD cards, and RF modules.
+
+```cpp
+#include <SPI.h>
+
+const int slaveSelectPin = 10;
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Initialize SPI as master
+  SPI.begin();
+
+  pinMode(slaveSelectPin, OUTPUT);
+  digitalWrite(slaveSelectPin, HIGH); // deselect slave
+}
+
+void loop()
+{
+  // Send and receive data from an SPI device
+  digitalWrite(slaveSelectPin, LOW); // select slave
+
+  byte response = SPI.transfer(0x55); // send byte 0x55, read response
+
+  digitalWrite(slaveSelectPin, HIGH); // deselect slave
+
+  Serial.print("SPI response: 0x");
+  Serial.println(response, HEX);
+
+  delay(1000);
+}
+```
+
+**Reading from an SPI temperature sensor:**
+
+```cpp
+#include <SPI.h>
+
+const int ssPin = 10;
+const byte READ_CMD = 0xAA;
+
+void setup()
+{
+  Serial.begin(9600);
+  SPI.begin();
+  pinMode(ssPin, OUTPUT);
+  digitalWrite(ssPin, HIGH);
+}
+
+void loop()
+{
+  digitalWrite(ssPin, LOW);
+
+  SPI.transfer(READ_CMD);          // send read command
+
+  byte highByte = SPI.transfer(0);
+  byte lowByte = SPI.transfer(0);
+
+  digitalWrite(ssPin, HIGH);
+
+  int tempRaw = (highByte << 8) | lowByte;
+  float tempC = tempRaw * 0.0625; // depends on sensor datasheet
+
+  Serial.print("Temperature: ");
+  Serial.print(tempC);
+  Serial.println(" °C");
+
+  delay(1000);
+}
+```
+
+Key `SPI` methods:
+- `begin()` — initialize SPI bus in master mode
+- `end()` — disable SPI
+- `transfer(val)` — send and receive one byte simultaneously
+- `transfer(buf, size)` — send and receive a buffer of bytes
+- `beginTransaction(settings)` — configure SPI settings before communication (clock speed, bit order, mode)
+- `endTransaction()` — end the SPI transaction
+- Using `SPISettings(clockSpeed, bitOrder, dataMode)` with `beginTransaction()` allows different devices on the same bus with different settings:
+
+```cpp
+void setup()
+{
+  SPI.begin();
+}
+
+void loop()
+{
+  // SPI settings for Device A: 4 MHz, MSBFIRST, mode 0
+  SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+  digitalWrite(10, LOW);
+  SPI.transfer(0x42);
+  digitalWrite(10, HIGH);
+  SPI.endTransaction();
+
+  // SPI settings for Device B: 1 MHz, LSBFIRST, mode 3
+  SPI.beginTransaction(SPISettings(1000000, LSBFIRST, SPI_MODE3));
+  digitalWrite(9, LOW);
+  SPI.transfer(0xAB);
+  digitalWrite(9, HIGH);
+  SPI.endTransaction();
+}
+```
+
+## Complete Example: Multi-Protocol Weather Station
+
+This example reads a temperature/humidity sensor over I²C (AHT20), logs data to an SD card over SPI, and prints results over Serial — demonstrating all three protocols working together.
+
+```cpp
+#include <Wire.h>
+#include <SPI.h>
+#include <SD.h>
+
+const int chipSelect = 10; // SD card CS pin
+
+// AHT20 I²C address
+const int AHT_ADDR = 0x38;
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Initialize I²C
+  Wire.begin();
+
+  // Initialize SPI + SD card
+  if (!SD.begin(chipSelect))
+  {
+    Serial.println("SD card failed!");
+    return;
+  }
+  Serial.println("SD card initialized.");
+
+  // Trigger AHT20 measurement
+  Wire.beginTransmission(AHT_ADDR);
+  Wire.write(0xAC); // trigger measurement command
+  Wire.write(0x33);
+  Wire.write(0x00);
+  Wire.endTransmission();
+}
+
+void loop()
+{
+  delay(2000);
+
+  // --- I²C: Read AHT20 sensor ---
+  Wire.requestFrom(AHT_ADDR, 6);
+  if (Wire.available() >= 6)
+  {
+    uint8_t status = Wire.read();
+    uint32_t rawHum = ((uint32_t)Wire.read() << 12)
+                    | ((uint32_t)Wire.read() << 4)
+                    | ((uint32_t)Wire.read() >> 4);
+    uint32_t rawTemp = (((uint32_t)Wire.read() & 0x0F) << 16)
+                     | ((uint32_t)Wire.read() << 8)
+                     | (uint32_t)Wire.read();
+
+    float tempC = rawTemp * 200.0 / 1048576.0 - 50;
+    float humRH = rawHum * 100.0 / 1048576.0;
+
+    // --- Serial: Print to monitor ---
+    Serial.print("Temp: ");
+    Serial.print(tempC);
+    Serial.print(" °C, Humidity: ");
+    Serial.print(humRH);
+    Serial.println(" %");
+
+    // --- SPI: Log to SD card ---
+    File dataFile = SD.open("datalog.txt", FILE_WRITE);
+    if (dataFile)
+    {
+      dataFile.print(millis());
+      dataFile.print(",");
+      dataFile.print(tempC);
+      dataFile.print(",");
+      dataFile.println(humRH);
+      dataFile.close();
+    }
+  }
+}
+```

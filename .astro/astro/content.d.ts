@@ -152,6 +152,83 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"blog": {
+"arduino-advance-io.mdx": {
+	id: "arduino-advance-io.mdx";
+  slug: "arduino-advance-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-analog-io.mdx": {
+	id: "arduino-analog-io.mdx";
+  slug: "arduino-analog-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-communication.mdx": {
+	id: "arduino-communication.mdx";
+  slug: "arduino-communication";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-digital-io.mdx": {
+	id: "arduino-digital-io.mdx";
+  slug: "arduino-digital-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-first-code.mdx": {
+	id: "arduino-first-code.mdx";
+  slug: "arduino-first-code";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-interrupts.mdx": {
+	id: "arduino-interrupts.mdx";
+  slug: "arduino-interrupts";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-intro.mdx": {
+	id: "arduino-intro.mdx";
+  slug: "arduino-intro";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-setup.mdx": {
+	id: "arduino-setup.mdx";
+  slug: "arduino-setup";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-syntax.mdx": {
+	id: "arduino-syntax.mdx";
+  slug: "arduino-syntax";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-time.mdx": {
+	id: "arduino-time.mdx";
+  slug: "arduino-time";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-wifi.mdx": {
+	id: "arduino-wifi.mdx";
+  slug: "arduino-Wi-Fi";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "c-arrays.mdx": {
 	id: "c-arrays.mdx";
   slug: "c-arrays";

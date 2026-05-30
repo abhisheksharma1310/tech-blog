@@ -1,0 +1,168 @@
+---
+title: "Time"
+description: "An introduction to Arduino time function."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-time"
+author: "Abhishek Sharma"
+order: 4
+---
+
+# Time
+
+Arduino provides several timing functions to pause execution or measure elapsed time. Choosing the right one is important  blocking functions like `delay()` are simple but prevent other code from running, while `millis()` and `micros()` enable non-blocking timing.
+
+## delay()
+
+`delay()` pauses the program for a specified number of milliseconds (1000 ms = 1 second). It is the simplest way to create timed behavior but blocks all other code execution.
+
+```cpp
+const int ledPin = 13;
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop()
+{
+  digitalWrite(ledPin, HIGH);
+  delay(1000); // wait 1 second
+
+  digitalWrite(ledPin, LOW);
+  delay(500); // wait 0.5 seconds
+}
+```
+
+`delay(ms)` takes an `unsigned long` argument. Because it blocks, avoid using `delay()` in sketches that need to read sensors, handle button presses, or update displays concurrently. Use `millis()` for non-blocking timing in such cases.
+
+## delayMicroseconds()
+
+`delayMicroseconds()` pauses the program for a specified number of microseconds (1 µs = 0.001 ms). It is useful for short, precise delays such as generating trigger pulses for sensors.
+
+```cpp
+const int trigPin = 9;
+
+void setup()
+{
+  pinMode(trigPin, OUTPUT);
+}
+
+void loop()
+{
+  // Generate a 10-microsecond trigger pulse
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10); // 10 µs pulse
+  digitalWrite(trigPin, LOW);
+
+  delay(100); // longer delay between readings
+}
+```
+
+`delayMicroseconds(us)` is accurate for values up to ~16,383 µs. For longer delays, use `delay()` or a loop of `delayMicroseconds()` calls. Unlike `delay()`, it does not yield to other tasks and will block all interrupts at very short intervals.
+
+## millis()
+
+`millis()` returns the number of milliseconds since the Arduino board began running the current program. It rolls over back to 0 after approximately 50 days. It is the primary tool for non-blocking timing.
+
+```cpp
+const int ledPin = 13;
+unsigned long previousMillis = 0;
+const long interval = 1000;
+bool ledState = LOW;
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop()
+{
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval)
+  {
+    previousMillis = currentMillis; // save the last toggle time
+
+    ledState = !ledState;           // toggle LED state
+    digitalWrite(ledPin, ledState);
+  }
+
+  // Other non-blocking code can run here...
+}
+```
+
+`millis()` returns an `unsigned long`. The rollover at ~50 days is handled correctly by unsigned subtraction arithmetic `currentMillis - previousMillis` works even after a wrap-around, as long as the interval is less than ~50 days.
+
+## micros()
+
+`micros()` returns the number of microseconds since the program started. It has a resolution of 4 µs on 16 MHz Arduino boards (Due to the timer prescaler). It rolls over after approximately 70 minutes.
+
+```cpp
+unsigned long previousMicros = 0;
+const long interval = 500; // 500 µs
+
+void setup()
+{
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  unsigned long currentMicros = micros();
+
+  if (currentMicros - previousMicros >= interval)
+  {
+    previousMicros = currentMicros;
+
+    // Perform high-speed periodic task
+    Serial.println(micros());
+  }
+}
+```
+
+`micros()` is useful for high-speed timing, measuring short pulses, or generating precise signal timings. For timing beyond a few minutes, use `millis()` instead since `micros()` overflows faster.
+
+## Complete Example: Non-Blocking Blink with Button Read
+
+This example blinks an LED using `millis()` (non-blocking) while simultaneously reading a button something `delay()` would prevent:
+
+```cpp
+const int ledPin = 13;
+const int buttonPin = 2;
+
+unsigned long previousMillis = 0;
+const long blinkInterval = 500;
+bool ledState = LOW;
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // Non-blocking LED blink
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= blinkInterval)
+  {
+    previousMillis = currentMillis;
+    ledState = !ledState;
+    digitalWrite(ledPin, ledState);
+  }
+
+  // Button is checked every loop iteration, never blocked
+  int buttonState = digitalRead(buttonPin);
+  if (buttonState == LOW) // pressed (INPUT_PULLUP inverts logic)
+  {
+    Serial.println("Button pressed at ms: ");
+    Serial.println(millis());
+    delay(50); // small debounce delay is acceptable here
+  }
+}
+```

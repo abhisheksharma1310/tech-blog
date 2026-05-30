@@ -1,0 +1,98 @@
+---
+title: "Digital/IO"
+description: "An introduction to Digital I/O with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-digital-io"
+author: "Abhishek Sharma"
+order: 1
+---
+
+# Digital I/O with Arduino
+Digital Input/Output (I/O) is a fundamental aspect of Arduino programming that allows you to interact with the physical world by reading digital signals from sensors and controlling actuators such as LEDs, motors, and relays. Digital I/O pins on the Arduino board can be configured as either inputs or outputs, depending on the requirements of your project. In this section, we will explore how to use digital I/O pins in Arduino programming, including how to read digital inputs and control digital outputs.
+
+## digitalRead()
+The `digitalRead()` function is used to read the state of a digital input pin. It returns either HIGH (1) or LOW (0) depending on the voltage level at the pin. To use `digitalRead()`, you first need to configure the pin as an input using the `pinMode()` function in the `setup()` function of your sketch. For example:
+```cpp
+const int buttonPin = 2; // the number of the pushbutton pin
+void setup()
+{
+  pinMode(buttonPin, INPUT); // initialize the pushbutton pin as an input
+}
+void loop()
+{
+  int buttonState = digitalRead(buttonPin); // read the state of the pushbutton
+  if (buttonState == HIGH) {
+    // do something when the button is pressed
+  } else {
+    // do something when the button is not pressed
+  }
+}
+```
+In this example, we configure pin 2 as an input for a pushbutton. The `digitalRead()` function reads the state of the button, and we can use an `if` statement to perform different actions based on whether the button is pressed (HIGH) or not pressed (LOW).
+
+## digitalWrite()
+The `digitalWrite()` function is used to write a HIGH or LOW value to a digital output pin. The pin must have been previously configured as an output using `pinMode()`.
+
+```cpp
+const int ledPin = 13; // the number of the LED pin
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT); // initialize the LED pin as an output
+}
+
+void loop()
+{
+  digitalWrite(ledPin, HIGH); // turn the LED on
+  delay(1000);                // wait for a second
+  digitalWrite(ledPin, LOW);  // turn the LED off
+  delay(1000);                // wait for a second
+}
+```
+
+In this example, we configure pin 13 as an output and then alternately write HIGH and LOW to it with a one-second delay. This causes the built-in LED on most Arduino boards to blink.
+
+## pinMode()
+The `pinMode()` function is used to configure a specific pin to behave either as an input or an output. It must be called before using `digitalRead()` or `digitalWrite()` on a pin, typically in the `setup()` function.
+
+```cpp
+const int ledPin = 13;   // the number of the LED pin
+const int buttonPin = 2; // the number of the pushbutton pin
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);   // initialize the LED pin as an output
+  pinMode(buttonPin, INPUT); // initialize the pushbutton pin as an input
+}
+```
+
+`pinMode()` takes two arguments: the pin number and the mode (`OUTPUT`, `INPUT`, or `INPUT_PULLUP`). `INPUT_PULLUP` enables the internal pull-up resistor on the pin, which is useful when connecting a button without an external resistor.
+
+## Complete Example: Button-Controlled LED
+
+The example below combines `pinMode()`, `digitalRead()`, and `digitalWrite()` to control an LED with a pushbutton:
+
+```cpp
+const int ledPin = 13;   // the number of the LED pin
+const int buttonPin = 2; // the number of the pushbutton pin
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);   // initialize the LED pin as an output
+  pinMode(buttonPin, INPUT); // initialize the pushbutton pin as an input
+}
+
+void loop()
+{
+  int buttonState = digitalRead(buttonPin); // read the state of the pushbutton
+
+  if (buttonState == HIGH) {
+    digitalWrite(ledPin, HIGH); // turn LED on when button is pressed
+  } else {
+    digitalWrite(ledPin, LOW);  // turn LED off when button is not pressed
+  }
+}
+```
+

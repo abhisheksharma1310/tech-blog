@@ -1,0 +1,199 @@
+---
+title: "Analog/IO"
+description: "An introduction to Analog I/O with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-analog-io"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# Analog Input/Output
+
+Analog Input/Output allows your Arduino to work with continuously variable signals, such as those from sensors (temperature, light, distance) and actuators (motors, dimmable LEDs). Unlike digital I/O which reads only HIGH or LOW, analog I/O can read or produce a range of values. Arduino uses an Analog-to-Digital Converter (ADC) for input and Pulse-Width Modulation (PWM) for output.
+
+## analogRead()
+
+The `analogRead()` function reads the voltage from an analog input pin (A0–A5 on most boards) and returns a value between 0 and 1023, mapping 0V to 0 and the reference voltage (typically 5V or 3.3V) to 1023.
+
+```cpp
+const int sensorPin = A0; // potentiometer wiper connected to A0
+
+void setup()
+{
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  int sensorValue = analogRead(sensorPin); // range: 0–1023
+  Serial.println(sensorValue);
+  delay(100);
+}
+```
+
+In this example, a potentiometer connected to A0 is read every 100 ms. The raw ADC value (0–1023) is printed to the Serial Monitor. To convert to a voltage: `voltage = sensorValue * (5.0 / 1023.0)`.
+
+## analogReadResolution()
+
+`analogReadResolution()` sets the resolution (in bits) of `analogRead()`. It is only available on boards with configurable ADC resolution such as the Arduino Due, Zero, and MKR family. The default is 10 bits (values 0–1023).
+
+```cpp
+void setup()
+{
+  Serial.begin(9600);
+  analogReadResolution(12); // 12-bit resolution: values 0–4095
+}
+
+void loop()
+{
+  int sensorValue = analogRead(A0);
+  Serial.println(sensorValue);
+  delay(100);
+}
+```
+
+Calling `analogReadResolution(12)` increases the precision to 4096 steps. Reducing the resolution (e.g., 8 bits for 0–255) can be useful for compatibility with legacy code or faster sampling.
+
+## analogReference()
+
+`analogReference()` selects the voltage reference used as the top end of the ADC range. The default is the board's operating voltage (5V on 5V boards, 3.3V on 3.3V boards).
+
+```cpp
+void setup()
+{
+  // Use internal 1.1V reference (Arduino Uno, Mega, etc.)
+  analogReference(INTERNAL);
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  int sensorValue = analogRead(A0);
+  float voltage = sensorValue * (1.1 / 1023.0);
+  Serial.print("Voltage: ");
+  Serial.println(voltage);
+  delay(100);
+}
+```
+
+Common options:
+- `DEFAULT` — the default reference (5V or 3.3V)
+- `INTERNAL` — built-in reference, typically 1.1V on Uno/Mega, 2.56V on Mega
+- `INTERNAL1V1`, `INTERNAL2V56` — specific internal references on some boards
+- `EXTERNAL` — voltage applied to the AREF pin (0–5V only)
+
+Using `INTERNAL` allows more precise readings for sensors with small voltage swings.
+
+## analogWrite()
+
+`analogWrite()` generates a PWM (Pulse-Width Modulation) signal on a PWM-capable digital pin (marked with `~` on the board). It takes a duty cycle value from 0 (always off) to 255 (always on), controlling the average voltage delivered to a device.
+
+```cpp
+const int ledPin = 9; // PWM-capable pin
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop()
+{
+  // Fade LED from off to full brightness
+  for (int brightness = 0; brightness <= 255; brightness++)
+  {
+    analogWrite(ledPin, brightness);
+    delay(10);
+  }
+
+  // Fade LED from full brightness to off
+  for (int brightness = 255; brightness >= 0; brightness--)
+  {
+    analogWrite(ledPin, brightness);
+    delay(10);
+  }
+}
+```
+
+`analogWrite()` does not produce a true analog voltage — it rapidly switches the pin between HIGH and LOW. The percentage of time the signal is HIGH (the duty cycle) determines the apparent brightness of an LED or the speed of a motor. A capacitor and resistor (RC filter) can be added to smooth the PWM output into a true analog voltage.
+
+## analogWriteResolution()
+
+`analogWriteResolution()` sets the resolution of `analogWrite()` on boards that support it (Due, Zero, MKR). The default is 8 bits, giving values from 0 to 255.
+
+```cpp
+void setup()
+{
+  pinMode(9, OUTPUT);
+  analogWriteResolution(12); // 12-bit PWM: values 0–4095
+}
+
+void loop()
+{
+  analogWrite(9, 2048); // approximately 50% duty cycle
+  delay(1000);
+  analogWrite(9, 1024); // approximately 25% duty cycle
+  delay(1000);
+}
+```
+
+Higher resolution allows finer control of the output. Be aware that not all boards support the same PWM frequencies at higher resolutions, and the maximum value is `2^resolution - 1`.
+
+## map()
+
+`map()` re-maps a number from one range to another. It takes five arguments: the value to map, the input range minimum and maximum, and the output range minimum and maximum.
+
+```cpp
+void setup()
+{
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  // Scale a 10-bit ADC reading (0–1023) to a percentage (0–100)
+  int sensorValue = analogRead(A0);
+  int percent = map(sensorValue, 0, 1023, 0, 100);
+
+  Serial.print("Raw: ");
+  Serial.print(sensorValue);
+  Serial.print("  Percent: ");
+  Serial.println(percent);
+  delay(200);
+}
+```
+
+`map()` performs integer linear scaling. Floating-point calculations inside `map()` are constrained to integers, so for precise results you may want to use manual floating-point math instead. Common use cases include scaling sensor values to PWM duty cycles, servo angles (`map(val, 0, 1023, 0, 180)`), or any range conversion.
+
+## Complete Example: Dimming LED with a Potentiometer
+
+This example combines `analogRead()` and `analogWrite()` to control LED brightness using a potentiometer:
+
+```cpp
+const int potPin = A0;  // potentiometer wiper pin
+const int ledPin = 9;   // PWM LED pin
+
+void setup()
+{
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  int sensorValue = analogRead(potPin);          // read pot (0–1023)
+  int brightness = map(sensorValue, 0, 1023, 0, 255); // scale to PWM range
+
+  analogWrite(ledPin, brightness);               // set LED brightness
+
+  Serial.print("Sensor: ");
+  Serial.print(sensorValue);
+  Serial.print("  Brightness: ");
+  Serial.println(brightness);
+
+  delay(50);
+}
+```
+
+The `map()` function linearly scales the 10-bit ADC reading (0–1023) to the 8-bit PWM range (0–255), giving smooth, responsive brightness control.

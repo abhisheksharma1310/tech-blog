@@ -1,0 +1,230 @@
+---
+title: "Math"
+description: "Mathematical functions in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-functions-math"
+author: "Abhishek Sharma"
+order: 6
+---
+
+# Math
+
+Arduino provides a variety of built-in mathematical functions to perform calculations, from basic operations like absolute value and rounding to trigonometric functions. These functions are useful for sensor data processing, signal smoothing, coordinate transformations, and any application that requires numerical computation.
+
+## abs()
+
+The `abs()` function returns the absolute value of a number. The absolute value is the non-negative value of the number, effectively removing its sign.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int x = -42;
+  int y = abs(x);
+  Serial.print("abs(");
+  Serial.print(x);
+  Serial.print(") = ");
+  Serial.println(y);  // prints 42
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `abs(-42)` returns `42`. The function works with both `int` and `float` types. It is commonly used when calculating differences between two values where only the magnitude matters, such as the distance between a sensor reading and a target value.
+
+## constrain()
+
+The `constrain()` function clamps a value within a specified range. It takes three arguments: the value to constrain, the lower bound, and the upper bound. If the value is below the lower bound, it returns the lower bound; if above the upper bound, it returns the upper bound; otherwise it returns the original value.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int sensorValue = 1050;  // reading outside expected range
+  int clamped = constrain(sensorValue, 0, 1023);
+  Serial.println(clamped);  // prints 1023
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, a sensor reading of 1050 is clamped to the valid ADC range of 0–1023, resulting in 1023. `constrain()` is frequently used to keep PWM values, servo angles, or motor speeds within safe operating limits.
+
+## map()
+
+The `map()` function re-maps a number from one range to another. It takes five arguments: the value to map, the current range's lower bound, the current range's upper bound, the target range's lower bound, and the target range's upper bound.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int sensorValue = 512;          // middle of ADC range 0-1023
+  int pwmValue = map(sensorValue, 0, 1023, 0, 255);
+  Serial.println(pwmValue);       // prints 127
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, an ADC reading of 512 (roughly the middle of the 0–1023 range) is mapped to 127 (roughly the middle of the 0–255 PWM range). `map()` does not clamp values — if the input falls outside the source range, the output can exceed the target range. Use `constrain()` after `map()` if clamping is needed.
+
+## max()
+
+The `max()` function returns the larger of two values. It works with any numeric data type.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 15;
+  int b = 42;
+  int largest = max(a, b);
+  Serial.println(largest);  // prints 42
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example compares `15` and `42` and returns `42`. `max()` is useful for finding peak sensor readings, setting minimum thresholds, or ensuring a value never goes below a certain level.
+
+## min()
+
+The `min()` function returns the smaller of two values. Like `max()`, it works with any numeric data type.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 15;
+  int b = 42;
+  int smallest = min(a, b);
+  Serial.println(smallest);  // prints 15
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `min(15, 42)` returns `15`. You can use `min()` to find the lowest sensor reading, enforce an upper limit, or compare multiple values by chaining calls like `min(min(x, y), z)`.
+
+## pow()
+
+The `pow()` function calculates the value of a number raised to a power. It takes two `float` arguments — the base and the exponent — and returns a `float`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  float result = pow(3.0, 4.0);
+  Serial.println(result);  // prints 81.00
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example computes 3 raised to the 4th power, which equals 81. `pow()` is useful for exponential calculations, such as converting sensor readings to physical units using calibration curves or calculating signal strength衰减.
+
+## sq()
+
+The `sq()` function returns the square of a number (the number multiplied by itself). It is simpler and faster than calling `pow(x, 2)`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int x = 7;
+  int squared = sq(x);
+  Serial.println(squared);  // prints 49
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `sq(7)` returns 49. The function accepts both integer and floating-point arguments. You might use `sq()` when calculating distance squared to avoid the computational cost of `sqrt()` in distance comparisons.
+
+## sqrt()
+
+The `sqrt()` function returns the square root of a number. It takes a `float` argument and returns a `float`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  float result = sqrt(144.0);
+  Serial.println(result);  // prints 12.00
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `sqrt(144)` returns `12.0`. Square roots are commonly used in distance calculations, statistics (standard deviation), and physics simulations on Arduino.
+
+## cos()
+
+The `cos()` function returns the cosine of an angle specified in radians. It takes a `float` argument and returns a `float` in the range -1 to 1.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  float angle = 0.0;  // 0 radians
+  float result = cos(angle);
+  Serial.println(result);  // prints 1.00
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example computes `cos(0)` which equals 1.0. Trigonometric functions are useful for generating sine waves for LED effects, calculating positions in robotics, or decomposing vectors into their components.
+
+## sin()
+
+The `sin()` function returns the sine of an angle specified in radians. It returns a `float` in the range -1 to 1.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  for (int i = 0; i < 360; i += 45) {
+    float rad = i * PI / 180.0;  // convert degrees to radians
+    float s = sin(rad);
+    Serial.print(i);
+    Serial.print(" deg: ");
+    Serial.println(s);
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch prints the sine of angles at 45-degree intervals from 0 to 315 degrees. You can use `sin()` together with `millis()` to create smooth, periodic motion in LEDs or servo movements without using `delay()`.
+
+## tan()
+
+The `tan()` function returns the tangent of an angle specified in radians. It takes a `float` argument and returns a `float`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  float rad = 45.0 * PI / 180.0;  // 45 degrees in radians
+  float result = tan(rad);
+  Serial.println(result);  // prints approximately 1.00
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `tan(45°)` returns approximately 1.0. Tangent is useful for calculating slopes, angles of incline, or distances using triangulation in robotics and navigation projects.

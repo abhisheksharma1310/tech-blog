@@ -1,0 +1,271 @@
+---
+title: "Control Structure"
+description: "Control flow structures in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Control & Operators"]
+tags: ["Arduino",]
+slug: "arduino-control-structure"
+author: "Abhishek Sharma"
+order: 1
+---
+
+# Control Structure
+
+Control structures determine the flow of execution in your Arduino program. They allow you to make decisions, repeat blocks of code, and jump to different sections based on conditions. Mastering these structures is essential for writing programs that respond intelligently to inputs and sensor data.
+
+## if
+
+The `if` statement executes a block of code only if a specified condition is true. It is the most fundamental decision-making structure.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  pinMode(2, INPUT_PULLUP);
+}
+
+void loop() {
+  if (digitalRead(2) == LOW) {
+    Serial.println("Button pressed");
+  }
+  delay(100);
+}
+```
+
+In this example, the message is printed only when pin 2 reads `LOW` (button pressed). The condition inside the parentheses is evaluated as a Boolean — any non-zero value is treated as `true`.
+
+## else
+
+The `else` statement extends `if` to provide an alternative block when the condition is false. You can also chain multiple conditions with `else if`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int sensor = analogRead(A0);
+  
+  if (sensor > 700) {
+    Serial.println("Bright");
+  } else if (sensor > 300) {
+    Serial.println("Medium");
+  } else {
+    Serial.println("Dark");
+  }
+  delay(500);
+}
+```
+
+This sketch reads a light sensor and prints different messages based on the reading. Only one block executes — the first whose condition is true. The final `else` acts as a default when no prior condition matches.
+
+## for
+
+The `for` loop repeats a block of code a specified number of times. It consists of three parts in parentheses: initialization, condition, and increment.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  // Initialize pins 3-7 as outputs
+  for (int i = 3; i <= 7; i++) {
+    pinMode(i, OUTPUT);
+  }
+}
+
+void loop() {
+  // Light up LEDs one at a time
+  for (int i = 3; i <= 7; i++) {
+    digitalWrite(i, HIGH);
+    delay(200);
+    digitalWrite(i, LOW);
+  }
+}
+```
+
+In this example, the first `for` loop sets pins 3–7 as outputs. The second `for` loop runs through each pin, turns it on, waits, then turns it off. The loop variable `i` starts at 3, runs while `i <= 7`, and increments by 1 each iteration.
+
+## while
+
+The `while` loop repeats a block of code as long as a condition remains true. The condition is checked before each iteration, so if it starts false, the body never executes.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  pinMode(2, INPUT_PULLUP);
+}
+
+void loop() {
+  // Wait for button press
+  while (digitalRead(2) == HIGH) {
+    // do nothing, just wait
+  }
+  Serial.println("Button pressed!");
+  delay(200);  // debounce delay
+  while (digitalRead(2) == LOW) {
+    // wait for release
+  }
+}
+```
+
+This sketch waits for a button press using `while` loops. The first loop blocks until the button is pressed (pin 2 goes LOW), and the second blocks until it is released. Be careful with `while` loops — if the condition never becomes false, the loop runs forever.
+
+## do...while
+
+The `do...while` loop is similar to `while`, but the condition is checked after the body executes. This guarantees the body runs at least once.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int value;
+  do {
+    value = analogRead(A0);
+    Serial.println(value);
+    delay(100);
+  } while (value < 900);
+  
+  Serial.println("Threshold reached!");
+  delay(2000);
+}
+```
+
+In this example, the sensor is read and printed at least once before the condition is checked. The loop continues until the reading reaches 900 or higher. `do...while` is useful when you need to perform an action before testing a condition.
+
+## switch...case
+
+The `switch...case` statement selects one of several blocks to execute based on the value of an expression. It is cleaner than a long chain of `else if` statements when comparing a single variable against multiple discrete values.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int sensor = analogRead(A0);
+  int range = sensor / 256;  // 0-3 from 0-1023
+
+  switch (range) {
+    case 0:
+      Serial.println("Low");
+      break;
+    case 1:
+      Serial.println("Medium");
+      break;
+    case 2:
+      Serial.println("High");
+      break;
+    case 3:
+      Serial.println("Very High");
+      break;
+    default:
+      Serial.println("Unknown");
+      break;
+  }
+  delay(500);
+}
+```
+
+This sketch divides the ADC range into four zones and prints a label for each. The `break` statement at the end of each `case` prevents fall-through to the next case. The optional `default` case runs when no other case matches.
+
+## break
+
+The `break` statement exits a loop (`for`, `while`, `do...while`) or `switch` block immediately, skipping any remaining iterations or cases.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  for (int i = 0; i < 100; i++) {
+    int sensor = analogRead(A0);
+    if (sensor > 900) {
+      Serial.print("High reading at iteration: ");
+      Serial.println(i);
+      break;  // exit the for loop early
+    }
+    delay(50);
+  }
+  delay(2000);
+}
+```
+
+In this example, the `for` loop would normally run 100 times, but `break` exits as soon as the sensor reading exceeds 900. This is useful for timeouts, threshold detection, or searching through data.
+
+## continue
+
+The `continue` statement skips the rest of the current loop iteration and jumps to the next one. Unlike `break`, it does not exit the loop — it only skips the remaining code for that particular iteration.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  for (int i = 0; i < 10; i++) {
+    if (i % 2 == 0) {
+      continue;  // skip even numbers
+    }
+    Serial.println(i);  // only prints odd: 1, 3, 5, 7, 9
+  }
+  delay(2000);
+}
+```
+
+This example prints only odd numbers from 0 to 9. When `i` is even, `continue` jumps to the next iteration, skipping the `Serial.println()` call. This is useful when you want to filter out certain values without deeply nesting `if` statements.
+
+## return
+
+The `return` statement exits a function and optionally returns a value to the caller. In `void` functions, `return` simply exits early without returning a value.
+
+```cpp
+int readSensor(int pin, int threshold) {
+  int value = analogRead(pin);
+  if (value > threshold) {
+    return value;  // early return with value
+  }
+  return 0;  // default return
+}
+
+void setup() {
+  Serial.begin(9600);
+  int result = readSensor(A0, 500);
+  Serial.println(result);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `readSensor()` returns immediately with the sensor value if it exceeds the threshold, or returns 0 otherwise. `return` is also commonly used to exit `setup()` or `loop()` early when a condition is not met, though note that returning from `loop()` still causes it to be called again.
+
+## goto
+
+The `goto` statement transfers execution to a labeled point in the same function. While generally discouraged (it can make code hard to follow), `goto` can simplify error handling or breaking out of nested loops.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  for (int x = 0; x < 10; x++) {
+    for (int y = 0; y < 10; y++) {
+      int val = analogRead(A0);
+      if (val > 1000) {
+        Serial.println("Emergency stop");
+        goto stop;  // break out of both loops
+      }
+    }
+  }
+  return;  // normal exit
+
+stop:
+  Serial.println("Stopped!");
+  delay(5000);
+}
+```
+
+In this example, `goto` exits two nested `for` loops at once — something `break` alone cannot do (it only exits the innermost loop). Use `goto` sparingly and only when it makes the code clearer than alternative approaches like flags or restructured logic.

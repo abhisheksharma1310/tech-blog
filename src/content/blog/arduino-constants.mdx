@@ -1,0 +1,151 @@
+---
+title: "Constants"
+description: "Predefined constants in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Variables"]
+tags: ["Arduino",]
+slug: "arduino-constants"
+author: "Abhishek Sharma"
+order: 1
+---
+
+# Constants
+
+Arduino defines several built-in constants that make your code more readable and portable. These constants represent pin states, logic levels, pin modes, numeric values, and special hardware identifiers. Using constants instead of raw values helps prevent errors and makes your intentions clear.
+
+## Integer Constants
+
+Integer constants are plain whole numbers that you can define with different bases. You can write them in decimal (base 10), binary (base 2 with `B` prefix), octal (base 8 with `0` prefix), or hexadecimal (base 16 with `0x` prefix).
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int decimal = 42;
+  int binary = 0b101010;   // same as 42
+  int hex = 0x2A;          // same as 42
+  Serial.println(decimal);  // prints 42
+  Serial.println(binary);  // prints 42
+  Serial.println(hex);     // prints 42
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `42` in decimal, `0b101010` in binary, and `0x2A` in hexadecimal all represent the same value. Binary notation is helpful when working with bit masks or register values, while hexadecimal is common for memory addresses and color values.
+
+## Floating Point Constants
+
+Floating point constants represent numbers with a decimal point and are treated as `float` values. You can also use scientific notation with the `E` or `e` suffix to express very large or very small numbers.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  float pi = 3.14159;
+  float speedOfLight = 2.998E8;  // 2.998 × 10^8
+  float small = 1.6e-19;         // 1.6 × 10^-19
+  Serial.println(pi, 5);         // prints 3.14159
+  Serial.println(speedOfLight);  // prints 299800000.00
+  Serial.println(small, 20);     // prints 0.00000000000000000016
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example shows three ways to write floating point constants. By default, floating point constants are stored as `double` on some platforms, but on standard Arduino boards (Uno, Nano, Mega) `double` is the same as `float` — 32 bits with about 7 decimal digits of precision.
+
+## HIGH | LOW
+
+`HIGH` and `LOW` are constants used to set or read the state of a digital pin. `HIGH` means 5V (or 3.3V on 3.3V boards) and represents a logic high, while `LOW` means 0V and represents a logic low.
+
+```cpp
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);  // turn LED on
+  delay(1000);
+  digitalWrite(LED_BUILTIN, LOW);   // turn LED off
+  delay(1000);
+}
+```
+
+This sketch blinks the built-in LED by alternating between `HIGH` and `LOW`. Using these constants makes the code self-documenting — `digitalWrite(13, 1)` would work the same way, but `digitalWrite(LED_BUILTIN, HIGH)` is much clearer.
+
+## INPUT | INPUT_PULLUP | OUTPUT
+
+These constants are used with `pinMode()` to configure how a pin behaves. `OUTPUT` sets the pin to drive voltage (for LEDs, motors, etc.), `INPUT` sets it to read voltage (for buttons, sensors), and `INPUT_PULLUP` enables the internal pull-up resistor so the pin reads `HIGH` by default when nothing is connected.
+
+```cpp
+void setup() {
+  pinMode(2, INPUT_PULLUP);   // button with internal pull-up
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int buttonState = digitalRead(2);
+  if (buttonState == LOW) {   // button pressed (pulls pin LOW)
+    digitalWrite(LED_BUILTIN, HIGH);
+    Serial.println("Button pressed");
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  delay(50);
+}
+```
+
+In this example, pin 2 is configured as `INPUT_PULLUP`, which connects an internal 20–50 kΩ resistor to 5V. When the button is open, the pin reads `HIGH`. When the button is pressed, it connects the pin to ground and it reads `LOW`. This eliminates the need for an external pull-up resistor.
+
+## LED_BUILTIN
+
+`LED_BUILTIN` is a predefined constant that refers to the built-in LED pin on your Arduino board. On most boards this is pin 13, but `LED_BUILTIN` ensures your code works across different board models without modification.
+
+```cpp
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+  Serial.print("LED is on pin: ");
+  Serial.println(LED_BUILTIN);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
+}
+```
+
+This sketch blinks the built-in LED and prints its pin number to the serial monitor. On an Arduino Uno, it prints `13`; on an Arduino MKR1000, it prints `6`. By using `LED_BUILTIN` instead of a hardcoded pin number, your code remains portable across different board models.
+
+## true | false
+
+`true` and `false` are Boolean constants representing logical truth values. `true` equals 1 (or any non-zero value), and `false` equals 0. They are typically used in conditional statements and loop conditions.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  bool ledOn = true;
+
+  if (ledOn == true) {
+    Serial.println("LED is on");
+  }
+
+  // You can also use true/false directly
+  while (true) {   // infinite loop
+    Serial.println("Running forever...");
+    delay(1000);
+  }
+}
+
+void loop() {
+  // never reached
+}
+```
+
+In this example, `true` is assigned to a Boolean variable and used in a comparison. The `while (true)` pattern creates an infinite loop, which is occasionally useful in `loop()`-free sketches or state machines. When evaluated in a numeric context, `true` equals 1 and `false` equals 0, so a statement like `int x = true;` sets `x` to 1.

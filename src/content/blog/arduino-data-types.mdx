@@ -1,0 +1,381 @@
+---
+title: "Data Types"
+description: "Data types available in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Variables"]
+tags: ["Arduino",]
+slug: "arduino-data-types"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# Data Types
+
+Arduino supports a range of data types for storing different kinds of information. Choosing the right type is important — it determines how much memory a variable uses, what values it can hold, and what operations you can perform on it. On an Arduino Uno with only 2 KB of SRAM, using the smallest appropriate type can make the difference between a working program and one that runs out of memory.
+
+## void
+
+The `void` keyword is used as a return type for functions that do not return a value. It is also used to declare functions that take no parameters.
+
+```cpp
+// Function that returns nothing
+void setup() {
+  Serial.begin(9600);
+  printMessage();
+}
+
+void printMessage() {
+  Serial.println("This function returns nothing!");
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, both `setup()` and `printMessage()` are declared with `void` because they perform actions (printing to serial) without returning any value. Every Arduino sketch must have `void setup()` and `void loop()`.
+
+## bool
+
+The `bool` type stores a Boolean value — either `true` or `false`. It occupies 1 byte of memory and is the preferred type for flags, conditions, and state tracking.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  bool ledState = false;
+  // Toggle the state
+  ledState = !ledState;
+  if (ledState == true) {
+    Serial.println("LED is on");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example declares a `bool` variable `ledState`, toggles it with the NOT operator `!`, and checks it in a condition. `bool` is preferred over the older `boolean` type.
+
+## boolean
+
+`boolean` is an older alias for `bool` that exists for compatibility with earlier Arduino code. It works identically to `bool` but `bool` is the recommended type for new code.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  boolean isReady = true;
+  if (isReady) {
+    Serial.println("Ready!");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Both `boolean` and `bool` can store `true` or `false`. In new projects, use `bool` for consistency with standard C++.
+
+## char
+
+The `char` type stores a single character and occupies 1 byte. It can hold ASCII values from -128 to 127. You can store a character literal in single quotes or assign a numeric ASCII value directly.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char letter = 'A';
+  char number = 65;  // ASCII value for 'A'
+  Serial.print(letter);  // prints A
+  Serial.print(" = ");
+  Serial.println(number, DEC);  // prints 65
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, both `letter` and `number` hold the same value — `'A'` (ASCII 65). Note that `char` is signed by default on Arduino. Use `unsigned char` if you need values from 0 to 255.
+
+## unsigned char
+
+`unsigned char` is like `char` but stores only non-negative values from 0 to 255. It is useful when working with raw byte data, sensor readings, or pixel values.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  unsigned char brightness = 200;
+  Serial.print("Brightness: ");
+  Serial.println(brightness);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `brightness` stores a value of 200, which is within the 0–255 range. Use `unsigned char` when you need to store byte-oriented data and want to avoid negative values.
+
+## byte
+
+The `byte` type stores an 8-bit unsigned value from 0 to 255. It is an Arduino-specific type (not standard C++) and is equivalent to `unsigned char`. It is ideal for storing small numeric values or raw binary data.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte sensorValue = 127;
+  Serial.println(sensorValue);  // prints 127
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+`byte` is commonly used for pin numbers, small counters, and data buffers. On an Uno, using `byte` instead of `int` saves 1 byte of RAM per variable.
+
+## int
+
+The `int` type stores a 16-bit signed integer from -32,768 to 32,767 on Arduino Uno and similar boards. It is the default integer type and is used in most general-purpose arithmetic.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int counter = 0;
+  for (int i = 0; i < 10; i++) {
+    counter += i;
+  }
+  Serial.println(counter);  // prints 45
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch sums the numbers 0 through 9 and stores the result in `counter`. On 32-bit Arduino boards (like Due or Zero), `int` is 32 bits and ranges from -2,147,483,648 to 2,147,483,647.
+
+## unsigned int
+
+`unsigned int` stores a 16-bit non-negative integer from 0 to 65,535 on Uno-class boards. Use it when you know the value will never be negative, which doubles the upper range compared to `int`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  unsigned int distance = 40000;
+  Serial.print("Distance: ");
+  Serial.println(distance);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `distance` holds 40,000 — a value that exceeds the maximum positive value of a signed `int` (32,767). `unsigned int` is useful for quantities that are naturally non-negative, like distances, counts, and timestamps.
+
+## word
+
+The `word` type stores a 16-bit unsigned value from 0 to 65,535. It is equivalent to `unsigned int` on Uno-class boards and is useful for storing two bytes combined into a single value.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  word sensorPair = 0xAABB;
+  Serial.println(sensorPair, HEX);  // prints AABB
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `word` stores a 16-bit hexadecimal value. The `word()` function can also create a word from two bytes: `word(highByte, lowByte)`.
+
+## long
+
+The `long` type stores a 32-bit signed integer from -2,147,483,648 to 2,147,483,647. Use it when `int` is not large enough for your values, such as for long time intervals or large counts.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  long largeNumber = 1000000;
+  long squared = largeNumber * largeNumber;
+  Serial.println(squared);  // prints 1000000000000
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example stores one million and computes its square. On Uno, `int` can only hold up to 32,767, so `long` is necessary here. Note that `millis()` returns an `unsigned long`, which you should use for timekeeping.
+
+## unsigned long
+
+`unsigned long` stores a 32-bit non-negative integer from 0 to 4,294,967,295. It is the return type of `millis()` and `micros()`, making it the standard choice for timing and elapsed-time calculations.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  unsigned long startTime = millis();
+  delay(1000);
+  unsigned long elapsed = millis() - startTime;
+  Serial.print("Elapsed: ");
+  Serial.print(elapsed);
+  Serial.println(" ms");
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch measures how long `delay(1000)` actually takes. Using `unsigned long` for time values prevents overflow when `millis()` rolls over after about 50 days.
+
+## short
+
+The `short` type stores a 16-bit signed integer from -32,768 to 32,767. On Uno-class boards, `short` is the same size as `int`. It is primarily used for cross-platform compatibility where explicit 16-bit width is needed.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  short temperature = -10;
+  Serial.println(temperature);  // prints -10
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+On Arduino, `short` and `int` are both 16 bits, so they are interchangeable. On 32-bit boards, `short` remains 16 bits while `int` becomes 32 bits, which matters when porting code between platforms.
+
+## float
+
+The `float` type stores a 32-bit floating-point number with approximately 6–7 decimal digits of precision. It can represent very large and very small numbers, including decimals. Floating point operations are slower than integer operations on Arduino.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  float temperature = 23.5;
+  float converted = (temperature * 9.0 / 5.0) + 32.0;
+  Serial.print(temperature);
+  Serial.print(" C = ");
+  Serial.print(converted);
+  Serial.println(" F");
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example converts 23.5°C to Fahrenheit. `float` is essential for sensor data that includes decimal values (temperature, humidity, voltage) but should be used sparingly on Uno-class boards due to limited memory and processing power.
+
+## double
+
+On Uno-class Arduino boards, `double` is the same as `float` — a 32-bit value with the same precision and range. On 32-bit boards like the Due or Zero, `double` is a true 64-bit value with much higher precision.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  double pi = 3.141592653589793;
+  Serial.println(pi, 10);  // limited to ~6 digits on Uno
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+On an Uno, this will only print about 6 decimal digits accurately because `double` is treated as `float`. If you need high-precision floating point, use a 32-bit Arduino board where `double` provides full 64-bit precision.
+
+## string (null-terminated char array)
+
+A `string` (lowercase) is not a type but a null-terminated array of `char` characters. It is the C-style way of representing text and is stored as a sequence of bytes ending with a null character (`\0`).
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char greeting[] = "Hello";  // automatically adds \0
+  Serial.println(greeting);   // prints Hello
+
+  // Access individual characters
+  for (int i = 0; greeting[i] != '\0'; i++) {
+    Serial.println(greeting[i]);
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `greeting` is a 6-element array (5 letters + null terminator). C-style strings are memory-efficient but require careful management — you must ensure the buffer is large enough to hold the text and its null terminator.
+
+## String (class)
+
+`String` (uppercase) is a class that provides an easy-to-use text data type. It supports concatenation, comparison, and many utility methods. It manages memory automatically but uses more RAM than C-style strings and can cause memory fragmentation.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  String name = "Arduino";
+  String message = "Hello, " + name + "!";
+  Serial.println(message);  // prints Hello, Arduino!
+  Serial.println(message.length());  // prints 14
+  Serial.println(message.toUpperCase());
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example creates a `String`, concatenates it, prints its length, and converts it to uppercase. The `String` class provides many useful methods like `indexOf()`, `substring()`, `toInt()`, and `replace()`, but should be used carefully on memory-constrained boards.
+
+## size_t
+
+`size_t` is an unsigned integer type used to represent sizes and counts. It is the return type of `sizeof()` and is commonly used for array indexing and loop counters. On Uno, `size_t` is equivalent to `unsigned int` (16-bit).
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int numbers[] = {10, 20, 30, 40, 50};
+  size_t count = sizeof(numbers) / sizeof(numbers[0]);
+  for (size_t i = 0; i < count; i++) {
+    Serial.println(numbers[i]);
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch calculates the number of elements in an array using `sizeof()` (which returns `size_t`) and then iterates through them. Using `size_t` for loop counters and array indices is considered best practice.
+
+## array
+
+An array is a collection of variables of the same type, stored in contiguous memory locations. Arrays are declared with square brackets and are zero-indexed — the first element is at index 0.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int leds[] = {2, 3, 4, 5, 6};
+  // Initialize all pins as outputs
+  for (int i = 0; i < 5; i++) {
+    pinMode(leds[i], OUTPUT);
+  }
+  // Turn on the third LED
+  digitalWrite(leds[2], HIGH);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, an array of five pin numbers is declared and used in a loop to configure all pins as outputs. Arrays are fundamental for managing multiple pins, storing sensor readings, or holding lookup tables. The number of elements must be known at compile time, and you must ensure your loop does not access an index beyond the array bounds.

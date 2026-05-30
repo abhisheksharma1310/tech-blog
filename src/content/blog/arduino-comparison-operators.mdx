@@ -1,0 +1,141 @@
+---
+title: "Comparison Operators"
+description: "Comparison operators in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Control & Operators"]
+tags: ["Arduino",]
+slug: "arduino-comparison-operators"
+author: "Abhishek Sharma"
+order: 3
+---
+
+# Comparison Operators
+
+Comparison operators compare two values and return a Boolean result — `true` (1) or `false` (0). They are the building blocks of decision-making in Arduino, used inside `if`, `while`, and `for` conditions to control program flow based on sensor readings, timing, or user input.
+
+## == (equal to)
+
+The `==` operator checks whether two values are equal. It returns `true` if they are identical and `false` otherwise. Do not confuse this with `=` (single equals), which is the assignment operator.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 10;
+  int b = 10;
+
+  if (a == b) {
+    Serial.println("a equals b");  // this prints
+  }
+
+  // Common mistake — using = instead of ==
+  if (a = 5) {  // assigns 5 to a, always true!
+    Serial.println("This always runs!");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `a == b` correctly compares the two values. The second `if` uses `=` instead of `==`, which assigns 5 to `a` and then evaluates to `true` (non-zero). This is a common bug — always double-check your equality comparisons.
+
+## != (not equal to)
+
+The `!=` operator checks whether two values are different. It returns `true` if they are not equal and `false` if they are equal.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  pinMode(2, INPUT_PULLUP);
+}
+
+void loop() {
+  if (digitalRead(2) != HIGH) {
+    Serial.println("Button is pressed");  // pin is LOW (pressed)
+  }
+  delay(100);
+}
+```
+
+This sketch checks if a button is pressed by testing whether pin 2 is not HIGH. When the button is pressed, the pin reads LOW, so `digitalRead(2) != HIGH` is `true`.
+
+## < (less than)
+
+The `<` operator returns `true` if the left value is smaller than the right value.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int sensor = analogRead(A0);
+  if (sensor < 100) {
+    Serial.println("Too dark");
+  }
+  delay(500);
+}
+```
+
+This example prints a warning when the light sensor reading drops below 100. The `<` operator is commonly used for threshold detection, loop bounds, and range checking.
+
+## > (greater than)
+
+The `>` operator returns `true` if the left value is larger than the right value.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int sensor = analogRead(A0);
+  if (sensor > 800) {
+    Serial.println("Very bright");
+  }
+  delay(500);
+}
+```
+
+This sketch prints a message when the sensor reading exceeds 800. Paired with `<`, you can check if a value falls within a specific range using `&&`: `if (value > 100 && value < 200)`.
+
+## `<= (less than or equal to)`
+
+The `<=` operator returns `true` if the left value is less than or equal to the right value.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  for (int i = 0; i <= 5; i++) {
+    Serial.println(i);  // prints 0, 1, 2, 3, 4, 5
+  }
+  delay(3000);
+}
+```
+
+In this example, the loop runs while `i <= 5`, so it prints 0 through 5 inclusive. Note the difference from `i < 5`, which would print only 0 through 4. The `<=` operator is useful when you want to include the upper bound.
+
+## >= (greater than or equal to)
+
+The `>=` operator returns `true` if the left value is greater than or equal to the right value.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  unsigned long start = millis();
+}
+
+void loop() {
+  unsigned long now = millis();
+  if (now - start >= 5000) {
+    Serial.println("5 seconds elapsed!");
+    start = now;  // reset timer
+  }
+}
+```
+
+This sketch prints a message every 5 seconds using `millis()` and the `>=` operator. Using `>=` for timing is more reliable than checking for exact equality (`==`), since `millis()` might increment past the exact target value before you check.

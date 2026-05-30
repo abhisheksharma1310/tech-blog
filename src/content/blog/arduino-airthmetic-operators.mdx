@@ -1,0 +1,165 @@
+---
+title: "Arithmetic Operators"
+description: "Arithmetic operators in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Control & Operators"]
+tags: ["Arduino",]
+slug: "arduino-arithmetic-operators"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# Arithmetic Operators
+
+Arithmetic operators allow you to perform mathematical calculations in your Arduino programs. They work with integer and floating-point types and follow standard mathematical precedence rules. Understanding how these operators behave — especially with mixed types — is essential for correct calculations.
+
+## = (assignment)
+
+The `=` operator assigns the value on the right to the variable on the left. It is not the same as mathematical equality — it stores a value into memory.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int x;
+  x = 42;  // assign 42 to x
+  Serial.println(x);  // prints 42
+
+  int y = x;  // assign the value of x to y
+  Serial.println(y);  // prints 42
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `x = 42` stores the value 42 in the variable `x`. Assignment is a fundamental operation — without it, variables would always hold their default (zero or garbage) values. Unlike in math, you can chain assignments: `a = b = c = 0;` sets all three to 0.
+
+## + (addition)
+
+The `+` operator adds two numbers together. It works with both integers and floating-point values.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 10;
+  int b = 20;
+  int sum = a + b;
+  Serial.println(sum);  // prints 30
+
+  float x = 2.5;
+  float y = 3.7;
+  float fsum = x + y;
+  Serial.println(fsum);  // prints 6.2
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example shows integer addition (10 + 20 = 30) and floating-point addition (2.5 + 3.7 = 6.2). When mixing types, the integer is promoted to float before the operation: `5 + 2.3` gives `7.3`.
+
+## - (subtraction)
+
+The `-` operator subtracts one number from another. It can also be used as a unary operator to negate a value.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 50;
+  int b = 30;
+  int diff = a - b;
+  Serial.println(diff);  // prints 20
+
+  int neg = -diff;  // unary negation
+  Serial.println(neg);  // prints -20
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Subtraction with integers can produce negative results. Be careful with `unsigned` types — subtracting a larger value from a smaller one causes wrap-around rather than producing a negative result.
+
+## * (multiplication)
+
+The `*` operator multiplies two numbers. Be aware of overflow when the result exceeds the range of the data type.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 100;
+  int b = 500;
+  long result = a * b;  // overflows! 100 * 500 = 50000
+  Serial.println(result);  // wrong!
+
+  long correct = (long)a * b;  // cast first
+  Serial.println(correct);  // prints 50000
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `a * b` is calculated as a 16-bit `int` and overflows before being assigned to `long`. Casting one operand to `long` forces 32-bit arithmetic. Always ensure your intermediate results fit within the type being used.
+
+## / (division)
+
+The `/` operator divides one number by another. When both operands are integers, the result is truncated (not rounded). For floating-point division, at least one operand must be a `float`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 10;
+  int b = 3;
+  int intResult = a / b;
+  Serial.println(intResult);  // prints 3 (truncated)
+
+  float floatResult = (float)a / b;
+  Serial.println(floatResult);  // prints 3.33
+
+  // Also works with a float literal
+  float r2 = a / 3.0;
+  Serial.println(r2);  // prints 3.33
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Integer division truncates toward zero — `10 / 3` gives 3, not 3.33. To get a fractional result, convert one operand to `float` before dividing. Division by zero causes undefined behavior and should always be avoided.
+
+## % (remainder)
+
+The `%` operator returns the remainder of integer division. It works only with integer types.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 17;
+  int b = 5;
+  int quotient = a / b;   // 3
+  int remainder = a % b;  // 2 (17 = 3*5 + 2)
+  Serial.print(quotient);
+  Serial.print(" remainder ");
+  Serial.println(remainder);
+
+  // Check if a number is even
+  for (int i = 0; i < 10; i++) {
+    if (i % 2 == 0) {
+      Serial.print(i);
+      Serial.println(" is even");
+    }
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+The remainder operator is commonly used to check divisibility (e.g., `x % 2 == 0` for even numbers), wrap around array indices, or implement cyclic behavior like looping through LED patterns.

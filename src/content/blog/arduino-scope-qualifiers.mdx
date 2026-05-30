@@ -1,0 +1,127 @@
+---
+title: "Scope & Qualifiers"
+description: "Variable scope and qualifiers in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Variables"]
+tags: ["Arduino",]
+slug: "arduino-scope-qualifiers"
+author: "Abhishek Sharma"
+order: 3
+---
+
+# Variable Scope & Qualifiers
+
+Variable scope determines where a variable can be accessed in your program, while qualifiers like `const`, `static`, and `volatile` modify how a variable behaves. Understanding these concepts helps you write code that uses memory efficiently, avoids unintended modifications, and correctly interfaces with hardware.
+
+## Scope
+
+Scope refers to the region of a program where a variable is visible and can be used. In Arduino, there are two main levels of scope: global (declared outside any function, accessible everywhere) and local (declared inside a function or block, accessible only within that block).
+
+```cpp
+int globalCount = 0;  // global — accessible everywhere
+
+void setup() {
+  Serial.begin(9600);
+  int localCount = 0;  // local — only inside setup()
+  globalCount++;
+  localCount++;
+  Serial.println(globalCount);  // prints 1
+  Serial.println(localCount);   // prints 1
+}
+
+void loop() {
+  globalCount++;
+  // localCount++;  // error: localCount not in scope here
+  Serial.println(globalCount);
+  delay(1000);
+}
+```
+
+In this example, `globalCount` is accessible in both `setup()` and `loop()`, while `localCount` is only available inside `setup()`. A local variable inside `loop()` would be created and destroyed on each iteration. Global variables persist for the entire program but use memory permanently.
+
+## const
+
+The `const` qualifier tells the compiler that a variable's value will never change after initialization. This allows the compiler to optimize the code and prevents accidental modification. Use `const` for pin numbers, fixed thresholds, and any value that should remain constant.
+
+```cpp
+const int ledPin = 13;
+const float pi = 3.14159;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(9600);
+  // ledPin = 12;  // error: cannot modify a const variable
+}
+
+void loop() {
+  static int count = 0;
+  digitalWrite(ledPin, HIGH);
+  delay(250);
+  digitalWrite(ledPin, LOW);
+  delay(250);
+}
+```
+
+By declaring `ledPin` as `const`, the compiler will flag any attempt to change it, preventing bugs. Constants also make your code more readable and maintainable — if the LED pin changes, you update it in one place instead of searching through the entire program.
+
+## static
+
+The `static` qualifier has two effects when used inside a function: the variable retains its value between function calls (it is not destroyed when the function exits), and it is initialized only once. It is useful for counters, state machines, and debounce timers.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  static int callCount = 0;
+  callCount++;
+  Serial.print("loop() has run ");
+  Serial.print(callCount);
+  Serial.println(" times");
+  delay(1000);
+
+  if (callCount >= 5) {
+    Serial.println("Reached 5 calls, stopping.");
+    while (true) { /* halt */ }
+  }
+}
+```
+
+In this example, `callCount` is declared `static` inside `loop()`. Unlike a normal local variable that would reset to 0 on every call, `static` keeps its value across invocations. This lets you count how many times `loop()` has executed without using a global variable.
+
+## volatile
+
+The `volatile` qualifier tells the compiler that a variable's value can change at any time, outside the normal flow of the program. This prevents the compiler from optimizing away reads or writes to the variable. It is essential for variables modified inside an interrupt service routine (ISR).
+
+```cpp
+volatile int buttonPresses = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(2), countPress, FALLING);
+}
+
+void loop() {
+  // Read the volatile variable with interrupts disabled for safety
+  noInterrupts();
+  int presses = buttonPresses;
+  interrupts();
+  
+  if (presses > 0) {
+    Serial.print("Button pressed ");
+    Serial.print(presses);
+    Serial.println(" times");
+    noInterrupts();
+    buttonPresses = 0;
+    interrupts();
+  }
+}
+
+void countPress() {
+  buttonPresses++;  // modified inside ISR
+}
+```
+
+In this example, `buttonPresses` is declared `volatile` because it is modified inside the `countPress()` interrupt service routine. Without `volatile`, the compiler might optimize the read in `loop()` by caching the value in a register, never seeing the updates from the ISR. Always use `volatile` for any variable shared between the main code and an interrupt.

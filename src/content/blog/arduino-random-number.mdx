@@ -1,0 +1,82 @@
+---
+title: "Random"
+description: "Generating random numbers in Arduino using random() and randomSeed()."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-functions-random-number"
+author: "Abhishek Sharma"
+order: 7
+---
+
+# Random Numbers
+
+Random numbers are useful in many Arduino projects — from rolling dice in games, to generating random LED patterns, to adding unpredictability in robotics. Arduino provides two functions for working with random numbers: `random()` to generate them and `randomSeed()` to make them less predictable.
+
+## random()
+
+The `random()` function generates a pseudo-random number. It has two forms: `random(max)` returns a random number between 0 and `max - 1`, while `random(min, max)` returns a random number between `min` and `max - 1`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  // Generate a random number between 0 and 9
+  int val1 = random(10);
+  Serial.print("0-9: ");
+  Serial.println(val1);
+
+  // Generate a random number between 5 and 14
+  int val2 = random(5, 15);
+  Serial.print("5-14: ");
+  Serial.println(val2);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `random(10)` produces a value from 0 to 9, and `random(5, 15)` produces a value from 5 to 14. Each time you reset the board, however, you will see the same sequence of numbers. This happens because the pseudo-random generator starts from the same default seed every time.
+
+You can use `random()` inside `loop()` to create dynamic behavior:
+
+```cpp
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int delayTime = random(200, 2000);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(delayTime);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(delayTime);
+  Serial.print("Random delay: ");
+  Serial.println(delayTime);
+}
+```
+
+This sketch blinks the built-in LED with a random on/off delay between 200 ms and 1999 ms, creating an unpredictable blinking pattern.
+
+## randomSeed()
+
+The `randomSeed()` function initializes the pseudo-random number generator with a seed value. Without calling `randomSeed()`, the generator produces the same sequence of numbers every time the board starts. By seeding it with a varying value — typically from an unconnected analog pin — you get different sequences on each run.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  // Seed the random generator with noise from an unconnected pin
+  randomSeed(analogRead(A0));
+}
+
+void loop() {
+  int val = random(1, 7);
+  Serial.println(val);
+  delay(1000);
+}
+```
+
+In this example, `randomSeed(analogRead(A0))` reads the floating voltage noise from analog pin A0 (which should be left unconnected) and uses that value as the seed. This produces a different sequence of numbers each time the board is powered on. The sketch then simulates rolling a six-sided die every second, printing values from 1 to 6.
+
+You should call `randomSeed()` only once in `setup()`. Calling it repeatedly or before every `random()` call can actually make the output *less* random, since `analogRead()` may return similar values in quick succession.

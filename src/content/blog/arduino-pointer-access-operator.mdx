@@ -1,0 +1,148 @@
+---
+title: "Pointer & Access Operators"
+description: "Pointer and access operators in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Control & Operators"]
+tags: ["Arduino",]
+slug: "arduino-pointer-access-operator"
+author: "Abhishek Sharma"
+order: 7
+---
+
+# Pointer & Access Operators
+
+Pointer and access operators let you work with memory addresses, dereference pointers, and access members of structures and arrays. These operators give you low-level control over data, which is useful for efficient memory use, direct hardware access, and interfacing with libraries.
+
+## & (reference / address-of)
+
+The `&` operator returns the memory address of a variable. In a pointer context, it is called the address-of operator and gives you a pointer to the variable.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int x = 42;
+  int *ptr = &x;  // ptr now holds the address of x
+
+  Serial.println(x);      // prints 42
+  Serial.println((long)ptr);  // prints the memory address (e.g., 2298)
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `&x` retrieves the address where `x` is stored in RAM. This address is assigned to the pointer variable `ptr`. Use the address-of operator when you need to pass a variable by reference to a function or store its location for later access.
+
+## * (dereference / pointer)
+
+The `*` operator accesses the value stored at a memory address held by a pointer. This is called dereferencing. When used in a declaration (`int *ptr;`), it creates a pointer type.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int x = 42;
+  int *ptr = &x;   // ptr points to x
+
+  Serial.println(*ptr);  // dereference: prints 42
+
+  *ptr = 99;             // modify x through the pointer
+  Serial.println(x);     // prints 99
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `*ptr` reads the value at the address stored in `ptr`, which is the value of `x`. Writing `*ptr = 99` changes `x` indirectly. Dereferencing is the primary way to read or modify data through a pointer.
+
+## . (dot / member access)
+
+The `.` operator accesses a member of a structure or class directly. It is used when you have the actual struct or object (not a pointer to it).
+
+```cpp
+struct SensorData {
+  int temperature;
+  int humidity;
+};
+
+void setup() {
+  Serial.begin(9600);
+  SensorData data;
+  data.temperature = 25;  // access member with dot
+  data.humidity = 60;
+
+  Serial.print("Temp: ");
+  Serial.println(data.temperature);
+  Serial.print("Humidity: ");
+  Serial.println(data.humidity);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `data.temperature` and `data.humidity` access the members of the `SensorData` struct using the dot operator. The dot operator has the highest precedence among access operators.
+
+## -> (arrow / pointer member access)
+
+The `->` operator accesses a member of a structure or class through a pointer. It combines dereferencing and member access in one step — `ptr->member` is equivalent to `(*ptr).member`.
+
+```cpp
+struct SensorData {
+  int temperature;
+  int humidity;
+};
+
+SensorData data;
+SensorData *ptr = &data;
+
+void setup() {
+  Serial.begin(9600);
+  ptr->temperature = 30;  // same as (*ptr).temperature = 30
+  ptr->humidity = 70;
+
+  Serial.print("Temp: ");
+  Serial.println(ptr->temperature);
+  Serial.print("Humidity: ");
+  Serial.println(ptr->humidity);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `ptr->temperature` accesses the `temperature` field of the struct that `ptr` points to. The arrow operator is cleaner and less error-prone than manually dereferencing with `*` and then using `.`.
+
+## [] (array subscript)
+
+The `[]` operator accesses an element of an array by its index. Arrays are zero-indexed, so the first element is at index `[0]`. The subscript operator is equivalent to pointer arithmetic: `array[i]` is the same as `*(array + i)`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int readings[5] = {10, 20, 30, 40, 50};
+
+  // Access elements with subscript
+  Serial.println(readings[0]);  // first element: 10
+  Serial.println(readings[2]);  // third element: 30
+  readings[4] = 99;             // modify last element
+
+  // Loop through array
+  for (int i = 0; i < 5; i++) {
+    Serial.print("Index ");
+    Serial.print(i);
+    Serial.print(": ");
+    Serial.println(readings[i]);
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example stores five sensor readings in an array and accesses them with the subscript operator. The subscript operator works on any pointer — not just arrays — so `int *p = readings; p[2]` also gives element 30.

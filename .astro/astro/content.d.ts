@@ -154,28 +154,105 @@ declare module 'astro:content' {
 		"blog": {
 "arduino-advance-io.mdx": {
 	id: "arduino-advance-io.mdx";
-  slug: "arduino-advance-io";
+  slug: "arduino-functions-advance-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-airthmetic-operators.mdx": {
+	id: "arduino-airthmetic-operators.mdx";
+  slug: "arduino-arithmetic-operators";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
 "arduino-analog-io.mdx": {
 	id: "arduino-analog-io.mdx";
-  slug: "arduino-analog-io";
+  slug: "arduino-functions-analog-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-bits-bytes.mdx": {
+	id: "arduino-bits-bytes.mdx";
+  slug: "arduino-functions-bits-bytes";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-bitwise-operators.mdx": {
+	id: "arduino-bitwise-operators.mdx";
+  slug: "arduino-bitwise-operators";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-boolean-operators.mdx": {
+	id: "arduino-boolean-operators.mdx";
+  slug: "arduino-boolean-operators";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-characters.mdx": {
+	id: "arduino-characters.mdx";
+  slug: "arduino-functions-characters";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
 "arduino-communication.mdx": {
 	id: "arduino-communication.mdx";
-  slug: "arduino-communication";
+  slug: "arduino-functions-communication";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-comparison-operators.mdx": {
+	id: "arduino-comparison-operators.mdx";
+  slug: "arduino-comparison-operators";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-compound-operators.mdx": {
+	id: "arduino-compound-operators.mdx";
+  slug: "arduino-compound-operators";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-constants.mdx": {
+	id: "arduino-constants.mdx";
+  slug: "arduino-constants";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-control-structure.mdx": {
+	id: "arduino-control-structure.mdx";
+  slug: "arduino-control-structure";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-conversion.mdx": {
+	id: "arduino-conversion.mdx";
+  slug: "arduino-conversion";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-data-types.mdx": {
+	id: "arduino-data-types.mdx";
+  slug: "arduino-data-types";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
 "arduino-digital-io.mdx": {
 	id: "arduino-digital-io.mdx";
-  slug: "arduino-digital-io";
+  slug: "arduino-functions-digital-io";
   body: string;
   collection: "blog";
   data: any
@@ -189,7 +266,7 @@ declare module 'astro:content' {
 } & { render(): Render[".mdx"] };
 "arduino-interrupts.mdx": {
 	id: "arduino-interrupts.mdx";
-  slug: "arduino-interrupts";
+  slug: "arduino-functions-interrupts";
   body: string;
   collection: "blog";
   data: any
@@ -197,6 +274,34 @@ declare module 'astro:content' {
 "arduino-intro.mdx": {
 	id: "arduino-intro.mdx";
   slug: "arduino-intro";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-math.mdx": {
+	id: "arduino-math.mdx";
+  slug: "arduino-functions-math";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pointer-access-operator.mdx": {
+	id: "arduino-pointer-access-operator.mdx";
+  slug: "arduino-pointer-access-operator";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-random-number.mdx": {
+	id: "arduino-random-number.mdx";
+  slug: "arduino-functions-random-number";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-scope-qualifiers.mdx": {
+	id: "arduino-scope-qualifiers.mdx";
+  slug: "arduino-scope-qualifiers";
   body: string;
   collection: "blog";
   data: any
@@ -217,14 +322,21 @@ declare module 'astro:content' {
 } & { render(): Render[".mdx"] };
 "arduino-time.mdx": {
 	id: "arduino-time.mdx";
-  slug: "arduino-time";
+  slug: "arduino-functions-time";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-utilities.mdx": {
+	id: "arduino-utilities.mdx";
+  slug: "arduino-utilities";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
 "arduino-wifi.mdx": {
 	id: "arduino-wifi.mdx";
-  slug: "arduino-Wi-Fi";
+  slug: "arduino-functions-Wi-Fi";
   body: string;
   collection: "blog";
   data: any

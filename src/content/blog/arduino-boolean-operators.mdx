@@ -1,0 +1,108 @@
+---
+title: "Boolean Operators"
+description: "Logical (Boolean) operators in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Control & Operators"]
+tags: ["Arduino",]
+slug: "arduino-boolean-operators"
+author: "Abhishek Sharma"
+order: 4
+---
+
+# Boolean Operators
+
+Boolean operators — also called logical operators — combine or invert Boolean expressions. They return `true` or `false` and are essential for building complex conditions in `if`, `while`, and `for` statements. Arduino supports three: `&&` (AND), `||` (OR), and `!` (NOT).
+
+## && (logical AND)
+
+The `&&` operator returns `true` only if both operands are `true`. If either operand is `false`, the result is `false`. It uses short-circuit evaluation — if the left side is `false`, the right side is never evaluated.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  pinMode(2, INPUT_PULLUP);
+  pinMode(3, INPUT_PULLUP);
+}
+
+void loop() {
+  int button1 = digitalRead(2);
+  int button2 = digitalRead(3);
+
+  if (button1 == LOW && button2 == LOW) {
+    Serial.println("Both buttons pressed");
+  } else {
+    Serial.println("Not both pressed");
+  }
+  delay(100);
+}
+```
+
+In this example, the message prints only when both buttons are pressed simultaneously. If either button is released, the condition evaluates to `false`. Short-circuit evaluation means if `button1 == LOW` is `false`, the code never checks `button2`.
+
+## || (logical OR)
+
+The `||` operator returns `true` if at least one operand is `true`. It also uses short-circuit evaluation — if the left side is `true`, the right side is skipped.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int sensor1 = analogRead(A0);
+  int sensor2 = analogRead(A1);
+
+  if (sensor1 > 800 || sensor2 > 800) {
+    Serial.println("At least one sensor is bright");
+  } else {
+    Serial.println("Both sensors are dim");
+  }
+  delay(500);
+}
+```
+
+This sketch triggers a message if either light sensor reading exceeds 800. The `||` is useful for alarm systems, safety triggers, or any scenario where multiple conditions can each independently trigger an action.
+
+## ! (logical NOT)
+
+The `!` operator inverts a Boolean value — `true` becomes `false` and `false` becomes `true`. It is a unary operator that precedes its operand.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  pinMode(2, INPUT_PULLUP);
+}
+
+void loop() {
+  bool buttonPressed = (digitalRead(2) == LOW);
+
+  if (!buttonPressed) {
+    Serial.println("Button is released");
+  }
+
+  // Also commonly used inline
+  if (!digitalRead(2)) {
+    Serial.println("Also released");
+  }
+
+  delay(100);
+}
+```
+
+Here, `!buttonPressed` is `true` when the button is not pressed. The NOT operator is also useful for toggling states:
+
+```cpp
+bool ledState = false;
+
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  ledState = !ledState;  // toggle between true and false
+  digitalWrite(LED_BUILTIN, ledState);
+  delay(500);
+}
+```
+
+This toggles the LED on and off every 500 ms by inverting `ledState` each time through `loop()`. The `!` operator provides a clean way to alternate between two states without using `if/else`.

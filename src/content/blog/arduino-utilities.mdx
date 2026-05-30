@@ -1,0 +1,100 @@
+---
+title: "Utilities"
+description: "Utility tools in Arduino — PROGMEM and sizeof()."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Variables"]
+tags: ["Arduino",]
+slug: "arduino-utilities"
+author: "Abhishek Sharma"
+order: 5
+---
+
+# Utilities
+
+Arduino provides several utility tools that help you write more efficient code. Two of the most important are `sizeof()` for determining memory usage and `PROGMEM` for storing data in flash program memory instead of RAM. On memory-constrained boards like the Uno (2 KB RAM, 32 KB flash), these tools are essential for building larger programs.
+
+## sizeof()
+
+The `sizeof()` operator returns the number of bytes a variable or data type occupies in memory. It is evaluated at compile time and is commonly used to calculate the number of elements in an array.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int numbers[] = {10, 20, 30, 40, 50};
+  size_t totalBytes = sizeof(numbers);          // 10 bytes (5 ints × 2 bytes)
+  size_t elementBytes = sizeof(numbers[0]);     // 2 bytes
+  size_t elementCount = sizeof(numbers) / sizeof(numbers[0]);  // 5
+
+  Serial.print("Total bytes: ");
+  Serial.println(totalBytes);
+  Serial.print("Element count: ");
+  Serial.println(elementCount);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `sizeof(numbers)` returns 10 (each `int` is 2 bytes × 5 elements). Dividing by `sizeof(numbers[0])` gives the number of elements — a common pattern that lets you change the array size without updating loop bounds.
+
+You can also use `sizeof()` with data types directly:
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  Serial.println(sizeof(char));   // 1
+  Serial.println(sizeof(int));    // 2
+  Serial.println(sizeof(long));   // 4
+  Serial.println(sizeof(float));  // 4
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This prints the size of each type in bytes. Knowing type sizes helps you choose the smallest type that fits your data, saving valuable RAM.
+
+## PROGMEM
+
+The `PROGMEM` qualifier stores data in flash program memory instead of SRAM. On an Arduino Uno, flash is 32 KB while SRAM is only 2 KB. Use `PROGMEM` for large lookup tables, strings, font data, or any read-only data that does not need to be in RAM.
+
+```cpp
+#include <avr/pgmspace.h>
+
+// Store a lookup table in flash memory
+const PROGMEM uint16_t sineTable[] = {
+  0, 128, 256, 384, 512, 640, 768, 896, 1023
+};
+
+void setup() {
+  Serial.begin(9600);
+  // Read a value from flash using pgm_read_word
+  for (int i = 0; i < 9; i++) {
+    uint16_t val = pgm_read_word(&sineTable[i]);
+    Serial.println(val);
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, the `sineTable` array is stored in flash instead of RAM. To read values back, you use `pgm_read_word()` (for 16-bit data), `pgm_read_byte()` (for 8-bit data), or `pgm_read_dword()` (for 32-bit data). Without `PROGMEM`, this 9-element table would consume 18 bytes of precious SRAM.
+
+You can also store strings in flash using the `F()` macro, which is a simpler way to keep string literals out of RAM:
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  Serial.println(F("This string stays in flash memory"));
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+The `F()` macro wraps a string literal so it is read directly from flash at runtime rather than being copied to RAM at startup. This is particularly useful for debug messages and menu text that would otherwise consume significant amounts of SRAM.

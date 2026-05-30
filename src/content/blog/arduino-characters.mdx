@@ -1,0 +1,303 @@
+---
+title: "Characters"
+description: "An introduction to character handling functions in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-functions-characters"
+author: "Abhishek Sharma"
+order: 5
+---
+
+# Characters
+
+Arduino provides a set of built-in functions to inspect and classify characters. These functions are defined in the `<ctype.h>` header and allow you to check whether a given character belongs to a specific category, such as being a letter, a digit, or whitespace. They are useful for parsing input, validating data, and processing text in your Arduino programs. Each function takes a single character as an argument and returns `true` (a non-zero value) or `false` (zero).
+
+## isAlpha()
+
+The `isAlpha()` function checks whether a character is an alphabetic letter (A-Z or a-z). It returns `true` if the character is a letter and `false` otherwise.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = 'A';
+  if (isAlpha(ch)) {
+    Serial.println("It's a letter!");
+  } else {
+    Serial.println("It's not a letter.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, we check if the character `'A'` is an alphabetic letter. Since `'A'` is a letter, the serial monitor will print `"It's a letter!"`. If you change `ch` to `'5'` or `'@'`, the function will return `false`.
+
+## isAlphaNumeric()
+
+The `isAlphaNumeric()` function checks whether a character is alphanumeric — that is, a letter (A-Z or a-z) or a digit (0-9). It returns `true` for characters that are either alphabetic or numeric.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char tests[] = {'A', 'z', '5', '#', ' '};
+  for (int i = 0; i < 5; i++) {
+    if (isAlphaNumeric(tests[i])) {
+      Serial.print(tests[i]);
+      Serial.println(" is alphanumeric.");
+    } else {
+      Serial.print(tests[i]);
+      Serial.println(" is not alphanumeric.");
+    }
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch iterates through an array of characters and prints whether each one is alphanumeric. `'A'`, `'z'`, and `'5'` will be identified as alphanumeric, while `'#'` and `' '` (space) will not.
+
+## isAscii()
+
+The `isAscii()` function checks whether a character falls within the standard ASCII range (0–127). Every standard character on your keyboard is an ASCII character.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = '~';
+  if (isAscii(ch)) {
+    Serial.println("Character is in the ASCII range.");
+  } else {
+    Serial.println("Character is outside the ASCII range.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+All common characters, including letters, digits, punctuation, and control characters, are ASCII. Characters with values above 127 (such as extended ASCII or Unicode characters) will cause `isAscii()` to return `false`.
+
+## isControl()
+
+The `isControl()` function checks whether a character is a control character (ASCII values 0–31 and 127). Control characters include non-printable characters like newline (`'\n'`), carriage return (`'\r'`), tab (`'\t'`), and backspace.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = '\n';
+  if (isControl(ch)) {
+    Serial.println("Character is a control character.");
+  } else {
+    Serial.println("Character is not a control character.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, the newline character `'\n'` is a control character, so the condition will be true. Printable characters like `'A'` or `'1'` will return `false`.
+
+## isDigit()
+
+The `isDigit()` function checks whether a character is a numeric digit (0–9). It returns `true` only for characters in the range `'0'` through `'9'`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = '7';
+  if (isDigit(ch)) {
+    Serial.println("Character is a digit.");
+  } else {
+    Serial.println("Character is not a digit.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This function is commonly used to validate numeric input from a keypad or serial data. Note that `isDigit()` only checks the character, not the numeric value — `'7'` is a digit, but the integer `7` is not a character at all.
+
+## isGraph()
+
+The `isGraph()` function checks whether a character is a printable, graphical character (any printable character except space). It returns `true` for characters that have a visible representation.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char visible = '!';
+  char invisible = ' ';
+  Serial.println(isGraph(visible));  // prints 1 (true)
+  Serial.println(isGraph(invisible)); // prints 0 (false)
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `'!'` is a graphical character because it has a visible glyph, while the space character `' '` is not considered graphical even though it is printable.
+
+## isHexadecimalDigit()
+
+The `isHexadecimalDigit()` function checks whether a character is a valid hexadecimal digit (0–9, A–F, or a–f). It is useful when parsing hex color codes or memory addresses.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char tests[] = {'A', 'G', 'f', '0', 'z'};
+  for (int i = 0; i < 5; i++) {
+    if (isHexadecimalDigit(tests[i])) {
+      Serial.print(tests[i]);
+      Serial.println(" is a hex digit.");
+    }
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example prints only the characters that are valid hexadecimal digits. `'A'`, `'f'`, and `'0'` will be printed, while `'G'` and `'z'` will be skipped.
+
+## isLowerCase()
+
+The `isLowerCase()` function checks whether a character is a lowercase letter (a–z). It returns `true` for lowercase alphabetic characters and `false` for everything else, including uppercase letters and digits.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = 'b';
+  if (isLowerCase(ch)) {
+    Serial.println("Character is lowercase.");
+  } else {
+    Serial.println("Character is not lowercase.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+You can use this function to check the case of a character before performing case-sensitive operations. To convert a character to uppercase, pair it with the `toupper()` function.
+
+## isPrintable()
+
+The `isPrintable()` function checks whether a character is a printable character (ASCII values 32–126). Printable characters include letters, digits, punctuation, and the space character.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = ' ';
+  if (isPrintable(ch)) {
+    Serial.println("Character is printable.");
+  } else {
+    Serial.println("Character is not printable.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Note that `isPrintable()` returns `true` for the space character, unlike `isGraph()` which returns `false` for space. Control characters like `'\n'` and `'\t'` are not printable.
+
+## isPunct()
+
+The `isPunct()` function checks whether a character is a punctuation character. Punctuation includes characters like `.`, `,`, `!`, `?`, `;`, `:`, `'`, `"`, and others — any printable character that is not alphanumeric or space.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = '?';
+  if (isPunct(ch)) {
+    Serial.println("Character is punctuation.");
+  } else {
+    Serial.println("Character is not punctuation.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `'?'` is identified as a punctuation character. Letters, digits, and spaces will return `false`. This function is helpful for filtering out punctuation from text input.
+
+## isSpace()
+
+The `isSpace()` function checks whether a character is a whitespace character that creates horizontal or vertical space. This includes space (`' '`), tab (`'\t'`), newline (`'\n'`), carriage return (`'\r'`), form feed (`'\f'`), and vertical tab (`'\v'`).
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = '\t';
+  if (isSpace(ch)) {
+    Serial.println("Character is a space character.");
+  } else {
+    Serial.println("Character is not a space character.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This function is broader than `isWhitespace()` on some platforms — it detects all standard whitespace characters, not just the most common ones. You might use it when parsing structured text formats.
+
+## isUpperCase()
+
+The `isUpperCase()` function checks whether a character is an uppercase letter (A–Z). It returns `true` for uppercase alphabetic characters and `false` for everything else.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = 'K';
+  if (isUpperCase(ch)) {
+    Serial.println("Character is uppercase.");
+  } else {
+    Serial.println("Character is not uppercase.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+You can use this function to identify uppercase letters in user input. Combined with `tolower()`, you can normalize text to a single case for case-insensitive comparisons.
+
+## isWhitespace()
+
+The `isWhitespace()` function checks whether a character is a whitespace character. In Arduino, it typically returns `true` for space (`' '`), tab (`'\t'`), newline (`'\n'`), carriage return (`'\r'`), and form feed (`'\f'`). It is commonly used to skip whitespace when parsing text.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  char ch = ' ';
+  if (isWhitespace(ch)) {
+    Serial.println("Character is whitespace.");
+  } else {
+    Serial.println("Character is not whitespace.");
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+When processing serial commands, you can use `isWhitespace()` to strip leading spaces or skip whitespace between arguments. For example, when parsing an input string like `"SET 100"`, calling `isWhitespace()` on each character helps you locate the beginning of the numeric value after the command.

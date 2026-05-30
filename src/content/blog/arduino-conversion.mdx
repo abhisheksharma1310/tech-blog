@@ -1,0 +1,177 @@
+---
+title: "Conversion"
+description: "Data type conversion functions and casts in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Variables"]
+tags: ["Arduino",]
+slug: "arduino-conversion"
+author: "Abhishek Sharma"
+order: 4
+---
+
+# Conversion
+
+Arduino provides several functions and cast operators to convert values from one data type to another. Type conversion is often necessary when mixing different data types in expressions, when reading data from sensors, or when preparing values for functions that expect a specific type.
+
+## byte()
+
+The `byte()` function converts a value to the `byte` type (8-bit unsigned, 0–255). Values outside this range are truncated.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int value = 300;
+  byte b = byte(value);
+  Serial.println(b);  // prints 44 (300 - 256)
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `300` exceeds the 0–255 byte range, so it wraps around: `300 - 256 = 44`. Use `byte()` when you need to ensure a value fits in a single byte, such as when sending data over serial or storing it in a buffer.
+
+## char()
+
+The `char()` function converts a value to the `char` type (8-bit signed, -128 to 127). It is commonly used to convert an integer ASCII code into its corresponding character.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int asciiCode = 65;
+  char ch = char(asciiCode);
+  Serial.println(ch);  // prints A
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, the integer `65` is converted to the character `'A'`. You can also convert a numeric value to a char to save memory when the range fits within -128 to 127.
+
+## float()
+
+The `float()` function converts a value to the `float` type (32-bit floating point). This is useful when you need decimal precision in calculations involving integer values.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 5;
+  int b = 2;
+  float result1 = a / b;          // integer division: 2
+  float result2 = float(a) / b;   // floating point: 2.5
+  Serial.println(result1);        // prints 2.00
+  Serial.println(result2);        // prints 2.50
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `a / b` performs integer division and gives `2`, but converting `a` to `float` before the division produces `2.5`. This is one of the most common uses of `float()` — avoiding integer truncation in division.
+
+## int()
+
+The `int()` function converts a value to the `int` type (16-bit signed on Uno, -32,768 to 32,767). Values outside the range are truncated.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  float temperature = 23.75;
+  int rounded = int(temperature);
+  Serial.println(rounded);  // prints 23 (truncates, not rounds)
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `23.75` is truncated to `23` — the decimal part is discarded, not rounded. To round to the nearest integer, add `0.5` before converting: `int(temperature + 0.5)`.
+
+## long()
+
+The `long()` function converts a value to the `long` type (32-bit signed, -2,147,483,648 to 2,147,483,647). Use it when you need to ensure a calculation uses 32-bit precision.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int a = 1000;
+  int b = 1000;
+  long result1 = a * b;           // int overflow: 16960
+  long result2 = long(a) * b;     // 32-bit: 1000000
+  Serial.println(result1);
+  Serial.println(result2);
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `a * b` (both `int`) overflows because 1,000,000 exceeds the 16-bit `int` range. Converting one operand to `long` forces 32-bit arithmetic and produces the correct result.
+
+## unsigned int
+
+The `unsigned int` cast converts a value to `unsigned int` (16-bit unsigned, 0–65,535 on Uno). It uses C-style cast syntax rather than a function call.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int signedVal = -1;
+  unsigned int unsignedVal = (unsigned int)signedVal;
+  Serial.println(unsignedVal);  // prints 65535
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `-1` cast to `unsigned int` wraps around to `65535`. This cast is useful when interfacing with functions or libraries that expect unsigned values, or when interpreting raw binary data.
+
+## unsigned long
+
+The `unsigned long` cast converts a value to `unsigned long` (32-bit unsigned, 0–4,294,967,295). This is useful when working with `millis()` or `micros()` values, or when you need a large non-negative range.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  long signedVal = -200;
+  unsigned long unsignedVal = (unsigned long)signedVal;
+  Serial.println(unsignedVal);  // prints 4294967096
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, the negative value wraps around to a large unsigned value. The most practical use of `unsigned long` is ensuring time difference calculations work correctly with `millis()`.
+
+## word()
+
+The `word()` function creates a 16-bit unsigned value (`word` type) from either two bytes or a single value. When given two bytes, the first becomes the high byte and the second becomes the low byte.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte high = 0xAB;
+  byte low = 0xCD;
+  word combined = word(high, low);
+  Serial.println(combined, HEX);  // prints ABCD
+
+  // Single-argument version
+  word single = word(12345);
+  Serial.println(single);         // prints 12345
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example combines two bytes `0xAB` and `0xCD` into the 16-bit value `0xABCD`. The two-argument form is especially useful when combining high and low bytes received from sensors over I2C or SPI.

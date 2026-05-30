@@ -1,0 +1,155 @@
+---
+title: "Bits and Bytes"
+description: "Bit and byte manipulation functions in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Functions"]
+tags: ["Arduino",]
+slug: "arduino-functions-bits-bytes"
+author: "Abhishek Sharma"
+order: 4
+---
+
+# Bits and Bytes
+
+Arduino provides a set of built-in functions for manipulating individual bits and bytes. These are essential when working with registers, sensor data, communication protocols, or any situation where you need fine-grained control over binary data. Bits are the smallest unit of data (0 or 1), and a byte is a group of 8 bits.
+
+## bit()
+
+The `bit()` function computes the value of a specific bit position. It returns 2 raised to the power of `n`, which is the decimal value of bit `n` when set. Bit positions are zero-indexed, so `bit(0)` equals 1, `bit(1)` equals 2, `bit(2)` equals 4, and so on.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  for (int i = 0; i < 8; i++) {
+    Serial.print("bit(");
+    Serial.print(i);
+    Serial.print(") = ");
+    Serial.println(bit(i));
+  }
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch prints the decimal value of each bit position from 0 to 7. The output shows `bit(0) = 1`, `bit(1) = 2`, `bit(2) = 4`, `bit(3) = 8`, and so on up to `bit(7) = 128`. You can use `bit()` together with the bitwise OR operator `|` to construct a byte with specific bits set.
+
+## bitClear()
+
+The `bitClear()` function clears (sets to 0) a specific bit in a numeric value. It takes two arguments: the variable to modify and the bit position to clear. The function returns the modified value without changing the original variable.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte x = 0b11111111;  // all bits set
+  byte y = bitClear(x, 3);  // clear bit 3
+  Serial.println(x, BIN);  // prints 11111111 (unchanged)
+  Serial.println(y, BIN);  // prints 11110111 (bit 3 cleared)
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `x` starts as `0b11111111` (all bits on). After calling `bitClear(x, 3)`, the returned value `y` has bit 3 cleared to 0, becoming `0b11110111`. The original variable `x` is not modified.
+
+## bitRead()
+
+The `bitRead()` function reads the value of a specific bit in a number. It returns either 0 or 1 depending on whether the bit at the given position is cleared or set.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte x = 0b10101010;
+  for (int i = 7; i >= 0; i--) {
+    Serial.print(bitRead(x, i));
+  }
+  Serial.println();
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch reads each bit of `0b10101010` from position 7 down to 0 and prints them in order, outputting `10101010`. You can use `bitRead()` to inspect individual flags in a status register or to decode data received from sensors.
+
+## bitSet()
+
+The `bitSet()` function sets (sets to 1) a specific bit in a numeric value. It takes two arguments: the variable to modify and the bit position to set. Like `bitClear()`, it returns the modified value without altering the original variable.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte x = 0b00000000;  // all bits cleared
+  byte y = bitSet(x, 4);  // set bit 4
+  Serial.println(x, BIN);  // prints 0 (unchanged)
+  Serial.println(y, BIN);  // prints 10000
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, `x` starts as `0`. The call to `bitSet(x, 4)` returns a new value with bit 4 set, which is `0b00010000` (decimal 16). This function is commonly used to enable specific hardware features by setting bits in control registers.
+
+## bitWrite()
+
+The `bitWrite()` function writes a specific value (0 or 1) to a specific bit in a number. Unlike `bitSet()` and `bitClear()` which are fixed operations, `bitWrite()` lets you choose the bit value dynamically.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte x = 0b00000000;
+  byte y = bitWrite(x, 2, 1);  // write 1 to bit 2
+  byte z = bitWrite(y, 5, 1);  // write 1 to bit 5
+  Serial.println(z, BIN);  // prints 100100
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, we start with all bits cleared, then write a 1 to bit 2 (y = `0b00000100`), then write a 1 to bit 5 (z = `0b00100100`). The `bitWrite()` function is useful when the bit value comes from a variable — for example, setting an LED state based on a sensor reading.
+
+## highByte()
+
+The `highByte()` function extracts the high-order (most significant) byte from a two-byte (16-bit) value. For a 16-bit integer, bits 8–15 form the high byte. This is commonly used when reading data from sensors or communication protocols that split multi-byte values.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int value = 0xAABB;  // two-byte value
+  byte high = highByte(value);
+  Serial.println(high, HEX);  // prints AA
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, the 16-bit value `0xAABB` is split: `highByte()` returns `0xAA` (the upper 8 bits). This is often paired with `lowByte()` to reconstruct data received over I2C or SPI.
+
+## lowByte()
+
+The `lowByte()` function extracts the low-order (least significant) byte from a two-byte (16-bit) value. For a 16-bit integer, bits 0–7 form the low byte.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int value = 0xAABB;  // two-byte value
+  byte low = lowByte(value);
+  Serial.println(low, HEX);  // prints BB
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `lowByte(0xAABB)` returns `0xBB`. Together, `highByte()` and `lowByte()` let you pack and unpack 16-bit values for transmission or storage. For example, when reading a 16-bit temperature sensor over I2C, you can combine the two received bytes back into a single integer using `(highByte(received) << 8) | lowByte(received)`.

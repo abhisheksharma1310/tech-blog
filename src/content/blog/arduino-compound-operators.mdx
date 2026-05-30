@@ -1,0 +1,228 @@
+---
+title: "Compound Operators"
+description: "Compound assignment and increment/decrement operators in Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Programming", "Control & Operators"]
+tags: ["Arduino",]
+slug: "arduino-compound-operators"
+author: "Abhishek Sharma"
+order: 5
+---
+
+# Compound Operators
+
+Compound operators combine an arithmetic or bitwise operation with assignment, letting you write `x += 5` instead of `x = x + 5`. The increment `++` and decrement `--` operators are shorthand for adding or subtracting 1. These operators make your code more concise and are widely used in loops and counters.
+
+## ++ (increment)
+
+The `++` operator adds 1 to a variable. In prefix form (`++x`), it increments before the value is used. In postfix form (`x++`), it increments after the value is used.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int count = 0;
+
+  Serial.println(count++);  // prints 0, then count becomes 1
+  Serial.println(++count);   // count becomes 2, then prints 2
+  Serial.println(count);     // prints 2
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+In this example, `count++` (postfix) returns the current value (0) before incrementing, while `++count` (prefix) increments first and then returns the new value (2). In a `for` loop like `for (int i = 0; i < 10; i++)`, the postfix form is conventional.
+
+## -- (decrement)
+
+The `--` operator subtracts 1 from a variable. Like `++`, it has prefix (`--x`) and postfix (`x--`) forms with the same timing difference.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  for (int i = 5; i > 0; i--) {
+    Serial.println(i);  // prints 5, 4, 3, 2, 1
+  }
+  Serial.println("Liftoff!");
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This countdown loop uses `i--` to decrement from 5 down to 1. Decrement is less common than increment but useful for reverse loops, removing items from a stack, or counting down remaining time.
+
+## += (compound addition)
+
+The `+=` operator adds the right value to the left variable and stores the result back in the left variable. It is equivalent to `x = x + y`.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int total = 0;
+
+  for (int i = 1; i <= 5; i++) {
+    total += i;  // same as total = total + i
+  }
+  Serial.println(total);  // prints 15 (1+2+3+4+5)
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch sums the numbers 1 through 5 using `+=`. Compound operators reduce repetition and make the intent clearer than the expanded form.
+
+## -= (compound subtraction)
+
+The `-=` operator subtracts the right value from the left variable and stores the result.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int fuel = 100;
+
+  for (int i = 0; i < 3; i++) {
+    fuel -= 25;  // same as fuel = fuel - 25
+    Serial.println(fuel);
+  }
+  // prints 75, 50, 25
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example simulates fuel consumption in three steps. Compound subtraction is useful for countdowns, decreasing health points, or draining battery levels.
+
+## *= (compound multiplication)
+
+The `*=` operator multiplies the left variable by the right value and stores the result.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int value = 2;
+  for (int i = 0; i < 4; i++) {
+    value *= 2;  // same as value = value * 2
+    Serial.println(value);
+  }
+  // prints 4, 8, 16, 32
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This sketch demonstrates exponential growth — each iteration doubles the value. Compound multiplication is useful for scaling values, calculating powers of two, or applying gain factors.
+
+## /= (compound division)
+
+The `/=` operator divides the left variable by the right value and stores the result. Remember that integer division truncates.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int steps = 100;
+
+  for (int i = 0; i < 3; i++) {
+    steps /= 2;  // same as steps = steps / 2
+    Serial.println(steps);
+  }
+  // prints 50, 25, 12 (truncated)
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, the value is halved each iteration. Note that `12` is the truncated result of `25 / 2`. Use `float` types if you need fractional results from compound division.
+
+## %= (compound remainder)
+
+The `%=` operator computes the remainder of dividing the left variable by the right value and stores the result.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  int value = 17;
+  value %= 5;  // same as value = value % 5
+  Serial.println(value);  // prints 2
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Compound remainder is useful for wrapping values within a range. For example, cycling through LED indices: `currentLED = (currentLED + 1) % 10;` can be written as `currentLED += 1; currentLED %= 10;`.
+
+## &= (compound bitwise AND)
+
+The `&=` operator performs a bitwise AND between the left variable and the right value, storing the result. It is commonly used to clear specific bits.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte flags = 0b11111111;
+  flags &= 0b00001111;  // clear upper 4 bits
+  Serial.println(flags, BIN);  // prints 1111
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+This example masks the upper 4 bits of `flags`, keeping only the lower 4 bits. `&=` is useful for clearing specific bits by ANDing with a mask that has 0s in the positions you want to clear.
+
+## |= (compound bitwise OR)
+
+The `|=` operator performs a bitwise OR between the left variable and the right value, storing the result. It is commonly used to set specific bits.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte flags = 0b00000000;
+  flags |= 0b00000101;  // set bits 0 and 2
+  Serial.println(flags, BIN);  // prints 101
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+Here, bits 0 and 2 are set to 1 while other bits remain unchanged. The `|=` operator is commonly used to enable features by setting bits in hardware control registers.
+
+## ^= (compound bitwise XOR)
+
+The `^=` operator performs a bitwise XOR between the left variable and the right value, storing the result. XOR flips bits that are 1 in the mask.
+
+```cpp
+void setup() {
+  Serial.begin(9600);
+  byte flags = 0b00001111;
+  flags ^= 0b11111111;  // flip all bits
+  Serial.println(flags, BIN);  // prints 11110000
+
+  // Toggle a specific bit
+  byte ledState = 0b00000001;
+  ledState ^= 0b00000001;  // toggle bit 0
+  Serial.println(ledState, BIN);  // prints 0
+  ledState ^= 0b00000001;  // toggle again
+  Serial.println(ledState, BIN);  // prints 1
+}
+
+void loop() {
+  // nothing to do here
+}
+```
+
+XOR with `^=` is useful for toggling bits — applying the same mask twice restores the original value. This makes it ideal for tasks like blinking an LED by toggling its control bit.

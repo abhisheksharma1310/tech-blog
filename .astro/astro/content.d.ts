@@ -152,191 +152,352 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"blog": {
-"arduino-advance-io.mdx": {
-	id: "arduino-advance-io.mdx";
-  slug: "arduino-functions-advance-io";
+"arduino-int-cm-433tr.mdx": {
+	id: "arduino-int-cm-433tr.mdx";
+  slug: "arduino-433-MHz-ransmitter-receiver-interfacing";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-airthmetic-operators.mdx": {
-	id: "arduino-airthmetic-operators.mdx";
+"arduino-int-cm-gsm.mdx": {
+	id: "arduino-int-cm-gsm.mdx";
+  slug: "arduino-SIM900-gsm/gprs-hield-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-cm-nrf.mdx": {
+	id: "arduino-int-cm-nrf.mdx";
+  slug: "arduino-nRF24L01-2.4-GHz-wireless-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-cm-rfid.mdx": {
+	id: "arduino-int-cm-rfid.mdx";
+  slug: "arduino-MRFC522-RFID-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-color.mdx": {
+	id: "arduino-int-di-color.mdx";
+  slug: "arduino-TCS3200-color-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-dmt.mdx": {
+	id: "arduino-int-di-dmt.mdx";
+  slug: "arduino-8x8-dot-matrix-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-key.mdx": {
+	id: "arduino-int-di-key.mdx";
+  slug: "arduino-membrane-keypad-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-rgb-led.mdx": {
+	id: "arduino-int-di-rgb-led.mdx";
+  slug: "arduino-WS2812B-RGB-LED-strip-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-tft.mdx": {
+	id: "arduino-int-di-tft.mdx";
+  slug: "arduino-TFT-display-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-bmp180.mdx": {
+	id: "arduino-int-env-bmp180.mdx";
+  slug: "arduino-bmp-180-Barometric-Pressure-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-dht.mdx": {
+	id: "arduino-int-env-dht.mdx";
+  slug: "arduino-tempertaure-and-humidity-interfacing-dht11-dht22";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-mq2.mdx": {
+	id: "arduino-int-env-mq2.mdx";
+  slug: "arduino-MQ-2-gas-smoke-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-rain.mdx": {
+	id: "arduino-int-env-rain.mdx";
+  slug: "arduino-rain-sensor-FC-37-YL-83-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-soil.mdx": {
+	id: "arduino-int-env-soil.mdx";
+  slug: "arduino-soil-moisture-YL-69-HL-69-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-temp.mdx": {
+	id: "arduino-int-env-temp.mdx";
+  slug: "arduino-DS18B20-temperature-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-mp-hcsro4.mdx": {
+	id: "arduino-int-mp-hcsro4.mdx";
+  slug: "arduino-hc-sr04-ultrasonic-distance-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-mp-mic.mdx": {
+	id: "arduino-int-mp-mic.mdx";
+  slug: "arduino-microphone-sound-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-mp-pir.mdx": {
+	id: "arduino-int-mp-pir.mdx";
+  slug: "arduino-pir-motion-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-mp-reed.mdx": {
+	id: "arduino-int-mp-reed.mdx";
+  slug: "arduino-reed-switch-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-mp-tilt.mdx": {
+	id: "arduino-int-mp-tilt.mdx";
+  slug: "arduino-tilt-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-mr-relay.mdx": {
+	id: "arduino-int-mr-relay.mdx";
+  slug: "arduino-relay-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-td-rtc.mdx": {
+	id: "arduino-int-td-rtc.mdx";
+  slug: "arduino-DS1307-DS3231-RTC-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-td-sd.mdx": {
+	id: "arduino-int-td-sd.mdx";
+  slug: "arduino-sd-card-module-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-co-airthmetic-operators.mdx": {
+	id: "arduino-pr-co-airthmetic-operators.mdx";
   slug: "arduino-arithmetic-operators";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-analog-io.mdx": {
-	id: "arduino-analog-io.mdx";
-  slug: "arduino-functions-analog-io";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-bits-bytes.mdx": {
-	id: "arduino-bits-bytes.mdx";
-  slug: "arduino-functions-bits-bytes";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-bitwise-operators.mdx": {
-	id: "arduino-bitwise-operators.mdx";
+"arduino-pr-co-bitwise-operators.mdx": {
+	id: "arduino-pr-co-bitwise-operators.mdx";
   slug: "arduino-bitwise-operators";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-boolean-operators.mdx": {
-	id: "arduino-boolean-operators.mdx";
+"arduino-pr-co-boolean-operators.mdx": {
+	id: "arduino-pr-co-boolean-operators.mdx";
   slug: "arduino-boolean-operators";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-characters.mdx": {
-	id: "arduino-characters.mdx";
-  slug: "arduino-functions-characters";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-communication.mdx": {
-	id: "arduino-communication.mdx";
-  slug: "arduino-functions-communication";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-comparison-operators.mdx": {
-	id: "arduino-comparison-operators.mdx";
+"arduino-pr-co-comparison-operators.mdx": {
+	id: "arduino-pr-co-comparison-operators.mdx";
   slug: "arduino-comparison-operators";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-compound-operators.mdx": {
-	id: "arduino-compound-operators.mdx";
+"arduino-pr-co-compound-operators.mdx": {
+	id: "arduino-pr-co-compound-operators.mdx";
   slug: "arduino-compound-operators";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-constants.mdx": {
-	id: "arduino-constants.mdx";
-  slug: "arduino-constants";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-control-structure.mdx": {
-	id: "arduino-control-structure.mdx";
+"arduino-pr-co-control-structure.mdx": {
+	id: "arduino-pr-co-control-structure.mdx";
   slug: "arduino-control-structure";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-conversion.mdx": {
-	id: "arduino-conversion.mdx";
-  slug: "arduino-conversion";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-data-types.mdx": {
-	id: "arduino-data-types.mdx";
-  slug: "arduino-data-types";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-digital-io.mdx": {
-	id: "arduino-digital-io.mdx";
-  slug: "arduino-functions-digital-io";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-first-code.mdx": {
-	id: "arduino-first-code.mdx";
-  slug: "arduino-first-code";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-interrupts.mdx": {
-	id: "arduino-interrupts.mdx";
-  slug: "arduino-functions-interrupts";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-intro.mdx": {
-	id: "arduino-intro.mdx";
-  slug: "arduino-intro";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-math.mdx": {
-	id: "arduino-math.mdx";
-  slug: "arduino-functions-math";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-pointer-access-operator.mdx": {
-	id: "arduino-pointer-access-operator.mdx";
+"arduino-pr-co-pointer-access-operator.mdx": {
+	id: "arduino-pr-co-pointer-access-operator.mdx";
   slug: "arduino-pointer-access-operator";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-random-number.mdx": {
-	id: "arduino-random-number.mdx";
+"arduino-pr-first-code.mdx": {
+	id: "arduino-pr-first-code.mdx";
+  slug: "arduino-first-code";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-advance-io.mdx": {
+	id: "arduino-pr-fn-advance-io.mdx";
+  slug: "arduino-functions-advance-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-analog-io.mdx": {
+	id: "arduino-pr-fn-analog-io.mdx";
+  slug: "arduino-functions-analog-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-bits-bytes.mdx": {
+	id: "arduino-pr-fn-bits-bytes.mdx";
+  slug: "arduino-functions-bits-bytes";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-characters.mdx": {
+	id: "arduino-pr-fn-characters.mdx";
+  slug: "arduino-functions-characters";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-communication.mdx": {
+	id: "arduino-pr-fn-communication.mdx";
+  slug: "arduino-functions-communication";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-digital-io.mdx": {
+	id: "arduino-pr-fn-digital-io.mdx";
+  slug: "arduino-functions-digital-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-interrupts.mdx": {
+	id: "arduino-pr-fn-interrupts.mdx";
+  slug: "arduino-functions-interrupts";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-math.mdx": {
+	id: "arduino-pr-fn-math.mdx";
+  slug: "arduino-functions-math";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-fn-random-number.mdx": {
+	id: "arduino-pr-fn-random-number.mdx";
   slug: "arduino-functions-random-number";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-scope-qualifiers.mdx": {
-	id: "arduino-scope-qualifiers.mdx";
-  slug: "arduino-scope-qualifiers";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-setup.mdx": {
-	id: "arduino-setup.mdx";
-  slug: "arduino-setup";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-syntax.mdx": {
-	id: "arduino-syntax.mdx";
-  slug: "arduino-syntax";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-time.mdx": {
-	id: "arduino-time.mdx";
+"arduino-pr-fn-time.mdx": {
+	id: "arduino-pr-fn-time.mdx";
   slug: "arduino-functions-time";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-utilities.mdx": {
-	id: "arduino-utilities.mdx";
-  slug: "arduino-utilities";
+"arduino-pr-fn-wifi.mdx": {
+	id: "arduino-pr-fn-wifi.mdx";
+  slug: "arduino-functions-Wi-Fi";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-wifi.mdx": {
-	id: "arduino-wifi.mdx";
-  slug: "arduino-functions-Wi-Fi";
+"arduino-pr-intro.mdx": {
+	id: "arduino-pr-intro.mdx";
+  slug: "arduino-intro";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-setup.mdx": {
+	id: "arduino-pr-setup.mdx";
+  slug: "arduino-setup";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-syntax.mdx": {
+	id: "arduino-pr-syntax.mdx";
+  slug: "arduino-syntax";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-vr-constants.mdx": {
+	id: "arduino-pr-vr-constants.mdx";
+  slug: "arduino-constants";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-vr-conversion.mdx": {
+	id: "arduino-pr-vr-conversion.mdx";
+  slug: "arduino-conversion";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-vr-data-types.mdx": {
+	id: "arduino-pr-vr-data-types.mdx";
+  slug: "arduino-data-types";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-vr-scope-qualifiers.mdx": {
+	id: "arduino-pr-vr-scope-qualifiers.mdx";
+  slug: "arduino-scope-qualifiers";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-pr-vr-utilities.mdx": {
+	id: "arduino-pr-vr-utilities.mdx";
+  slug: "arduino-utilities";
   body: string;
   collection: "blog";
   data: any

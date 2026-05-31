@@ -1,0 +1,211 @@
+---
+title: "SD Card Module"
+description: "SD Card Module interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Time & Data"]
+tags: ["Arduino",]
+slug: "arduino-sd-card-module-interfacing"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# SD Card Module
+
+The SD card module lets Arduino read and write files on a microSD card using the SPI bus. It is essential for data logging applications where sensor data must be stored for later retrieval. Most modules include a voltage regulator and level shifters to interface 5V Arduino logic with 3.3V SD cards.
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- MicroSD card module (e.g., the common red SPI adapter)
+- microSD card formatted as FAT16 or FAT32 (up to 32 GB)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+Connect the SD card module to the Arduino as follows:
+
+```
+SD Card Module        Arduino
+---------------       -------
+VCC           -->     5V
+GND           -->     GND
+CS            -->     Digital Pin 4 (or 10)
+MOSI          -->     Digital Pin 11 (Uno/Nano) / 51 (Mega)
+MISO          -->     Digital Pin 12 (Uno/Nano) / 50 (Mega)
+SCK           -->     Digital Pin 13 (Uno/Nano) / 52 (Mega)
+```
+
+## Pin Map
+
+| SD Module Pin | SPI Function | Arduino Uno/Nano | Arduino Mega |
+|---|---|---|---|
+| VCC | Power | 5V | 5V |
+| GND | Ground | GND | GND |
+| CS | Chip Select | 4 (or 10) | 4 (or 53) |
+| MOSI | Master Out Slave In | 11 | 51 |
+| MISO | Master In Slave Out | 12 | 50 |
+| SCK | Serial Clock | 13 | 52 |
+
+The CS pin can be any digital output pin -- pin 4 is commonly used to leave pin 10 (SS) free for other SPI devices.
+
+## Install necessary Library
+
+The **SD** library is built into the Arduino IDE -- no additional installation is required. Include it with:
+
+```cpp
+#include <SD.h>
+```
+
+## Code with complete explanation
+
+This sketch initializes the SD card, creates/opens a file, writes sensor-style data to it, and then reads it back to the Serial Monitor.
+
+```cpp
+#include <SD.h>
+
+const int chipSelect = 4;
+
+void setup()
+{
+  Serial.begin(9600);
+  Serial.println("SD Card Test");
+
+  // Initialize SD card
+  if (!SD.begin(chipSelect))
+  {
+    Serial.println("Card initialization failed!");
+    return;
+  }
+  Serial.println("Card initialized.");
+
+  // Open or create the file for writing
+  File dataFile = SD.open("data.txt", FILE_WRITE);
+
+  if (dataFile)
+  {
+    Serial.println("Writing to data.txt...");
+
+    dataFile.println("Time,Temperature,Humidity");
+    dataFile.print("0,");
+    dataFile.print(22.5);
+    dataFile.print(",");
+    dataFile.println(55.0);
+
+    dataFile.print("1,");
+    dataFile.print(22.7);
+    dataFile.print(",");
+    dataFile.println(54.5);
+
+    dataFile.close();
+    Serial.println("Write complete.");
+  }
+  else
+  {
+    Serial.println("Error opening data.txt");
+  }
+
+  // Re-open the file for reading
+  dataFile = SD.open("data.txt");
+
+  if (dataFile)
+  {
+    Serial.println("Reading data.txt:");
+
+    while (dataFile.available())
+    {
+      Serial.write(dataFile.read());
+    }
+
+    dataFile.close();
+  }
+  else
+  {
+    Serial.println("Error opening data.txt");
+  }
+}
+
+void loop()
+{
+  // Nothing to do here
+}
+```
+
+### Code breakdown
+
+- `#include <SD.h>` -- includes the built-in Arduino SD card library.
+- `SD.begin(chipSelect)` -- initializes the SD card on the SPI bus using the specified CS pin. Returns `true` on success.
+- `SD.open("data.txt", FILE_WRITE)` -- opens a file for writing (creates it if it does not exist). Returns a `File` object.
+- `dataFile.println(...)` -- writes a line of text to the file, appending a newline.
+- `dataFile.close()` -- closes the file, flushing all data to the SD card. **Always close files** after writing to prevent data corruption.
+- `SD.open("data.txt")` -- opens a file for reading (default mode).
+- `dataFile.available()` -- returns the number of bytes available to read.
+- `dataFile.read()` -- reads a single byte from the file.
+
+### Data logging with a timestamp
+
+Combine the SD card with an RTC to log timestamped sensor data:
+
+```cpp
+#include <SD.h>
+#include <RTClib.h>
+
+const int chipSelect = 4;
+RTC_DS3231 rtc;
+
+void setup()
+{
+  Serial.begin(9600);
+  SD.begin(chipSelect);
+  rtc.begin();
+
+  File logFile = SD.open("log.csv", FILE_WRITE);
+
+  if (logFile)
+  {
+    DateTime now = rtc.now();
+
+    logFile.print(now.year());
+    logFile.print("-");
+    logFile.print(now.month());
+    logFile.print("-");
+    logFile.print(now.day());
+    logFile.print(" ");
+    logFile.print(now.hour());
+    logFile.print(":");
+    logFile.print(now.minute());
+    logFile.print(":");
+    logFile.print(now.second());
+    logFile.print(",");
+    logFile.println(22.5);
+
+    logFile.close();
+  }
+}
+
+void loop() {}
+```
+
+## Steps to perform this interfacing
+
+1. Format your microSD card as FAT16 or FAT32 (most cards come pre-formatted).
+2. Connect the SD card module to the Arduino as shown in the schematic.
+3. Insert the microSD card into the module.
+4. Copy the code into the Arduino IDE.
+5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+6. Upload the sketch to the Arduino.
+7. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+8. Verify the initialization step succeeds and observe the file being written and read back.
+9. Remove the SD card and check `data.txt` on your computer to confirm the data.
+
+## Caution
+
+- **Always close files** after writing with `dataFile.close()`. Failing to close a file may result in data loss or corruption.
+- The SD card library uses significant RAM (about 512 bytes for the file buffer). On an Uno (2 KB RAM), be mindful of memory usage when combining with other libraries.
+- The module operates the SD card at 3.3V. Most modules include a voltage regulator, but powering the module from the Arduino's 3.3V pin may not supply enough current for all SD cards. Use the 5V pin if your module supports it.
+- Do not remove the SD card while the Arduino is writing to it -- this can corrupt the file system and require reformatting.
+- SD cards larger than 32 GB (SDXC) formatted as exFAT are not supported by the Arduino SD library. Use 32 GB or smaller cards formatted as FAT32.
+- Pin 10 (SS) on the Uno/Nano must be configured as an OUTPUT even if unused, or the SPI bus may not work correctly:
+  ```cpp
+  pinMode(10, OUTPUT);
+  ```

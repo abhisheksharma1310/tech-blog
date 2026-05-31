@@ -1,0 +1,170 @@
+---
+title: "PIR Motion"
+description: "PIR Motion Sensor interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Motion & Proximity"]
+tags: ["Arduino"]
+slug: "arduino-pir-motion-sensor-interfacing"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# PIR Motion Sensor
+
+The PIR (Passive Infrared) motion sensor detects movement by sensing changes in infrared radiation emitted by warm objects like humans and animals. The HC-SR501 module is the most widely used variant, offering adjustable sensitivity and delay time, making it ideal for automation, security systems, and occupancy detection.
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- HC-SR501 PIR motion sensor module
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+Connect the PIR sensor to the Arduino as follows:
+
+```
+HC-SR501              Arduino
+--------              -------
+VCC           -->     5V
+OUT           -->     Digital Pin 2
+GND           -->     GND
+```
+
+No external components are required. The module operates at 5V and its output is a standard 5V logic signal.
+
+## Pin Map
+
+| Pin | Name | Connection |
+|---|---|---|
+| VCC | Power | 5V |
+| OUT | Signal output | Any digital pin (pin 2 used) |
+| GND | Ground | GND |
+
+On the HC-SR501, pins are typically labeled on the board. The order varies by manufacturer -- verify the labels before connecting.
+
+### HC-SR501 Adjustments
+
+The module has two potentiometers and a jumper:
+
+| Control | Function |
+|---|---|
+| **Sensitivity (Sx)** | Adjusts detection range (~3 m to ~7 m). Clockwise = more range. |
+| **Time delay (Tx)** | Adjusts how long the output stays HIGH after trigger (~3 sec to ~5 min). |
+| **Trigger jumper (H / L)** | H = repeatable trigger (retriggers on continued motion), L = single trigger (one pulse per event). |
+
+## Install necessary Library
+
+No external library is required. PIR motion detection uses standard `digitalRead()` built into Arduino.
+
+## Code with complete explanation
+
+This sketch reads the PIR sensor output and prints a message to the Serial Monitor whenever motion is detected or the area becomes clear.
+
+```cpp
+const int pirPin = 2;
+
+int calibrationTime = 30; // seconds for warm-up
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(pirPin, INPUT);
+  Serial.println("PIR Motion Sensor Test");
+  Serial.print("Calibrating for ");
+  Serial.print(calibrationTime);
+  Serial.println(" seconds...");
+
+  // Warm-up period: the sensor needs time to stabilize
+  for (int i = 0; i < calibrationTime; i++)
+  {
+    delay(1000);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("Sensor ready - move to trigger");
+  Serial.println();
+}
+
+void loop()
+{
+  int sensorValue = digitalRead(pirPin);
+
+  if (sensorValue == HIGH)
+  {
+    Serial.println("Motion detected!");
+    delay(100); // Debounce: avoid repeated triggers from same event
+  }
+  else
+  {
+    // Optional: uncomment to see clear state
+    // Serial.println("No motion");
+  }
+
+  delay(100);
+}
+```
+
+### Code breakdown
+
+- `digitalRead(pirPin)` -- reads the PIR output pin. It returns `HIGH` when motion is detected and `LOW` when the area is clear.
+- The calibration loop waits 30 seconds after power-up. During this time the sensor stabilizes its internal reference level to the ambient infrared environment.
+- The `delay(100)` after detection prevents rapid repeated triggers from the same motion event. For repeatable triggering, set the module jumper to H mode.
+- The PIR output stays HIGH for the duration set by the time delay potentiometer (Tx), then returns LOW.
+
+### Adding an LED indicator
+
+To visually indicate motion detection with an LED:
+
+```cpp
+const int pirPin = 2;
+const int ledPin = 13; // built-in LED
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(pirPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+
+  delay(30000); // 30-second calibration
+  Serial.println("Ready");
+}
+
+void loop()
+{
+  if (digitalRead(pirPin) == HIGH)
+  {
+    digitalWrite(ledPin, HIGH);
+    Serial.println("Motion detected");
+    delay(100);
+  }
+  else
+  {
+    digitalWrite(ledPin, LOW);
+  }
+}
+```
+
+## Steps to perform this interfacing
+
+1. Connect the PIR sensor to the Arduino as shown in the schematic.
+2. Set the HC-SR501 jumper to H (repeatable) or L (single) depending on your application.
+3. Adjust the sensitivity and time delay potentiometers to your desired settings.
+4. Copy the code into the Arduino IDE.
+5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+6. Upload the sketch to the Arduino.
+7. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+8. Wait 30 seconds for calibration -- do not move during this period.
+9. Move in front of the sensor and observe `Motion detected!` messages.
+
+## Caution
+
+- The PIR sensor requires a **calibration (stabilization) period** of 30-60 seconds after power-up. During this time, avoid moving in its field of view for best results.
+- The sensor detects **changes** in infrared radiation, not static heat. A stationary person or object will not trigger it after the initial detection.
+- The detection range is affected by ambient temperature. In very hot weather (close to body temperature, ~37 C), sensitivity decreases because the thermal contrast is smaller.
+- The HC-SR501 has a 110-120 degree detection angle and a range of up to 7 meters. The Fresnel lens on the module shapes this pattern -- do not remove or modify it.
+- Do not mount the sensor near windows, air conditioning vents, heaters, or direct sunlight. Rapid ambient temperature changes can cause false triggers.
+- The sensor works best when the moving object crosses the detection zones (perpendicular to the sensor), not when moving directly toward it.
+- The output is active HIGH -- most modules do not have an inverted output option. If you need active LOW, use a transistor or logic inverter.

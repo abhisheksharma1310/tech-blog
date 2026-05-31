@@ -1,0 +1,153 @@
+---
+title: "BMP180 Barometric Pressure"
+description: "BMP180 Barometric Pressure interfacing with Arduino."
+date: "2026-05-31"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Environment"]
+tags: ["Arduino",]
+slug: "arduino-bmp-180-Barometric-Pressure-interfacing"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# BMP180 Barometric Pressure Sensor
+
+The BMP180 is a high-precision barometric pressure and temperature sensor from Bosch. It communicates over I2C and can measure barometric pressure with an accuracy as low as ±0.02 hPa, making it suitable for weather stations, altimeters, and indoor navigation. It is the successor to the BMP085.
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- BMP180 pressure sensor module
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+The BMP180 communicates over the I2C bus. Connect it to the Arduino as follows:
+
+```
+BMP180 Module        Arduino
+------------         -------
+VIN           -->    5V (or 3.3V depending on module)
+GND           -->    GND
+SCL           -->    A5 (Uno/Nano) or SCL (Mega/Due)
+SDA           -->    A4 (Uno/Nano) or SDA (Mega/Due)
+```
+
+Most BMP180 modules include built-in pull-up resistors and a voltage regulator, so no external components are needed.
+
+## Pin Map
+
+| BMP180 Pin | Name | Connection |
+|---|---|---|
+| VIN | Power | 5V or 3.3V (module-dependent) |
+| GND | Ground | GND |
+| SCL | I2C Clock | A5 (Uno/Nano), SCL (Mega) |
+| SDA | I2C Data | A4 (Uno/Nano), SDA (Mega) |
+
+I2C pins vary by Arduino board:
+- **Uno / Nano / Mini**: SDA → A4, SCL → A5
+- **Mega 2560**: SDA → 20, SCL → 21
+- **Leonardo**: SDA → 2, SCL → 3
+- **Due / Zero**: SDA → SDA, SCL → SCL (dedicated pins)
+
+## Install necessary Library
+
+Install the **Adafruit BMP085 Library** (which also supports BMP180) via the Library Manager (`Tools > Manage Libraries`):
+
+1. **Adafruit BMP085 Library** by Adafruit
+2. **Adafruit Unified Sensor Library** by Adafruit (required dependency)
+
+Alternatively, using arduino-cli:
+
+```bash
+arduino-cli lib install "Adafruit BMP085 Library"
+arduino-cli lib install "Adafruit Unified Sensor"
+```
+
+## Code with complete explanation
+
+This sketch reads temperature, pressure, and calculates altitude from the BMP180, printing the values to the Serial Monitor.
+
+```cpp
+#include <Adafruit_BMP085.h>
+
+Adafruit_BMP085 bmp;
+
+void setup()
+{
+  Serial.begin(9600);
+  Serial.println("BMP180 Barometric Pressure Sensor Test");
+
+  if (!bmp.begin())
+  {
+    Serial.println("Could not find a valid BMP180 sensor, check wiring!");
+    while (1) {}
+  }
+}
+
+void loop()
+{
+  float temperature = bmp.readTemperature();
+  float pressure    = bmp.readPressure();        // in Pascals
+  float altitude    = bmp.readAltitude();         // in meters (assumes sea-level pressure of 101325 Pa)
+
+  // Read pressure at sea-level (requires known altitude at your location)
+  float sealevelPressure = bmp.readSealevelPressure(); // Pa
+
+  // Estimate altitude using a custom sea-level pressure (e.g., from a weather report)
+  float altitudeCorrected = bmp.readAltitude(sealevelPressure);
+
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" °C");
+
+  Serial.print("Pressure: ");
+  Serial.print(pressure / 100.0); // convert Pa to hPa (millibar)
+  Serial.println(" hPa");
+
+  Serial.print("Sea-level Pressure: ");
+  Serial.print(sealevelPressure / 100.0);
+  Serial.println(" hPa");
+
+  Serial.print("Altitude (estimated): ");
+  Serial.print(altitude);
+  Serial.println(" m");
+
+  Serial.print("Altitude (corrected): ");
+  Serial.print(altitudeCorrected);
+  Serial.println(" m");
+
+  Serial.println();
+  delay(2000);
+}
+```
+
+### Code breakdown
+
+- `#include <Adafruit_BMP085.h>` — includes the library for BMP085 and BMP180 sensors.
+- `Adafruit_BMP085 bmp` — creates a BMP085/BMP180 object.
+- `bmp.begin()` — initializes the I2C connection and returns `true` if the sensor is found. The `while (1)` loop halts execution if the sensor is missing.
+- `bmp.readTemperature()` — returns temperature in degrees Celsius.
+- `bmp.readPressure()` — returns absolute pressure in Pascals (1 hPa = 100 Pa).
+- `bmp.readAltitude()` — estimates altitude in meters assuming standard sea-level pressure (101325 Pa).
+- `bmp.readSealevelPressure()` — calculates what the pressure would be at sea level given the current altitude measurement. This is useful for weather station use.
+- `bmp.readAltitude(sealevelPressure)` — a more accurate altitude estimate when you provide the current sea-level pressure (e.g., from a local weather report).
+
+## Steps to perform this interfacing
+
+1. Connect the BMP180 module to the Arduino as shown in the schematic above.
+2. Install the Adafruit BMP085 Library and its dependency via the Library Manager.
+3. Copy the code into the Arduino IDE.
+4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+5. Upload the sketch to the Arduino.
+6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+7. Observe temperature, pressure, sea-level pressure, and altitude readings every 2 seconds.
+
+## Caution
+
+- The BMP180 is a 3.3V sensor. If using a bare chip (not a module), connect VCC to 3.3V, NOT 5V, or you will damage the sensor. Most breakout modules include a voltage regulator and can accept 5V.
+- The I2C address of the BMP180 is fixed at `0x77` and cannot be changed. You cannot connect two BMP180 sensors on the same I2C bus without a multiplexer.
+- Altitude readings are estimates based on pressure. They are affected by weather changes and require calibration with a known reference pressure for accuracy.
+- The BMP180's pressure range is 300–1100 hPa. It will not function correctly at very high altitudes (above about 9000 m / 30000 ft).
+- Allow the sensor to stabilize for a few seconds after power-up before relying on readings.
+- Avoid exposing the sensor to water or condensing humidity — the BMP180 is not waterproof and the measurement diaphragm can be damaged by liquid ingress.

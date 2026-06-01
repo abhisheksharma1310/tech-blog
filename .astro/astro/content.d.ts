@@ -152,16 +152,44 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"blog": {
+"arduino-int-ca-driver.mdx": {
+	id: "arduino-int-ca-driver.mdx";
+  slug: "arduino-motor-driver-L298N-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ca-relay.mdx": {
+	id: "arduino-int-ca-relay.mdx";
+  slug: "arduino-relay-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ca-servo.mdx": {
+	id: "arduino-int-ca-servo.mdx";
+  slug: "arduino-servo-motor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ca-stepper.mdx": {
+	id: "arduino-int-ca-stepper.mdx";
+  slug: "arduino-stepper-motor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-cm-433tr.mdx": {
 	id: "arduino-int-cm-433tr.mdx";
-  slug: "arduino-433-MHz-ransmitter-receiver-interfacing";
+  slug: "arduino-433-MHz-transmitter-receiver-interfacing";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
 "arduino-int-cm-gsm.mdx": {
 	id: "arduino-int-cm-gsm.mdx";
-  slug: "arduino-SIM900-gsm/gprs-hield-interfacing";
+  slug: "arduino-SIM900-gsm-gprs-shield-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -175,7 +203,7 @@ declare module 'astro:content' {
 } & { render(): Render[".mdx"] };
 "arduino-int-cm-rfid.mdx": {
 	id: "arduino-int-cm-rfid.mdx";
-  slug: "arduino-MRFC522-RFID-interfacing";
+  slug: "arduino-MFRC522-RFID-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -288,13 +316,6 @@ declare module 'astro:content' {
 "arduino-int-mp-tilt.mdx": {
 	id: "arduino-int-mp-tilt.mdx";
   slug: "arduino-tilt-sensor-interfacing";
-  body: string;
-  collection: "blog";
-  data: any
-} & { render(): Render[".mdx"] };
-"arduino-int-mr-relay.mdx": {
-	id: "arduino-int-mr-relay.mdx";
-  slug: "arduino-relay-interfacing";
   body: string;
   collection: "blog";
   data: any

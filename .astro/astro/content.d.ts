@@ -152,6 +152,20 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"blog": {
+"arduino-int-ai-camera.mdx": {
+	id: "arduino-int-ai-camera.mdx";
+  slug: "arduino-OV7670-camera-basic-image-capture-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ai-gesture.mdx": {
+	id: "arduino-int-ai-gesture.mdx";
+  slug: "arduino-APDS-9960-gesture-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-ca-driver.mdx": {
 	id: "arduino-int-ca-driver.mdx";
   slug: "arduino-motor-driver-L298N-interfacing";
@@ -187,9 +201,30 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"arduino-int-cm-esp.mdx": {
+	id: "arduino-int-cm-esp.mdx";
+  slug: "arduino-esp8266-esp32-wi-fi-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-cm-gsm.mdx": {
 	id: "arduino-int-cm-gsm.mdx";
   slug: "arduino-SIM900-gsm-gprs-shield-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-cm-hc05.mdx": {
+	id: "arduino-int-cm-hc05.mdx";
+  slug: "arduino-hc05-bluetooth-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-cm-lora.mdx": {
+	id: "arduino-int-cm-lora.mdx";
+  slug: "arduino-sx1278-lora-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -204,6 +239,13 @@ declare module 'astro:content' {
 "arduino-int-cm-rfid.mdx": {
 	id: "arduino-int-cm-rfid.mdx";
   slug: "arduino-MFRC522-RFID-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-cm-wifi-builtin.mdx": {
+	id: "arduino-int-cm-wifi-builtin.mdx";
+  slug: "arduino-wifi-builtin-wi-fi-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -243,6 +285,20 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"arduino-int-env-anemometer.mdx": {
+	id: "arduino-int-env-anemometer.mdx";
+  slug: "arduino-anemometer-wind-speed-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-bh1750.mdx": {
+	id: "arduino-int-env-bh1750.mdx";
+  slug: "arduino-bh1750-light-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-env-bmp180.mdx": {
 	id: "arduino-int-env-bmp180.mdx";
   slug: "arduino-bmp-180-Barometric-Pressure-interfacing";
@@ -253,6 +309,13 @@ declare module 'astro:content' {
 "arduino-int-env-dht.mdx": {
 	id: "arduino-int-env-dht.mdx";
   slug: "arduino-tempertaure-and-humidity-interfacing-dht11-dht22";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-lm35.mdx": {
+	id: "arduino-int-env-lm35.mdx";
+  slug: "arduino-lm35-temperature-sensor-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -281,6 +344,20 @@ declare module 'astro:content' {
 "arduino-int-env-temp.mdx": {
 	id: "arduino-int-env-temp.mdx";
   slug: "arduino-DS18B20-temperature-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-uv.mdx": {
+	id: "arduino-int-env-uv.mdx";
+  slug: "arduino-uv-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-waterflow.mdx": {
+	id: "arduino-int-env-waterflow.mdx";
+  slug: "arduino-water-flow-sensor-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -316,6 +393,20 @@ declare module 'astro:content' {
 "arduino-int-mp-tilt.mdx": {
 	id: "arduino-int-mp-tilt.mdx";
   slug: "arduino-tilt-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-pe-acs712.mdx": {
+	id: "arduino-int-pe-acs712.mdx";
+  slug: "arduino-acs712-current-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-pe-ina219.mdx": {
+	id: "arduino-int-pe-ina219.mdx";
+  slug: "arduino-ina219-current-sensor-interfacing";
   body: string;
   collection: "blog";
   data: any

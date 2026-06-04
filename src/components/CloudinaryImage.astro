@@ -1,0 +1,51 @@
+---
+interface Props {
+  publicId: string;
+  alt: string;
+  aspectRatio?: string; // e.g., "16:9", "4:3", or "1:1"
+  className?: string;
+  sizes?: string;
+}
+
+const { 
+  publicId, 
+  alt, 
+  aspectRatio, 
+  className, 
+  sizes = "(max-width: 768px) 100vw, 800px" // Default responsive logic
+} = Astro.props;
+
+// Replace with your actual Cloudinary Cloud Name
+const cloudName = "dek8yhyjm";
+const bucket = "tech-blog"; // Adjust if you have a specific folder structure in Cloudinary 
+const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload`;
+
+// Define target widths for the srcset (Mobile, Tablet, Laptop, Desktop)
+const targetWidths = [400, 640, 800, 1200];
+
+// Base optimization transformations
+let baseTransform = "f_auto,q_auto,c_scale";
+if (aspectRatio) {
+  // If aspect ratio is provided, crop tightly to fill those dimensions
+  baseTransform = `f_auto,q_auto,c_fill,ar_${aspectRatio}`;
+}
+
+// Generate the dynamic srcset string array
+const srcSetArray = targetWidths.map((w) => {
+  return `${baseUrl}/${baseTransform},w_${w}//${bucket}/${publicId} ${w}w`;
+});
+const srcSetString = srcSetArray.join(", ");
+
+// Fallback URL for older browsers (uses a safe default desktop width)
+const fallbackUrl = `${baseUrl}/${baseTransform},w_800/${bucket}/${publicId}`;
+---
+
+<img 
+  src={fallbackUrl} 
+  srcset={srcSetString} 
+  sizes={sizes}
+  alt={alt} 
+  class={className}
+  loading="lazy" 
+  decoding="async"
+/>

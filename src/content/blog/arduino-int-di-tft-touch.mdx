@@ -1,0 +1,316 @@
+---
+title: "Touchscreen TFT (ILI9341 + XPT2046)"
+description: "Touchscreen TFT interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Displays & Interfaces"]
+tags: ["Arduino", "TFT", "Touchscreen", "ILI9341", "XPT2046"]
+slug: "arduino-ILI9341-XPT2046-touchscreen-TFT-interfacing"
+author: "Abhishek Sharma"
+order: 11
+---
+
+# Touchscreen TFT (ILI9341 + XPT2046) – Interactive UI
+
+The 2.8" / 3.5" TFT LCD shield combines a 320×240 (or 480×320) colour TFT display driven by the ILI9341 controller with a 4-wire resistive touch panel digitised by the XPT2046 touch controller. Both communicate over SPI, sharing the same bus with separate chip-select lines. The display includes an SD card slot (also SPI). With the Adafruit GFX library you can draw shapes, text, and bitmaps in full 18-bit colour, and detect touch position for interactive button UIs.
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Mega 2560 recommended — shields are designed for Uno form factor)
+- 2.8" / 3.5" TFT LCD shield with resistive touch (ILI9341 + XPT2046)
+- USB cable to connect Arduino to your computer
+- (Optional) MicroSD card for bitmap storage
+
+## Schematic
+
+Most ILI9341-based TFT shields are **Arduino Uno form-factor shields** — they plug directly onto the Uno's headers and use the following pin assignments:
+
+```
+Shield Pin     Arduino Uno Pin
+----------     ---------------
+LCD_CS         Digital 10
+LCD_CD (DC)    Digital 9
+LCD_WR (WR)    Digital 8
+LCD_RD (RD)    Digital 7
+LCD_RST        Digital 8 or shared with Arduino RESET*
+LCD_D0–D7      Digital 2–6, A0–A2 (8-bit parallel on some shields)
+```
+
+*Note: many shields use the **8-bit parallel** interface for the display and a **separate SPI bus** for touch/SD. Newer shields use **SPI-only** for the display. The schematic below is for the **SPI version** (Adafruit 2.8" TFT TouchShield v2).*
+
+### SPI-wired touchscreen TFT (Adafruit-style)
+
+```
+TFT Module              Arduino
+----------              -------
+VIN (VCC)       -->     5V
+GND             -->     GND
+TFT_CS          -->     Digital 10
+TFT_DC          -->     Digital 9
+TFT_RST         -->     Digital 8 (or tied to Arduino RESET)
+TFT_MOSI        -->     Digital 11 (MOSI)
+TFT_SCK         -->     Digital 13 (SCK)
+TFT_MISO        -->     Digital 12 (MISO) — optional, some displays are write-only
+
+Touch_CS        -->     Digital 4 (or Digital 6 on some shields)
+SD_CS           -->     Digital 5 (SS for SD card slot, optional)
+```
+
+### Display + Touch + SD SPI bus sharing
+
+All three peripherals share the same SPI bus (MISO, MOSI, SCK) and each has its own chip-select pin:
+
+- **TFT_CS** (Pin 10) — select the display
+- **Touch_CS** (Pin 4) — select the XPT2046 touch controller
+- **SD_CS** (Pin 5) — select the SD card slot
+
+## Pin Map
+
+| Shield Pin | Name | Arduino Connection |
+|---|---|---|
+| TFT_CS | Display chip select | 10 |
+| TFT_DC | Display data/command | 9 |
+| TFT_RST | Display reset | 8 (or NRST) |
+| TFT_MOSI | SPI MOSI | 11 (ICSP-4) |
+| TFT_SCK | SPI Clock | 13 (ICSP-3) |
+| TFT_MISO | SPI MISO | 12 (ICSP-1) |
+| T_IRQ | Touch interrupt (optional) | — |
+| T_CS | Touch chip select | 4 |
+| SD_CS | SD card chip select | 5 |
+| VIN | Power | 5V |
+| GND | Ground | GND |
+| BL | Backlight | 3.3V via resistor or PWM pin |
+
+### Pin differences on Mega 2560
+
+For shields designed for Uno, the SPI pins on Mega 2560 are:
+- MOSI → Pin 51 (ICSP-4)
+- MISO → Pin 50 (ICSP-1)
+- SCK  → Pin 52 (ICSP-3)
+
+You cannot plug an Uno shield directly onto a Mega — use jumper wires.
+
+## Install necessary Library
+
+Install the following libraries via the Library Manager (`Tools > Manage Libraries`):
+
+1. **Adafruit ILI9341** by Adafruit
+2. **Adafruit GFX** by Adafruit (required for fonts and graphics primitives)
+3. **XPT2046_Touchscreen** by Paul Stoffregen (or **Adafruit TouchScreen** for resistive touch)
+
+Alternatively, using arduino-cli:
+
+```bash
+arduino-cli lib install "Adafruit ILI9341"
+arduino-cli lib install "Adafruit GFX"
+arduino-cli lib install "XPT2046_Touchscreen"
+```
+
+## Code with complete explanation
+
+This sketch displays a coloured UI with a button. When the button is pressed via touch, the background colour changes and a touch coordinate crosshair is drawn.
+
+```cpp
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
+#include <XPT2046_Touchscreen.h>
+
+// Display pins
+#define TFT_CS  10
+#define TFT_DC  9
+#define TFT_RST 8
+
+// Touch controller pin
+#define TOUCH_CS 4
+
+// Create display and touch objects
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
+XPT2046_Touchscreen ts(TOUCH_CS);
+
+// Calibration constants — adjust for your display
+#define TS_MINX 200
+#define TS_MINY 200
+#define TS_MAXX 3800
+#define TS_MAXY 3800
+
+// UI button area
+#define BTN_X 60
+#define BTN_Y 160
+#define BTN_W 200
+#define BTN_H 50
+
+uint16_t bgColor = ILI9341_NAVY;
+
+void setup()
+{
+  Serial.begin(9600);
+
+  tft.begin();
+  tft.setRotation(1);  // Landscape orientation
+  tft.fillScreen(bgColor);
+
+  if (!ts.begin())
+  {
+    tft.println("Touch sensor not found!");
+    while (1) {}
+  }
+
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(20, 20);
+  tft.print("Touchscreen Demo");
+
+  drawButton("CHANGE COLOUR", ILI9341_DARKGREEN);
+  drawCrosshair(160, 120, ILI9341_YELLOW);
+}
+
+void loop()
+{
+  if (ts.touched())
+  {
+    TS_Point p = ts.getPoint();
+
+    // Map raw touch coordinates to display coordinates
+    int16_t x = map(p.x, TS_MINX, TS_MAXX, 0, tft.width() - 1);
+    int16_t y = map(p.y, TS_MINY, TS_MAXY, 0, tft.height() - 1);
+
+    Serial.print("Touch at: ");
+    Serial.print(x);
+    Serial.print(", ");
+    Serial.println(y);
+
+    // Remove old crosshair
+    drawCrosshair(x, y, bgColor);
+
+    // Check if button area was pressed
+    if ((x >= BTN_X) && (x <= BTN_X + BTN_W) &&
+        (y >= BTN_Y) && (y <= BTN_Y + BTN_H))
+    {
+      bgColor = random(ILI9341_BLACK, ILI9341_WHITE);
+      tft.fillScreen(bgColor);
+      drawButton("CHANGE COLOUR", ILI9341_DARKGREEN);
+    }
+
+    drawCrosshair(x, y, ILI9341_YELLOW);
+
+    delay(100);  // Debounce
+  }
+}
+
+void drawButton(const char* label, uint16_t colour)
+{
+  tft.fillRoundRect(BTN_X, BTN_Y, BTN_W, BTN_H, 8, colour);
+  tft.drawRoundRect(BTN_X, BTN_Y, BTN_W, BTN_H, 8, ILI9341_WHITE);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(BTN_X + 20, BTN_Y + 12);
+  tft.print(label);
+}
+
+void drawCrosshair(int16_t x, int16_t y, uint16_t colour)
+{
+  tft.drawLine(x - 8, y, x + 8, y, colour);
+  tft.drawLine(x, y - 8, x, y + 8, colour);
+  tft.drawCircle(x, y, 4, colour);
+}
+```
+
+### Code breakdown
+
+- `Adafruit_ILI9341 tft(CS, DC, RST)` — creates an ILI9341 display object on the specified SPI pins.
+- `XPT2046_Touchscreen ts(CS)` — creates an XPT2046 touch controller object with its own chip select.
+- `tft.begin()` — initialises the display.
+- `ts.begin()` — initialises the touch controller.
+- `ts.touched()` — returns `true` if the touch panel is being pressed.
+- `ts.getPoint()` — returns a `TS_Point` struct with raw 12-bit X, Y, and Z (pressure) values.
+- `map(p.x, TS_MINX, TS_MAXX, 0, tft.width())` — maps raw ADC values to display pixel coordinates. Calibration constants must be determined for each display.
+- `tft.setRotation(n)` — rotates the display (0–3). Rotation 1 = landscape with USB on the left.
+- `tft.fillScreen(colour)` — fills the entire screen with a 16-bit colour.
+- `tft.fillRoundRect(x, y, w, h, r, colour)` — draws a filled rectangle with rounded corners.
+
+### Touch calibration
+
+Raw touch values typically range from ≈200 to ≈3800 on each axis, depending on the display size and orientation. To calibrate:
+
+```cpp
+void calibrate()
+{
+  // Press four corners and print raw values
+  TS_Point p = ts.getPoint();
+  Serial.print("X = ");
+  Serial.print(p.x);
+  Serial.print("  Y = ");
+  Serial.println(p.y);
+}
+```
+
+Replace `TS_MINX`, `TS_MAXX`, `TS_MINY`, `TS_MAXY` with your measured minimum and maximum values.
+
+### Drawing shapes and colours
+
+```cpp
+// 16-bit colour macro (5 bits R, 6 bits G, 5 bits B)
+// tft.color565(r, g, b)   — convert 8-bit R,G,B to 16-bit colour
+
+tft.drawPixel(10, 20, ILI9341_RED);
+tft.drawLine(0, 0, 100, 100, ILI9341_GREEN);
+tft.drawRect(10, 10, 50, 30, ILI9341_BLUE);
+tft.fillRect(10, 10, 50, 30, ILI9341_YELLOW);
+tft.drawCircle(50, 50, 20, ILI9341_CYAN);
+tft.fillCircle(50, 50, 20, ILI9341_MAGENTA);
+tft.drawTriangle(10, 10, 20, 30, 30, 10, ILI9341_WHITE);
+tft.fillTriangle(10, 10, 20, 30, 30, 10, ILI9341_ORANGE);
+tft.drawRoundRect(10, 10, 50, 30, 5, ILI9341_PINK);
+tft.setCursor(0, 0);
+tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK); // Text colour, background colour
+tft.print("Hello!");
+```
+
+### Reading touch pressure (Z)
+
+```cpp
+TS_Point p = ts.getPoint();
+
+// Higher Z = harder press
+uint16_t z = p.z;
+if (z < 100)
+{
+  // Light touch or no touch
+}
+else if (z > 500)
+{
+  // Firm press
+}
+```
+
+## Steps to perform this interfacing
+
+1. Plug the TFT shield directly onto an Arduino Uno (or wire via breadboard for Mega).
+2. Install the Adafruit ILI9341, Adafruit GFX, and XPT2046_Touchscreen libraries.
+3. Copy the code into the Arduino IDE.
+4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+5. Upload the sketch to the Arduino.
+6. The display will show "Touchscreen Demo" in landscape, a green "CHANGE COLOUR" button, and a yellow crosshair at the centre.
+7. Tap anywhere on the screen — the crosshair moves to the touch point and the raw coordinates print to the Serial Monitor.
+8. Tap the "CHANGE COLOUR" button — the background colour changes randomly.
+9. (Optional) Insert a microSD card and extend the code to load bitmap images.
+
+### Calibration procedure
+
+1. Upload the calibration snippet above.
+2. Open the Serial Monitor (9600 baud).
+3. Press each corner of the display gently and note the raw X, Y values.
+4. Update `TS_MINX` etc. to match your display.
+5. Re-upload the full sketch.
+
+## Caution
+
+- **Shield compatibility:** Most 2.8" / 3.5" TFT shields are designed for the **Arduino Uno / Leonardo / Duemilanove** form factor. They **will not fit** the Arduino Mega 2560 without jumper wires. The Mega uses different SPI pin positions (50/51/52 vs 11/12/13) and the shield's headers do not align with the Mega's socket.
+- **5V logic:** Most TFT shields are 5V-compatible and use 5V SPI logic. If using a 3.3V Arduino board (Due, Zero, MKR), level-shifting is needed on all SPI and control pins. The ILI9341 itself is a 3.3V part — the shield's onboard regulator handles 5V input.
+- **Touch controller voltage:** The XPT2046 operates at 2.7–5.25 V. On a 5V Arduino, the touch controller's SPI output is 5V which can drive 3.3V SPI inputs — but if in doubt, use a level shifter.
+- **Current draw:** A TFT with the backlight on draws **80–120 mA** (display + backlight at full brightness) and up to **200 mA** when driving the touch controller and SD card simultaneously. The Arduino Uno's 5V regulator (500 mA) handles this, but if powering via USB, use a **USB port that can supply ≥ 500 mA**. Do not power the shield from the Arduino's 3.3V pin (it cannot supply enough current).
+- **Backlight control:** The backlight LED is often tied directly to 5V via a jumper resistor. To control brightness via PWM, cut the trace or remove the jumper and connect the BL pin to a PWM-capable digital pin (e.g., Pin 3) through a 100 Ω resistor. Use `analogWrite(backlightPin, brightness)` with values 0–255.
+- **Touch debounce:** The resistive touch panel is susceptible to noise and mechanical bounce. Always introduce a delay (50–100 ms) after a touch event, or implement debounce logic to avoid false double-taps.
+- **SD card slot:** The SD slot shares the SPI bus with the display and touch controller. When using the SD card, ensure the other peripherals have their CS lines de-asserted (HIGH). Some SD cards draw up to 100 mA during write operations — this adds to the total current budget.
+- **Overheating:** The ILI9341 can become warm to the touch during extended operation, especially with the backlight at full brightness. This is normal. Ensure adequate ventilation and do not cover the display with insulating materials.
+- **Static electricity:** The resistive touch panel is a plastic surface that can accumulate static charge. Discharge yourself before touching the screen in dry environments. A surface-mount TVS diode on the touch inputs would mitigate ESD, but most shields omit it.

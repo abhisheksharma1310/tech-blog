@@ -159,6 +159,13 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"arduino-int-ai-finger.mdx": {
+	id: "arduino-int-ai-finger.mdx";
+  slug: "arduino-R305-AS608-fingerprint-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-ai-gesture.mdx": {
 	id: "arduino-int-ai-gesture.mdx";
   slug: "arduino-APDS-9960-gesture-sensor-interfacing";
@@ -166,30 +173,44 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-int-ca-driver.mdx": {
-	id: "arduino-int-ca-driver.mdx";
-  slug: "arduino-motor-driver-L298N-interfacing";
+"arduino-int-ai-tracking.mdx": {
+	id: "arduino-int-ai-tracking.mdx";
+  slug: "arduino-line-follower-TCRT5000-sensor-interfacing";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-int-ca-relay.mdx": {
-	id: "arduino-int-ca-relay.mdx";
-  slug: "arduino-relay-interfacing";
+"arduino-int-ai-voice.mdx": {
+	id: "arduino-int-ai-voice.mdx";
+  slug: "arduino-voice-recognition-module-speech-based-control";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-int-ca-servo.mdx": {
-	id: "arduino-int-ca-servo.mdx";
-  slug: "arduino-servo-motor-interfacing";
+"arduino-int-bt-joystick.mdx": {
+	id: "arduino-int-bt-joystick.mdx";
+  slug: "arduino-KY-023-joystick-module-interfacing";
   body: string;
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-int-ca-stepper.mdx": {
-	id: "arduino-int-ca-stepper.mdx";
-  slug: "arduino-stepper-motor-interfacing";
+"arduino-int-bt-key.mdx": {
+	id: "arduino-int-bt-key.mdx";
+  slug: "arduino-membrane-keypad-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-bt-push.mdx": {
+	id: "arduino-int-bt-push.mdx";
+  slug: "arduino-push-button-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-bt-rotary-enc.mdx": {
+	id: "arduino-int-bt-rotary-enc.mdx";
+  slug: "arduino-KY-040-rotary-encoder-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -250,6 +271,13 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"arduino-int-di-7-seg-led.mdx": {
+	id: "arduino-int-di-7-seg-led.mdx";
+  slug: "arduino-7-segment-LED-single-digit-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-di-color.mdx": {
 	id: "arduino-int-di-color.mdx";
   slug: "arduino-TCS3200-color-sensor-interfacing";
@@ -264,9 +292,30 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"arduino-int-di-key.mdx": {
-	id: "arduino-int-di-key.mdx";
-  slug: "arduino-membrane-keypad-interfacing";
+"arduino-int-di-laser.mdx": {
+	id: "arduino-int-di-laser.mdx";
+  slug: "arduino-KY-008-laser-emitter-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-lcd.mdx": {
+	id: "arduino-int-di-lcd.mdx";
+  slug: "arduino-HD44780-LCD-16x2-display-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-mult-7seg-led.mdx": {
+	id: "arduino-int-di-mult-7seg-led.mdx";
+  slug: "arduino-multiple-7-segment-LED-multiplexed-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-oled.mdx": {
+	id: "arduino-int-di-oled.mdx";
+  slug: "arduino-OLED-SSD1306-display-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -274,6 +323,20 @@ declare module 'astro:content' {
 "arduino-int-di-rgb-led.mdx": {
 	id: "arduino-int-di-rgb-led.mdx";
   slug: "arduino-WS2812B-RGB-LED-strip-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-rgbled.mdx": {
+	id: "arduino-int-di-rgbled.mdx";
+  slug: "arduino-rgb-led-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-di-tft-touch.mdx": {
+	id: "arduino-int-di-tft-touch.mdx";
+  slug: "arduino-ILI9341-XPT2046-touchscreen-TFT-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -327,6 +390,13 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"arduino-int-env-photoresistor.mdx": {
+	id: "arduino-int-env-photoresistor.mdx";
+  slug: "arduino-photoresistor-LDR-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-env-rain.mdx": {
 	id: "arduino-int-env-rain.mdx";
   slug: "arduino-rain-sensor-FC-37-YL-83-interfacing";
@@ -355,9 +425,58 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"arduino-int-env-water-level.mdx": {
+	id: "arduino-int-env-water-level.mdx";
+  slug: "arduino-water-level-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-env-waterflow.mdx": {
 	id: "arduino-int-env-waterflow.mdx";
   slug: "arduino-water-flow-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ma-dc.mdx": {
+	id: "arduino-int-ma-dc.mdx";
+  slug: "arduino-dc-motor-transistor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ma-driver.mdx": {
+	id: "arduino-int-ma-driver.mdx";
+  slug: "arduino-motor-driver-L298N-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ma-l293d.mdx": {
+	id: "arduino-int-ma-l293d.mdx";
+  slug: "arduino-L293D-motor-driver-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ma-relay.mdx": {
+	id: "arduino-int-ma-relay.mdx";
+  slug: "arduino-relay-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ma-servo.mdx": {
+	id: "arduino-int-ma-servo.mdx";
+  slug: "arduino-servo-motor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-ma-stepper.mdx": {
+	id: "arduino-int-ma-stepper.mdx";
+  slug: "arduino-stepper-motor-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -393,6 +512,13 @@ declare module 'astro:content' {
 "arduino-int-mp-tilt.mdx": {
 	id: "arduino-int-mp-tilt.mdx";
   slug: "arduino-tilt-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-mp-vibration.mdx": {
+	id: "arduino-int-mp-vibration.mdx";
+  slug: "arduino-SW-420-piezo-vibration-sensor-interfacing";
   body: string;
   collection: "blog";
   data: any
@@ -733,13 +859,13 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"cloud-computing-overview.md": {
-	id: "cloud-computing-overview.md";
+"cloud-computing-overview.mdx": {
+	id: "cloud-computing-overview.mdx";
   slug: "cloud-computing-overview";
   body: string;
   collection: "blog";
   data: any
-} & { render(): Render[".md"] };
+} & { render(): Render[".mdx"] };
 "devops-automation.mdx": {
 	id: "devops-automation.mdx";
   slug: "devops-automation";

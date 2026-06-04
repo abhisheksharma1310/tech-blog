@@ -1,0 +1,242 @@
+---
+title: "Joystick Module (KY-023)"
+description: "Joystick Module interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Button & Keypad"]
+tags: ["Arduino", "Joystick", "KY-023"]
+slug: "arduino-KY-023-joystick-module-interfacing"
+author: "Abhishek Sharma"
+order: 4
+---
+
+# Joystick Module (KY-023)
+
+The KY-023 dual-axis joystick module consists of two 10 kΩ potentiometers (X and Y axes) and a momentary push button (Z / SW) activated by pressing the shaft down. The potentiometers are spring-loaded to return to centre (≈ 2.5 V / ADC 512) when released. It provides two analog outputs (X, Y) and one digital output (SW). Joysticks are used for robot control, game controllers, pan/tilt camera mounts, and menu navigation.
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- KY-023 dual-axis joystick module (or similar: PS2 joystick, HW-504)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+```
+KY-023 Module         Arduino
+-------------         -------
+GND           -->     GND
++5V           -->     5V
+VRx (X)       -->     A0 (analog)
+VRy (Y)       -->     A1 (analog)
+SW  (Z)       -->     Digital Pin 2
+```
+
+The module uses 5V power and outputs 0–5V on the analog axes. The switch is active LOW (LOW = pressed) with no external pull-up — use `INPUT_PULLUP`.
+
+## Pin Map
+
+| Module Pin | Name | Arduino Connection |
+|---|---|---|
+| GND | Ground | GND |
+| +5V | Power | 5V |
+| VRx | X-axis analog (left/right) | A0 |
+| VRy | Y-axis analog (forward/backward) | A1 |
+| SW | Push button (Z) | Pin 2 |
+
+### Hardware centre and direction
+
+Looking at the joystick with the connector at the bottom:
+- **X axis** (VRx): move left → ADC decreases toward 0; move right → ADC increases toward 1023.
+- **Y axis** (VRy): push forward/up → ADC decreases toward 0; pull back/down → ADC increases toward 1023.
+- **Centre position**: both axes near ADC 512 (≈ 2.5 V). Small dead zone (±50) accounts for mechanical tolerance.
+
+## Install necessary Library
+
+No library is required — the analog axes are read with `analogRead()` and the switch with `digitalRead()`. For applications requiring direction detection (NSEW) or dead-zone configuration, simple threshold logic suffices.
+
+## Code with complete explanation
+
+This sketch reads the joystick position and direction, prints the raw and mapped values, and detects button presses.
+
+```cpp
+#define JOY_X  A0
+#define JOY_Y  A1
+#define JOY_SW 2
+
+// Dead zone around centre (ADC 512 ± deadZone)
+const int deadZone = 50;
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(JOY_SW, INPUT_PULLUP);
+  Serial.println("Joystick Test");
+}
+
+void loop()
+{
+  int xRaw = analogRead(JOY_X);
+  int yRaw = analogRead(JOY_Y);
+  int sw   = digitalRead(JOY_SW);
+
+  // Map to -512..+512 range
+  int xCentered = xRaw - 512;
+  int yCentered = yRaw - 512;
+
+  // Determine direction
+  const char* dirX = "C";
+  const char* dirY = "C";
+
+  if (xCentered > deadZone)    dirX = "R";   // Right
+  else if (xCentered < -deadZone) dirX = "L"; // Left
+
+  if (yCentered > deadZone)    dirY = "D";   // Down
+  else if (yCentered < -deadZone) dirY = "U"; // Up
+
+  Serial.print("X: ");
+  Serial.print(xRaw);
+  Serial.print(" (");
+  Serial.print(dirX);
+  Serial.print(")  Y: ");
+  Serial.print(yRaw);
+  Serial.print(" (");
+  Serial.print(dirY);
+  Serial.print(")  SW: ");
+  Serial.println(sw == LOW ? "PRESSED" : "released");
+
+  delay(100);
+}
+```
+
+### Mapped output (0–100 %)
+
+```cpp
+void loop()
+{
+  int x = analogRead(JOY_X);
+  int y = analogRead(JOY_Y);
+
+  // Map from 0–1023 to -100..+100
+  int xPct = map(x, 0, 1023, -100, 100);
+  int yPct = map(y, 0, 1023, -100, 100);
+
+  // Apply dead zone: within ±10 % → 0
+  if (abs(xPct) < 10) xPct = 0;
+  if (abs(yPct) < 10) yPct = 0;
+
+  Serial.print("X: ");
+  Serial.print(xPct);
+  Serial.print("%  Y: ");
+  Serial.print(yPct);
+  Serial.println("%");
+}
+```
+
+### Motor control (dual-channel with dead zone)
+
+```cpp
+// Assume L298N motor driver on pins 5,6,9,10
+#define ENA 5
+#define IN1 6
+#define IN2 9
+#define ENB 10
+
+void loop()
+{
+  int x = analogRead(JOY_X);
+  int y = analogRead(JOY_Y);
+
+  // Map Y to motor speed: centre = stop, forward = +255, backward = -255
+  int speed = map(y, 0, 1023, -255, 255);
+  if (abs(speed) < 30) speed = 0;
+
+  // Map X to steering
+  int steer = map(x, 0, 1023, -255, 255);
+  if (abs(steer) < 30) steer = 0;
+
+  // Left motor
+  int left  = constrain(speed + steer, -255, 255);
+  int right = constrain(speed - steer, -255, 255);
+
+  setMotor(ENA, IN1, IN2, left);
+  setMotor(ENB, ...);  // Mirror for right motor
+}
+```
+
+### Code breakdown
+
+- `analogRead(A0)` — returns 0–1023 (10-bit ADC) proportional to the joystick position on the X axis.
+- Centre value is approximately 512 (2.5 V). Actual centre may drift by ±20–50 counts due to mechanical tolerance.
+- `deadZone` — a threshold around centre (e.g., ±50) to prevent jitter when the joystick is released. Values within the dead zone are treated as 0.
+- `digitalRead(SW)` — with `INPUT_PULLUP`, returns `LOW` when the joystick shaft is pressed.
+- `map(value, fromLow, fromHigh, toLow, toHigh)` — re-scales the ADC reading to any output range (e.g., -100 to +100).
+- `constrain(value, min, max)` — clamps the output to the valid range.
+
+### Direction enum (8-way)
+
+```cpp
+int getDirection()
+{
+  int x = analogRead(JOY_X) - 512;
+  int y = analogRead(JOY_Y) - 512;
+
+  if (abs(x) < deadZone && abs(y) < deadZone) return 0;  // Neutral
+
+  if (abs(x) > abs(y))
+    return (x > 0) ? 1 : 2;  // 1 = East, 2 = West
+  else
+    return (y > 0) ? 3 : 4;  // 3 = South, 4 = North
+}
+```
+
+## Steps to perform this interfacing
+
+1. Connect the KY-023 joystick module to the Arduino as shown in the schematic.
+2. No library installation needed.
+3. Copy the code into the Arduino IDE.
+4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+5. Upload the sketch to the Arduino.
+6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+7. Move the joystick in each direction and observe the X/Y values and direction labels.
+8. Press the shaft down — the SW label changes to "PRESSED".
+9. Note the centre ADC value — adjust the dead zone constant if the neutral reading drifts.
+
+### Calibration
+
+The joystick's centre position may not be exactly 512 and the full range may not reach 0 or 1023. For precise applications, auto-calibrate by reading min/max for each axis:
+
+```cpp
+int xMin = 1023, xMax = 0;
+int yMin = 1023, yMax = 0;
+
+void calibrate()
+{
+  for (int i = 0; i < 100; i++)
+  {
+    int x = analogRead(JOY_X);
+    int y = analogRead(JOY_Y);
+
+    if (x < xMin) xMin = x;
+    if (x > xMax) xMax = x;
+    if (y < yMin) yMin = y;
+    if (y > yMax) yMax = y;
+
+    delay(10);
+  }
+
+  // Move joystick to all extremes during calibration
+}
+```
+
+## Caution
+
+- **Centre drift:** The joystick's mechanical return-to-centre is not perfectly repeatable. The centre ADC reading can vary by ±20 counts between releases and drifts with temperature and wear. Always use a dead zone (±30–100 ADC counts) to prevent ghost input when the joystick is released.
+- **Analog noise:** The 10-bit ADC on the ATmega has inherent noise of ±2–5 counts. Long wires from the joystick to the Arduino can pick up additional noise. Averaging multiple readings (`analogRead()` in a loop with delay) or adding a 100 nF capacitor from each analog pin to GND reduces noise.
+- **Spring wear:** The return springs inside a cheap joystick module weaken over time (50,000–100,000 cycles), causing the centre position to drift further. For applications requiring long-term reliability, use a hall-effect joystick (e.g., PS4/Xbox controller modules) or add a periodic recalibration routine.
+- **Voltage reference:** `analogRead()` uses the Arduino's 5V supply as the ADC reference (`AREF`). If the 5V rail is noisy or drops under load, the ADC values will shift. For precision, connect a stable external 3.3V or 5V reference to the `AREF` pin and call `analogReference(EXTERNAL)`.
+- **Switch debounce:** The Z-axis push button is a mechanical switch and bounces. The simple delay-based debounce (`delay(200)`) in the motor control example blocks loop execution. For responsive UIs, use non-blocking debounce or the Bounce2 library.
+- **Module variants:** The KY-023 and HW-504 have the same pinout (GND, +5V, VRx, VRy, SW). However, some generic PS2-style joystick modules swap VRx and VRy or have different connector orientations. Verify the pinout with a multimeter before assuming the layout.
+- **5V only:** This module requires 5V supply. At 3.3V, the output range is reduced and the centre voltage shifts. If using a 3.3V Arduino (Due, Zero), power the module from 5V (if available) or use a voltage divider on the analog outputs to avoid exceeding 3.3V on the ADC input.
+
+

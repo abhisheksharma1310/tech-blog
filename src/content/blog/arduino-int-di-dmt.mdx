@@ -9,6 +9,14 @@ author: "Abhishek Sharma"
 order: 5
 ---
 
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
+<CloudinaryImage 
+   publicId="8x8-led-matrix-max7219_gw8q7i.webp" 
+   alt="8x8 Dot Matrix Display (MAX7219)" 
+   className="my-6 rounded"
+/>
+
 # 8x8 Dot Matrix Display (MAX7219)
 
 The 8x8 dot matrix display consists of 64 LEDs arranged in an 8-row by 8-column grid. Each LED can be individually controlled to display characters, symbols, and simple graphics. The MAX7219 is a compact, serial-input/common-cathode display driver that interfaces microcontrollers to 64 individual LEDs, handling multiplexing and current limiting internally. It communicates over a 3-wire SPI-compatible interface and can be daisy-chained to control multiple displays.

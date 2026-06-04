@@ -9,6 +9,14 @@ author: "Abhishek Sharma"
 order: 4
 ---
 
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
+<CloudinaryImage 
+   publicId="Joystick-Module-connection-with-Micro-controller_rbj8wu.png" 
+   alt="Joystick module connection with microcontroller" 
+   className="my-6 rounded"
+/>
+
 # Joystick Module (KY-023)
 
 The KY-023 dual-axis joystick module consists of two 10 kΩ potentiometers (X and Y axes) and a momentary push button (Z / SW) activated by pressing the shaft down. The potentiometers are spring-loaded to return to centre (≈ 2.5 V / ADC 512) when released. It provides two analog outputs (X, Y) and one digital output (SW). Joysticks are used for robot control, game controllers, pan/tilt camera mounts, and menu navigation.
@@ -45,6 +53,12 @@ The module uses 5V power and outputs 0–5V on the analog axes. The switch is ac
 | SW | Push button (Z) | Pin 2 |
 
 ### Hardware centre and direction
+
+<CloudinaryImage 
+   publicId="Joystick-Module-Analog-Output_ddegyq.png" 
+   alt="Database schema showing relationships" 
+   className="my-6 rounded"
+/>
 
 Looking at the joystick with the connector at the bottom:
 - **X axis** (VRx): move left → ADC decreases toward 0; move right → ADC increases toward 1023.

@@ -17,27 +17,27 @@ const {
 
 // Replace with your actual Cloudinary Cloud Name
 const cloudName = "dek8yhyjm";
-const bucket = "tech-blog"; // Adjust if you have a specific folder structure in Cloudinary 
+//const bucket = "tech-blog"; // Adjust if you have a specific folder structure in Cloudinary 
 const baseUrl = `https://res.cloudinary.com/${cloudName}/image/upload`;
 
 // Define target widths for the srcset (Mobile, Tablet, Laptop, Desktop)
 const targetWidths = [400, 640, 800, 1200];
 
 // Base optimization transformations
-let baseTransform = "f_auto,q_auto,c_scale";
+let baseTransform = "f_auto,q_auto,e_make_transparent,c_scale";
 if (aspectRatio) {
   // If aspect ratio is provided, crop tightly to fill those dimensions
-  baseTransform = `f_auto,q_auto,c_fill,ar_${aspectRatio}`;
+  baseTransform = `f_auto,q_auto,e_make_transparent,c_fill,ar_${aspectRatio}`;
 }
 
 // Generate the dynamic srcset string array
 const srcSetArray = targetWidths.map((w) => {
-  return `${baseUrl}/${baseTransform},w_${w}//${bucket}/${publicId} ${w}w`;
+  return `${baseUrl}/${baseTransform},w_${w}/${publicId} ${w}w`;
 });
 const srcSetString = srcSetArray.join(", ");
 
 // Fallback URL for older browsers (uses a safe default desktop width)
-const fallbackUrl = `${baseUrl}/${baseTransform},w_800/${bucket}/${publicId}`;
+const fallbackUrl = `${baseUrl}/${baseTransform},w_800/${publicId}`;
 ---
 
 <img 

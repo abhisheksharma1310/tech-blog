@@ -9,6 +9,14 @@ author: "Abhishek Sharma"
 order: 8
 ---
 
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
+<CloudinaryImage 
+   publicId="esp32_ykulm3.jpg" 
+   alt="ESP32 module pinout" 
+   className="my-6 rounded"
+/>
+
 # ESP8266/ESP32 – Wi-Fi Communication with Arduino
 
 The ESP8266 and ESP32 are powerful Wi-Fi SoCs from Espressif that can be used as Wi-Fi co-processors with an Arduino. Communicating over serial UART using AT commands, the Arduino offloads Wi-Fi connectivity to the ESP module. The ESP8266 offers 802.11 b/g/n Wi-Fi, while the ESP32 adds Bluetooth, dual-core processing, and more GPIOs. This configuration is useful when you want to add Wi-Fi to an existing Arduino project without rewriting the firmware.
@@ -20,6 +28,30 @@ The ESP8266 and ESP32 are powerful Wi-Fi SoCs from Espressif that can be used as
 - 3.3V voltage regulator (if using an ESP-01 with 5V Arduino) — ESP modules are 3.3V
 - Breadboard and jumper wires
 - USB cable to connect Arduino to your computer
+
+## ESP32 Pinout
+
+<CloudinaryImage 
+   publicId="ESP32-DevKit-V1-Pinout-Diagram_tp54cc.png" 
+   alt="ESP32 module pinout" 
+   className="my-6 rounded"
+/>
+
+## ESP8266 Pinout
+
+<CloudinaryImage 
+   publicId="esp8266-pinout_r1esot.jpg" 
+   alt="ESP8266 module pinout" 
+   className="my-6 rounded"
+/>
+
+## ESP01 Pinout
+
+<CloudinaryImage 
+   publicId="ESP_01_PINOUT_n8o808.png" 
+   alt="ESP-01 module pinout" 
+   className="my-6 rounded"
+/>
 
 ## Schematic
 

@@ -9,6 +9,14 @@ author: "Abhishek Sharma"
 order: 8
 ---
 
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
+<CloudinaryImage 
+   publicId="BH1750-Light-Sensor-Pinout_ouf8rj.png" 
+   alt="BH1750 Light Sensor Pinout" 
+   className="my-6 rounded"
+/>
+
 # BH1750 Ambient Light Sensor
 
 The BH1750FVI is a digital ambient light sensor from ROHM Semiconductor that measures illuminance in lux (0–65535 lx) directly over an I2C interface. It uses a photodiode with a spectral response close to human eye sensitivity, making it ideal for display backlight control, automatic lighting systems, and solar irradiance monitoring. The sensor has a wide dynamic range and can be configured for low-resolution (4 lx per bit, 16 ms) or high-resolution (1 lx per bit, 120 ms) measurement modes.

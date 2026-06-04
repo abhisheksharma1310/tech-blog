@@ -9,6 +9,14 @@ author: "Abhishek Sharma"
 order: 5
 ---
 
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
+<CloudinaryImage 
+   publicId="DS18B20-Temperature-Sensor_e25nsh.jpg" 
+   alt="DS18B20 Temperature Sensor Pinout" 
+   className="my-6 rounded"
+/>
+
 # DS18B20 Temperature Sensor
 
 The DS18B20 is a digital temperature sensor from Maxim Integrated that communicates over the 1-Wire protocol. It offers +/-0.5C accuracy, a wide temperature range, and the unique ability to operate multiple sensors on a single data pin -- each sensor has a unique 64-bit ROM address for identification on the bus.
@@ -20,6 +28,12 @@ The DS18B20 is a digital temperature sensor from Maxim Integrated that communica
 - 4.7k ohm resistor (1-Wire pull-up)
 - Breadboard and jumper wires
 - USB cable to connect Arduino to your computer
+
+<CloudinaryImage 
+   publicId="DS18B20-temperature-sensor-probe_zeq9s4.jpg" 
+   alt="DS18B20 Temperature Sensor Probe" 
+   className="my-6 rounded"
+/>
 
 ## Schematic
 

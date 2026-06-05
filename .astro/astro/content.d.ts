@@ -182,7 +182,7 @@ declare module 'astro:content' {
 } & { render(): Render[".mdx"] };
 "arduino-int-ai-voice.mdx": {
 	id: "arduino-int-ai-voice.mdx";
-  slug: "arduino-voice-recognition-module-speech-based-control";
+  slug: "arduino-V3-Grove-voice-recognition-module";
   body: string;
   collection: "blog";
   data: any
@@ -362,6 +362,20 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"arduino-int-env-bme280.mdx": {
+	id: "arduino-int-env-bme280.mdx";
+  slug: "arduino-BME280-environmental-sensor";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-env-bme680.mdx": {
+	id: "arduino-int-env-bme680.mdx";
+  slug: "arduino-BME680-IAQ-gas-sensor";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "arduino-int-env-bmp180.mdx": {
 	id: "arduino-int-env-bmp180.mdx";
   slug: "arduino-bmp-180-Barometric-Pressure-interfacing";
@@ -519,6 +533,27 @@ declare module 'astro:content' {
 "arduino-int-mp-vibration.mdx": {
 	id: "arduino-int-mp-vibration.mdx";
   slug: "arduino-SW-420-piezo-vibration-sensor-interfacing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-on-adxl.mdx": {
+	id: "arduino-int-on-adxl.mdx";
+  slug: "arduino-ADXL335-ADXL345-accelerometer";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-on-gps.mdx": {
+	id: "arduino-int-on-gps.mdx";
+  slug: "arduino-NEO6M-NEO7M-NEO8M-GPS-module";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"arduino-int-on-mpu.mdx": {
+	id: "arduino-int-on-mpu.mdx";
+  slug: "arduino-MPU6050-IMU-accelerometer-gyroscope";
   body: string;
   collection: "blog";
   data: any

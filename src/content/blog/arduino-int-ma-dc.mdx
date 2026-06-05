@@ -11,15 +11,15 @@ order: 1
 
 import CloudinaryImage from '../../components/CloudinaryImage.astro';
 
+# DC Motor (Transistor Drive)
+
+A DC motor cannot be driven directly from an Arduino digital pin — the pin can only source ≈ 40 mA at 5V, while a small DC motor draws 100–500 mA under load and generates voltage spikes during commutation. The solution is a **transistor switch** (BJT or MOSFET) that uses the Arduino's low-current signal to control a separate high-current supply. This tutorial covers one-direction speed control via PWM with a flyback diode for back-EMF protection.
+
 <CloudinaryImage 
    publicId="DC-Motor-Pinout-Wiring_ad38pm.png" 
    alt="DC Motor Pinout and Wiring" 
    className="my-6 rounded"
 />
-
-# DC Motor (Transistor Drive)
-
-A DC motor cannot be driven directly from an Arduino digital pin — the pin can only source ≈ 40 mA at 5V, while a small DC motor draws 100–500 mA under load and generates voltage spikes during commutation. The solution is a **transistor switch** (BJT or MOSFET) that uses the Arduino's low-current signal to control a separate high-current supply. This tutorial covers one-direction speed control via PWM with a flyback diode for back-EMF protection.
 
 ## For this interfacing you need the following components:
 

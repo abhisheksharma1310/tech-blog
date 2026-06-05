@@ -9,9 +9,17 @@ author: "Abhishek Sharma"
 order: 1
 ---
 
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
 # INA219 Current Sensor
 
 The INA219 is a high-precision digital current and power monitoring IC from Texas Instruments. It measures both the voltage across a shunt resistor (current) and the bus voltage (load voltage) using a 12-bit ADC, and communicates the results over I2C. It can measure bus voltages up to 26 VDC and currents up to ±3.2 A (depending on the shunt resistor value). The high accuracy (±0.5% typical) and low offset make it ideal for battery monitoring, solar power tracking, and energy metering in IoT devices.
+
+<CloudinaryImage 
+   publicId="ina219-top-view_uyevq2.png" 
+   alt="INA219 Current Sensor Top View" 
+   className="my-6 rounded"
+/>
 
 ## For this interfacing you need the following components:
 

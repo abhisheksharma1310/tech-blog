@@ -11,15 +11,15 @@ order: 3
 
 import CloudinaryImage from '../../components/CloudinaryImage.astro';
 
+# Multiple 7-Segment LED Displays (Multiplexed)
+
+Driving multiple 7-segment displays individually would require 8 pins per digit (7 segments + DP). For N digits, that is 8 × N pins — impractical beyond 2 digits. **Multiplexing** solves this by connecting all segment pins in parallel and using one common pin per digit. By rapidly switching which digit is active (≈ 1–2 ms per digit), persistence of vision makes all digits appear to be lit simultaneously. The TM1637 (4-digit I²C-like) and MAX7219 (SPI, 8-digit) driver ICs handle multiplexing automatically.
+
 <CloudinaryImage 
    publicId="multiple-7-segment_igofxc.png" 
    alt="Multiple 7-Segment LED Displays (Multiplexed)" 
    className="my-6 rounded"
 />
-
-# Multiple 7-Segment LED Displays (Multiplexed)
-
-Driving multiple 7-segment displays individually would require 8 pins per digit (7 segments + DP). For N digits, that is 8 × N pins — impractical beyond 2 digits. **Multiplexing** solves this by connecting all segment pins in parallel and using one common pin per digit. By rapidly switching which digit is active (≈ 1–2 ms per digit), persistence of vision makes all digits appear to be lit simultaneously. The TM1637 (4-digit I²C-like) and MAX7219 (SPI, 8-digit) driver ICs handle multiplexing automatically.
 
 ## For this interfacing you need the following components:
 

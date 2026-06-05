@@ -9,6 +9,8 @@ author: "Abhishek Sharma"
 order: 3
 ---
 
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
 # Stepper Motor – Accurate positioning
 
 A stepper motor moves in discrete steps, allowing precise position and speed control without feedback. Each full rotation is divided into an equal number of steps (e.g., 200 steps/rev for a NEMA 17, or 64 steps/rev for a 28BYJ-48 before gearing). Steppers are used in 3D printers, CNC machines, camera sliders, and any application requiring accurate rotary or linear positioning.
@@ -16,6 +18,12 @@ A stepper motor moves in discrete steps, allowing precise position and speed con
 This tutorial covers two common setups:
 - **28BYJ-48** (unipolar, 5V) with ULN2003 driver board — low cost, low torque
 - **NEMA 17** (bipolar, 12–24V) with A4988 driver — higher torque, microstepping
+
+<CloudinaryImage 
+   publicId="28BYJ-48-stepper-motor_iije6k.webp" 
+   alt="Stepper motor" 
+   className="my-6 rounded"
+/>
 
 ## For this interfacing you need the following components:
 

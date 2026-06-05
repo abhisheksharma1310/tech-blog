@@ -1,0 +1,236 @@
+---
+title: "BME280 Environmental Sensor"
+description: "BME280 Environmental Sensor interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Environment"]
+tags: ["Arduino", "BME280", "Temperature", "Humidity", "Pressure"]
+slug: "arduino-BME280-environmental-sensor"
+author: "Abhishek Sharma"
+order: 14
+---
+
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
+# BME280 Environmental Sensor
+
+The BME280 is a digital environmental sensor from Bosch that measures temperature (±1°C), humidity (±3% RH), and barometric pressure (±1 hPa) in a single 2.5 × 2.5 mm package. It communicates over I²C (default address 0x76) or SPI. The pressure sensor can be used for altitude estimation (≈ 8.4 m per hPa at sea level). It draws only 2–3 µA in sleep mode and 1–3 mA during measurement, making it suitable for battery-powered weather stations.
+
+<CloudinaryImage 
+   publicId="BME280-Sensor-Module_obwrcr.jpg" 
+   alt="BME280 Sensor Module" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- BME280 sensor module (GY-BME280, Adafruit, etc.)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+### I²C wiring (4 pins)
+
+```
+BME280 Module         Arduino
+--------------        -------
+VCC           -->     3.3V or 5V (check module — most accept 5V)
+GND           -->     GND
+SCL           -->     A5 (Uno) / SCL (Mega)
+SDA           -->     A4 (Uno) / SDA (Mega)
+```
+
+### SPI wiring (7 pins)
+
+```
+BME280 Module         Arduino
+--------------        -------
+VCC           -->     3.3V or 5V
+GND           -->     GND
+SCK           -->     Pin 13
+SDI (MOSI)    -->     Pin 11
+SDO (MISO)    -->     Pin 12
+CS            -->     Pin 10
+```
+
+## Pin Map
+
+### I²C
+
+| Module Pin | Arduino Pin |
+|---|---|
+| VCC | 3.3V or 5V |
+| GND | GND |
+| SCL | A5 (Uno), 21 (Mega) |
+| SDA | A4 (Uno), 20 (Mega) |
+
+### I²C address
+
+- **0x76** — default (SDO pin LOW, most modules)
+- **0x77** — alternative (SDO pin HIGH)
+
+### SPI
+
+| Module Pin | Arduino Pin |
+|---|---|
+| VCC | 3.3V or 5V |
+| GND | GND |
+| SCK | 13 |
+| MOSI | 11 |
+| MISO | 12 |
+| CS | 10 |
+
+## Install necessary Library
+
+Install the **Adafruit BME280 Library** by Adafruit via the Library Manager (`Tools > Manage Libraries`).
+
+Dependencies: **Adafruit BusIO** and **Adafruit Unified Sensor**.
+
+```bash
+arduino-cli lib install "Adafruit BME280 Library"
+arduino-cli lib install "Adafruit Unified Sensor"
+```
+
+## Code with complete explanation
+
+This sketch reads temperature, humidity, and pressure from the BME280 and calculates altitude, printing to Serial Monitor.
+
+```cpp
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+
+Adafruit_BME280 bme;
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Try two I²C addresses
+  if (!bme.begin(0x76) && !bme.begin(0x77))
+  {
+    Serial.println("BME280 not found. Check wiring.");
+    while (1) {}
+  }
+
+  Serial.println("BME280 Environmental Sensor");
+  Serial.println();
+
+  // Optional: customise measurement settings
+  bme.setSampling(
+    Adafruit_BME280::MODE_NORMAL,   // Operating mode
+    Adafruit_BME280::SAMPLING_X2,   // Temperature oversampling
+    Adafruit_BME280::SAMPLING_X16,  // Pressure oversampling
+    Adafruit_BME280::SAMPLING_X1,   // Humidity oversampling
+    Adafruit_BME280::FILTER_X16,    // IIR filter coefficient
+    Adafruit_BME280::STANDBY_MS_0_5 // Standby time
+  );
+}
+
+void loop()
+{
+  float tempC = bme.readTemperature();
+  float humidity = bme.readHumidity();
+  float pressurePa = bme.readPressure();               // Pascals
+  float pressureHPa = pressurePa / 100.0;              // Hectopascals
+  float altitudeM = bme.readAltitude(1013.25);         // Sea-level reference
+
+  Serial.print("Temperature: ");
+  Serial.print(tempC, 1);
+  Serial.println(" °C");
+
+  Serial.print("Humidity: ");
+  Serial.print(humidity, 1);
+  Serial.println(" %");
+
+  Serial.print("Pressure: ");
+  Serial.print(pressureHPa, 1);
+  Serial.println(" hPa");
+
+  Serial.print("Altitude: ");
+  Serial.print(altitudeM, 1);
+  Serial.println(" m");
+
+  Serial.println();
+  delay(2000);
+}
+```
+
+### SPI mode
+
+```cpp
+#include <Adafruit_BME280.h>
+#include <SPI.h>
+
+#define BME_CS 10
+
+Adafruit_BME280 bme(BME_CS);  // Use SPI
+
+void setup()
+{
+  Serial.begin(9600);
+
+  if (!bme.begin())
+  {
+    Serial.println("BME280 not found (SPI).");
+    while (1) {}
+  }
+}
+```
+
+### Code breakdown
+
+- `bme.begin(0x76)` — initialises the BME280 at the given I²C address. Returns `false` if the sensor is not detected.
+- `bme.readTemperature()` — returns temperature in °C.
+- `bme.readHumidity()` — returns relative humidity in % (0–100).
+- `bme.readPressure()` — returns barometric pressure in **Pascals**. Divide by 100 to get hPa (millibars).
+- `bme.readAltitude(seaLevelPressure)` — approximates altitude in metres based on the measured pressure and the reference sea-level pressure (1013.25 hPa = standard atmosphere). This is accurate to ±1 m near sea level but drifts with weather changes.
+- `bme.setSampling(...)` — configures oversampling and filtering. Higher oversampling = better precision + longer measurement time. The IIR filter smooths out rapid pressure changes.
+
+### Environmental monitoring with SD card logging
+
+```cpp
+#include <SD.h>
+
+const int chipSelect = 10;
+
+void logData()
+{
+  File dataFile = SD.open("data.csv", FILE_WRITE);
+
+  if (dataFile)
+  {
+    dataFile.print(millis());
+    dataFile.print(",");
+    dataFile.print(bme.readTemperature(), 1);
+    dataFile.print(",");
+    dataFile.print(bme.readHumidity(), 1);
+    dataFile.print(",");
+    dataFile.println(bme.readPressure() / 100.0, 1);
+    dataFile.close();
+  }
+}
+```
+
+## Steps to perform this interfacing
+
+1. Connect the BME280 module to the Arduino as shown (I²C is simplest).
+2. Install the Adafruit BME280 Library and Adafruit Unified Sensor.
+3. Copy the code into the Arduino IDE.
+4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+5. Upload the sketch to the Arduino.
+6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+7. Temperature, humidity, pressure, and altitude are displayed every 2 seconds.
+8. Breathe on the sensor — humidity and temperature should rise.
+9. Lift the board a few metres (or a floor) — altitude should increase.
+
+## Caution
+
+- **I²C address conflict:** The BME280's I²C address is determined by the SDO (or CSB) pin. Most modules have SDO connected to GND = address 0x76. If you have another I²C device at 0x76, change the BME280's SDO pin to HIGH (solder bridge) for address 0x77, or use a multiplexer. The BMP280 (pressure-only) also uses 0x76/0x77 and can conflict if both sensors are on the same bus.
+- **3.3V vs 5V:** The BME280's VDDIO pin operates at 1.7–3.6V. Many breakout boards include a 3.3V regulator and level shifters so VIN can accept 5V. Check your module's schematic — if it lacks a regulator, power from the Arduino's 3.3V pin only. The I²C logic levels follow VDDIO — if powered at 3.3V, I²C signals are 3.3V and are safe for Arduino inputs.
+- **Altitude accuracy:** `readAltitude()` uses the standard barometric formula. The reference sea-level pressure (1013.25 hPa) must be corrected for local weather conditions. A passing storm can change pressure by 20–30 hPa, creating an apparent altitude change of 160–250 m. For accurate absolute altitude, sync the reference pressure with a local weather station reading ("altimeter setting" / QNH).
+- **Self-heating:** The BME280 contains a temperature sensor that is affected by the self-heating of the IC itself (≈ 0.1–0.5°C depending on the measurement rate). In still air, the sensor reads slightly above ambient. Ventilation or reducing the measurement rate (higher standby time) minimises this effect. The humidity sensor is not affected by self-heating.
+- **Oversampling vs speed:** The default configuration (×1 or ×2 oversampling) completes a measurement in ≈ 5–10 ms. Maximum oversampling (×16 for T, ×16 for P, ×16 for H) takes ≈ 100 ms per reading. For weather stations, oversampling is beneficial and 1–2 s intervals are fine. For fast-reacting applications (e.g., altitude for drone stabilisation), use lower oversampling to reduce latency.
+- **Waterproofing:** The BME280 is **not waterproof**. In outdoor weather stations, place the sensor inside a Stevenson screen (ventilated radiation shield) or a 3D-printed housing with openings covered by hydrophobic mesh (Gore-Tex vent). Direct rain or condensation on the sensor will give false humidity readings and may permanently damage the humidity sensing polymer.
+- **BMP280 vs BME280:** The BMP280 is the pressure-only version of the BME280 (no humidity sensor). The BMP280 uses the **same I²C address and library** — it will work with the code above but will return 0% humidity. If you need humidity data, ensure your module is labelled BME280 (E = Environmental, includes humidity).

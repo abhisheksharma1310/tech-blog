@@ -1,0 +1,270 @@
+---
+title: "BME680 Environmental Sensor (Gas + IAQ)"
+description: "BME680 Environmental Sensor interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Environment"]
+tags: ["Arduino", "BME680", "IAQ", "Gas Sensor", "VOC"]
+slug: "arduino-BME680-IAQ-gas-sensor"
+author: "Abhishek Sharma"
+order: 15
+---
+
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
+<CloudinaryImage 
+   publicId="bme-680_mjak2n.webp" 
+   alt="BME680 Sensor Module" 
+   className="my-6 rounded"
+/>
+
+# BME680 Environmental Sensor (Gas + IAQ)
+
+The BME680 is Bosch's 4-in-1 environmental sensor that measures temperature (±1°C), humidity (±3% RH), barometric pressure (±1 hPa), and **indoor air quality (IAQ)** via a metal-oxide (MOX) gas sensor that responds to volatile organic compounds (VOCs). The MOX sensor requires a burn-in period of ≈ 48 hours to stabilise. The sensor communicates over I²C or SPI. The Adafruit BME680 library provides a simplified IAQ score (0–500) using the proprietary BSEC algorithm.
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- BME680 sensor module (Adafruit BME680, GY-BME680, etc.)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+### I²C wiring
+
+```
+BME680 Module         Arduino
+--------------        -------
+VIN (VCC)     -->     3.3V or 5V (check module)
+GND           -->     GND
+SCL           -->     A5 (Uno) / SCL (Mega)
+SDA           -->     A4 (Uno) / SDA (Mega)
+```
+
+The BME680 operates at 1.71–3.6V internally. Most breakout boards include a regulator for 5V input.
+
+## Pin Map (I²C)
+
+| Module Pin | Arduino Pin |
+|---|---|
+| VIN | 3.3V or 5V |
+| GND | GND |
+| SCL | A5 (Uno), 21 (Mega) |
+| SDA | A4 (Uno), 20 (Mega) |
+
+### I²C address
+
+- **0x76** — default (SDO LOW)
+- **0x77** — alternative (SDO HIGH)
+
+### SPI pins
+
+| Module Pin | Arduino Pin |
+|---|---|
+| CS | 10 |
+| MOSI | 11 |
+| MISO | 12 |
+| SCK | 13 |
+
+## Install necessary Library
+
+Install the **Adafruit BME680 Library** by Adafruit via the Library Manager.
+
+Dependencies: **Adafruit BusIO** and **Adafruit Unified Sensor**.
+
+```bash
+arduino-cli lib install "Adafruit BME680 Library"
+arduino-cli lib install "Adafruit Unified Sensor"
+```
+
+For advanced IAQ scoring (BSEC algorithm), download the **Bosch BSEC library** from Bosch's GitHub (not available via Library Manager — requires manual install).
+
+## Code with complete explanation
+
+This sketch reads all BME680 sensors plus a simplified air quality index.
+
+```cpp
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME680.h>
+
+Adafruit_BME680 bme;
+
+void setup()
+{
+  Serial.begin(9600);
+
+  if (!bme.begin(0x76))
+  {
+    Serial.println("BME680 not found. Check wiring.");
+    while (1) {}
+  }
+
+  // Configure oversampling and IIR filter
+  bme.setTemperatureOversampling(BME680_OS_8X);
+  bme.setHumidityOversampling(BME680_OS_2X);
+  bme.setPressureOversampling(BME680_OS_4X);
+  bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
+  bme.setGasHeater(320, 150);  // 320°C heater, 150 ms duration
+
+  Serial.println("BME680 Environmental + Gas Sensor");
+  Serial.println();
+}
+
+void loop()
+{
+  // Trigger a measurement (blocking, ≈ 150–200 ms)
+  if (bme.performReading())
+  {
+    float tempC  = bme.temperature;
+    float hum    = bme.humidity;
+    float press  = bme.pressure / 100.0;  // hPa
+    float gas    = bme.gas_resistance;     // kΩ
+    float alt    = bme.readAltitude(1013.25);
+
+    // Simple air quality score
+    // Lower gas resistance = more VOCs = poorer air quality
+    float airQuality = constrain(map(gas, 5000, 50000, 100, 0), 0, 100);
+
+    Serial.print("Temperature: ");
+    Serial.print(tempC, 1);
+    Serial.println(" °C");
+
+    Serial.print("Humidity: ");
+    Serial.print(hum, 1);
+    Serial.println(" %");
+
+    Serial.print("Pressure: ");
+    Serial.print(press, 1);
+    Serial.println(" hPa");
+
+    Serial.print("Gas Resistance: ");
+    Serial.print(gas, 0);
+    Serial.println(" Ω");
+
+    Serial.print("Air Quality: ");
+    if (airQuality > 75)       Serial.print("Good");
+    else if (airQuality > 50)  Serial.print("Moderate");
+    else if (airQuality > 25)  Serial.print("Poor");
+    else                       Serial.print("Very Poor");
+
+    Serial.print(" (");
+    Serial.print(airQuality, 0);
+    Serial.println(")");
+
+    Serial.println();
+  }
+  else
+  {
+    Serial.println("Measurement failed");
+  }
+
+  delay(3000);
+}
+```
+
+### Code breakdown
+
+- `bme.begin(0x76)` — initialises the BME680 on I²C. Returns `false` if the sensor is not found.
+- `bme.setTemperatureOversampling(n)` — sets oversampling for temperature (OS_1X to OS_8X). Higher = better precision, slower.
+- `bme.setGasHeater(temp, duration)` — pre-heats the MOX plate to the specified temperature (°C) for the specified duration (ms). The gas resistance reading stabilises when the heater is active. Recommended: 300–350°C for 100–200 ms.
+- `bme.performReading()` — takes a complete measurement (T, H, P, gas) in one call. Returns `true` on success. This call blocks for ≈ 150–200 ms.
+- `bme.gas_resistance` — the measured gas resistance in ohms. **Lower resistance = more VOCs = worse air quality.** A fresh-air baseline is ≈ 50–200 kΩ. Polluted indoor air may be 5–20 kΩ.
+- The simple air quality index maps gas resistance to a 0–100 scale. This is a crude approach — for scientific-grade IAQ, use Bosch's proprietary BSEC library.
+
+### Using the BSEC library (advanced IAQ)
+
+The BSEC (Bosch Sensortec Environmental Cluster) library fuses temperature, humidity, and gas data into an IAQ score (0–500) with accuracy indicators. Manual installation from GitHub is required.
+
+```cpp
+// This is pseudocode — BSEC has its own API
+#include "bsec.h"
+
+Bsec bsec;
+
+void setup()
+{
+  bsec.begin(BME680_I2C_ADDR_PRIMARY);
+  bsec.updateSubscription(
+    BSEC_OUTPUT_IAQ,
+    BSEC_SAMPLE_RATE_LP    // Low power: 3% accuracy
+    // BSEC_SAMPLE_RATE_ULP  // Ultra-low power: 1% accuracy
+  );
+}
+
+void loop()
+{
+  if (bsec.run())
+  {
+    Serial.print("IAQ: ");
+    Serial.print(bsec.iaq);
+    Serial.print("  Accuracy: ");
+    Serial.println(bsec.iaqAccuracy);
+    // 0 = stale, 1 = low, 2 = medium, 3 = high
+  }
+}
+```
+
+### Code breakdown
+
+- **Gas heater stabilisation:** The MOX sensor requires the heater to be at the correct temperature (320°C) for accurate gas readings. The first 10–20 readings after power-up will drift as the heater stabilises. Discard the first minute of gas data or wait for the resistance to plateau.
+- **Gas resistance units:** `bme.gas_resistance` is in **ohms**. A typical range is 5,000–200,000 Ω. Divide by 1000 for kΩ.
+- `bme.readAltitude(seaLevelHPa)` — estimates altitude from pressure. Not as accurate as a dedicated altimeter without weather correction.
+
+### Gas logging with SD
+
+```cpp
+#include <SD.h>
+
+File logFile;
+
+void setup()
+{
+  SD.begin(10);
+  logFile = SD.open("bme680.csv", FILE_WRITE);
+  logFile.println("Time,Temp,Humidity,Pressure,GasResistance");
+}
+
+void loop()
+{
+  if (bme.performReading())
+  {
+    logFile.print(millis());
+    logFile.print(",");
+    logFile.print(bme.temperature, 1);
+    logFile.print(",");
+    logFile.print(bme.humidity, 1);
+    logFile.print(",");
+    logFile.print(bme.pressure / 100.0, 1);
+    logFile.print(",");
+    logFile.println(bme.gas_resistance, 0);
+    logFile.flush();
+  }
+
+  delay(60000);  // Log every minute
+}
+```
+
+## Steps to perform this interfacing
+
+1. Connect the BME680 module to the Arduino as shown (I²C).
+2. Install the Adafruit BME680 Library and Adafruit Unified Sensor.
+3. Copy the code into the Arduino IDE.
+4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+5. Upload the sketch to the Arduino.
+6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+7. Temperature, humidity, pressure, gas resistance, and air quality are displayed every 3 seconds.
+8. After the first 1–2 minutes of heater stabilisation, the gas resistance should be stable.
+9. Hold a VOC source near the sensor (e.g., a marker pen, acetone/nail polish remover at a safe distance, or exhaled breath) — observe the gas resistance drop.
+10. Move the sensor to fresh air — the resistance should rise.
+
+## Caution
+
+- **⚠️ MOX sensor burn-in:** The metal-oxide gas sensor inside the BME680 requires a **burn-in period of approximately 48 hours of continuous operation** before the gas resistance readings stabilise. During the first 2 days of use, the gas readings will drift significantly as the MOX layer undergoes initial ageing. The IAQ accuracy will be **low (accuracy = 0 or 1)** during this period. Do not calibrate or rely on absolute gas readings until burn-in is complete.
+- **Gas sensor lifetime:** The MOX sensor has a finite lifetime — typically 5–10 years when operated at the standard heater profile (≤ 1% duty cycle at 320°C). Continuous heating or higher temperatures reduces lifetime. The gas sensor is **not a laboratory-grade gas analyser** — its resistance drifts with temperature, humidity, and ageing. Use it for relative (trend) air quality monitoring, not for absolute VOC concentration in ppm.
+- **Power consumption during gas measurement:** The gas sensor heater draws approximately **25–35 mA at 5V** (≈ 150 mW) for 100–200 ms each measurement cycle. With a 3-second interval, average consumption is ≈ 1–2 mA for the heater + 1 mA for the other sensors + 2 mA for the microcontroller = 4–5 mA average. The peak 35 mA on the 5V rail is still within the Arduino's USB supply capacity but must be considered for battery projects. Use `bme.setGasHeater()` with minimal duration (100 ms) and a long interval (≥ 10 s) for battery operation.
+- **VOC selectivity:** The BME680's MOX sensor is **broadband** — it responds to many reducing gases (VOCs, hydrogen, carbon monoxide) but **cannot distinguish between them**. A drop in gas resistance could be from ethanol (cooking wine), acetone (nail polish remover), isopropanol (cleaning), or methane (natural gas leak). If you need specific gas identification, use an electrochemical or NDIR sensor instead.
+- **Temperature compensation:** Gas resistance is highly temperature-dependent. The BME680 internally compensates for temperature and humidity, but large temperature swings (> 10°C/min) can cause transient gas reading errors. Avoid placing the sensor near heaters, air conditioning vents, or in direct sunlight.
+- **Heater algorithm:** The `bme.setGasHeater()` temperature setting must be ≥ 200°C and ≤ 400°C for the MOX sensor to function. Below 200°C, the sensor is in its "cold" state and gas readings are meaningless. Above 400°C, the sensor may be damaged. The standard profile is 320°C for 150 ms. The heater pulse is automatically applied before each `performReading()` call.
+- **BME680 vs BME280 vs BME688:** The BME688 is the latest iteration with improved gas sensor and configurable heater profiles for gas identification. The BME280 has **no gas sensor** (temperature + humidity + pressure only). Ensure you have the correct part. The Adafruit BME680 library will fail to initialise a BME280 — the I²C addresses are the same but the chip ID (0x61) differs.
+- **Altitude accuracy:** Same as BME280 — pressure-based altitude is affected by weather. See BME280 Caution.

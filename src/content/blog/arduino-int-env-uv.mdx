@@ -11,20 +11,21 @@ order: 10
 
 import CloudinaryImage from '../../components/CloudinaryImage.astro';
 
+# UV Sensor (ML8511 / GUVA-S12D)
+
+Ultraviolet (UV) sensors measure the intensity of UV radiation in the 200–400 nm range. Two common modules for Arduino are:
+
 <CloudinaryImage 
    publicId="ML8511_UV_Sensor_qqtdcl.jpg" 
    alt="ML8511 UV Sensor Pinout" 
    className="my-6 rounded"
 />
 
-# UV Sensor (ML8511 / GUVA-S12D)
-
-Ultraviolet (UV) sensors measure the intensity of UV radiation in the 200–400 nm range. Two common modules for Arduino are:
-
 - **ML8511** — analog output (1–3.2 V) proportional to UV intensity, requires 3.3V power.
 - **GUVA-S12D** — analog output (0–5 V) proportional to UV index, operates at 5V.
 
 Both sensors output a voltage that can be read with `analogRead()` and converted to a UV index value (0–11+), making them suitable for sun exposure monitoring, UV index meters, and environmental sensing.
+
 
 <CloudinaryImage 
    publicId="GUAVA-UV-Sensor_m6nwxq.png" 

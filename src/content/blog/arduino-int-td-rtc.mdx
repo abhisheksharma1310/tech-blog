@@ -3,15 +3,23 @@ title: "DS1307/DS3231 (RTC)"
 description: "DS1307/DS3231 (RTC) interfacing with Arduino."
 date: "2026-05-30"
 category: ["Embedded/IoT", "Arduino", "Interfacing", "Time & Data"]
-tags: ["Arduino",]
+tags: ["Arduino", "RTC", "Time", "Data"]
 slug: "arduino-DS1307-DS3231-RTC-interfacing"
 author: "Abhishek Sharma"
 order: 1
 ---
 
+import CloudinaryImage from '../../components/CloudinaryImage.astro';
+
 # DS1307/DS3231 RTC Sensor
 
 The DS1307 and DS3231 are Real-Time Clock (RTC) modules that keep accurate time even when the Arduino is powered off, using a coin cell backup battery. The DS3231 is the superior choice with a temperature-compensated crystal oscillator (+/-2 ppm accuracy vs. DS1307's +/-5 ppm). Both communicate over I2C and are functionally interchangeable in code.
+
+<CloudinaryImage 
+   publicId="rtc-ds3231_qshfst.webp" 
+   alt="DS1307/DS3231 RTC Module" 
+   className="my-6 rounded"
+/>
 
 ## For this interfacing you need the following components:
 

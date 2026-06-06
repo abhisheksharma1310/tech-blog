@@ -1,0 +1,106 @@
+---
+title: "Functions"
+description: "Functions in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Programming Basics", "Functions"]
+slug: "c-functions"
+author: "Abhishek Sharma"
+order: 9
+---
+
+import InfoCard from '@/components/InfoCard.tsx';
+
+# Functions
+
+Functions in C programming are a fundamental building block that allows you to break down your code into smaller, reusable pieces.
+
+<InfoCard title="What is a function?">
+    **A function is a block of code that performs a specific task and can be called from other parts of the program**.
+</InfoCard>
+
+Functions help improve code organization, readability, and maintainability by allowing you to encapsulate specific functionality. In C, you can define a function using the following syntax:
+```c
+return_type function_name(parameter_list) {
+    // Function body
+}
+```
+In this syntax, `return_type` specifies the type of value that the function will return (or `void` if it does not return anything), `function_name` is the name of the function, and `parameter_list` is a comma-separated list of parameters that the function takes as input.
+
+For example, to define a simple function that adds two integers and returns the result, you would write:
+```c
+int add(int a, int b) {
+    return a + b;
+}
+```
+In this example, the function `add` takes two integer parameters `a` and `b`, adds them together, and returns the result as an integer.
+
+You can call this function from the `main` function or any other part of your program. For example:
+```c
+#include <stdio.h>
+int add(int a, int b) {
+    return a + b;
+}
+int main() {
+    int num1 = 5;
+    int num2 = 10;
+    int result = add(num1, num2);
+    printf("The sum of %d and %d is: %d\n", num1, num2, result);
+    return 0;
+}
+```
+In this example, we call the `add` function with the values of `num1` and `num2`, and store the result in the variable `result`. We then print the result to the console.
+
+Functions in C can also take no parameters and return no value. For example:
+```c
+void greet() {
+    printf("Hello, World!\n");
+}
+```
+In this example, the function `greet` does not take any parameters and does not return any value. It simply prints a greeting message to the console when called. You can call this function from the `main` function as follows:
+```c
+#include <stdio.h>
+void greet() {
+    printf("Hello, World!\n");
+}
+int main() {
+    greet(); // Call the greet function
+    return 0;
+}
+```
+In this example, we call the `greet` function from the `main` function, which will execute the code inside the `greet` function and print "Hello, World!" to the console.
+
+**Functions in C can also be recursive**, meaning that a function can call itself.
+This can be useful for solving problems that can be broken down into smaller, similar subproblems. For example, the following function calculates the factorial of a number using recursion:
+```c
+int factorial(int n) {
+    if (n == 0) {
+        return 1; // Base case: factorial of 0 is 1
+    } else {
+        return n * factorial(n - 1); // Recursive case
+    }
+}
+```
+In this example, the `factorial` function takes an integer `n` as input and returns the factorial of that number. If `n` is 0, it returns 1 (the base case). Otherwise, it returns `n` multiplied by the factorial of `n - 1`, which is the recursive case. You can call this function from the `main` function as follows:
+```c
+#include <stdio.h>
+int factorial(int n) {
+    if (n == 0) {
+        return 1; // Base case: factorial of 0 is 1
+    } else {
+        return n * factorial(n - 1); // Recursive case
+    }
+}
+int main() {
+    int number = 5;
+    int result = factorial(number);
+    printf("The factorial of %d is: %d\n", number, result);
+    return 0;
+}
+```
+In this example, we call the `factorial` function with the value of `number`, which is 5, and store the result in the variable `result`. We then print the result to the console, which will output "The factorial of 5 is: 120".
+
+This demonstrates how functions can be used to perform specific tasks and how recursion can be used to solve problems in C programming.
+
+Functions are an essential part of C programming and are widely used to create modular and efficient code. They allow you to break down complex problems into smaller, more manageable pieces, and promote code reuse, making your programs easier to read and maintain.
+

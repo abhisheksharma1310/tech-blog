@@ -1,6 +1,11 @@
 {
   "extends": "./tsconfig.node.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "jsx": "preserve",
     "jsxImportSource": "react",
     "moduleResolution": "Bundler",

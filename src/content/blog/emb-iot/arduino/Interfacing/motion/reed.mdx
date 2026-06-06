@@ -1,0 +1,199 @@
+---
+title: "Reed Switch"
+description: "Reed Switch interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Motion & Proximity"]
+tags: ["Arduino",]
+slug: "arduino-reed-switch-interfacing"
+author: "Abhishek Sharma"
+order: 6
+---
+
+import CloudinaryImage from '@/components/CloudinaryImage.astro';
+
+# Reed Switch
+
+A reed switch is a magnetic sensor consisting of two ferromagnetic reed contacts sealed inside a glass tube. When a permanent magnet is brought near, the reeds magnetize and attract each other, closing the circuit. It is widely used in door/window alarms, proximity detection, flow meters, and RPM sensors.
+
+<CloudinaryImage 
+   publicId="Reed-Switch-Sensor-Module-Inttroduction_j2ko2w.jpg" 
+   alt="Reed Switch Module" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- Reed switch (Normally Open, e.g., MKA-10110, MKA-14102)
+- 10k ohm resistor (pull-down or pull-up)
+- Magnet (permanent magnet or electromagnet)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+Connect the reed switch to the Arduino as follows:
+
+```
+Reed Switch           Arduino
+-----------           -------
+Pin 1         -->     Digital Pin 2
+Pin 2         -->     GND
+```
+
+Connect a 10k ohm pull-down resistor from Digital Pin 2 to GND so the pin reads LOW when the switch is open. Alternatively, use the Arduino's internal pull-up for an inverted output:
+
+```
+With internal pull-up:
+Reed Switch           Arduino
+-----------           -------
+Pin 1         -->     Digital Pin 2
+Pin 2         -->     GND
+// No external resistor needed - use pinMode(pin, INPUT_PULLUP)
+```
+
+## Pin Map
+
+| Reed Pin | Connection |
+|---|---|
+| Pin 1 | Digital pin 2 (with 10k ohm pull-down) or directly with INPUT_PULLUP |
+| Pin 2 | GND |
+
+Reed switches are non-polarized -- connect either way.
+
+## Install necessary Library
+
+No external library is required. A reed switch reads like a digital switch using standard `digitalRead()`.
+
+## Code with complete explanation
+
+This sketch reads the reed switch state and prints a message when a magnet is detected (switch closed).
+
+```cpp
+const int reedPin = 2;
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(reedPin, INPUT_PULLUP); // Use internal pull-up
+}
+
+void loop()
+{
+  int sensorValue = digitalRead(reedPin);
+
+  // With INPUT_PULLUP: LOW = magnet near (switch closed to GND)
+  // HIGH = no magnet (switch open, pulled HIGH internally)
+  if (sensorValue == LOW)
+  {
+    Serial.println("Magnet detected!");
+    delay(200); // Debounce
+  }
+  else
+  {
+    Serial.println("No magnet");
+  }
+
+  delay(100);
+}
+```
+
+### Code breakdown
+
+- `pinMode(reedPin, INPUT_PULLUP)` -- enables the internal pull-up resistor. The pin reads HIGH when the switch is open and LOW when a magnet closes the switch to GND.
+- `digitalRead(reedPin)` -- returns `LOW` when a magnet is near enough to actuate the switch, `HIGH` otherwise.
+- The `delay(200)` provides debouncing -- reed switches can mechanically bounce when closing or opening.
+
+### Door/window alarm example
+
+This example uses a reed switch as a door sensor with an LED indicator:
+
+```cpp
+const int reedPin = 2;
+const int ledPin  = 13;
+const int buzzerPin = 8;
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(reedPin, INPUT_PULLUP);
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+}
+
+void loop()
+{
+  if (digitalRead(reedPin) == HIGH) // Door open (magnet moved away)
+  {
+    digitalWrite(ledPin, HIGH);
+    tone(buzzerPin, 1000);
+    Serial.println("Door OPEN!");
+  }
+  else // Door closed (magnet near)
+  {
+    digitalWrite(ledPin, LOW);
+    noTone(buzzerPin);
+    Serial.println("Door closed");
+  }
+
+  delay(200);
+}
+```
+
+### RPM counter example
+
+To measure revolutions per minute using a magnet on a rotating shaft:
+
+```cpp
+const int reedPin = 2;
+
+volatile unsigned int pulseCount = 0;
+unsigned long lastTime = 0;
+
+void countPulse()
+{
+  pulseCount++;
+}
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(reedPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(reedPin), countPulse, FALLING);
+}
+
+void loop()
+{
+  unsigned long now = millis();
+
+  if (now - lastTime >= 1000) // Every second
+  {
+    unsigned int rpm = pulseCount * 60; // pulses per second * 60
+    Serial.print("RPM: ");
+    Serial.println(rpm / 2); // Divide by 2 if one rotation = 2 pulses
+
+    pulseCount = 0;
+    lastTime = now;
+  }
+}
+```
+
+## Steps to perform this interfacing
+
+1. Connect the reed switch to the Arduino with a pull-down resistor (or use INPUT_PULLUP).
+2. Copy the code into the Arduino IDE.
+3. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+4. Upload the sketch to the Arduino.
+5. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+6. Bring a magnet close to the reed switch and observe the state change.
+7. Remove the magnet and verify the switch opens.
+
+## Caution
+
+- Reed switches contain **fragile glass encapsulation**. Avoid bending the leads at the glass body -- use a tool to grip the lead near the bend point. Dropping or applying mechanical stress can break the glass and destroy the switch.
+- The glass tube is not waterproof. Use a potted or encapsulated reed switch for outdoor or wet environments.
+- Reed switches have a limited current rating (typically 10-500 mA). Do not drive loads directly -- use a transistor or MOSFET for switching higher currents.
+- The switch can bounce mechanically, especially when a magnet is moved slowly. Always include debounce logic (hardware or software) for reliable triggering.
+- The actuation distance depends on the magnet's strength and the reed switch's sensitivity. Test the effective range with your specific magnet before final mounting.
+- Strong external magnetic fields (motors, transformers, induction coils) can cause false triggering. Shield the sensor or relocate it away from such sources.
+- For high-speed applications (RPM counting above 1000 Hz), reed switches may miss pulses due to mechanical inertia. Use a Hall effect sensor instead.

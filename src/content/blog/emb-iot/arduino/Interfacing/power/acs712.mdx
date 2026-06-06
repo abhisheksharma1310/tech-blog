@@ -1,0 +1,228 @@
+---
+title: "ACS712 Current Sensor"
+description: "ACS712 current sensor interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Power & Energy"]
+tags: ["Arduino", "ACS712", "Current Sensor"]
+slug: "arduino-acs712-current-sensor-interfacing"
+author: "Abhishek Sharma"
+order: 2
+---
+
+import CloudinaryImage from '@/components/CloudinaryImage.astro';
+
+# ACS712 Current Sensor
+
+The ACS712 is a hall-effect-based linear current sensor from Allegro MicroSystems. It measures both AC and DC current with galvanic isolation between the current path and the sensor output. The output is an analog voltage proportional to the current: 185 mV/A (5 A version), 100 mV/A (20 A version), or 66 mV/A (30 A version), with a 2.5 V offset at zero current (when powered from 5 V). Its low cost, simplicity, and isolation make it popular for motor current monitoring, power supply measurement, and energy metering.
+
+<CloudinaryImage 
+   publicId="ACS712-Pinout_bl0lot.png" 
+   alt="ACS712 Current Sensor Pinout" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- ACS712 current sensor module (5A, 20A, or 30A variant)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+- Load and power source for testing
+
+## Schematic
+
+Connect the ACS712 module to the Arduino as follows:
+
+```
+ACS712 Module         Arduino
+-------------         -------
+VCC           -->     5V
+GND           -->     GND
+OUT           -->     Analog Pin A0
+
+Load circuit:
+Power supply (+) --> AC/DC source (+) terminal (ACS712)
+AC/DC source (-) terminal (ACS712) --> Load (+)
+Load (-)        --> Power supply (-)
+```
+
+The ACS712 is placed in series with the load. Current flows through the two thick screw terminals or pins on the module. The direction of current flow matters for DC — reversing the wires inverts the output voltage swing.
+
+## Pin Map
+
+| Module Pin | Name | Arduino Connection |
+|---|---|---|
+| VCC | Power | 5V |
+| GND | Ground | GND |
+| OUT | Analog output | A0 |
+| AC/DC terminal 1 | Current path input | Power supply (+) |
+| AC/DC terminal 2 | Current path output | Load (+) |
+
+### Sensitivity by variant
+
+| Variant | Sensitivity | Full Range | Resolution (10-bit ADC) |
+|---|---|---|---|
+| ACS712-05B | 185 mV/A | ±5 A | ~26 mA per step |
+| ACS712-20A | 100 mV/A | ±20 A | ~49 mA per step |
+| ACS712-30A | 66 mV/A | ±30 A | ~74 mA per step |
+
+All variants output 2.5 V at 0 A (with a 5 V supply).
+
+## Install necessary Library
+
+No external library is required. The ACS712 uses standard `analogRead()` built into Arduino.
+
+For convenience, the **ACS712** library by Rob Tillaart is available via the Library Manager. This tutorial uses direct `analogRead()` for transparency.
+
+## Code with complete explanation
+
+This sketch reads the ACS712 output voltage, calculates the current (DC), and prints the value to the Serial Monitor. It includes zero-current calibration and AC RMS calculation.
+
+```cpp
+const int sensorPin = A0;
+
+// Sensitivity in mV per A — change for your variant
+const float SENSITIVITY = 185.0; // mV/A (5A = 185, 20A = 100, 30A = 66)
+
+const float VCC = 5.0;     // Supply voltage
+const float ADC_RES = 1023.0;
+
+float zeroOffset = 2.5;    // V (typical at 0 A, adjusted during calibration)
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Calibrate zero offset by averaging 50 readings with no load
+  Serial.println("Calibrating ACS712...");
+  Serial.println("Ensure NO current is flowing through the sensor.");
+  delay(2000);
+
+  float sum = 0;
+
+  for (int i = 0; i < 50; i++)
+  {
+    int raw = analogRead(sensorPin);
+    sum += raw * (VCC / ADC_RES);
+    delay(10);
+  }
+
+  zeroOffset = sum / 50.0;
+
+  Serial.print("Zero-current voltage: ");
+  Serial.print(zeroOffset, 3);
+  Serial.println(" V");
+  Serial.println("Calibration complete.");
+  Serial.println();
+}
+
+void loop()
+{
+  // DC current measurement
+  int raw = analogRead(sensorPin);
+  float voltage = raw * (VCC / ADC_RES);
+
+  float currentDC = (voltage - zeroOffset) / (SENSITIVITY / 1000.0);
+
+  Serial.print("Raw: ");
+  Serial.print(raw);
+  Serial.print("  Voltage: ");
+  Serial.print(voltage, 3);
+  Serial.print(" V");
+  Serial.print("  Current (DC): ");
+  Serial.print(currentDC, 2);
+  Serial.println(" A");
+
+  delay(500);
+}
+```
+
+### AC current measurement (RMS)
+
+To measure AC current, sample over one or more full mains cycles (e.g., 20 samples over 20 ms for 50 Hz / 16.67 ms for 60 Hz) and compute the RMS value:
+
+```cpp
+const int samples = 100;
+float sumSquared = 0;
+
+for (int i = 0; i < samples; i++)
+{
+  int raw = analogRead(sensorPin);
+  float voltage = raw * (VCC / ADC_RES);
+  float current = (voltage - zeroOffset) / (SENSITIVITY / 1000.0);
+
+  sumSquared += current * current;
+  delayMicroseconds(200); // 100 samples × 200 µs = 20 ms (one 50 Hz cycle)
+}
+
+float rmsCurrent = sqrt(sumSquared / samples);
+
+Serial.print("AC RMS Current: ");
+Serial.print(rmsCurrent, 3);
+Serial.println(" A");
+```
+
+### Code breakdown
+
+- `analogRead(sensorPin)` — reads the analog voltage (0–1023) from the ACS712 output.
+- `raw * (VCC / 1023.0)` — converts the raw ADC value to voltage (0–5 V).
+- **Zero-current offset:** At 0 A, the output is VCC/2 = 2.5 V (ideal). The calibration loop averages 50 readings to find the actual offset, which varies due to component tolerances and supply voltage variation.
+- `(voltage - zeroOffset) / (SENSITIVITY / 1000.0)` — subtracts the offset, then divides by sensitivity in V/A (sensitivity in mV/A divided by 1000). A positive result means current flows in the direction indicated by the module's arrow.
+- **AC RMS:** `sqrt(average(squared_current_samples))` gives the RMS current. The sampling must cover a full number of cycles for accuracy.
+
+### Using the ACS712 library
+
+```cpp
+#include <ACS712.h>
+
+ACS712 sensor(ACS712_05B, A0); // ACS712_05B, ACS712_20A, or ACS712_30A
+
+void setup()
+{
+  Serial.begin(9600);
+  sensor.calibrate();
+}
+
+void loop()
+{
+  float currentDC  = sensor.getCurrentDC();
+  float currentAC  = sensor.getCurrentAC(50); // 50 Hz
+
+  Serial.print("DC: ");
+  Serial.print(currentDC, 3);
+  Serial.print(" A  AC: ");
+  Serial.print(currentAC, 3);
+  Serial.println(" A");
+
+  delay(500);
+}
+```
+
+## Steps to perform this interfacing
+
+1. Connect the ACS712 module to the Arduino as shown in the schematic.
+2. Connect the load in series through the ACS712's screw terminals. For DC, ensure the arrow on the module points in the direction of conventional current flow (supply → load).
+3. Copy the code into the Arduino IDE.
+4. Set `SENSITIVITY` to match your sensor variant (185, 100, or 66).
+5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+6. Upload the sketch to the Arduino.
+7. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+8. Wait for the calibration to complete (do not apply current during calibration).
+9. Apply a DC load and observe the current reading. For a 1 A load, the reading should be approximately 1.00 A.
+10. (Optional) Upload the AC RMS code and test with an AC load.
+
+### Troubleshooting
+
+- **Reading stuck at 2.5 V / 512 raw:** The sensor is likely not powered or the load circuit is open. Check VCC and GND connections.
+- **Negative current readings:** Reverse the connections to the ACS712 screw terminals (swap the supply and load sides), or negate the reading in software.
+- **Noisy readings:** Add a 100 nF capacitor from OUT to GND and a 10 µF capacitor from VCC to GND near the module. Average multiple readings (e.g., `analogRead` 10 times and divide by 10).
+
+## Caution
+
+- **Galvanic isolation:** The ACS712 provides galvanic isolation between the current path (pins 1–4) and the sensor electronics (pins 5–8) rated for 2.1 kV RMS minimum. This means the Arduino is electrically isolated from the high-current circuit — do not bypass this isolation by connecting the high-current ground to the Arduino ground. However, the sensor output (OUT) is referenced to the sensor GND, which should be connected to Arduino GND. The high-current path has its own separate ground.
+- **Supply voltage sensitivity:** The output voltage is ratiometric — the zero-current offset is VCC/2, and the sensitivity scales with VCC. If using a 3.3 V Arduino, the zero offset is 1.65 V and the sensitivity is proportionally lower. The calibration step compensates for this automatically.
+- **Noise on output:** The ACS712 output has significant noise (especially on the 5 A variant, ±100 mV peak-to-peak). For stable readings, average 10–50 samples. For AC measurement, use synchronous sampling or a hardware low-pass filter (RC filter: 1 kΩ + 10 µF ≈ 16 Hz cutoff).
+- **Bandwidth:** The ACS712 has a bandwidth of 80 kHz (typical). For DC measurements, the wide bandwidth picks up high-frequency noise — digital filtering is essential. For AC mains (50/60 Hz), the bandwidth is adequate but may require anti-aliasing before the ADC.
+- **Overcurrent:** Applying current beyond the sensor's rated range will not damage it immediately (the sensor can withstand up to 5× the rated current for short pulses), but the output saturates at the supply rails and the reading will be inaccurate. Sustained overcurrent can heat the internal conductor and change the calibration.
+- **Magnetic fields:** As a hall-effect sensor, the ACS712 is sensitive to external magnetic fields. Keep the module away from transformers, inductors, and magnets. Nearby magnetic fields add an offset to the current reading.
+

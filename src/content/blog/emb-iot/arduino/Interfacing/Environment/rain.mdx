@@ -1,0 +1,149 @@
+---
+title: "Rain Sensor (FC-37/YL-83)"
+description: "Rain Sensor FC-37/YL-83 interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Environment"]
+tags: ["Arduino",]
+slug: "arduino-rain-sensor-FC-37-YL-83-interfacing"
+author: "Abhishek Sharma"
+order: 3
+---
+
+import CloudinaryImage from '@/components/CloudinaryImage.astro';
+
+# Rain Sensor (FC-37/YL-83)
+
+The FC-37 (also sold as YL-83) rain sensor module detects the presence and intensity of water droplets on its sensing pad. It uses an LM393 comparator to provide both a digital (rain/no-rain) and an analog (intensity) output, making it useful for rain detection, irrigation control, and weather monitoring.
+
+<CloudinaryImage 
+   publicId="Rain-Sensor_hwnxve.png" 
+   alt="Rain Sensor Pinout" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- FC-37 / YL-83 rain sensor module (sensing pad + control board)
+- Breadboard and jumper wires (female-to-female for the sensor)
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+The sensor module has two parts: the sensing pad and the control board. Connect the control board to the Arduino as follows:
+
+```
+Control Board         Arduino
+-------------         -------
+VCC           -->     5V
+GND           -->     GND
+DO            -->     Digital Pin 2
+AO            -->     Analog Pin A0
+```
+
+Connect the sensing pad to the control board using the female-to-female jumper wires. The control board has a potentiometer that adjusts the digital output threshold — rotate it with a screwdriver to set the sensitivity.
+
+## Pin Map
+
+### Control Board
+
+| Pin | Name | Connection |
+|---|---|---|
+| VCC | Power | 5V |
+| GND | Ground | GND |
+| DO | Digital Output | Any digital pin (pin 2 used) |
+| AO | Analog Output | Any analog pin (A0 used) |
+
+### Sensing Pad
+
+| Pin | Connection |
+|---|---|
+| Two pads side-by-side | Connect to the two spring terminals on the control board (polarity does not matter) |
+
+## Install necessary Library
+
+No external library is required — rain detection uses standard `digitalRead()` and `analogRead()` functions built into Arduino.
+
+## Code with complete explanation
+
+This sketch reads both the digital (rain detected or not) and analog (rain intensity) outputs, printing the values to the Serial Monitor.
+
+```cpp
+const int digitalPin = 2; // DO pin
+const int analogPin  = A0; // AO pin
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(digitalPin, INPUT);
+}
+
+void loop()
+{
+  int digitalValue = digitalRead(digitalPin); // LOW = rain detected
+  int analogValue  = analogRead(analogPin);   // 0–1023 (lower = more water)
+
+  Serial.print("Digital: ");
+  Serial.print(digitalValue);
+  Serial.print(" (");
+
+  if (digitalValue == LOW)
+  {
+    Serial.print("RAIN DETECTED");
+  }
+  else
+  {
+    Serial.print("NO RAIN");
+  }
+
+  Serial.print(")  Analog: ");
+  Serial.print(analogValue);
+  Serial.print(" (");
+
+  // Interpret analog value
+  if (analogValue < 200)
+  {
+    Serial.print("Heavy rain");
+  }
+  else if (analogValue < 500)
+  {
+    Serial.print("Light rain");
+  }
+  else if (analogValue < 800)
+  {
+    Serial.print("Damp / humid");
+  }
+  else
+  {
+    Serial.print("Dry");
+  }
+
+  Serial.println(")");
+  delay(500);
+}
+```
+
+### Code breakdown
+
+- `digitalRead(digitalPin)` — reads the DO pin. The LM393 comparator drives this pin `LOW` when water is detected above the threshold set by the potentiometer. It is `HIGH` when dry.
+- `analogRead(analogPin)` — reads the AO pin (0–1023). A lower value means more water on the pad, as water creates a conductive path that reduces resistance.
+- The digital output provides a simple rain/no-rain boolean. The analog output provides granular intensity data, useful for differentiating between mist, light rain, and heavy rain.
+
+## Steps to perform this interfacing
+
+1. Connect the sensing pad to the control board via the spring terminals.
+2. Connect the control board to the Arduino as shown in the schematic.
+3. Copy the code into the Arduino IDE.
+4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+5. Upload the sketch to the Arduino.
+6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+7. Place a drop of water on the sensing pad and observe the readings change.
+8. Adjust the sensitivity potentiometer on the control board with a screwdriver to change the digital trigger point.
+
+## Caution
+
+- The sensing pad is NOT corrosion-proof. Prolonged exposure to moisture and DC current causes electrolysis that degrades the copper traces over time. Consider applying a conformal coating or using the sensor only for short measurement bursts (power it through a MOSFET or transistor when not actively reading).
+- Do not power the sensing pad continuously. Turn on VCC only when taking a reading (via a digital pin controlling a transistor) to extend the pad's lifespan.
+- The sensor does not differentiate between rain and other conductive liquids (tap water, salt water, condensation). False triggers can occur in high-humidity environments.
+- Keep the control board dry — only the sensing pad should be exposed to the elements.
+- Clean the sensing pad periodically with isopropyl alcohol to remove oxidation and residue.

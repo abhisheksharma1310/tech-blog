@@ -1,0 +1,166 @@
+---
+title: "MQ-2 (Gas/Smoke)"
+description: "MQ-2 (Gas/Smoke) interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Environment"]
+tags: ["Arduino",]
+slug: "arduino-MQ-2-gas-smoke-interfacing"
+author: "Abhishek Sharma"
+order: 1
+---
+
+import CloudinaryImage from '@/components/CloudinaryImage.astro';
+
+# MQ-2 (Gas/Smoke) Sensor
+
+The MQ-2 is a gas sensor that detects combustible gases and smoke. It is sensitive to LPG, i-butane, propane, methane, alcohol, hydrogen, and smoke. The module provides both an analog output (proportional to gas concentration) and a digital output (triggered by an adjustable threshold), making it suitable for gas leak detectors, smoke alarms, and air quality monitors.
+
+<CloudinaryImage 
+   publicId="MQ2-gas-sensor_qsizws.jpg" 
+   alt="MQ-2 Gas/Smoke Sensor Pinout" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- MQ-2 gas/smoke sensor module (with LM393 comparator)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+Connect the MQ-2 module to the Arduino as follows:
+
+```
+MQ-2 Module           Arduino
+-----------           -------
+VCC           -->     5V
+GND           -->     GND
+DO            -->     Digital Pin 2
+AO            -->     Analog Pin A0
+```
+
+The module operates at 5V and includes a built-in heater. No external components are required.
+
+## Pin Map
+
+| Pin | Name | Connection |
+|---|---|---|
+| VCC | Power | 5V |
+| GND | Ground | GND |
+| DO | Digital Output | Any digital pin (pin 2 used) |
+| AO | Analog Output | Any analog pin (A0 used) |
+
+## Install necessary Library
+
+No external library is required. The MQ-2 uses standard `analogRead()` and `digitalRead()` functions built into Arduino.
+
+For precise PPM (parts-per-million) calculations using the MQ-2 datasheet curves, install the **MQGas** library or **MQUnifiedSensor** library via the Library Manager. This tutorial uses the simpler direct-read approach.
+
+## Code with complete explanation
+
+This sketch reads both the analog and digital outputs of the MQ-2 sensor, estimates gas concentration levels, and prints the values to the Serial Monitor.
+
+```cpp
+const int digitalPin = 2; // DO pin
+const int analogPin  = A0; // AO pin
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(digitalPin, INPUT);
+  Serial.println("MQ-2 Gas/Smoke Sensor Test");
+  Serial.println("Warming up sensor...");
+  delay(60000); // Allow 60 seconds for sensor warm-up
+  Serial.println("Sensor ready");
+}
+
+void loop()
+{
+  int digitalValue = digitalRead(digitalPin); // LOW = gas detected above threshold
+  int analogValue  = analogRead(analogPin);   // 0-1023 (higher = more gas)
+
+  // Convert to voltage
+  float voltage = analogValue * (5.0 / 1023.0);
+
+  // Estimate gas level description
+  String level;
+  if (analogValue < 50)
+  {
+    level = "Clean air";
+  }
+  else if (analogValue < 200)
+  {
+    level = "Low gas";
+  }
+  else if (analogValue < 400)
+  {
+    level = "Moderate gas";
+  }
+  else if (analogValue < 600)
+  {
+    level = "High gas";
+  }
+  else
+  {
+    level = "Very high gas - DANGER";
+  }
+
+  Serial.print("Digital: ");
+  Serial.print(digitalValue);
+  Serial.print(" (");
+
+  if (digitalValue == LOW)
+  {
+    Serial.print("ALARM");
+  }
+  else
+  {
+    Serial.print("Normal");
+  }
+
+  Serial.print(")  Analog: ");
+  Serial.print(analogValue);
+  Serial.print("  Voltage: ");
+  Serial.print(voltage, 2);
+  Serial.print(" V  ");
+  Serial.println(level);
+
+  delay(500);
+}
+```
+
+### Code breakdown
+
+- `digitalRead(digitalPin)` -- reads the DO pin. The LM393 comparator drives this pin `LOW` when the gas concentration exceeds the threshold set by the module's potentiometer.
+- `analogRead(analogPin)` -- reads the AO pin (0-1023). Higher values indicate higher gas concentration. The voltage output increases as more target gas is detected.
+- The 60-second `delay()` in `setup()` allows the sensor's heating element to stabilize. For first-time use, a burn-in period of 24-48 hours is recommended for accurate readings.
+- The threshold levels in this example are approximate. For accurate PPM readings, use calibration curves from the MQ-2 datasheet.
+
+### Adjusting sensitivity
+
+Turn the potentiometer on the module with a screwdriver to adjust the digital output threshold:
+- **Clockwise**: increases sensitivity (triggers at lower gas concentration)
+- **Counter-clockwise**: decreases sensitivity (triggers at higher gas concentration)
+
+## Steps to perform this interfacing
+
+1. Connect the MQ-2 module to the Arduino as shown in the schematic.
+2. Copy the code into the Arduino IDE.
+3. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+4. Upload the sketch to the Arduino.
+5. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+6. Wait 60 seconds for the sensor to warm up.
+7. Observe the readings -- expose the sensor to a gas source (e.g., lighter gas without flame) and watch the values rise.
+8. Adjust the sensitivity potentiometer as needed.
+
+## Caution
+
+- The MQ-2 sensor requires a **preheat (warm-up) period** of at least 60 seconds before readings stabilize. For maximum accuracy, a burn-in of 24-48 hours with continuous power is recommended when the sensor is first used.
+- The sensor's heating element draws significant current (~300 mA at 5V). Do not power it from an Arduino 3.3V pin. Use an external power supply if running other high-current components.
+- The MQ-2 is **not selective** -- it responds to multiple gases simultaneously. It cannot distinguish between LPG, methane, alcohol, or smoke.
+- Readings drift over time and with temperature and humidity. The analog output is a relative indication, not an absolute PPM measurement unless calibrated.
+- Avoid exposing the sensor to very high gas concentrations for extended periods -- this can damage the sensing element.
+- The sensor's sensitivity decreases over its lifespan (typically 2-5 years). Periodic recalibration may be necessary.
+- Do not apply water or liquids to the sensor surface -- the sensing element can be permanently damaged.

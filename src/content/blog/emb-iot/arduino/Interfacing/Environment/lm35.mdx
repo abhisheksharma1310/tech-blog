@@ -1,0 +1,145 @@
+---
+title: "LM35 Temperature"
+description: "LM35 Temperature Sensor Interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Environment"]
+tags: ["Arduino", "LM35", "Temperature Sensor"]
+slug: "arduino-lm35-temperature-sensor-interfacing"
+author: "Abhishek Sharma"
+order: 7
+---
+
+import CloudinaryImage from '@/components/CloudinaryImage.astro';
+
+# LM35 Temperature Sensor
+
+The LM35 is a precision analog temperature sensor whose output voltage is linearly proportional to the temperature in degrees Celsius. It outputs 10 mV per °C with no external calibration required, offering ±0.5°C accuracy at room temperature and ±1°C accuracy over the full −55°C to +150°C range. It draws only 60 µA and is available in TO-92, TO-220, and SO-8 packages.
+
+<CloudinaryImage 
+   publicId="lm35-temperature-sensor-module_xyjkun.png" 
+   alt="LM35 Temperature Sensor Pinout" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- LM35 temperature sensor (TO-92 package)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+- (Optional) 100 nF capacitor between VCC and GND for noise filtering
+
+## Schematic
+
+Connect the LM35 to the Arduino as follows:
+
+```
+LM35 (TO-92)          Arduino
+------------          -------
+VCC (pin 1, left) --> 5V
+VOUT (pin 2, center)   Analog Pin A0
+GND (pin 3, right) --> GND
+```
+
+When viewing the flat face of the TO-92 package with pins facing down, pin 1 is the left pin (VCC), pin 2 is the center pin (VOUT), and pin 3 is the right pin (GND).
+
+A 100 nF capacitor between VCC and GND near the sensor reduces noise in the analog reading.
+
+## Pin Map
+
+| Pin | Name | Connection |
+|---|---|---|
+| 1 (left) | VCC | 5V |
+| 2 (center) | VOUT | Any analog pin (A0 used) |
+| 3 (right) | GND | GND |
+
+## Install necessary Library
+
+No external library is required. The LM35 uses standard `analogRead()` built into Arduino.
+
+## Code with complete explanation
+
+This sketch reads the LM35 output voltage and converts it to temperature in Celsius and Fahrenheit, printing the values to the Serial Monitor.
+
+```cpp
+const int sensorPin = A0;
+
+void setup()
+{
+  Serial.begin(9600);
+  Serial.println("LM35 Temperature Sensor Test");
+}
+
+void loop()
+{
+  int raw = analogRead(sensorPin);
+
+  // Convert raw ADC value to voltage (0–5V mapped to 0–1023)
+  float voltage = raw * (5.0 / 1023.0);
+
+  // LM35: 10 mV per °C
+  float temperatureC = voltage * 100.0;
+  float temperatureF = temperatureC * 9.0 / 5.0 + 32.0;
+
+  Serial.print("Raw: ");
+  Serial.print(raw);
+  Serial.print("  Voltage: ");
+  Serial.print(voltage, 3);
+  Serial.print(" V");
+  Serial.print("  Temp: ");
+  Serial.print(temperatureC, 2);
+  Serial.print(" °C  ");
+  Serial.print(temperatureF, 2);
+  Serial.println(" °F");
+
+  delay(1000);
+}
+```
+
+### Code breakdown
+
+- `analogRead(sensorPin)` — reads the analog voltage (0–1023) from the sensor output pin.
+- `raw * (5.0 / 1023.0)` — converts the raw ADC value to a voltage (0–5 V).
+- `voltage * 100.0` — the LM35 outputs 10 mV per °C, so multiply the voltage by 100 to get °C. At 25°C the output is 0.25 V.
+- `temperatureC * 9.0 / 5.0 + 32.0` — standard conversion from Celsius to Fahrenheit.
+
+### Using the internal 1.1V reference for better resolution
+
+The LM35 only outputs 0–1.5 V over its full range (−55 to +150°C). Using the 5V reference wastes ADC resolution. Change to the internal 1.1V reference for finer granularity:
+
+```cpp
+void setup()
+{
+  analogReference(INTERNAL); // 1.1V reference (on Uno/Nano)
+  // For Mega: analogReference(INTERNAL1V1);
+}
+
+void loop()
+{
+  int raw = analogRead(sensorPin);
+  float voltage = raw * (1.1 / 1023.0);
+  float temperatureC = voltage * 100.0;
+  // ...
+}
+```
+
+With the 1.1V reference, the resolution improves from ~0.49°C per step to ~0.11°C per step.
+
+## Steps to perform this interfacing
+
+1. Connect the LM35 to the Arduino as shown in the schematic.
+2. Optionally place a 100 nF capacitor between VCC and GND near the sensor.
+3. Copy the code into the Arduino IDE.
+4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+5. Upload the sketch to the Arduino.
+6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+7. Observe the raw ADC value, voltage, and temperature printed every second.
+8. Test by warming the sensor with your finger — the temperature should rise visibly.
+
+## Caution
+
+- **Only 10 mV/°C:** The LM35 outputs 10.0 mV per degree Celsius, giving 0 V at 0°C and 1 V at 100°C. Unlike the TMP36, the LM35 does not have an offset — it cannot read temperatures below 0°C without a negative supply (or a pull-down resistor), as the output would go below 0 V. For sub-zero readings, use the TMP36 (500 mV offset) or the LM35 with a bipolar supply.
+- **Self-heating:** The LM35 draws approximately 60 µA, which causes negligible self-heating in still air (≈0.08°C). In a vacuum or enclosed space without airflow, self-heating can increase by 0.2–0.5°C.
+- **Analog reference:** The default 5V analog reference gives a resolution of about 0.49°C per ADC step. For better resolution, switch to the internal 1.1V reference as shown above. Note: `analogReference(INTERNAL)` changes the reference for ALL analog pins, not just the one reading the LM35.
+- **Noise:** The LM35 output is susceptible to electrical noise, especially with long sensor wires. Use a 100 nF ceramic capacitor between VCC and GND and a 100 nF capacitor between VOUT and GND near the sensor. Twisted-pair or shielded cable helps for runs longer than 30 cm.
+- **Pinout:** The TO-92 package pinout varies by manufacturer. Some LM35 variants have different pinouts — always verify with your specific datasheet. The common TO-92 arrangement (flat face toward you, pins down) is: left = VCC, center = VOUT, right = GND.

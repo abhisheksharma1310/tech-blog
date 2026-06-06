@@ -1,0 +1,289 @@
+---
+title: "OLED Display (SSD1306)"
+description: "OLED Display interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Displays & Interfaces"]
+tags: ["Arduino", "OLED", "SSD1306"]
+slug: "arduino-OLED-SSD1306-display-interfacing"
+author: "Abhishek Sharma"
+order: 9
+---
+
+import CloudinaryImage from '@/components/CloudinaryImage.astro';
+
+# OLED Display (SSD1306) – Compact high-contrast display
+
+The SSD1306 is a single-chip CMOS OLED driver that controls a 128×64 (or 128×32) dot-matrix OLED display. Each pixel emits its own light — no backlight needed — resulting in deep blacks, high contrast, and low power consumption (≈20 mA typical). Communication is over I²C or SPI. These small monochrome displays are widely used in embedded projects for status readouts, sensor data, menu systems, and wearable devices.
+
+<CloudinaryImage 
+   publicId="OLED-display-ssd1306_m2qd6x.jpg" 
+   alt="OLED Display (SSD1306) – Compact high-contrast display" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- SSD1306 OLED display module (128×64, I²C or SPI)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+
+## Schematic
+
+### I²C wiring (most common — 4 pins)
+
+```
+SSD1306 (I²C)         Arduino
+-------------         -------
+VCC           -->     5V (or 3.3V — most modules include a regulator)
+GND           -->     GND
+SCL           -->     A5 (Uno/Nano) or SCL (Mega)
+SDA           -->     A4 (Uno/Nano) or SDA (Mega)
+```
+
+### SPI wiring (6–7 pins, faster refresh)
+
+```
+SSD1306 (SPI)         Arduino
+-------------         -------
+VCC           -->     5V
+GND           -->     GND
+CS            -->     Digital Pin 10
+DC            -->     Digital Pin 9
+RESET (RST)   -->     Digital Pin 8
+MOSI (SDA)    -->     Digital Pin 11 (MOSI)
+SCK (SCL)     -->     Digital Pin 13 (SCK)
+```
+
+SPI provides faster refresh rates than I²C, useful for animations.
+
+## Pin Map
+
+### I²C pins
+
+| Module Pin | Name | Arduino Connection |
+|---|---|---|
+| VCC | Power | 5V or 3.3V |
+| GND | Ground | GND |
+| SCL | I²C Clock | A5 (Uno), SCL (Mega) |
+| SDA | I²C Data | A4 (Uno), SDA (Mega) |
+
+### SPI pins
+
+| Module Pin | Name | Arduino Connection |
+|---|---|---|
+| VCC | Power | 5V or 3.3V |
+| GND | Ground | GND |
+| CS | Chip Select | Pin 10 |
+| DC | Data / Command | Pin 9 |
+| RESET (RST) | Reset | Pin 8 |
+| MOSI (SDA) | SPI Data | Pin 11 |
+| SCK (SCL) | SPI Clock | Pin 13 |
+
+### I²C address
+
+The SSD1306 I²C address is typically **0x3C** (or 0x3D on some modules). If the display doesn't respond, try the alternate address.
+
+## Install necessary Library
+
+Install the following libraries via the Library Manager (`Tools > Manage Libraries`):
+
+1. **Adafruit SSD1306** by Adafruit
+2. **Adafruit GFX** by Adafruit (required dependency)
+
+Alternatively, using arduino-cli:
+
+```bash
+arduino-cli lib install "Adafruit SSD1306"
+arduino-cli lib install "Adafruit GFX"
+```
+
+## Code with complete explanation
+
+This sketch demonstrates text, shapes, and bitmap display on the SSD1306 OLED via I²C.
+
+```cpp
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH  128
+#define SCREEN_HEIGHT 64
+
+// I²C address — change to 0x3D if needed
+#define OLED_ADDR     0x3C
+
+// Reset pin — set to -1 if tied to VCC (most I²C modules)
+#define OLED_RESET    -1
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+void setup()
+{
+  Serial.begin(9600);
+
+  // Initialise display
+  if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR))
+  {
+    Serial.println("SSD1306 allocation failed");
+    while (1) {}
+  }
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.println("OLED Ready!");
+  display.display();
+  delay(1500);
+
+  // Run demos
+  demoText();
+  demoShapes();
+  demoBitmap();
+}
+
+void loop()
+{
+  // Nothing in loop — run setup once
+}
+
+void demoText()
+{
+  display.clearDisplay();
+
+  display.setTextSize(2);
+  display.setCursor(10, 0);
+  display.println("Hello!");
+
+  display.setTextSize(1);
+  display.setCursor(0, 20);
+  display.print("Temp: ");
+  display.print(22.5);
+  display.println(" C");
+
+  display.setCursor(0, 30);
+  display.print("Hum:  65 %");
+
+  display.setTextSize(1);
+  display.setCursor(0, 50);
+  display.println("128 x 64 OLED");
+
+  display.display();
+  delay(3000);
+}
+
+void demoShapes()
+{
+  display.clearDisplay();
+
+  display.drawRect(10, 10, 30, 20, SSD1306_WHITE);
+  display.fillRect(50, 10, 30, 20, SSD1306_WHITE);
+  display.drawCircle(20, 50, 10, SSD1306_WHITE);
+  display.fillCircle(60, 50, 10, SSD1306_WHITE);
+  display.drawTriangle(90, 10, 100, 30, 110, 10, SSD1306_WHITE);
+
+  display.display();
+  delay(3000);
+}
+
+void demoBitmap()
+{
+  // Simple 16x16 smiley face bitmap
+  static const uint8_t PROGMEM smiley[] = {
+    0b00001111, 0b11110000,
+    0b00010000, 0b00001000,
+    0b00100000, 0b00000100,
+    0b01000000, 0b00000010,
+    0b01000000, 0b00000010,
+    0b10000000, 0b00000001,
+    0b10000110, 0b01100001,
+    0b10001001, 0b10010001,
+    0b10010000, 0b00001001,
+    0b10010000, 0b00001001,
+    0b10001001, 0b10010001,
+    0b10000110, 0b01100001,
+    0b10000000, 0b00000001,
+    0b01000000, 0b00000010,
+    0b00100000, 0b00000100,
+    0b00011111, 0b11111000
+  };
+
+  display.clearDisplay();
+  display.drawBitmap(56, 24, smiley, 16, 16, SSD1306_WHITE);
+  display.display();
+  delay(3000);
+}
+```
+
+### Code breakdown
+
+- `Adafruit_SSD1306 display(width, height, &Wire, reset)` — creates an SSD1306 display object for I²C. For SPI, use `Adafruit_SSD1306 display(width, height, &SPI, DC, RST, CS)`.
+- `display.begin(SSD1306_SWITCHCAPVCC, addr)` — initialises the display. `SSD1306_SWITCHCAPVCC` enables the internal charge pump (required for 3.3V operation).
+- `display.clearDisplay()` — clears the internal buffer (all pixels off).
+- `display.display()` — sends the buffer to the display. Changes only take effect after this call.
+- `display.setCursor(x, y)` — sets the text cursor position (in pixels).
+- `display.setTextSize(n)` — sets text size multiplier (1 = 6×8 pixel font, 2 = 12×16, etc.).
+- `display.setTextColor(color)` — sets the text/foreground colour. On monochrome OLED: `SSD1306_WHITE` (on) or `SSD1306_BLACK` (off, for inverting).
+- `display.println(text)` — prints text and advances to the next line.
+- `display.drawRect(x, y, w, h, color)` — draws a rectangle outline.
+- `display.fillRect(x, y, w, h, color)` — draws a filled rectangle.
+- `display.drawCircle(x, y, r, color)` — draws a circle outline.
+- `display.drawBitmap(x, y, bitmap, w, h, color)` — draws a monochrome bitmap from PROGMEM.
+
+### Using the SPI interface
+
+```cpp
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define OLED_CS   10
+#define OLED_DC   9
+#define OLED_RST  8
+
+Adafruit_SSD1306 display(128, 64, &SPI, OLED_DC, OLED_RST, OLED_CS);
+
+void setup()
+{
+  display.begin(SSD1306_SWITCHCAPVCC);
+  // No I²C address needed for SPI
+}
+```
+
+### Inverted display and scrolling
+
+```cpp
+// Invert entire display
+display.invertDisplay(true);  // true = inverted, false = normal
+
+// Horizontal scroll
+display.startscrollright(0x00, 0x0F); // Scroll right, start page 0, end page 15
+// display.startscrollleft(0x00, 0x0F);
+// display.stopscroll();
+```
+
+## Steps to perform this interfacing
+
+1. Determine whether your OLED module uses I²C (4 pins) or SPI (6–7 pins). Most 0.96" modules are I²C.
+2. Connect the OLED to the Arduino as shown in the relevant schematic.
+3. Install the Adafruit SSD1306 and Adafruit GFX libraries.
+4. Copy the code into the Arduino IDE. If using SPI, uncomment the SPI constructor.
+5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+6. Upload the sketch to the Arduino.
+7. The display will show "OLED Ready!", then text, then shapes, then a smiley face bitmap.
+
+### Troubleshooting
+
+- **Display blank:** Adjust the contrast potentiometer (if present) or check that I²C address matches (try 0x3C and 0x3D).
+- **Garbled or no display:** Check wiring, especially VCC/GND. For I²C, verify SDA/SCL are not swapped. For SPI, ensure CS and DC are on the correct pins.
+- **Faint display:** The SSD1306 needs the internal charge pump enabled. Ensure `SSD1306_SWITCHCAPVCC` is passed to `begin()`.
+
+## Caution
+
+- **I²C address:** Most SSD1306 modules use address 0x3C. Some (particularly 128×32 or certain batches) use 0x3D. If the display doesn't initialise, try the other address in `display.begin()`.
+- **Pull-up resistors:** I²C modules include onboard pull-up resistors on SDA and SCL. If using the module without onboard pull-ups, add external 4.7 kΩ resistors from SDA to VCC and SCL to VCC. Without pull-ups, the I²C bus will not work.
+- **Charge pump:** The SSD1306 requires the internal DC-DC charge pump to generate the OLED drive voltage (≈7–15 V). This is enabled by `SSD1306_SWITCHCAPVCC`. If the display is very faint, the charge pump may not be running — ensure VCC is ≥ 3.3 V and the charge pump setting is correct.
+- **Current draw:** The OLED draws 15–25 mA in normal use (all pixels on white). This is higher than a character LCD but lower than a TFT display (which has a backlight). The peak current during charge pump start-up can reach 30 mA.
+- **Burn-in:** Like all OLEDs, the SSD1306 is susceptible to permanent burn-in if the same static image is displayed for extended periods. Avoid displaying fixed patterns (e.g., a static menu) for days at a time. Use screen savers or periodic inversion if the display must remain on continuously.
+- **SPI vs I²C speed:** The SPI interface is significantly faster (up to 10 MHz SPI clock vs 400 kHz I²C). For animated content or high frame rates, use SPI. For static text displays, I²C is adequate and uses fewer pins.

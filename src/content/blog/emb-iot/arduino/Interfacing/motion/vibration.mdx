@@ -1,0 +1,249 @@
+---
+title: "Vibration Sensor (SW-420 / Piezo)"
+description: "Vibration Sensor interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Motion & Proximity"]
+tags: ["Arduino", "Vibration", "SW-420", "Piezo"]
+slug: "arduino-SW-420-piezo-vibration-sensor-interfacing"
+author: "Abhishek Sharma"
+order: 6
+---
+
+import CloudinaryImage from '@/components/CloudinaryImage.astro';
+
+# Vibration Sensor (SW-420 / Piezo)
+
+Vibration sensors detect mechanical motion or impact using one of two common technologies: a **spring-based mechanical switch** (SW-420) that momentarily closes on vibration, or a **piezoelectric element** that generates a voltage spike when flexed. The SW-420 module includes an LM393 comparator with a potentiometer for sensitivity adjustment and provides both analog (AO) and digital (DO) outputs. Applications include vibration alarms, door/window knock detection, washing machine status monitoring, and impact sensing.
+
+<CloudinaryImage 
+   publicId="Vibration-Sensor-Pinout_hcnp5i.jpg" 
+   alt="Vibration Sensor Module" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- SW-420 vibration sensor module (spring switch + LM393) OR piezoelectric disc
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+- (Optional) Buzzer module for alarm output
+
+## Schematic
+
+### SW-420 module
+
+```
+SW-420 Module         Arduino
+-------------         -------
+VCC           -->     5V
+GND           -->     GND
+DO (Digital)  -->     Digital Pin 2
+AO (Analog)   -->     A0 (optional)
+```
+
+The SW-420 contains a coiled spring with a metal pin through the centre. When vibration is sufficient, the spring contacts the pin momentarily, completing the circuit.
+
+### Piezo disc (direct)
+
+```
+Piezo Element         Arduino
+-------------         -------
+One terminal    -->   A0 (analog input)
+Other terminal  -->   GND
+
+Optional: 1 MΩ resistor across piezo terminals
+(for faster signal decay)
+```
+
+No external power is required — the piezo generates its own voltage.
+
+## Pin Map
+
+### SW-420 module
+
+| Module Pin | Name | Arduino Connection |
+|---|---|---|
+| VCC | Power | 5V |
+| GND | Ground | GND |
+| DO | Digital output | Pin 2 (interrupt-capable) |
+| AO | Analog output (noise envelope) | A0 |
+
+- DO: HIGH when no vibration, LOW when vibration exceeds threshold.
+- AO: raw amplified signal from the spring switch (fluctuating).
+- Potentiometer adjusts the comparator threshold.
+
+### Piezo disc
+
+| Component | Arduino Pin |
+|---|---|
+| Piezo + terminal | A0 |
+| Piezo - terminal | GND |
+| 1 MΩ resistor (optional) | Across terminals |
+
+## Install necessary Library
+
+No library is required. For the SW-420, use `digitalRead()`. For the piezo, use `analogRead()`. For event counting, `attachInterrupt()` is recommended for the SW-420's DO pin.
+
+## Code with complete explanation
+
+### SW-420 vibration detection with interrupt
+
+This sketch counts vibration events and triggers an alarm if the rate exceeds a threshold.
+
+```cpp
+#define VIB_DO  2    // Digital output (interrupt-capable)
+#define BUZZER  9
+#define LED_PIN 13
+
+volatile unsigned long vibrationCount = 0;
+unsigned long lastReportTime = 0;
+const unsigned long REPORT_INTERVAL = 5000;  // ms
+const unsigned long ALARM_THRESHOLD = 10;    // events per interval
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(VIB_DO, INPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+
+  attachInterrupt(digitalPinToInterrupt(VIB_DO), onVibration, FALLING);
+
+  Serial.println("Vibration Sensor Test");
+}
+
+void loop()
+{
+  unsigned long now = millis();
+
+  if (now - lastReportTime >= REPORT_INTERVAL)
+  {
+    noInterrupts();
+    unsigned long count = vibrationCount;
+    vibrationCount = 0;
+    interrupts();
+
+    Serial.print("Vibrations in last 5 s: ");
+    Serial.println(count);
+
+    if (count >= ALARM_THRESHOLD)
+    {
+      Serial.println("ALARM — Excessive vibration!");
+      digitalWrite(LED_PIN, HIGH);
+      tone(BUZZER, 2000);
+      delay(2000);
+      digitalWrite(LED_PIN, LOW);
+      noTone(BUZZER);
+    }
+
+    lastReportTime = now;
+  }
+}
+
+void onVibration()
+{
+  vibrationCount++;
+}
+```
+
+### Piezo knock detector
+
+```cpp
+#define PIEZO_PIN A0
+
+int knockThreshold = 100;  // Adjust based on sensitivity
+int reading = 0;
+
+void setup()
+{
+  Serial.begin(9600);
+  Serial.println("Piezo Knock Detector");
+}
+
+void loop()
+{
+  reading = analogRead(PIEZO_PIN);
+
+  if (reading > knockThreshold)
+  {
+    Serial.print("Knock detected!  Signal: ");
+    Serial.println(reading);
+    delay(200);  // Debounce
+  }
+}
+```
+
+### Dual-threshold knock pattern
+
+```cpp
+int detectKnockPattern()
+{
+  unsigned long start = millis();
+  int peak = 0;
+
+  // Sample for 100 ms to find peak
+  while (millis() - start < 100)
+  {
+    int val = analogRead(PIEZO_PIN);
+    if (val > peak) peak = val;
+  }
+
+  return peak;
+}
+
+void loop()
+{
+  int peak = detectKnockPattern();
+
+  if (peak > 200)
+  {
+    Serial.println("Hard knock");
+  }
+  else if (peak > 80)
+  {
+    Serial.println("Light tap");
+  }
+}
+```
+
+### Code breakdown
+
+- **SW-420:** `attachInterrupt(pin, ISR, FALLING)` — triggers the interrupt service routine `onVibration()` each time the spring switch closes (LOW transition). The volatile counter tracks events.
+- `noInterrupts()` / `interrupts()` — safely copy the counter to a non-volatile variable for printing without race conditions.
+- The alarm triggers if the vibration count exceeds a threshold in the reporting interval. This filters out single spurious events (a bump, a door closing) while detecting sustained vibration (a washing machine out of balance, a drill nearby).
+- **Piezo:** `analogRead()` returns the voltage generated by the piezo disc. A knock or tap produces a sharp positive spike (up to ADC 500–900) that decays over 50–200 ms.
+- The comparison `reading > knockThreshold` detects a knock. A 200 ms debounce delay prevents multiple triggers from the same knock.
+- The peak-detection approach samples the piezo for 100 ms and returns the maximum reading, then classifies the knock intensity.
+
+### Sensitivity adjustment
+
+For the SW-420, rotate the potentiometer with a small screwdriver:
+- **Clockwise** → less sensitive (needs stronger vibration to trigger).
+- **Anticlockwise** → more sensitive (triggers on light vibration).
+
+For the piezo, adjust the `knockThreshold` in code.
+
+## Steps to perform this interfacing
+
+1. Connect the SW-420 module (or piezo disc) to the Arduino as shown.
+2. No library installation needed.
+3. Copy the code into the Arduino IDE.
+4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+5. Upload the sketch to the Arduino.
+6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+7. Tap the SW-420 module gently — observe the vibration count increment.
+8. Tap repeatedly and rapidly — when the count exceeds 10 in 5 seconds, the alarm activates.
+9. For the piezo, tap the disc — observe the peak signal value printed.
+10. Adjust the SW-420 potentiometer to set the desired sensitivity.
+
+## Caution
+
+- **SW-420 spring damage:** The coiled spring inside the SW-420 is delicate. Excessive vibration (e.g., mounting on a high-RPM motor) or a hard impact can permanently deform the spring, making it either permanently shorted (constant triggering) or permanently open (no detection). Handle gently and avoid dropping the module.
+- **SW-420 orientation:** The SW-420 is somewhat directional — it is most sensitive to vibration perpendicular to the spring's axis. Mount it on a flat surface with the pins pointing outward for the best response. In some orientations, gravity alone can hold the spring against the pin, causing a false trigger. Mount the module with the spring axis horizontal to prevent gravity bias.
+- **Piezo voltage spikes:** A sharp impact on a piezo disc can generate > 50V (peak). While the Arduino's ADC input is clamped by protection diodes, repeated high-voltage spikes can eventually damage the input pin. For heavy-impact applications (e.g., a door slam sensor), add a 5.1V Zener diode from the analog pin to GND (cathode to pin) to clamp the voltage safely.
+- **Piezo bias resistor:** A 1 MΩ resistor across the piezo terminals is recommended. Without it, the charge generated by a knock has no discharge path and the signal decays very slowly (seconds), making the sensor appear to be continuously triggered. The resistor provides a bleed path with a time constant of ≈ 1 MΩ × piezo capacitance (≈ 10–20 nF) ≈ 10–20 ms.
+- **Debouncing:** The SW-420's spring switch bounces for 1–10 ms after the initial contact, producing multiple interrupts per vibration event. The library example uses `FALLING` edge triggering, which triggers once per contact closure. However, in heavy vibration, the spring can make and break contact dozens of times per second. The interrupt counter approach with rate-limiting naturally debounces by looking at the count over a window rather than reacting to every individual edge.
+- **Piezo as actuator vs sensor:** A piezo disc is bidirectional — applying a voltage causes it to flex and produce sound. Do not accidentally connect the piezo to an output pin configured for tone generation while also reading it as an input. If both are needed, use a resistor divider or a separate piezo for each direction.
+- **Environmental noise:** The SW-420 can be triggered by sound waves if mounted on a resonating surface (a thin plastic enclosure, a metal panel). For vibration-only sensing, use a rubber grommet or foam pad to mechanically decouple the module from airborne sound while transmitting structural vibration.
+

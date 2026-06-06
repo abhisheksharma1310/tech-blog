@@ -1,0 +1,191 @@
+---
+title: "Water Flow Sensor (YF-S201)"
+description: "Water Flow Sensor Interfacing with Arduino."
+date: "2026-05-30"
+category: ["Embedded/IoT", "Arduino", "Interfacing", "Environment"]
+tags: ["Arduino", "Water Flow Sensor"]
+slug: "arduino-water-flow-sensor-interfacing"
+author: "Abhishek Sharma"
+order: 11
+---
+
+import CloudinaryImage from '@/components/CloudinaryImage.astro';
+
+# Water Flow Sensor (YF-S201)
+
+The YF-S201 is a hall-effect water flow sensor that outputs a pulse train proportional to the flow rate through the device. An internal impeller (rotor) spins as water passes through, and a hall effect sensor detects the rotation, generating a square wave. By measuring the frequency of these pulses, the flow rate in litres per minute (L/min) and the total volume in litres can be calculated. This sensor is commonly used in water dispensers, coffee machines, irrigation controllers, and coolant monitoring systems.
+
+<CloudinaryImage 
+   publicId="YF-S201-wate-flow-sensor_sf70e1.webp" 
+   alt="YF-S201 Water Flow Sensor" 
+   className="my-6 rounded"
+/>
+
+## For this interfacing you need the following components:
+
+- Arduino board (Uno, Nano, Mega, etc.)
+- YF-S201 water flow sensor
+- 10 kΩ pull-up resistor (if not built into the module)
+- Breadboard and jumper wires
+- USB cable to connect Arduino to your computer
+- (Optional) Tubing and fittings for your specific pipe diameter
+
+## Schematic
+
+Connect the YF-S201 to the Arduino as follows:
+
+```
+YF-S201               Arduino
+--------              -------
+Red wire      -->     5V
+Black wire    -->     GND
+Yellow wire   -->     Digital Pin 2 (interrupt-capable)
+
+10 kΩ resistor between Yellow and VCC (pull-up, if not built-in)
+```
+
+Pin 2 is an interrupt-capable pin on the Uno/Nano, necessary for accurate pulse counting without losing edges. The yellow signal wire is an open-collector output that requires a pull-up resistor — most YF-S201 modules include one, but add an external 10 kΩ resistor if the signal is not reaching 5V.
+
+## Pin Map
+
+| YF-S201 Wire | Name | Arduino Connection |
+|---|---|---|
+| Red | VCC | 5V |
+| Black | GND | GND |
+| Yellow | Signal (open-collector) | Digital Pin 2 (interrupt) |
+
+The YF-S201 operates at 5–24V DC and draws approximately 15 mA. The signal output is a 5V-logic square wave compatible with Arduino inputs.
+
+## Install necessary Library
+
+No external library is required. Pulse counting uses `attachInterrupt()` built into Arduino.
+
+## Code with complete explanation
+
+This sketch measures the water flow rate and total volume. It counts pulses over a 2-second window to calculate instantaneous flow rate and accumulates volume over time.
+
+```cpp
+const int sensorPin = 2;
+
+volatile unsigned long pulseCount = 0;
+
+// Calibration factor: pulses per litre
+// YF-S201 typical: 450 pulses/L (varies by model — check datasheet)
+const float PULSES_PER_LITRE = 450.0;
+
+unsigned long lastSampleTime = 0;
+const unsigned long SAMPLE_INTERVAL = 2000; // ms
+
+float totalLitres = 0.0;
+
+void setup()
+{
+  Serial.begin(9600);
+
+  pinMode(sensorPin, INPUT_PULLUP);
+
+  // Attach interrupt on RISING edge
+  attachInterrupt(digitalPinToInterrupt(sensorPin), countPulse, RISING);
+
+  Serial.println("YF-S201 Water Flow Sensor Test");
+  Serial.println();
+}
+
+void loop()
+{
+  unsigned long now = millis();
+
+  if (now - lastSampleTime >= SAMPLE_INTERVAL)
+  {
+    // Disable interrupt during calculation
+    detachInterrupt(digitalPinToInterrupt(sensorPin));
+
+    unsigned long count = pulseCount;
+    pulseCount = 0;
+
+    // Re-enable interrupt
+    attachInterrupt(digitalPinToInterrupt(sensorPin), countPulse, RISING);
+
+    lastSampleTime = now;
+
+    // Calculate flow rate (L/min)
+    float frequency = count / (SAMPLE_INTERVAL / 1000.0);  // Hz (pulses per second)
+    float flowRate  = (frequency / PULSES_PER_LITRE) * 60; // L/min
+
+    // Accumulate total volume
+    float litresThisInterval = count / PULSES_PER_LITRE;
+    totalLitres += litresThisInterval;
+
+    Serial.print("Pulses: ");
+    Serial.print(count);
+    Serial.print("  Flow: ");
+    Serial.print(flowRate, 2);
+    Serial.print(" L/min");
+    Serial.print("  Volume: ");
+    Serial.print(totalLitres, 3);
+    Serial.print(" L");
+    Serial.print("  (this interval: ");
+    Serial.print(litresThisInterval, 3);
+    Serial.println(" L)");
+  }
+}
+
+void countPulse()
+{
+  pulseCount++;
+}
+```
+
+### Code breakdown
+
+- `attachInterrupt(pin, ISR, RISING)` — triggers on LOW→HIGH transitions of the hall effect sensor output.
+- `volatile unsigned long pulseCount` — counter incremented by the ISR. Declared `volatile` because it is modified inside an interrupt context.
+- `count / (SAMPLE_INTERVAL / 1000.0)` — converts pulse count to frequency (Hz). With a 2-second window, divide by 2.
+- `(frequency / PULSES_PER_LITRE) * 60` — converts Hz to L/min. If the sensor gives 450 pulses per litre, then 450 Hz = 1 L/s = 60 L/min, so 1 Hz = 0.133 L/min.
+- `count / PULSES_PER_LITRE` — calculates the volume of water that passed during the sample interval.
+- `totalLitres` — running total of all water that has flowed since power-on (or last reset).
+
+### Calibration factor reference
+
+| Sensor Model | Pulses per Litre | Pulses per Gallon (US) |
+|---|---|---|
+| YF-S201 | 450 | 1703 |
+| YF-S401 | 588 | 2226 |
+| YF-S402 | 2220 | 8403 |
+| YF-B1 | 280 | 1060 |
+| OF-002ZT | 585 | 2214 |
+
+Check your specific sensor's datasheet and adjust `PULSES_PER_LITRE` accordingly. You can also calibrate by measuring a known volume and adjusting the factor.
+
+### Manual calibration
+
+To calibrate the sensor for your specific unit:
+
+1. Run water through the sensor and collect the output in a measuring jug for exactly 1 minute.
+2. Note the total pulse count reported by the Arduino.
+3. Your calibration factor = pulse count / collected litres.
+4. Update `PULSES_PER_LITRE` with this value.
+
+## Steps to perform this interfacing
+
+1. Connect the YF-S201 to the Arduino as shown in the schematic. Use pin 2 (interrupt-capable) for the signal.
+2. If the signal does not reach 5V, add a 10 kΩ pull-up resistor between the yellow wire and 5V.
+3. Mount the sensor in your water line with the flow direction arrow pointing in the direction of flow.
+4. Check your sensor's datasheet for the pulses-per-litre factor and update `PULSES_PER_LITRE` in the code.
+5. Copy the code into the Arduino IDE.
+6. Select the correct board and port (`Tools > Board` and `Tools > Port`).
+7. Upload the sketch to the Arduino.
+8. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
+9. Open the water valve slightly — observe the pulse count, flow rate, and accumulated volume printed every 2 seconds.
+10. Close the valve — the flow rate should drop to zero and pulse counting should stop.
+
+## Caution
+
+- **Interrupt pin required:** The YF-S201 signal must be on an interrupt-capable pin. On Uno/Nano, only pins 2 and 3 support interrupts. Using a non-interrupt pin with `digitalRead()` in a loop will miss pulses at moderate flow rates (above ~2 L/min).
+- **Maximum pressure and temperature:** The YF-S201 is rated for water pressures up to 2.0 MPa (≈20 bar / 290 psi) and temperatures from −25°C to +80°C. Do not use with hot water above 80°C or with corrosive fluids. The plastic housing (POM / nylon) may degrade in prolonged contact with strong acids, alkalis, or organic solvents.
+- **Flow direction:** The sensor has a marked flow direction arrow. Installing it backwards will prevent the impeller from spinning correctly. The sensor must also be mounted with the impeller axis horizontal or slightly tilted downward to ensure water fills the chamber — air pockets cause erratic readings.
+- **Minimum flow rate:** The YF-S201 requires a minimum flow rate of approximately 0.3–0.5 L/min to start the impeller turning. Below this rate, pulses may stop and the sensor will report zero flow even though a small amount of water is passing.
+- **Particle filtration:** The small impeller can be jammed by debris in the water. Install a 100-micron or finer filter upstream of the sensor to prevent clogging or damage. Even clean municipal water can contain small particles that accumulate over time.
+- **Impeller wear:** The impeller spins on a metal shaft. Over extended use (years), the shaft and bearing can wear, changing the calibration factor. Regular calibration checks are recommended for long-term monitoring installations.
+- **Cavitation:** Do not install the sensor immediately downstream of a pump outlet or a sharp reduction in pipe diameter. Turbulence and cavitation cause the impeller to spin erratically, producing inaccurate readings. Allow at least 10 pipe diameters of straight pipe before and after the sensor.
+- **Electrical isolation:** The sensor's electronics are not isolated from the water path — the hall effect sensor is potted but uses the same housing as the water channel. Do not use the YF-S201 in applications where electrical continuity with the water is a safety concern (e.g., medical or drinking water monitoring where galvanic isolation is required).

@@ -17,6 +17,7 @@ export interface Post {
   Content: any;
 }
 
+// 1. Scan the new 'posts' folder recursively (** covers all subfolders)
 const modules = import.meta.glob('../content/blog/**/*.{md,mdx}', { eager: true }) as Record<
   string,
   {
@@ -32,23 +33,21 @@ const posts: Post[] = Object.entries(modules)
 
     return {
       slug,
-      url: `/blog/${slug}`,
+      // 2. Removed '/blog/' prefix from the URL asset path
+      url: `/${slug}`, 
       frontmatter: module.frontmatter,
       Content: module.default
     };
   })
   .filter((post) => !post.frontmatter.draft)
   .sort((a, b) => {
-    // Get the first category for each post
     const catA = a.frontmatter.category[0] || '';
     const catB = b.frontmatter.category[0] || '';
 
-    // Sort by category first
     if (catA !== catB) {
       return catA.localeCompare(catB);
     }
 
-    // Within same category, sort by order field if present
     const orderA = a.frontmatter.order ?? Infinity;
     const orderB = b.frontmatter.order ?? Infinity;
 
@@ -56,7 +55,6 @@ const posts: Post[] = Object.entries(modules)
       return orderA - orderB;
     }
 
-    // Fallback to date (newest first)
     return b.frontmatter.date.localeCompare(a.frontmatter.date);
   });
 

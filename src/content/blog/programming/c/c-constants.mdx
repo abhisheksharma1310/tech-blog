@@ -1,0 +1,31 @@
+---
+title: "Constants"
+description: "Constants in C."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Programming Basics", "Constants"]
+slug: "c-constants"
+author: "Abhishek Sharma"
+order: 3
+---
+
+# Constants
+
+In C programming, a constant is a value that cannot be changed during the execution of a program. Constants are used to represent fixed values that are known at compile time and do not change throughout the program. They can be defined using the `const` keyword or by using preprocessor directives.
+
+## Using `const` keyword
+The `const` keyword is used to declare a variable as a constant. Once a variable is declared as `const`, its value cannot be modified after it has been initialized. Here’s an example:
+
+```c
+#include <stdio.h>
+int main() {
+    const int MAX_SIZE = 100; // MAX_SIZE is a constant
+    printf("The maximum size is: %d\n", MAX_SIZE);
+    
+    // MAX_SIZE = 200; // This will cause a compilation error because MAX_SIZE is a constant
+    
+    return 0;
+}
+```
+
+In this example, `MAX_SIZE` is declared as a constant integer with a value of 100. Attempting to change the value of `MAX_SIZE` will result in a compilation error.

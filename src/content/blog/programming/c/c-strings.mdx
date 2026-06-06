@@ -1,0 +1,119 @@
+---
+title: "Strings"
+description: "Strings in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language"]
+tags: ["C", "Programming Basics", "Strings"]
+slug: "c-strings"
+author: "Abhishek Sharma"
+order: 8
+---
+
+# Strings
+
+Strings in C programming are a sequence of characters that are stored in an array of characters.
+In C, strings are represented as null-terminated character arrays, which means that the last character in the array is a null character (`'\0'`) that indicates the end of the string.
+This allows C to determine where the string ends when processing it. For example, the string "Hello" would be stored in an array of characters as follows:
+```c
+char myString[] = {'H', 'e', 'l', 'l', 'o', '\0'};
+```
+In this example, the string "Hello" is stored in an array of characters, and the null character `'\0'` is used to indicate the end of the string. When you declare a string in C, you can also use double quotes to initialize it, which automatically adds the null character at the end. For example:
+```c
+char myString[] = "Hello";
+```
+In this case, the string "Hello" is initialized in the array `myString`, and the null character is automatically added at the end of the string. You can access individual characters in the string using their index, just like with any other array. For example:
+```c
+char myString[] = "Hello";
+printf("%c\n", myString[0]); // Output: H
+printf("%c\n", myString[1]); // Output: e
+printf("%c\n", myString[2]); // Output: l
+printf("%c\n", myString[3]); // Output: l
+printf("%c\n", myString[4]); // Output: o
+```
+In this example, we access each character in the string `myString` using its index and print its value to the console. Remember that string indices start at 0, so `myString[0]` refers to the first character, `myString[1]` refers to the second character, and so on. Strings in C are a fundamental data type that allows you to work with text and manipulate character data. However, it's important to be mindful of the null character and ensure that you do not access characters beyond the null character, as this can lead to undefined behavior. Additionally, C provides a standard library of functions for working with strings, such as `strlen` for calculating the length of a string, `strcpy` for copying strings, and `strcmp` for comparing strings, among others. These functions can be very useful for performing common string operations in C programming.
+
+## Here are some examples of common string operations in C:
+### Calculating the Length of a String
+```c
+#include <stdio.h>
+#include <string.h>
+int main() {
+    char myString[] = "Hello, World!";
+    int length = strlen(myString);
+    printf("The length of the string is: %d\n", length);
+    return 0;
+}
+```
+In this example, we use the `strlen` function from the `<string.h>` library to calculate the length of the string `myString` and print it to the console.
+
+### Copying a String
+```c
+#include <stdio.h>
+#include <string.h>
+int main() {
+    char source[] = "Hello, World!";
+    char destination[20]; // Make sure the destination array is large enough to hold the source
+    strcpy(destination, source);
+    printf("Copied string: %s\n", destination);
+    return 0;
+}
+```
+
+In this example, we use the `strcpy` function to copy the contents of the `source` string into the `destination` array. We also ensure that the `destination` array is large enough to hold the copied string.
+
+### Comparing Strings
+```c
+#include <stdio.h>
+#include <string.h>
+int main() {
+    char string1[] = "Hello";
+    char string2[] = "Hello";
+    char string3[] = "World";
+    if (strcmp(string1, string2) == 0) {
+        printf("string1 and string2 are equal.\n");
+    } else {
+        printf("string1 and string2 are not equal.\n");
+    }
+    if (strcmp(string1, string3) == 0) {
+        printf("string1 and string3 are equal.\n");
+    } else {        
+        printf("string1 and string3 are not equal.\n");
+    }
+    return 0;
+}
+```
+In this example, we use the `strcmp` function to compare `string1` with `string2` and `string3`. The `strcmp` function returns 0 if the strings are equal, a negative value if the first string is less than the second string, and a positive value if the first string is greater than the second string. In this case, `string1` and `string2` are equal, while `string1` and `string3` are not equal.
+
+### Concatenating Strings
+```c
+#include <stdio.h>
+#include <string.h>
+int main() {
+    char string1[20] = "Hello, ";
+    char string2[] = "World!";
+    strcat(string1, string2);
+    printf("Concatenated string: %s\n", string1);
+    return 0;
+}
+```
+In this example, we use the `strcat` function to concatenate `string2` to the end of `string1`. We also ensure that `string1` has enough space to hold the concatenated result. After the concatenation, `string1` contains the combined string "Hello, World!", which is printed to the console.
+
+### Finding a Substring
+```c
+#include <stdio.h>
+#include <string.h>
+int main() {
+    char string[] = "Hello, World!";
+    char substring[] = "World";
+    char *ptr = strstr(string, substring);
+    if (ptr != NULL) {
+        printf("Substring found at position: %ld\n", ptr - string);
+    } else {
+        printf("Substring not found.\n");
+    }
+    return 0;
+}
+```
+In this example, we use the `strstr` function to find the first occurrence of the `substring` in the `string`. If the substring is found, `strstr` returns a pointer to the first occurrence of the substring in the string. We then calculate the position of the substring by subtracting the original string pointer from the returned pointer. If the substring is not found, `strstr` returns `NULL`, and we print a message indicating that the substring was not found.
+
+These examples demonstrate some of the common operations you can perform with strings in C programming. Remember to always be cautious when working with strings in C, as improper handling can lead to issues such as buffer overflows and undefined behavior. Always ensure that your string arrays are large enough to hold the data you intend to store, and be mindful of the null character that indicates the end of a string.

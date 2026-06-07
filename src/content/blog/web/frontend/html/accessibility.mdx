@@ -3,7 +3,7 @@ title: "Accessibility"
 description: "Learn about accessibility elements in HTML"
 date: "2026-05-30"
 category: ["Web Development", "Frontend", "HTML"]
-tags: ["HTML", "Text"]
+tags: ["HTML", "Accessibility", "a11y"]
 slug: "accessibility-in-html"
 author: "Abhishek Sharma"
 order: 12
@@ -11,12 +11,249 @@ order: 12
 
 # Accessibility
 
+Web accessibility (a11y) means designing web pages that can be used by **everyone**, including people with disabilities — visual, auditory, motor, or cognitive. Accessible HTML benefits all users, improves SEO, and is required by law in many countries (WCAG / Section 508).
+
 ## Use Semantic HTML
+
+Semantic HTML is the **foundation of accessibility**. Screen readers and other assistive technologies rely on HTML elements to understand page structure and purpose.
+
+<CodePlayground
+  title=""
+  html='
+<!-- ❌ Bad — all divs, no meaning -->
+<div class="header">
+  <div class="nav">...</div>
+</div>
+<div class="main">
+  <div class="article">...</div>
+</div>
+
+<!-- ✅ Good — semantic elements convey meaning -->
+<header>
+  <nav>...</nav>
+</header>
+<main>
+  <article>...</article>
+</main>
+' />
+
+**Why it matters:** A screen reader user can jump from `<nav>` to `<main>` to `<article>` using keyboard shortcuts. With `<div>`s, they have to Tab through every element.
+
+### Heading hierarchy
+
+Use headings in order — `<h1>` → `<h2>` → `<h3>` — and do not skip levels:
+
+<CodePlayground
+  title=""
+  html='
+<!-- ❌ Bad -->
+<h1>Page Title</h1>
+<h3>Sub-section</h3>  <!-- Skipped h2 -->
+
+<!-- ✅ Good -->
+<h1>Page Title</h1>
+<h2>Section</h2>
+<h3>Sub-section</h3>
+' />
+
+Screen reader users navigate by headings. A logical hierarchy creates a table of contents they can scan.
+
+### Landmark elements
+
+| Element | Landmark Role | Purpose |
+|---|---|---|
+| `<header>` | `banner` | Site header (per-page) |
+| `<nav>` | `navigation` | Navigation links |
+| `<main>` | `main` | Primary page content |
+| `<section>` | `region` (if named) | Thematic group |
+| `<article>` | `article` | Self-contained content |
+| `<aside>` | `complementary` | Related content |
+| `<footer>` | `contentinfo` | Footer information |
+| `<form>` | `form` | Form (if has accessible name) |
 
 ## Use alt Attributes for Images
 
+The `alt` attribute provides **text alternatives** for images:
+
+<CodePlayground
+  title=""
+  html='
+<!-- Informative image — describe what it shows -->
+<img src="chart.png" alt="Bar chart showing 25% revenue growth in Q1 2026">
+
+<!-- Decorative image — empty alt tells screen readers to skip it -->
+<img src="decorative-border.png" alt="">
+
+<!-- Functional image (link) — describe the destination -->
+<a href="/portfolio">
+  <img src="thumb.jpg" alt="View my portfolio project">
+</a>
+
+<!-- Icon with text — redundant, use empty alt -->
+<button>
+  <img src="search-icon.png" alt=""> Search
+</button>
+' />
+
+**Rules for alt text:**
+- Be **descriptive** but **concise** (under 125 characters).
+- If the image is **decorative**, use `alt=""` (empty) — never omit the `alt` attribute.
+- If the image is a **link**, describe the link destination.
+- If the image contains **text**, include that text in the `alt`.
+
 ## Use the role Attribute
+
+The `role` attribute explicitly defines an element's **purpose** for assistive technologies. Use it when the HTML element alone is not sufficient:
+
+<CodePlayground
+  title=""
+  html='
+<!-- Use semantic elements first, then add role if needed -->
+<nav role="navigation" aria-label="Main navigation">...</nav>
+
+<!-- Custom widget that behaves like a button -->
+<div role="button" tabindex="0" onclick="submit()">Submit</div>
+
+<!-- Alert message -->
+<div role="alert">Form submitted successfully!</div>
+
+<!-- Tab interface -->
+<div role="tablist">
+  <button role="tab" aria-selected="true">Tab 1</button>
+  <button role="tab">Tab 2</button>
+</button>
+' />
+
+**Important:** Prefer native semantic elements over `role`. A `<button>` already has `role="button"` built in — do not add it.
+
+### Common roles
+
+| Role | Purpose |
+|---|---|
+| `button` | Clickable element that triggers an action |
+| `link` | Navigates to another page or section |
+| `navigation` | Collection of links |
+| `banner` | Site-wide header content |
+| `main` | Primary content |
+| `complementary` | Supporting content (sidebar) |
+| `contentinfo` | Footer information |
+| `alert` | Important, time-sensitive message |
+| `dialog` | Modal or popup window |
+| `tab` / `tablist` | Tabbed interface |
+| `progressbar` | Progress indicator |
+| `slider` | Range input |
 
 ## Use the tabindex Attribute
 
+The `tabindex` attribute controls keyboard focus order:
+
+<CodePlayground
+  title=""
+  html='
+<!-- Natural tab order (default) -->
+<button>First</button>
+<button>Second</button>
+
+<!-- Make a non-focusable element focusable -->
+<div tabindex="0">This div is now keyboard-focusable</div>
+
+<!-- Custom tab order (use with caution) -->
+<button tabindex="3">Third</button>
+<button tabindex="1">First</button>
+<button tabindex="2">Second</button>
+' />
+
+| Value | Behaviour |
+|---|---|
+| `-1` | Focusable via JavaScript (`.focus()`) but not via Tab key |
+| `0` | Focusable via Tab in the natural document order |
+| `1`+ | Custom tab order (tabindex="1" comes before tabindex="2") |
+
+**Best practice:** Avoid positive `tabindex` values (`1`, `2`, etc.) — they override the natural DOM order and confuse keyboard users. Use `tabindex="0"` to make an element focusable, and rely on the DOM order for the tab sequence.
+
 ## Use ARIA Attributes
+
+ARIA (Accessible Rich Internet Applications) attributes supplement HTML semantics when native elements are insufficient.
+
+### ARIA Labels
+
+<CodePlayground
+  title=""
+  html='
+<!-- Visible text is insufficient -->
+<button aria-label="Close dialog">X</button>
+
+<!-- Additional context -->
+<nav aria-label="Breadcrumb navigation">...</nav>
+
+<!-- Referencing visible text -->
+<input type="search" aria-label="Search">
+' />
+
+### ARIA Describedby
+
+Links the element to a description elsewhere on the page:
+
+<CodePlayground
+  title=""
+  html='
+<label for="password">Password</label>
+<input type="password" id="password"
+       aria-describedby="password-hint">
+<p id="password-hint">Must be at least 8 characters</p>
+' />
+
+### ARIA Live Regions
+
+Announce dynamic content changes to screen readers without moving focus:
+
+<CodePlayground
+  title=""
+  html='
+<!-- Polite — waits for current speech to finish -->
+<div aria-live="polite" id="status">
+  Loading complete.
+</div>
+
+<!-- Assertive — interrupts current speech (use sparingly) -->
+<div aria-live="assertive" id="error">
+  Error: Connection lost.
+</div>
+' />
+
+### ARIA Expanded
+
+Indicates whether a collapsible element is open or closed:
+
+<CodePlayground
+  title=""
+  html='
+<button aria-expanded="false" onclick="toggleMenu()">
+  Menu
+</button>
+' />
+
+### Common ARIA attributes
+
+| Attribute | Purpose |
+|---|---|
+| `aria-label` | Provides an invisible label |
+| `aria-labelledby` | References a visible element as the label |
+| `aria-describedby` | References a visible description |
+| `aria-hidden="true"` | Hides an element from assistive technology |
+| `aria-expanded` | Indicates if a collapsible is open/closed |
+| `aria-selected` | Indicates selected tab or option |
+| `aria-current` | Indicates current page in navigation (`page`, `step`, `location`, `date`, `time`, `true`) |
+| `aria-live` | Announces dynamic content (`off`, `polite`, `assertive`) |
+| `aria-required` | Indicates a required field (prefer HTML `required` attribute) |
+| `aria-invalid` | Indicates invalid input (`true`, `false`, `grammar`, `spelling`) |
+| `aria-disabled` | Marks element as disabled (use HTML `disabled` when possible) |
+| `role` | Defines the element type for assistive technology |
+
+### ARIA Rules (first rule of ARIA)
+
+1. **If you can use a native HTML element, do it.** `<button>` is better than `<div role="button">`.
+2. **Do not change native semantics.** Do not add `role="heading"` to a `<button>`.
+3. **All interactive ARIA controls must be keyboard-accessible.** If it has `role="button"`, it must be reachable via Tab and activatable with Enter/Space.
+4. **Do not use `role="presentation"` or `aria-hidden="true"` on focusable elements.**
+5. **All interactive elements must have an accessible name** (via content, `aria-label`, or `aria-labelledby`).

@@ -11,35 +11,228 @@ order: 1
 
 # HTML
 
+HTML (HyperText Markup Language) is the standard language for creating web pages. It describes the structure of a web page using a system of tags and attributes. Every website you visit is built on HTML.
+
 ## History of HTML
+
+HTML was created by **Tim Berners-Lee** in 1991 while working at CERN. He wanted a way for scientists to share documents over the internet. The first version had only 18 tags. Today, HTML has over 140 tags and is maintained by the **W3C (World Wide Web Consortium)** and **WHATWG (Web Hypertext Application Technology Working Group)**.
 
 ## HTML Versions Timeline
 
+| Version | Year | Key Features |
+|---|---|---|
+| HTML 1.0 | 1991 | Basic text, links, images |
+| HTML 2.0 | 1995 | Forms, tables |
+| HTML 3.2 | 1997 | CSS support, scripts |
+| HTML 4.01 | 1999 | Improved CSS, accessibility |
+| XHTML 1.0 | 2000 | Stricter syntax (XML-based) |
+| HTML5 | 2014 | Semantic tags, audio/video, canvas, local storage |
+| HTML 5.1 | 2016 | Minor improvements |
+| HTML 5.2 | 2017 | New features and fixes |
+
+The current standard is **HTML5**, which added semantic elements like `<header>`, `<footer>`, `<article>`, and native multimedia support.
+
 ## How Browser Render HTML
+
+When you visit a webpage, the browser goes through these steps:
+
+1. **Parse HTML** — reads the HTML file and builds a DOM (Document Object Model) tree.
+2. **Load CSS** — applies styles to the DOM elements.
+3. **Execute JavaScript** — runs scripts that may modify the DOM.
+4. **Render** — paints the visual output on your screen.
+
+```
+HTML File  →  Parser  →  DOM Tree  →  Render Tree  →  Display
+    ↓
+External resources (CSS, JS, images) loaded in parallel
+```
 
 ## HTML Document Structure
 
+Every HTML document follows a basic structure:
+
+<CodePlayground 
+  title="HTML Document Structure"
+  html='
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My First Page</title>
+</head>
+<body>
+  <h1>Hello, World!</h1>
+  <p>This is my first HTML page.</p>
+</body>
+</html>'
+  css=""
+  js=""
+/>
+
 ### Type Declaration
+
+`<!DOCTYPE html>` tells the browser that this is an HTML5 document. It must be the very first line in any HTML file.
 
 ### html Element
 
+The `<html>` element is the **root** of every HTML page. All other elements go inside it. The `lang` attribute (e.g., `lang="en"`) tells the browser the page language — important for accessibility and SEO.
+
 ### head Element
+
+The `<head>` element contains **metadata** — information about the page that is not displayed directly. This includes the page title, character encoding, links to CSS files, and meta tags for SEO.
 
 ### body Element
 
+The `<body>` element contains **everything visible** on the page — headings, paragraphs, images, links, forms, and all other content.
+
 ## Tags
+
+HTML uses **tags** to mark up content. Tags are words wrapped in angle brackets:
+
+<CodePlayground
+  title=""
+  html='
+  <h1>This is a heading</h1>
+<p>This is a paragraph.</p>'
+/>
+
+Most tags come in pairs: an **opening tag** (`<h1>`) and a **closing tag** (`</h1>`). Some tags are **self-closing** (void elements):
+
+<CodePlayground
+  title=""
+  html='<br>    <!-- line break -->
+<img>   <!-- image -->
+<input> <!-- input field -->'
+/>
 
 ## Elements
 
+An **element** is everything from the opening tag to the closing tag, including the content:
+
+```
+<tag>     content     </tag>
+└─┬─┘   └───┬────┘   └──┬──┘
+opening   content     closing
+tag       between     tag
+```
+
+Example:
+
+<CodePlayground
+  title=""
+  html='<p>This is a paragraph element.</p>'
+/>
+
+The element includes the `<p>` tag, the text "This is a paragraph element.", and the `</p>` tag.
+
 ## Tags vs Elements
+
+| Tags | Elements |
+|---|---|
+| The markup itself (`<p>`, `</p>`) | Tags + content together |
+| Used to define where an element starts/ends | The complete unit rendered by the browser |
+| `<a href="...">` is a tag | `<a href="...">Click me</a>` is an element |
+
+Think of **tags** as the wrapper and **elements** as the wrapped package.
 
 ## Attributes
 
+Attributes provide **additional information** about an element. They go inside the opening tag:
+
+<CodePlayground
+  title=""
+  html='<a href="https://example.com" target="_blank">Visit Example</a>'
+/>
+
+Attributes are written as `name="value"` pairs:
+
+| Attribute | Purpose |
+|---|---|
+| `href` | URL for links |
+| `src` | Source file for images |
+| `alt` | Alternative text for images |
+| `class` | CSS class name |
+| `id` | Unique identifier |
+| `style` | Inline CSS |
+| `target` | Where to open a link |
+
+Common patterns:
+
+```html
+<img src="photo.jpg" alt="A scenic view">
+<input type="text" placeholder="Enter your name" required>
+<div class="container" id="main-content">
+```
+
 ## HTML is case insensitive
+
+HTML tags and attributes are **case-insensitive** — `<P>` and `<p>` both work. However, the convention is to use **lowercase** for all tags and attributes:
+
+<CodePlayground
+  title=""
+  html='html
+<!-- Correct convention -->
+<p>Hello</p>
+<a href="page.html">Link</a>
+
+<!-- Works but not recommended -->
+<P>Hello</P>
+<A HREF="page.html">Link</A>'
+/>
+
+**Why use lowercase?** Consistency, readability, and because XHTML (a stricter version) requires lowercase.
 
 ## White spaces in HTML
 
+In HTML, multiple spaces, tabs, and newlines are collapsed into **a single space**:
+
+<CodePlayground
+  title=""
+  html='<p>This     text
+has        many
+spaces</p>'
+/>
+
+Renders as: `This text has many spaces`
+
+To preserve whitespace, use the `<pre>` tag or CSS `white-space: pre`:
+
+<CodePlayground
+  title=""
+  html='<pre>
+This   text   preserves
+  all    spaces
+    and   line breaks
+</pre>'
+/>
+
+To add a single extra space, use the `&nbsp;` entity (non-breaking space):
+
+<CodePlayground
+  title=""
+  html='<p>Hello &nbsp; World</p>'
+/>
+
 ## HTML Comments
+
+Comments are ignored by the browser and are only visible in the source code. Use `<!-- -->`:
+
+<CodePlayground
+  title=""
+  html="<!-- This is a comment — it won't be displayed -->
+<p>Visible content</p>
+
+<!--
+  Multi-line
+  comment
+-->"
+/>
+
+Comments are useful for:
+- Explaining sections of code
+- Temporarily disabling code
+- Leaving notes for yourself or other developers
 
 
 

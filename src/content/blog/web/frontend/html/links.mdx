@@ -11,20 +11,179 @@ order: 5
 
 # Links in HTML
 
+Links are what make the web a "web" — they connect pages, documents, and resources together. The `<a>` (anchor) element creates a hyperlink that users can click or tap to navigate.
+
 ## Anchor Element
+
+The basic structure of a link:
+
+```html
+<a href="https://example.com">Visit Example</a>
+```
+
+The **anchor element** wraps the link text (or content) and the `href` attribute tells the browser where to go. The text between `<a>` and `</a>` is what the user sees and clicks.
 
 ## Hyperlink Reference (href) Attribute
 
+The `href` attribute defines the **destination URL**. It can point to:
+
+```html
+<!-- Absolute URL — full web address -->
+<a href="https://www.google.com">Google</a>
+
+<!-- Relative URL — path within the same website -->
+<a href="/about.html">About Us</a>
+<a href="contact.html">Contact</a>
+
+<!-- Same-page anchor (#id) -->
+<a href="#section-2">Jump to Section 2</a>
+
+<!-- Email link -->
+<a href="mailto:hello@example.com">Send Email</a>
+
+<!-- Telephone link (mobile devices) -->
+<a href="tel:+1234567890">Call Us</a>
+
+<!-- Download a file (suggests download) -->
+<a href="document.pdf" download>Download PDF</a>
+
+<!-- Execute JavaScript -->
+<a href="javascript:void(0)" onclick="myFunction()">Run Action</a>
+```
+
 ## Link Text
+
+The **visible text** of a link should describe where the link goes:
+
+```html
+<!-- Good — descriptive -->
+<a href="/tutorials/html">Learn HTML Tutorials</a>
+
+<!-- Bad — vague -->
+<a href="/tutorials/html">Click here</a>
+
+<!-- Even worse — just a URL -->
+<a href="/tutorials/html">https://example.com/tutorials/html</a>
+```
+
+**Why it matters:** Screen reader users often navigate by jumping from link to link. "Click here" gives no context about the destination.
+
+Links can also contain images:
+
+```html
+<a href="/portfolio.html">
+  <img src="project-thumbnail.jpg" alt="View my project">
+</a>
+```
 
 ## Target Attribute
 
+The `target` attribute controls where the linked page opens:
+
+| Value | Behaviour |
+|---|---|
+| `_self` | Opens in the same tab/window (default) |
+| `_blank` | Opens in a new tab/window |
+| `_parent` | Opens in the parent frame |
+| `_top` | Opens in the full body of the window |
+
+```html
+<a href="https://example.com" target="_blank">Open in new tab</a>
+```
+
+**Security note:** When using `target="_blank"`, always add `rel="noopener noreferrer"` to prevent the target page from accessing your page via `window.opener`:
+
+```html
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">
+  Safe external link
+</a>
+```
+
 ## Link Types
+
+The `rel` attribute describes the **relationship** between the current page and the linked page:
+
+| rel Value | Purpose |
+|---|---|
+| `nofollow` | Tells search engines not to pass authority (used for paid links, untrusted content) |
+| `noopener` | Prevents `window.opener` access |
+| `noreferrer` | Hides the referrer header from the target |
+| `external` | Indicates an external link |
+| `next` / `prev` | Pagination — previous/next page |
+| `license` | Link to the license of the current page |
+| `author` | Link to the author's page |
+| `help` | Link to a help page |
+
+```html
+<a href="https://partner-site.com" rel="nofollow noopener">Partner</a>
+<a href="/page-2" rel="next">Next Page</a>
+```
 
 ## Relative vs Absolute URLs
 
+**Absolute URLs** include the full protocol and domain:
+
+```
+https://example.com/images/photo.jpg
+```
+
+**Relative URLs** are paths without the domain — they resolve relative to the current page:
+
+```
+images/photo.jpg                     — same directory
+/images/photo.jpg                    — root of the site
+../images/photo.jpg                  — parent directory
+../../assets/images/photo.jpg        — two levels up
+```
+
+| Current page | Relative URL | Resolves to |
+|---|---|---|
+| `/blog/post.html` | `image.jpg` | `/blog/image.jpg` |
+| `/blog/post.html` | `/image.jpg` | `/image.jpg` |
+| `/blog/post.html` | `../image.jpg` | `/image.jpg` |
+
+Use **relative URLs** within your own site (easier to move your site to a new domain). Use **absolute URLs** for external sites.
+
 ## Link Accessibility
+
+- Use **descriptive link text** — never just "click here" or "read more".
+- If opening in a new tab, warn users:
+
+```html
+<a href="https://example.com" target="_blank">
+  Visit Example (opens in new tab)
+</a>
+```
+
+- Skip links allow keyboard users to bypass navigation:
+
+```html
+<a href="#main-content" class="skip-link">Skip to main content</a>
+```
+
+- Use `aria-label` when the visible text is insufficient:
+
+```html
+<a href="/settings" aria-label="User settings">⚙️</a>
+```
 
 ## SEO Best Practices for Links in HTML
 
+- Use **descriptive, keyword-rich link text** — search engines use link text to understand the target page.
+- Internal links help search engines discover and index your pages.
+- Use `rel="nofollow"` for paid or untrusted links to avoid SEO penalties.
+- Check for **broken links** (404 errors) — they harm user experience and SEO.
+- A logical **link structure** (breadcrumbs, navigation, related articles) improves site crawlability.
+
 ## Detailed Table with Tag, attributes and attribute values
+
+| Attribute | Values | Description |
+|---|---|---|
+| `href` | URL, `mailto:`, `tel:`, `#id` | Link destination |
+| `target` | `_self`, `_blank`, `_parent`, `_top` | Where to open the link |
+| `rel` | `nofollow`, `noopener`, `noreferrer`, `external`, `next`, `prev`, `license`, `help`, `author`, `tag` | Relationship to linked page |
+| `download` | filename (optional) | Suggests download instead of navigating |
+| `type` | MIME type | Hints the linked content type |
+| `hreflang` | language code | Language of the linked page |
+| `ping` | URL | Tracks clicks (sends POST request) |
+| `referrerpolicy` | `no-referrer`, `origin`, `strict-origin-when-cross-origin` | Referrer behaviour |

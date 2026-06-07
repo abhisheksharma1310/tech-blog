@@ -3,7 +3,7 @@ title: "Media"
 description: "Learn about media elements in HTML"
 date: "2026-05-30"
 category: ["Web Development", "Frontend", "HTML"]
-tags: ["HTML", "Text"]
+tags: ["HTML", "Audio", "Video", "Media"]
 slug: "media-in-html"
 author: "Abhishek Sharma"
 order: 10
@@ -11,41 +11,270 @@ order: 10
 
 # Multimedia Tags in HTML
 
+HTML5 introduced native `<audio>` and `<video>` elements that allow embedding media directly in web pages without plugins like Flash. Modern browsers support a range of audio and video formats.
+
 ## audio tag
+
+The `<audio>` element embeds sound content (music, podcasts, sound effects).
 
 ### Default Behavior
 
+<CodePlayground
+  title=""
+  html='
+<audio src="song.mp3"></audio>
+' />
+
+With just the `src` attribute, the audio element is **invisible** on the page — nothing is shown and nothing plays automatically.
+
 ### Adding Controls
+
+Add the `controls` attribute to show play/pause, volume, and progress:
+
+<CodePlayground
+  title=""
+  html='
+<audio src="song.mp3" controls></audio>
+' />
 
 ### MIME Type
 
+Specify the audio format using the `type` attribute inside a `<source>` element:
+
+<CodePlayground
+  title=""
+  html='
+<audio controls>
+  <source src="song.mp3" type="audio/mpeg">
+  <source src="song.ogg" type="audio/ogg">
+  Your browser does not support the audio element.
+</audio>
+' />
+
+The browser plays the first format it supports. The text between `<audio>` and `</audio>` is a fallback for very old browsers.
+
+Supported audio formats:
+
+| Format | MIME Type | Browser Support |
+|---|---|---|
+| MP3 | `audio/mpeg` | All browsers |
+| OGG Vorbis | `audio/ogg` | Firefox, Chrome, Opera |
+| AAC | `audio/aac` | Safari, Chrome |
+| WAV | `audio/wav` | All browsers (uncompressed, large) |
+
 ### Autoplay
+
+<CodePlayground
+  title=""
+  html='
+<audio src="background.mp3" autoplay></audio>
+' />
+
+**Note:** Most browsers block autoplay with audio unless the media is muted. See "Muted Playback" below.
 
 ### Looping
 
+<CodePlayground
+  title=""
+  html='
+<audio src="loop.mp3" loop controls></audio>
+' />
+
 ### Muted Playback
 
+<CodePlayground
+  title=""
+  html='
+<audio src="intro.mp3" muted controls></audio>
+' />
+
+The `muted` attribute starts the audio with the volume off. Combined with `autoplay`, this is the only way to reliably autoplay media in modern browsers:
+
+<CodePlayground
+  title=""
+  html='
+<audio src="background.mp3" autoplay muted loop>
+  <!-- Background music that starts silently -->
+</audio>
+' />
+
 ### JavaScript Events
+
+<CodePlayground
+  title=""
+  html='
+<audio id="player" src="song.mp3" controls></audio>
+
+<script>
+  const audio = document.getElementById("player");
+
+  audio.onplay = () => console.log("Playing");
+  audio.onpause = () => console.log("Paused");
+  audio.onended = () => console.log("Finished");
+  audio.ontimeupdate = () => console.log(audio.currentTime);
+</script>
+' />
+
+Key events: `play`, `pause`, `ended`, `timeupdate`, `loadeddata`, `error`.
 
 ## video tag
 
+The `<video>` element embeds video content.
+
 ### Default Behavior
+
+<CodePlayground
+  title=""
+  html='
+<video src="movie.mp4"></video>
+' />
+
+Without `controls`, the video is invisible (though the audio still plays).
 
 ### Adding Controls
 
+<CodePlayground
+  title=""
+  html='
+<video src="movie.mp4" controls></video>
+' />
+
+Shows play/pause, progress bar, volume, fullscreen, and (on most browsers) picture-in-picture.
+
 ### MIME Type
+
+Multiple `<source>` elements for format fallback:
+
+<CodePlayground
+  title=""
+  html='
+<video controls width="640" height="360">
+  <source src="movie.mp4" type="video/mp4">
+  <source src="movie.webm" type="video/webm">
+  <source src="movie.ogv" type="video/ogg">
+  Your browser does not support the video element.
+</video>
+' />
+
+Supported video formats:
+
+| Format | MIME Type | Notes |
+|---|---|---|
+| MP4 (H.264) | `video/mp4` | Universal support |
+| WebM (VP8/VP9) | `video/webm` | Smaller size, open format |
+| OGG (Theora) | `video/ogg` | Legacy, now uncommon |
 
 ### Autoplay
 
+<CodePlayground
+  title=""
+  html='
+<video src="intro.mp4" autoplay></video>
+' />
+
+Same restriction as audio — autoplay is blocked unless `muted` is also present.
+
 ### Looping
+
+<CodePlayground
+  title=""
+  html='
+<video src="loop.mp4" loop controls></video>
+' />
 
 ### Poster Image
 
+A poster image is displayed before the video starts:
+
+<CodePlayground
+  title=""
+  html='
+<video src="movie.mp4" controls poster="thumbnail.jpg">
+</video>
+' />
+
 ### Dimensions
+
+Set width and height — the video aspect ratio is maintained:
+
+<CodePlayground
+  title=""
+  html='
+<video src="movie.mp4" controls width="640" height="360">
+</video>
+' />
+
+Always set both `width` and `height` to prevent layout shifts (cumulative layout shift / CLS) when the video loads.
 
 ### Muted Playback
 
+<CodePlayground
+  title=""
+  html='
+<video src="intro.mp4" autoplay muted loop>
+</video>
+' />
+
+Common for video backgrounds on landing pages.
+
 ### JavaScript Events
 
+<CodePlayground
+  title=""
+  html='
+<video id="vid" src="movie.mp4" controls></video>
+
+<script>
+  const vid = document.getElementById("vid");
+
+  vid.onplay = () => console.log("Playing");
+  vid.onpause = () => console.log("Paused");
+  vid.onvolumechange = () => console.log("Volume:", vid.volume);
+  vid.onfullscreenchange = () => console.log("Fullscreen:", document.fullscreenElement);
+
+  // Custom controls
+  document.getElementById("playBtn").onclick = () => vid.play();
+  document.getElementById("pauseBtn").onclick = () => vid.pause();
+  document.getElementById("seekBar").oninput = (e) => {
+    vid.currentTime = (e.target.value / 100) * vid.duration;
+  };
+</script>
+' />
+
+Key video-specific attributes:
+
+| Attribute | Description |
+|---|---|
+| `playsinline` | Play inline on iOS (not fullscreen) |
+| `disablePictureInPicture` | Prevent picture-in-picture |
+| `preload` | `none`, `metadata` (default), `auto` — how much to preload |
+
 ## Detailed Table with Tag, attributes and attribute values
+
+| Tag | Attribute | Values | Description |
+|---|---|---|---|
+| `<audio>` | `src` | URL | Audio file source |
+| `<audio>` | `controls` | (boolean) | Show browser controls |
+| `<audio>` | `autoplay` | (boolean) | Start playing automatically |
+| `<audio>` | `loop` | (boolean) | Repeat after finishing |
+| `<audio>` | `muted` | (boolean) | Start with volume off |
+| `<audio>` | `preload` | `none`, `metadata`, `auto` | Preload behaviour |
+| `<video>` | `src` | URL | Video file source |
+| `<video>` | `controls` | (boolean) | Show browser controls |
+| `<video>` | `autoplay` | (boolean) | Start playing automatically |
+| `<video>` | `loop` | (boolean) | Repeat after finishing |
+| `<video>` | `muted` | (boolean) | Start with volume off |
+| `<video>` | `poster` | URL | Thumbnail before play |
+| `<video>` | `width` | pixels | Display width |
+| `<video>` | `height` | pixels | Display height |
+| `<video>` | `preload` | `none`, `metadata`, `auto` | Preload behaviour |
+| `<video>` | `playsinline` | (boolean) | Inline playback on mobile |
+| `<video>` | `disablePictureInPicture` | (boolean) | Disable PiP |
+| `<source>` | `src` | URL | Media file source (inside audio/video) |
+| `<source>` | `type` | MIME type | Format hint |
+| `<track>` | `src` | URL | WebVTT subtitle file |
+| `<track>` | `kind` | `subtitles`, `captions`, `descriptions`, `chapters`, `metadata` | Track type |
+| `<track>` | `srclang` | language code | Track language |
+| `<track>` | `label` | text | Track label shown to user |
+| `<track>` | `default` | (boolean) | Default track |
 

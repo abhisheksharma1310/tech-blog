@@ -11,48 +11,339 @@ order: 4
 
 # Text in HTML
 
+Text is the foundation of most web pages. HTML provides a rich set of elements for structuring and marking up text semantically — meaning the tags describe the **purpose** of the text, not just its appearance.
+
 ## Headings
+
+Headings create a hierarchy for your content. There are six levels:
+
+<CodePlayground
+  title=""
+  html='
+<h1>Main Heading (page title)</h1>
+<h2>Section Heading</h2>
+<h3>Sub-section Heading</h3>
+<h4>Sub-sub-section</h4>
+<h5>Minor heading</h5>
+<h6>Smallest heading</h6>
+' />
+
+**Rules:**
+- Use `<h1>` once per page — it describes the main topic.
+- Do not skip levels (e.g., don't jump from `<h2>` to `<h4>`).
+- Headings help search engines and screen readers understand page structure.
 
 ## Paragraphs
 
+The `<p>` element wraps a paragraph of text:
+
+<CodePlayground
+  title=""
+  html='
+<p>This is a paragraph. It can contain multiple sentences.
+Browsers automatically add space before and after paragraphs.</p>
+
+<p>This is another paragraph. Paragraphs are block elements,
+so they start on a new line.</p>
+' />
+
 ## Line Breaks
+
+Use `<br>` to break a line inside a paragraph without creating a new paragraph:
+
+<CodePlayground
+  title=""
+  html='
+<p>First line<br>
+Second line<br>
+Third line</p>
+' />
+
+`<br>` is a **void element** (self-closing). Do not use it to create spacing between paragraphs — use CSS `margin` instead.
 
 ## Horizontal Rules
 
+The `<hr>` element creates a thematic break — a horizontal line across the page:
+
+<CodePlayground
+  title=""
+  html='
+<p>Content above the divider.</p>
+<hr>
+<p>Content below the divider.</p>
+' />
+
 ## Preformatted Text
 
+The `<pre>` element preserves spaces, tabs, and line breaks exactly as written:
+
+<CodePlayground
+  title=""
+  html='
+<pre>
+  function hello() {
+    console.log("Hello, World!");
+  }
+</pre>
+' />
+
+Use `<pre>` for **code blocks, ASCII art, or any text where formatting matters**.
+
 ## Blockquotes
+
+The `<blockquote>` element indicates a quoted passage from another source:
+
+<CodePlayground
+  title=""
+  html='
+<blockquote cite="https://example.com/source">
+  <p>The only way to do great work is to love what you do.</p>
+  <footer>—Steve Jobs</footer>
+</blockquote>
+' />
+
+For short, inline quotes, use `<q>`:
+
+<CodePlayground
+  title=""
+  html='
+<p>He said, <q>HTML is the language of the web.</q></p>
+' />
 
 ## Lists
 
 ### Unordered Lists
 
+`<ul>` creates a bullet-point list. Each item uses `<li>`:
+
+<CodePlayground
+  title=""
+  html='
+<ul>
+  <li>Apples</li>
+  <li>Bananas</li>
+  <li>Cherries</li>
+</ul>
+' />
+
+Nested lists:
+
+<CodePlayground
+  title=""
+  html='
+<ul>
+  <li>Fruits
+    <ul>
+      <li>Apple</li>
+      <li>Banana</li>
+    </ul>
+  </li>
+  <li>Vegetables</li>
+</ul>
+' />
+
 ### Ordered Lists
+
+`<ol>` creates a numbered list:
+
+<CodePlayground
+  title=""
+  html='
+<ol>
+  <li>First step</li>
+  <li>Second step</li>
+  <li>Third step</li>
+</ol>
+' />
+
+Customise numbering with attributes:
+
+| Attribute | Values | Example |
+|---|---|---|
+| `type` | `1`, `A`, `a`, `I`, `i` | `type="A"` → A, B, C |
+| `start` | number | `start="5"` → 5, 6, 7 |
+| `reversed` | (boolean) | Counts down: 3, 2, 1 |
+
+<CodePlayground
+  title=""
+  html='
+<ol type="I" start="3">
+  <li>Item III</li>
+  <li>Item IV</li>
+</ol>
+' />
 
 ## Definition Lists
 
+`<dl>` creates a list of term-description pairs:
+
+<CodePlayground
+  title=""
+  html='
+<dl>
+  <dt>HTML</dt>
+  <dd>HyperText Markup Language — the standard for web pages.</dd>
+
+  <dt>CSS</dt>
+  <dd>Cascading Style Sheets — controls the visual presentation.</dd>
+</dl>
+' />
+
+- `<dt>` — definition term
+- `<dd>` — definition description
+
 ## Abbreviations
+
+Use `<abbr>` to mark an abbreviation with the full form in the `title` attribute:
+
+<CodePlayground
+  title=""
+  html='
+<p><abbr title="HyperText Markup Language">HTML</abbr> is easy to learn.</p>
+' />
+
+Screen readers announce the title attribute, and browsers may show a dotted underline with a tooltip.
 
 ## Acronyms
 
+In HTML5, `<acronym>` is **deprecated** — use `<abbr>` for all abbreviations and acronyms.
+
 ## Emphasis and Strong Importance
+
+These elements add **semantic meaning**, not just visual styling:
+
+| Element | Meaning | Default Style |
+|---|---|---|
+| `<em>` | Emphasised text (stress) | *Italic* |
+| `<strong>` | Strong importance | **Bold** |
+| `<b>` | Bold text (no extra meaning) | **Bold** |
+| `<i>` | Italic text (no extra meaning) | *Italic* |
+
+<CodePlayground
+  title=""
+  html='
+<p>I <em>really</em> need to finish this project.</p>
+<p><strong>Warning:</strong> High voltage!</p>
+' />
+
+Use `<em>` and `<strong>` instead of `<i>` and `<b>` for better accessibility.
 
 ## Semantic vs Visual Tags
 
+| Semantic (preferred) | Visual (avoid) | Purpose |
+|---|---|---|
+| `<strong>` | `<b>` | Strong importance |
+| `<em>` | `<i>` | Emphasis |
+| `<blockquote>` | — | Long quotation |
+| `<q>` | — | Inline quotation |
+| `<code>` | — | Code snippet |
+| `<pre>` | — | Preformatted text |
+| `<mark>` | `<font>` | Highlighted text |
+
+**Golden rule:** Use semantic tags that describe the **meaning** of the content, not its appearance. Let CSS handle the appearance.
+
 ## Small Print
+
+The `<small>` element represents side comments or fine print:
+
+<CodePlayground
+  title=""
+  html='
+<p>Buy now and save! <small>Terms and conditions apply.</small></p>
+' />
 
 ## Subscript and Superscript
 
+<CodePlayground
+  title=""
+  html='
+<p>H<sub>2</sub>O — water (subscript)</p>
+<p>E = mc<sup>2</sup> — squared (superscript)</p>
+' />
+
 ## Marked Text
+
+The `<mark>` element highlights text for reference:
+
+<CodePlayground
+  title=""
+  html='
+<p>Please read the <mark>important notes</mark> before proceeding.</p>
+' />
 
 ## Deleted and Inserted Text
 
+<CodePlayground
+  title=""
+  html='
+<p>Original price: <del>$29.99</del> <ins>$19.99</ins></p>
+' />
+
+- `<del>` — deleted text (strikethrough)
+- `<ins>` — inserted text (underline)
+
 ## Bidirectional Text
+
+The `<bdo>` element overrides text direction:
+
+<CodePlayground
+  title=""
+  html='
+<p><bdo dir="rtl">This text reads right-to-left</bdo></p>
+' />
+
+- `dir="ltr"` — left-to-right (default)
+- `dir="rtl"` — right-to-left (Arabic, Hebrew)
 
 ## Special Characters and Entities
 
+Reserved characters must be written as **HTML entities**:
+
+| Character | Entity | Result |
+|---|---|---|
+| Less than | `&lt;` | \< |
+| Greater than | `&gt;` | > |
+| Ampersand | `&amp;` | & |
+| Double quote | `&quot;` | " |
+| Single quote | `&apos;` | ' |
+| Non-breaking space | `&nbsp;` | (space) |
+| Copyright | `&copy;` | © |
+| Registered | `&reg;` | ® |
+| Euro | `&euro;` | € |
+
+<CodePlayground
+  title=""
+  html='
+<p>Use &lt;h1&gt; for the main heading.</p>
+<p>&copy; 2026 My Website. All rights reserved.</p>
+' />
+
 ## Character Encoding in HTML
+
+Character encoding tells the browser how to interpret the bytes of the file. Always declare it in the `<head>`:
+
+<CodePlayground
+  title=""
+  html='
+<meta charset="UTF-8">
+' />
+
+**UTF-8** supports every character from every language in the world. Without proper encoding, special characters like `é`, `ñ`, `中文`, or `日本語` may appear as garbage.
 
 ## Accessibility Considerations for Text in HTML
 
+- Use **semantic heading levels** (`<h1>`–`<h6>`) — screen reader users navigate by headings.
+- Do not skip heading levels — going from `<h2>` to `<h4>` confuses navigation.
+- Use `<strong>` and `<em>` instead of `<b>` and `<i>` — screen readers announce the semantic meaning.
+- Ensure **colour is not the only way** information is conveyed (e.g., don't use red text alone to indicate an error).
+- Provide meaningful link text — "Click here" is bad for accessibility.
+- Use `aria-label` when the visual text is ambiguous.
+
 ## SEO Best Practices for Text in HTML
+
+- Use exactly **one `<h1>`** per page — it tells search engines what the page is about.
+- Keep paragraphs concise and well-structured — search engines analyse content density.
+- Use **descriptive link text** — "Learn more about HTML" is better than "Click here".
+- Avoid hiding text with `display: none` — search engines may penalise keyword stuffing.
+- Use `<abbr>` with `title` for abbreviations — adds context for search engines.
+- The `<title>` element (in `<head>`) is the **most important SEO tag** — include primary keywords.

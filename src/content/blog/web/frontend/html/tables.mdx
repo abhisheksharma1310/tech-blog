@@ -2,13 +2,258 @@
 title: "Table"
 description: "Learn about table in html"
 date: "2026-05-30"
-category: ["Web Development", "Frontend", "html"]
-tags: ["Table", "html"]
-slug: "table in html"
+category: ["Web Development", "Frontend", "HTML"]
+tags: ["Table", "HTML"]
+slug: "tables-in-html"
 author: "Abhishek Sharma"
 order: 7
 ---
 
-# Table in html
+# Tables in HTML
+
+HTML tables display data in rows and columns. Use tables for **tabular data** (schedules, prices, comparisons, statistics), **not for page layout** — use CSS Grid or Flexbox for layout instead.
+
+## Basic Table Structure
+
+<CodePlayground
+  title=""
+  html='
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Age</th>
+      <th>City</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Alice</td>
+      <td>25</td>
+      <td>New York</td>
+    </tr>
+    <tr>
+      <td>Bob</td>
+      <td>30</td>
+      <td>London</td>
+    </tr>
+    <tr>
+      <td>Charlie</td>
+      <td>28</td>
+      <td>Tokyo</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3">Total: 3 people</td>
+    </tr>
+  </tfoot>
+</table>
+' />
+
+## Core Table Elements
+
+| Element | Purpose |
+|---|---|
+| `<table>` | The table container |
+| `<caption>` | Title / summary of the table |
+| `<thead>` | Groups header rows (column titles) |
+| `<tbody>` | Groups body rows (data) |
+| `<tfoot>` | Groups footer rows (summaries) |
+| `<tr>` | Table row |
+| `<th>` | Header cell (bold, centred by default) |
+| `<td>` | Data cell |
+| `<colgroup>` / `<col>` | Column groups for styling |
+
+**Rendered:**
+
+| Name | Age | City |
+|---|---|---|
+| Alice | 25 | New York |
+| Bob | 30 | London |
+| Charlie | 28 | Tokyo |
+| **Total: 3 people** | | |
+
+## Colspan and Rowspan
+
+Cells can span multiple columns or rows:
+
+<CodePlayground
+  title=""
+  html='
+<table>
+  <tr>
+    <th>Name</th>
+    <th colspan="2">Contact</th>
+  </tr>
+  <tr>
+    <td>Alice</td>
+    <td>alice@email.com</td>
+    <td>+1-555-0100</td>
+  </tr>
+</table>
+' />
+
+`colspan="2"` makes the "Contact" header span two columns.
+
+**Rowspan example — spanning rows vertically:**
+
+<CodePlayground
+  title=""
+  html='
+<table>
+  <tr>
+    <th rowspan="2">Class</th>
+    <th>Room</th>
+  </tr>
+  <tr>
+    <!-- The "Class" header occupies this cell -->
+    <td>101</td>
+  </tr>
+</table>
+' />
+
+## Table Caption
+
+The `<caption>` element provides a title for the table — useful for accessibility:
+
+<CodePlayground
+  title=""
+  html='
+<table>
+  <caption>Monthly Sales Report — Q1 2026</caption>
+  <thead>
+    <tr>
+      <th>Month</th>
+      <th>Revenue</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>January</td><td>$12,000</td></tr>
+    <tr><td>February</td><td>$15,000</td></tr>
+    <tr><td>March</td><td>$18,000</td></tr>
+  </tbody>
+</table>
+' />
+
+## Column Groups
+
+Style entire columns using `<colgroup>` and `<col>`:
+
+<CodePlayground
+  title=""
+  html='
+<table>
+  <colgroup>
+    <col style="background-color: #f0f0f0;">
+    <col span="2" style="background-color: #e0e0e0;">
+  </colgroup>
+  <tr>
+    <th>Item</th>
+    <th>Price</th>
+    <th>Stock</th>
+  </tr>
+  <tr>
+    <td>Keyboard</td>
+    <td>$29</td>
+    <td>45</td>
+  </tr>
+</table>
+' />
+
+## Table Styling with CSS
+
+Basic CSS for readable tables:
+
+<CodePlayground
+  title=""
+  html='<table>
+  <caption>Monthly Sales Report — Q1 2026</caption>
+  <thead>
+    <tr>
+      <th>Month</th>
+      <th>Revenue</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>January</td><td>$12,000</td></tr>
+    <tr><td>February</td><td>$15,000</td></tr>
+    <tr><td>March</td><td>$18,000</td></tr>
+  </tbody>
+</table>'
+  css='<style>
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #007bff;
+    color: white;
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  tr:hover {
+    background-color: #ddd;
+  }
+  caption {
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+</style>'  
+/>
+
+## Accessibility in Tables
+
+- Use `<th>` for headers with `scope="col"` or `scope="row"` to associate headers with data:
+
+<CodePlayground
+  title=""
+  html='
+<tr>
+  <th scope="col">Product</th>
+  <th scope="col">Price</th>
+</tr>
+<tr>
+  <th scope="row">Widget</th>
+  <td>$9.99</td>
+</tr>
+' />
+
+- Use `<caption>` to describe the table purpose.
+- For complex tables, use the `id` + `headers` attributes to explicitly link data cells to header cells:
+
+<CodePlayground
+  title=""
+  html='
+<th id="name">Name</th>
+<th id="age">Age</th>
+<td headers="name">Alice</td>
+<td headers="age">25</td>
+' />
 
 ## Detailed Table with Tag, attributes and attribute values
+
+| Tag | Attribute | Values | Description |
+|---|---|---|---|
+| `<table>` | — | — | Table container |
+| `<caption>` | — | text | Table title |
+| `<thead>` | — | — | Header section |
+| `<tbody>` | — | — | Body section |
+| `<tfoot>` | — | — | Footer section |
+| `<tr>` | — | — | Table row |
+| `<th>` | `scope` | `col`, `row`, `colgroup`, `rowgroup` | Header cell |
+| `<th>` | `colspan` | number | Number of columns to span |
+| `<th>` | `rowspan` | number | Number of rows to span |
+| `<th>` | `headers` | space-separated IDs | Links to header cells |
+| `<th>` | `abbr` | text | Abbreviated version of header |
+| `<td>` | `colspan` | number | Number of columns to span |
+| `<td>` | `rowspan` | number | Number of rows to span |
+| `<td>` | `headers` | space-separated IDs | Links to header cells |
+| `<colgroup>` | `span` | number | Number of columns in group |
+| `<col>` | `span` | number | Number of columns this col applies to |

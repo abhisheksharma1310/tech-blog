@@ -11,20 +11,208 @@ order: 2
 
 # Head Element in HTML
 
+The `<head>` element is a container for **metadata** — data about the HTML document that is not displayed on the page. It sits between the `<html>` opening tag and the `<body>` element. Despite being invisible, the `<head>` is crucial for SEO, styling, behaviour, and browser compatibility.
+
 ## What goes inside the head element?
+
+The `<head>` can contain these elements:
+
+- `<title>` — page title (required)
+- `<meta>` — metadata like character encoding, description, viewport settings
+- `<link>` — external resources like CSS files, favicons
+- `<style>` — internal CSS rules
+- `<script>` — JavaScript (can also go in `<body>`)
+- `<noscript>` — content for browsers with JavaScript disabled
+- `<base>` — base URL for relative links
+
+Example of a complete `<head>`:
+
+'
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A beginner-friendly guide to HTML">
+  <title>My Website</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="favicon.ico">
+  <base href="https://example.com/">
+</head>
+<body>
+  <!-- visible content -->
+</body>
+</html>
+```
 
 ## title Element
 
+The `<title>` element sets the page title shown in the browser tab. It is **required** for valid HTML and is used by:
+
+- Browser tabs and bookmarks
+- Search engine result pages (SERPs)
+- Social media previews
+
+```html
+<title>My Blog - Learn HTML | Example.com</title>
+```
+
+**SEO tip:** Keep titles under 60 characters and put important keywords first.
+
 ## meta Element
+
+The `<meta>` element provides structured metadata about the page. It is a **void element** (self-closing). Common uses:
+
+```html
+<!-- Character encoding — must be in first 1024 bytes -->
+<meta charset="UTF-8">
+
+<!-- Viewport settings for responsive design -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Page description for search results (120-160 chars) -->
+<meta name="description" content="Learn HTML from scratch with examples.">
+
+<!-- Keywords (largely ignored by modern search engines) -->
+<meta name="keywords" content="HTML, web development, tutorial">
+
+<!-- Author -->
+<meta name="author" content="Abhishek Sharma">
+
+<!-- Refresh/redirect after 5 seconds -->
+<meta http-equiv="refresh" content="5; url=https://example.com">
+
+<!-- Open Graph tags for social sharing -->
+<meta property="og:title" content="Learn HTML">
+<meta property="og:description" content="A complete HTML tutorial">
+<meta property="og:image" content="https://example.com/thumbnail.jpg">
+```
+
+| Attribute | Values | Purpose |
+|---|---|---|
+| `charset` | `UTF-8`, `ISO-8859-1` | Character encoding |
+| `name` | `description`, `viewport`, `author`, `keywords` | Metadata type |
+| `content` | varies | Value of the metadata |
+| `http-equiv` | `refresh`, `content-type`, `X-UA-Compatible` | HTTP header simulation |
+| `property` | `og:title`, `og:image`, etc. | Open Graph / social media |
 
 ## link Element
 
+The `<link>` element connects the HTML document to **external resources**. It is also a void element.
+
+```html
+<!-- CSS stylesheet -->
+<link rel="stylesheet" href="style.css">
+
+<!-- Favicon (browser tab icon) -->
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+
+<!-- Alternative stylesheet -->
+<link rel="alternate stylesheet" href="dark.css" title="Dark theme">
+
+<!-- Preload a resource for performance -->
+<link rel="preload" href="font.woff2" as="font" crossorigin>
+
+<!-- Prefetch a page the user might visit next -->
+<link rel="prefetch" href="next-page.html">
+```
+
+| Attribute | Common Values | Purpose |
+|---|---|---|
+| `rel` | `stylesheet`, `icon`, `preload`, `prefetch`, `canonical`, `alternate` | Relationship type |
+| `href` | URL | Path to the resource |
+| `type` | `text/css`, `image/x-icon` | MIME type |
+| `media` | `screen`, `print`, `(max-width: 768px)` | Media query condition |
+
 ## style Element
+
+The `<style>` element contains **internal (embedded) CSS**:
+
+```html
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    color: navy;
+  }
+</style>
+```
+
+Internal styles affect only the current page. Use `type="text/css"` (optional, still valid).
 
 ## script Element
 
+The `<script>` element embeds or links to **JavaScript**:
+
+```html
+<!-- External script -->
+<script src="app.js"></script>
+
+<!-- Inline script -->
+<script>
+  alert('Hello, World!');
+</script>
+
+<!-- Deferred execution (after HTML parses) -->
+<script src="app.js" defer></script>
+
+<!-- Async execution (load and execute as soon as ready) -->
+<script src="analytics.js" async></script>
+```
+
+**Important:** Scripts block HTML parsing by default. The `defer` and `async` attributes prevent this.
+
 ## noscript Element
+
+The `<noscript>` element shows content when JavaScript is **disabled or unsupported** in the browser:
+
+```html
+<noscript>
+  <p>JavaScript is required for this site to function properly.</p>
+  <p>Please enable JavaScript in your browser settings.</p>
+</noscript>
+```
 
 ## base Element
 
+The `<base>` element sets a **base URL** for all relative URLs in the document. There should be only one `<base>` per page:
+
+```html
+<base href="https://example.com/">
+<base target="_blank">  <!-- Open all links in new tab -->
+```
+
+With `<base href="https://example.com/folder/">`, a relative link like `<a href="page.html">` points to `https://example.com/folder/page.html`.
+
 ## Detailed Table with Tag, attributes and attribute values
+
+| Tag | Attribute | Values | Description |
+|---|---|---|---|
+| `<title>` | — | Text | Page title shown in browser tab |
+| `<meta>` | `charset` | `UTF-8`, `ISO-8859-1` | Character encoding |
+| `<meta>` | `name` | `description`, `viewport`, `author`, `keywords`, `robots` | Metadata type |
+| `<meta>` | `content` | varies | Value paired with name or property |
+| `<meta>` | `property` | `og:title`, `og:description`, `og:image`, `twitter:card` | Open Graph / social |
+| `<meta>` | `http-equiv` | `refresh`, `content-type`, `X-UA-Compatible` | Simulates HTTP header |
+| `<link>` | `rel` | `stylesheet`, `icon`, `preload`, `prefetch`, `canonical`, `alternate`, `manifest` | Relationship to page |
+| `<link>` | `href` | URL | Resource location |
+| `<link>` | `type` | `text/css`, `image/png` | MIME type |
+| `<link>` | `media` | `screen`, `print`, `all` | Media query |
+| `<link>` | `crossorigin` | `anonymous`, `use-credentials` | CORS setting |
+| `<link>` | `as` | `font`, `style`, `script`, `image` | Resource type for preload |
+| `<link>` | `sizes` | `16x16`, `32x32`, `any` | Icon dimensions |
+| `<style>` | — | CSS rules | Embedded CSS |
+| `<style>` | `type` | `text/css` (default) | Style language |
+| `<style>` | `media` | `screen`, `print`, `all` | Media condition |
+| `<script>` | `src` | URL | External script location |
+| `<script>` | `defer` | (boolean) | Executes after HTML parsed |
+| `<script>` | `async` | (boolean) | Loads and executes asynchronously |
+| `<script>` | `type` | `text/javascript`, `module` | Script language / module |
+| `<script>` | `integrity` | hash | Subresource integrity (SRI) |
+| `<noscript>` | — | HTML | Content shown when JS disabled |
+| `<base>` | `href` | URL | Base URL for relative links |
+| `<base>` | `target` | `_self`, `_blank`, `_parent`, `_top` | Default link target |

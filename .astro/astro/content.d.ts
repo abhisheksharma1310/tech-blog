@@ -922,8 +922,8 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
-"web/frontend/html/container-tags.mdx": {
-	id: "web/frontend/html/container-tags.mdx";
+"web/frontend/html/container.mdx": {
+	id: "web/frontend/html/container.mdx";
   slug: "container-tags-in-html";
   body: string;
   collection: "blog";
@@ -931,7 +931,7 @@ declare module 'astro:content' {
 } & { render(): Render[".mdx"] };
 "web/frontend/html/forms.mdx": {
 	id: "web/frontend/html/forms.mdx";
-  slug: "";
+  slug: "forms-in-html";
   body: string;
   collection: "blog";
   data: any
@@ -973,7 +973,7 @@ declare module 'astro:content' {
 } & { render(): Render[".mdx"] };
 "web/frontend/html/tables.mdx": {
 	id: "web/frontend/html/tables.mdx";
-  slug: "table in html";
+  slug: "tables-in-html";
   body: string;
   collection: "blog";
   data: any

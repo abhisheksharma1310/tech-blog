@@ -39,7 +39,7 @@ function isActiveInNode(node: TreeNode, activeSlug?: string): boolean {
 
 function renderNode(node: TreeNode, activeSlug?: string) {
   return (
-    <ul>
+    <ul style={{margin: 0, paddingLeft: 2, paddingBottom: 0}}>
       {Object.values(node.children).map((child) => {
         const hasChildren = Object.keys(child.children).length > 0;
         const hasPosts = child.posts.length > 0;
@@ -47,7 +47,7 @@ function renderNode(node: TreeNode, activeSlug?: string) {
 
         return (
           <li key={child.name}>
-            <details open={open}>
+            <details style={{margin: 0, paddingLeft: 3, paddingBottom: 0}} open={open}>
               <summary>{child.name}</summary>
 
               {hasPosts ? (

@@ -11,8 +11,155 @@ order: 3
 
 # Body Element in HTML
 
+The `<body>` element contains **all visible content** on a web page — text, images, links, forms, and everything else the user sees and interacts with. There can be only **one `<body>`** per HTML document, and it follows the `<head>` element.
+
+<CodePlayground
+  title=""
+  html='
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Page Title</title>
+</head>
+<body>
+  <h1>Visible Heading</h1>
+  <p>Visible paragraph.</p>
+</body>
+</html>
+' />
+
+Elements inside the `<body>` are categorised into two display types: **block** and **inline**.
+
 ## Block Elements
 
-## Inline Elements  
+Block elements **start on a new line** and take up the **full width available** (by default). They create a "block" in the page layout.
+
+<CodePlayground
+  title=""
+  html='
+<h1>Heading 1</h1>
+<p>This paragraph is a block element.</p>
+<div>A generic block container.</div>
+<ul>
+  <li>List item</li>
+</ul>
+' />
+
+Common block elements:
+
+| Element | Purpose |
+|---|---|
+| `<h1>`–`<h6>` | Headings |
+| `<p>` | Paragraph |
+| `<div>` | Generic container |
+| `<section>` | Thematic section |
+| `<article>` | Self-contained content |
+| `<header>` | Introductory content |
+| `<footer>` | Footer of a section |
+| `<nav>` | Navigation links |
+| `<main>` | Main content |
+| `<aside>` | Sidebar content |
+| `<ul>`, `<ol>`, `<li>` | Lists |
+| `<table>` | Table |
+| `<form>` | Form |
+| `<blockquote>` | Long quotation |
+| `<pre>` | Preformatted text |
+| `<hr>` | Horizontal rule |
+
+**Characteristics:**
+- Starts on a new line
+- Stretches to fill its parent's width
+- Can contain other block elements and inline elements
+- Respects `width`, `height`, `margin`, and `padding` CSS properties
+
+## Inline Elements
+
+Inline elements **do not start on a new line**. They sit beside each other on the same line, wrapping only when needed. They take up **only as much width as their content**.
+
+<CodePlayground
+  title=""
+  html='
+<p>This is <strong>important</strong> text with an <a href="#">inline link</a>.
+<span>A span is inline</span> and an <img src="icon.png" alt="icon"> is too.</p>
+' />
+
+Common inline elements:
+
+| Element | Purpose |
+|---|---|
+| `<span>` | Generic inline container |
+| `<a>` | Hyperlink |
+| `<strong>` | Strong importance (bold) |
+| `<em>` | Emphasis (italic) |
+| `<img>` | Image |
+| `<br>` | Line break |
+| `<code>` | Code snippet |
+| `<input>` | Form input |
+| `<label>` | Form label |
+| `<button>` | Clickable button |
+| `<abbr>` | Abbreviation |
+| `<sub>`, `<sup>` | Subscript / Superscript |
+| `<small>` | Small print |
+
+**Characteristics:**
+- Stays on the same line as adjacent content
+- Only takes the width of its content
+- Cannot contain block elements (except `<a>` in HTML5)
+- `width` and `height` CSS properties have no effect
+- Top/bottom `margin` and `padding` do not push adjacent content away
 
 ## Block vs Inline Elements
+
+| Feature | Block | Inline |
+|---|---|---|
+| Line break before/after | Yes | No |
+| Default width | 100% of parent | Content width |
+| Can contain block elements | Yes | No (generally) |
+| Can contain inline elements | Yes | Yes |
+| `width` / `height` | Works | No effect |
+| `margin` top/bottom | Works | No effect |
+| `padding` top/bottom | Works | Visually works but doesn't affect flow |
+
+**Visual example:**
+
+<CodePlayground
+  title=""
+  html='
+<!-- Block elements stack vertically -->
+<div>Block 1</div>
+<div>Block 2</div>
+
+<!-- Inline elements sit side by side -->
+<span>Inline 1</span>
+<span>Inline 2</span>
+' />
+
+**Rendered:**
+
+' />
+Block 1
+Block 2
+
+Inline 1 Inline 2
+' />
+
+### Inline-block hybrid
+
+CSS `display: inline-block` combines features of both:
+
+<CodePlayground
+  title=""
+  html='
+<style>
+  .box {
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+  }
+</style>
+<div class="box">A</div>
+<div class="box">B</div>
+<div class="box">C</div>
+' />
+
+These boxes sit on the same line (like inline) but respect width/height (like block).

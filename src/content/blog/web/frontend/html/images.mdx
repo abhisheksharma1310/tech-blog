@@ -2,21 +2,211 @@
 title: "Images"
 description: "Learn images in html"
 date: "2026-05-30"
-category: ["Web Development", "Frontend", "html"]
-tags: ["Image", "html"]
+category: ["Web Development", "Frontend", "HTML"]
+tags: ["HTML", "Images"]
 slug: "images-in-html"
 author: "Abhishek Sharma"
 order: 9
 ---
 
-# Images in html
+# Images in HTML
+
+Images make web pages visually engaging. HTML provides elements for embedding images, providing fallbacks, and adapting to different screen sizes.
 
 ## img tag
 
+The `<img>` element embeds an image in the page. It is a **void element** (self-closing).
+
+<CodePlayground
+  title=""
+  html='
+<img src="photo.jpg" alt="A scenic mountain landscape">
+' />
+
+### Required attributes
+
+| Attribute | Purpose |
+|---|---|
+| `src` | Image URL (path to the image file) |
+| `alt` | Alternative text — describes the image for screen readers and when the image fails to load |
+
+### Optional attributes
+
+<CodePlayground
+  title=""
+  html='
+<img
+  src="photo.jpg"
+  alt="Sunset over the ocean"
+  width="800"
+  height="600"
+  loading="lazy"
+  decoding="async"
+>
+' />
+
+| Attribute | Values | Purpose |
+|---|---|---|
+| `width` | pixels | Display width (maintains aspect ratio with `height`) |
+| `height` | pixels | Display height |
+| `loading` | `eager` (default), `lazy` | Lazy loading — defers loading off-screen images |
+| `decoding` | `sync`, `async`, `auto` | Image decoding hint for the browser |
+| `fetchpriority` | `high`, `low`, `auto` | Priority hint for loading |
+| `referrerpolicy` | `no-referrer`, `origin`, etc. | Referrer information |
+| `sizes` | media query + width | Used with `srcset` for responsive images |
+| `srcset` | comma-separated URLs + widths | Multiple resolution options |
+| `crossorigin` | `anonymous`, `use-credentials` | CORS settings |
+
+### Image formats
+
+| Format | Use Case | Pros |
+|---|---|---|
+| JPEG (`.jpg`) | Photographs, complex scenes | Small file size, 16M colours |
+| PNG (`.png`) | Logos, icons, screenshots | Lossless, transparency support |
+| GIF (`.gif`) | Simple animations | Animations |
+| WebP (`.webp`) | Modern replacement for JPEG/PNG | Smaller size, transparency + animation |
+| AVIF (`.avif`) | Next-gen format | Even smaller than WebP, HDR support |
+| SVG (`.svg`) | Icons, illustrations, logos | Scalable (vector), tiny file size |
+
 ## figure tag
+
+`<figure>` groups an image with a caption (`<figcaption>`):
+
+<CodePlayground
+  title=""
+  html='
+<figure>
+  <img src="chart.png" alt="Bar chart showing quarterly sales">
+  <figcaption>Figure 1: Quarterly sales for 2026</figcaption>
+</figure>
+
+<figure>
+  <figcaption>Team photo at the annual conference</figcaption>
+  <img src="team.jpg" alt="Team photo">
+</figure>
+' />
+
+`<figcaption>` can go before or after the image. One `<figure>` can contain multiple images.
 
 ## Responsive Images with srcset
 
+The `srcset` attribute lets the browser choose the best image resolution based on the device's screen size and pixel density:
+
+### Width-based selection
+
+<CodePlayground
+  title=""
+  html='
+<img
+  src="photo-800.jpg"
+  srcset="photo-400.jpg 400w,
+          photo-800.jpg 800w,
+          photo-1200.jpg 1200w,
+          photo-1600.jpg 1600w"
+  sizes="(max-width: 600px) 100vw,
+         (max-width: 1200px) 50vw,
+         33vw"
+  alt="Landscape photo"
+>
+' />
+
+- **`srcset`**: lists images with their **actual width** in pixels (`400w`, `800w`, etc.).
+- **`sizes`**: tells the browser how wide the image will be displayed at different breakpoints (`100vw` = full viewport width, `50vw` = half, `33vw` = one-third).
+
+The browser selects the smallest image that fits the layout at the device's pixel density.
+
+### Pixel density selection
+
+<CodePlayground
+  title=""
+  html='
+<img
+  src="icon-1x.png"
+  srcset="icon-1x.png 1x,
+          icon-2x.png 2x,
+          icon-3x.png 3x"
+  alt="Icon"
+>
+' />
+
+Use `1x`, `2x`, `3x` for standard, retina (2×), and super-retina (3×) displays.
+
 ## picture tag
 
+The `<picture>` element provides **art direction** — different images for different screen sizes or formats. It contains multiple `<source>` elements and one `<img>` fallback.
+
+### Format fallbacks (WebP with JPEG/PNG fallback)
+
+<CodePlayground
+  title=""
+  html='
+<picture>
+  <source srcset="photo.avif" type="image/avif">
+  <source srcset="photo.webp" type="image/webp">
+  <img src="photo.jpg" alt="Landscape">
+</picture>
+' />
+
+The browser uses the first `<source>` with a format it supports. If none match, it falls back to the `<img>` tag.
+
+### Art direction (crop for mobile)
+
+<CodePlayground
+  title=""
+  html='
+<picture>
+  <source
+    media="(max-width: 600px)"
+    srcset="photo-cropped.jpg"
+  >
+  <source
+    media="(min-width: 601px)"
+    srcset="photo-full.jpg"
+  >
+  <img src="photo-full.jpg" alt="Full landscape photo">
+</picture>
+' />
+
+On narrow screens, a cropped version is shown. On wider screens, the full photo is displayed.
+
+### Combined: art direction + resolution switching
+
+<CodePlayground
+  title=""
+  html='
+<picture>
+  <source
+    media="(max-width: 600px)"
+    srcset="photo-mobile-1x.jpg 1x,
+            photo-mobile-2x.jpg 2x"
+  >
+  <source
+    media="(min-width: 601px)"
+    srcset="photo-desktop-1x.jpg 1x,
+            photo-desktop-2x.jpg 2x"
+  >
+  <img src="photo-desktop-1x.jpg" alt="Landscape">
+</picture>
+' />
+
 ## Detailed Table with Tag, attributes and attribute values
+
+| Tag | Attribute | Values | Description |
+|---|---|---|---|
+| `<img>` | `src` | URL | Image source (required) |
+| `<img>` | `alt` | text | Alternative text (required for accessibility) |
+| `<img>` | `width` | pixels | Display width |
+| `<img>` | `height` | pixels | Display height |
+| `<img>` | `loading` | `eager`, `lazy` | Lazy loading behaviour |
+| `<img>` | `decoding` | `sync`, `async`, `auto` | Decoding hint |
+| `<img>` | `srcset` | comma-separated list | Responsive image sources |
+| `<img>` | `sizes` | media query + size | Display size conditions |
+| `<img>` | `fetchpriority` | `high`, `low`, `auto` | Loading priority |
+| `<img>` | `crossorigin` | `anonymous`, `use-credentials` | CORS |
+| `<figure>` | — | — | Container for media + caption |
+| `<figcaption>` | — | text | Caption for the figure |
+| `<picture>` | — | — | Container for multiple sources |
+| `<source>` | `srcset` | URL(s) | Image source for picture |
+| `<source>` | `media` | media query | When this source applies |
+| `<source>` | `type` | MIME type | Image format hint |
+| `<source>` | `sizes` | media query + size | Display size conditions |

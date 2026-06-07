@@ -1,0 +1,222 @@
+---
+// src/components/CodePlayground.astro
+interface Props {
+  html?: string;
+  css?: string;
+  js?: string;
+  title?: string;
+}
+
+const { 
+  html = "", 
+  css = "", 
+  js = "", 
+  title = "Code Preview" 
+} = Astro.props;
+
+// Combine snippets into a standalone document for the preview iframe
+const iframeSourceCode = `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: system-ui, sans-serif; margin: 12px; padding: 0; color: #1e293b; }
+        ${css}
+      </style>
+    </head>
+    <body>
+      ${html}
+      <script>
+        try {
+          ${js}
+        } catch (err) {
+          console.error(err);
+          document.body.innerHTML += '<pre style="color:#ef4444; border:1px solid #fee2e2; background:#fef2f2; padding:12px; border-radius:6px; font-family:monospace; margin-top:12px;">' + err.message + '</pre>';
+        }
+      <\/script>
+    </body>
+  </html>
+`;
+---
+
+<div class="playground-container">
+  {title && <div class="playground-header"><strong>Demo:</strong> {title}</div>}
+  
+  <!-- Top Section: Stacked Code Blocks -->
+  <div class="playground-code-stack">
+    {html && (
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>HTML</span>
+          <button class="copy-btn" data-code={html.trim()}>Copy</button>
+        </div>
+        <pre><code>{html.trim()}</code></pre>
+      </div>
+    )}
+    
+    {css && (
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>CSS</span>
+          <button class="copy-btn" data-code={css.trim()}>Copy</button>
+        </div>
+        <pre><code>{css.trim()}</code></pre>
+      </div>
+    )}
+    
+    {js && (
+      <div class="code-block-wrapper">
+        <div class="code-block-header">
+          <span>JavaScript</span>
+          <button class="copy-btn" data-code={js.trim()}>Copy</button>
+        </div>
+        <pre><code>{js.trim()}</code></pre>
+      </div>
+    )}
+  </div>
+
+  <!-- Bottom Section: Live Output Window -->
+  <div class="playground-preview">
+    <div class="preview-label">Live Output Window</div>
+    <iframe 
+      srcdoc={iframeSourceCode} 
+      title={title}
+      sandbox="allow-scripts allow-modals" 
+      loading="lazy"
+    ></iframe>
+  </div>
+</div>
+
+<script>
+  // Dynamic client-side copying logic
+  const copyButtons = document.querySelectorAll('.copy-btn');
+  
+  copyButtons.forEach(button => {
+    button.addEventListener('click', async () => {
+      const codeToCopy = button.getAttribute('data-code') || '';
+      
+      try {
+        await navigator.clipboard.writeText(codeToCopy);
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.classList.add('copied');
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+      }
+    });
+  });
+</script>
+
+<style>
+  .playground-container {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin: 2rem 0;
+    overflow: hidden;
+    background: #0f172a; /* Dark theme container base */
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+  
+  .playground-header {
+    background: #f8fafc;
+    color: #334155;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+  }
+
+  /* Stacked Layout configuration */
+  .playground-code-stack {
+    display: flex;
+    flex-direction: column;
+    background: #1e293b;
+  }
+
+  .code-block-wrapper {
+    border-bottom: 1px solid #334155;
+    position: relative;
+  }
+  
+  .code-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0f172a;
+    padding: 0.4rem 1rem;
+  }
+  
+  .code-block-header span {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  /* Copy Button Styling */
+  .copy-btn {
+    background: #334155;
+    color: #cbd5e1;
+    border: none;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .copy-btn:hover {
+    background: #475569;
+    color: #ffffff;
+  }
+  
+  .copy-btn.copied {
+    background: #10b981;
+    color: #ffffff;
+  }
+
+  .code-block-wrapper pre {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    background: #1e293b;
+  }
+  
+  .code-block-wrapper code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+  }
+
+  /* Output window styling at the bottom */
+  .playground-preview {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-top: 2px solid #cbd5e1;
+  }
+  
+  .preview-label {
+    font-size: 0.75rem;
+    background: #f1f5f9;
+    padding: 0.4rem 1rem;
+    color: #64748b;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  iframe {
+    width: 100%;
+    height: 220px; /* Preset window vertical workspace depth */
+    border: none;
+    background: #ffffff;
+  }
+</style>

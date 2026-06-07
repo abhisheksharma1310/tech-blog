@@ -1,0 +1,314 @@
+---
+title: "Container"
+description: "Learn about container tags in HTML"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "HTML"]
+tags: ["HTML", "Container Tags"]
+slug: "container-tags-in-html"
+author: "Abhishek Sharma"
+order: 6
+---
+
+# Container Tags in HTML
+
+Container tags (also called structural or semantic tags) group related content together. They give structure to your page, help with styling, improve accessibility, and boost SEO. HTML5 introduced several semantic container tags that describe the **purpose** of the content they hold.
+
+## div Element
+
+The `<div>` is the **generic container** — a block-level element with no semantic meaning. Use it when no other semantic tag fits:
+
+<CodePlayground
+  title=""
+  html='
+<div class="card">
+  <h3>Product Name</h3>
+  <p>Product description...</p>
+</div>
+
+<div id="footer">
+  <p>&copy; 2026 My Site</p>
+</div>
+' />
+
+**Best practice:** Use `<div>` only as a last resort — prefer semantic tags like `<section>`, `<article>`, or `<aside>` first.
+
+## span Element
+
+The `<span>` is the **inline generic container** — same as `<div>` but for inline content:
+
+<CodePlayground
+  title=""
+  html='
+<p>This is <span class="highlight">highlighted text</span> in a paragraph.</p>
+' />
+
+## section Element
+
+The `<section>` represents a **thematic group** of content, typically with a heading:
+
+<CodePlayground
+  title=""
+  html='
+<section>
+  <h2>Our Services</h2>
+  <p>We offer web design, development, and consulting.</p>
+</section>
+
+<section>
+  <h2>Contact Us</h2>
+  <p>Email: info@example.com</p>
+</section>
+' />
+
+Use `<section>` when the content could logically appear in a table of contents.
+
+## article Element
+
+The `<article>` represents **self-contained, independent content** that could be distributed separately:
+
+<CodePlayground
+  title=""
+  html='
+<article>
+  <header>
+    <h2>How to Learn HTML</h2>
+    <p>Published: May 30, 2026</p>
+  </header>
+  <p>HTML is the foundation of the web...</p>
+  <footer>
+    <p>Tags: HTML, Web Development</p>
+  </footer>
+</article>
+
+<!-- Multiple articles in a blog list -->
+<section>
+  <article><!-- blog post 1 --></article>
+  <article><!-- blog post 2 --></article>
+  <article><!-- blog post 3 --></article>
+</section>
+' />
+
+Good candidates: blog posts, news articles, forum posts, comments, product cards.
+
+## aside Element
+
+The `<aside>` holds content **tangentially related** to the main content — sidebars, pull quotes, related links, advertisements:
+
+<CodePlayground
+  title=""
+  html='
+<article>
+  <p>Main article content...</p>
+
+  <aside>
+    <h3>Related Articles</h3>
+    <ul>
+      <li><a href="#">CSS Basics</a></li>
+      <li><a href="#">JavaScript Intro</a></li>
+    </ul>
+  </aside>
+</article>
+' />
+
+## header Element
+
+The `<header>` contains **introductory content** or navigational aids for its parent section:
+
+<CodePlayground
+  title=""
+  html='
+<header>
+  <h1>My Website</h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+  </nav>
+</header>
+
+<article>
+  <header>
+    <h2>Blog Post Title</h2>
+    <p>By Author | June 2026</p>
+  </header>
+  <!-- article content -->
+</article>
+' />
+
+A page can have **multiple `<header>` elements** (one per section/article).
+
+## footer Element
+
+The `<footer>` contains **closing information** — copyright, contact links, sitemap, back-to-top:
+
+<CodePlayground
+  title=""
+  html='
+<footer>
+  <p>&copy; 2026 My Website</p>
+  <nav>
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+  </nav>
+</footer>
+' />
+
+Like `<header>`, you can have multiple `<footer>` elements on a page.
+
+## nav Element
+
+The `<nav>` wraps **primary navigation links**:
+
+<CodePlayground
+  title=""
+  html='
+<nav>
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/blog">Blog</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+' />
+
+Not every group of links needs `<nav>` — only major navigation blocks. Footer links can be inside a `<nav>` but it is not required.
+
+## main Element
+
+The `<main>` wraps the **primary content** of the page — content unique to this page that is not repeated across pages (like sidebars, navigation, site headers):
+
+<CodePlayground
+  title=""
+  html='
+<body>
+  <header><!-- site header --></header>
+  <nav><!-- site nav --></nav>
+
+  <main>
+    <h1>About Us</h1>
+    <p>This is unique page content...</p>
+  </main>
+
+  <footer><!-- site footer --></footer>
+</body>
+' />
+
+Use **only one `<main>` per page**.
+
+## figure and figcaption Elements
+
+`<figure>` encapsulates media with an optional `<figcaption>` caption:
+
+<CodePlayground
+  title=""
+  html='
+<figure>
+  <img src="chart.png" alt="Sales chart showing growth">
+  <figcaption>Figure 1: Quarterly sales growth in 2026</figcaption>
+</figure>
+
+<figure>
+  <pre><code>console.log("Hello");</code></pre>
+  <figcaption>Example JavaScript code snippet</figcaption>
+</figure>
+' />
+
+## details and summary Elements
+
+`<details>` creates an **expandable/collapsible widget** (disclosure triangle):
+
+<CodePlayground
+  title=""
+  html='
+<details>
+  <summary>Click to reveal more information</summary>
+  <p>This hidden content appears when the user clicks the summary.</p>
+  <ul>
+    <li>Item 1</li>
+    <li>Item 2</li>
+  </ul>
+</details>
+
+<!-- Open by default -->
+<details open>
+  <summary>FAQ: What is HTML?</summary>
+  <p>HTML is HyperText Markup Language... </p>
+</details>
+' />
+
+## dialog Element
+
+`<dialog>` represents a **modal or popup** dialog:
+
+<CodePlayground
+  title=""
+  html='
+<dialog id="myDialog">
+  <h3>Confirm</h3>
+  <p>Are you sure you want to delete this item?</p>
+  <button onclick="document.getElementById("myDialog").close()">Cancel</button>
+  <button onclick="document.getElementById("myDialog").close()">Delete</button>
+</dialog>
+
+<button onclick="document.getElementById("myDialog").showModal()">
+  Open Dialog
+</button>
+' />
+
+The `<dialog>` element is relatively new (modern browsers) and provides built-in focus trapping for accessibility.
+
+## div vs span Elements
+
+| Feature | `<div>` | `<span>` |
+|---|---|---|
+| Display | Block | Inline |
+| Starts new line | Yes | No |
+| Takes full width | Yes | No (content width only) |
+| Use for | Grouping block-level content | Grouping inline content |
+| Default CSS | `display: block` | `display: inline` |
+
+<CodePlayground
+  title=""
+  html='
+<div>A div fills the width</div>
+<div>Another div below it</div>
+<span>Spans sit</span>
+<span>side by side</span>
+' />
+
+## section vs article Elements
+
+| Feature | `<section>` | `<article>` |
+|---|---|---|
+| Content type | Thematic group | Self-contained, reusable |
+| Has a heading | Should have one | Should have one |
+| Can be syndicated | No | Yes (RSS feed) |
+| Example | "Our Services", "Contact" | Blog post, news article, comment |
+
+**Rule of thumb:** If the content makes sense on its own outside the page (in a feed, an email, a printout), use `<article>`. Otherwise, use `<section>`.
+
+## header vs nav Elements
+
+| Feature | `<header>` | `<nav>` |
+|---|---|---|
+| Purpose | Introductory content | Navigation links |
+| Contains | Logo, heading, tagline, nav | Links (usually `<ul>`) |
+| Can contain `<nav>` | Yes | No (nesting nav inside nav is unusual) |
+
+A `<header>` often contains a `<nav>`, but they serve different purposes.
+
+## Accessibility Considerations for Container Tags in HTML
+
+- Semantic tags like `<nav>`, `<main>`, `<article>` are recognised by screen readers — they provide keyboard shortcuts for jumping between sections.
+- Use `<main>` to mark the primary content — screen reader users can skip to it directly.
+- The `<nav>` element should be used for primary navigation; avoid wrapping every small link group in `<nav>`.
+- `<aside>` content should be truly ancillary — not critical for understanding the main content.
+- The `<dialog>` element handles focus management and modal behaviour natively — prefer it over custom modal implementations.
+
+## SEO Best Practices for Container Tags in HTML
+
+- Search engines use semantic structure to understand page hierarchy.
+- `<article>` is used by Google for **rich snippets** and featured content.
+- A clear heading structure inside `<section>` and `<article>` improves keyword relevance.
+- The `<main>` element helps Google identify the primary content for indexing.
+- Avoid excessive nested `<div>`s — they add no semantic value and bloat the HTML.

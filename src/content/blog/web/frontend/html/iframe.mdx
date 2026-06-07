@@ -3,22 +3,193 @@ title: "Iframe"
 description: "Learn about iframe elements in HTML"
 date: "2026-05-30"
 category: ["Web Development", "Frontend", "HTML"]
-tags: ["HTML", "Text"]
+tags: ["HTML", "Iframe"]
 slug: "iframe-in-html"
 author: "Abhishek Sharma"
 order: 11
 ---
 
-# Iframe in html
+# Iframe in HTML
+
+The `<iframe>` (inline frame) element embeds another HTML page inside the current page. It creates a **nested browsing context** — a separate window within your page. Common uses: embedding YouTube videos, Google Maps, social media posts, or other third-party content.
 
 ## Basic Usage
 
+<CodePlayground
+  title=""
+  html='
+<iframe src="https://example.com" width="600" height="400"></iframe>
+' />
+
+The `src` attribute specifies the URL of the page to embed.
+
+**Minimal attributes:**
+
+<CodePlayground
+  title=""
+  html='
+<iframe src="page.html" title="Embedded content"></iframe>
+' />
+
+The `title` attribute is **important for accessibility** — it tells screen reader users what the iframe contains.
+
+### Common examples
+
+<CodePlayground
+  title=""
+  html='
+<!-- YouTube video -->
+<iframe
+  width="560" height="315"
+  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+  title="YouTube video"
+  allowfullscreen>
+</iframe>
+
+<!-- Google Maps location -->
+<iframe
+  width="600" height="450"
+  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1d3..."
+  title="Map of location"
+  allowfullscreen>
+</iframe>
+
+<!-- Twitter/X post -->
+<iframe
+  src="https://platform.twitter.com/widgets/tweet_button.html"
+  title="Twitter share button">
+</iframe>
+' />
+
 ## srcdoc Attribute
+
+The `srcdoc` attribute contains **inline HTML** to render inside the iframe, instead of loading from a URL:
+
+<CodePlayground
+  title=""
+  html='
+<iframe
+  srcdoc="<h1>Hello from inside the iframe!</h1><p>This content is inline.</p>"
+  width="400" height="200"
+  title="Inline content example">
+</iframe>
+' />
+
+If both `srcdoc` and `src` are present, `srcdoc` takes precedence (and `src` is used as a fallback for older browsers).
 
 ## sandbox Attribute
 
+The `sandbox` attribute applies **security restrictions** to the iframe content. With no value, all restrictions are applied:
+
+<CodePlayground
+  title=""
+  html='
+<iframe src="untrusted-page.html" sandbox title="Restricted iframe"></iframe>
+' />
+
+Restrictions applied (all enabled by default with empty `sandbox`):
+
+- Forms cannot be submitted
+- Scripts cannot run
+- Plugins are blocked
+- Navigation of the parent page is blocked
+- Popups are blocked
+- Same-origin access is blocked
+
+### Enabling specific features
+
+Pass space-separated values to selectively **allow** features:
+
+<CodePlayground
+  title=""
+  html='
+<!-- Allow scripts and forms -->
+<iframe
+  src="page.html"
+  sandbox="allow-scripts allow-forms"
+  title="Sandboxed page">
+</iframe>
+' />
+
+| Value | Allows |
+|---|---|
+| `allow-scripts` | JavaScript execution |
+| `allow-forms` | Form submission |
+| `allow-same-origin` | Access to parent's origin (use with caution) |
+| `allow-popups` | Popup windows |
+| `allow-modals` | `alert()`, `confirm()`, etc. |
+| `allow-top-navigation` | Navigate the parent page |
+| `allow-downloads` | File downloads |
+| `allow-presentation` | Presentation mode |
+
+**Security best practice:** Use `sandbox` when embedding untrusted content. Start with all restrictions and allow only what is necessary.
+
 ## allow Attribute
+
+The `allow` attribute specifies **permissions policies** for the iframe — what browser features the embedded content can access:
+
+<CodePlayground
+  title=""
+  html='
+<iframe
+  src="https://example.com/camera-app"
+  allow="camera; microphone; geolocation"
+  title="Camera demo">
+</iframe>
+' />
+
+Common permission values:
+
+| Permission | Description |
+|---|---|
+| `camera` | Access the user's camera |
+| `microphone` | Access the user's microphone |
+| `geolocation` | Access the user's location |
+| `fullscreen` | Request fullscreen mode |
+| `autoplay` | Autoplay media |
+| `payment` | Payment Request API |
+| `clipboard-read` | Read clipboard |
+| `clipboard-write` | Write to clipboard |
+| `accelerometer` | Access accelerometer sensor |
+| `gyroscope` | Access gyroscope sensor |
 
 ## Referrer Policy
 
+The `referrerpolicy` attribute controls what **referrer information** is sent when the iframe makes requests:
+
+<CodePlayground
+  title=""
+  html='
+<iframe
+  src="https://other-site.com"
+  referrerpolicy="no-referrer"
+  title="External content">
+</iframe>
+' />
+
+| Value | Behaviour |
+|---|---|
+| `no-referrer` | Never send referrer |
+| `no-referrer-when-downgrade` | Send full URL except to HTTP (default) |
+| `origin` | Send only the origin (domain) |
+| `origin-when-cross-origin` | Full URL for same origin, origin for cross-origin |
+| `same-origin` | Send only for same origin |
+| `strict-origin-when-cross-origin` | Strict + protocol downgrade check |
+| `unsafe-url` | Always send full URL (not recommended) |
+
 ## Detailed Table with Tag, attributes and attribute values
+
+| Attribute | Values | Description |
+|---|---|---|
+| `src` | URL | Page to embed |
+| `srcdoc` | HTML code | Inline content (overrides `src`) |
+| `width` | pixels | Frame width (default 300) |
+| `height` | pixels | Frame height (default 150) |
+| `name` | text | Frame name (for targeting links/forms) |
+| `sandbox` | space-separated allow values | Security restrictions |
+| `allow` | space-separated feature names | Permissions policy for features |
+| `allowfullscreen` | (boolean) | Allow fullscreen mode |
+| `referrerpolicy` | `no-referrer`, `origin`, `same-origin`, `strict-origin-when-cross-origin`, etc. | Referrer information |
+| `loading` | `eager` (default), `lazy` | Lazy loading behaviour |
+| `title` | text | Frame description (accessibility) |
+| `importance` | `auto`, `high`, `low` | Loading priority hint |

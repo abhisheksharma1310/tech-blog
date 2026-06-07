@@ -2,76 +2,408 @@
 title: "Forms"
 description: "Learn forms in html"
 date: "2026-05-30"
-category: ["Web Development", "Frontend", "html"]
-tags: ["",]
-slug: ""
+category: ["Web Development", "Frontend", "HTML"]
+tags: ["HTML", "Forms"]
+slug: "forms-in-html"
 author: "Abhishek Sharma"
 order: 8
 ---
 
-# Forms in html
+# Forms in HTML
+
+Forms collect user input and send it to a server for processing. They are the foundation of user interaction on the web — login pages, search bars, registration forms, checkout pages, and surveys all use forms.
 
 ## Basic Structure
 
+<CodePlayground
+  title=""
+  html='
+<form action="/submit" method="post">
+  <label for="name">Name:</label>
+  <input type="text" id="name" name="name" required>
+
+  <label for="email">Email:</label>
+  <input type="email" id="email" name="email">
+
+  <button type="submit">Submit</button>
+</form>
+' />
+
+A `<form>` wraps one or more **form controls** (inputs, buttons, selects, textareas) and defines how the data is sent.
+
 ## Default Behavior
+
+When a form is submitted:
+1. The browser collects the **name-value pairs** from all form controls.
+2. It sends them to the URL specified in the `action` attribute.
+3. The browser navigates to that URL (or processes the response if JavaScript intercepts it).
 
 ## Targeting the Submission URL
 
-## What Data Gets Sent?
-Form data comes from form controls, such as:
+| Attribute | Value | Behaviour |
+|---|---|---|
+| `action` | URL | Where to send the data |
+| `method` | `get` or `post` | HTTP method to use |
+| `enctype` | `application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain` | Encoding type for the data |
 
-- input – single-line text fields
-- textarea – multi-line text areas
-- select – dropdown menus
-- Radio buttons – choose one from a visible list
-- Checkboxes – choose zero, one, or multiple options
-- File uploads – send files to the server
-And more...
+<CodePlayground
+  title=""
+  html='
+<!-- GET method — data in URL (search forms) -->
+<form action="/search" method="get">
+  <input type="search" name="q">
+  <button>Search</button>
+</form>
+
+<!-- POST method — data in body (login, registration) -->
+<form action="/login" method="post">
+  <input type="text" name="username">
+  <input type="password" name="password">
+  <button>Log In</button>
+</form>
+
+<!-- File uploads require multipart encoding -->
+<form action="/upload" method="post" enctype="multipart/form-data">
+  <input type="file" name="avatar">
+  <button>Upload</button>
+</form>
+' />
+
+## What Data Gets Sent?
+
+Form data comes from all **named form controls** — elements with a `name` attribute:
+
+<CodePlayground
+  title=""
+  html='
+<input type="text" name="username" value="alice">
+' />
+
+This sends: `username=alice`
+
+Controls that send data:
+- `<input>` (text, email, password, hidden, number, etc.)
+- `<textarea>`
+- `<select>` (dropdown menus)
+- `<input type="radio">` (sends value of selected option)
+- `<input type="checkbox">` (sends value if checked)
+- `<input type="file">` (sends file content with `multipart/form-data`)
 
 ## Input Tag
 
+The `<input>` tag is the most versatile form control. Its `type` attribute determines its appearance and behaviour.
+
 ### Placeholder
+
+Shows hint text inside the field that disappears when typing:
+
+<CodePlayground
+  title=""
+  html='
+<input type="text" placeholder="Enter your full name">
+' />
 
 ### Text
 
+Single-line text input (default):
+
+<CodePlayground
+  title=""
+  html='
+<input type="text" name="fullname" maxlength="50">
+' />
+
 ### Email
+
+Validates email format automatically:
+
+<CodePlayground
+  title=""
+  html='
+<input type="email" name="email" placeholder="user@example.com">
+' />
 
 ### Password
 
+Masks the input characters:
+
+<CodePlayground
+  title=""
+  html='
+<input type="password" name="password">
+' />
+
 ### Number
+
+Accepts only numeric input:
+
+<CodePlayground
+  title=""
+  html='
+<input type="number" name="age" min="0" max="150" step="1">
+' />
 
 ### Hidden
 
+Sends data to the server without displaying a control to the user:
+
+<CodePlayground
+  title=""
+  html='
+<input type="hidden" name="user_id" value="123">
+' />
+
 ### Default Value
+
+Pre-fills the input using the `value` attribute:
+
+<CodePlayground
+  title=""
+  html='
+<input type="text" name="country" value="United States">
+' />
 
 ### Required Fields
 
+The `required` attribute prevents submission if the field is empty:
+
+<CodePlayground
+  title=""
+  html='
+<input type="text" name="email" required>
+' />
+
 ### Format Enforcement
+
+Browser-side validation attributes:
+
+| Attribute | Used With | Example |
+|---|---|---|
+| `minlength` / `maxlength` | text, password | `maxlength="10"` |
+| `min` / `max` | number, date, range | `min="18" max="100"` |
+| `step` | number, range | `step="5"` |
+| `pattern` | text, search, url, tel | `pattern="[A-Za-z]+"` |
+
+<CodePlayground
+  title=""
+  html='
+<input type="text" pattern="[A-Za-z ]+" title="Letters only">
+' />
 
 ### Submit
 
-## Other Form Input Types 
+The submit button triggers form submission:
+
+<CodePlayground
+  title=""
+  html='
+<input type="submit" value="Send">
+<!-- or use a button element -->
+<button type="submit">Send</button>
+' />
+
+## Other Form Input Types
 
 ### File Uploads
 
+<CodePlayground
+  title=""
+  html='
+<input type="file" name="avatar" accept="image/*" multiple>
+' />
+
+- `accept` — restricts file types (`image/*`, `.pdf`, `.doc`)
+- `multiple` — allows selecting multiple files
+
 ### Buttons
+
+<CodePlayground
+  title=""
+  html='
+<!-- Submit the form (default) -->
+<button type="submit">Save</button>
+
+<!-- Reset all fields to their default values -->
+<button type="reset">Clear</button>
+
+<!-- Regular button — does nothing by default -->
+<button type="button" onclick="alert("Clicked!")">Click Me</button>
+' />
 
 ### Radio Buttons
 
+Choose **one** option from a group (same `name`):
+
+<CodePlayground
+  title=""
+  html='
+<fieldset>
+  <legend>Gender</legend>
+  <input type="radio" id="male" name="gender" value="male">
+  <label for="male">Male</label>
+  <input type="radio" id="female" name="gender" value="female">
+  <label for="female">Female</label>
+  <input type="radio" id="other" name="gender" value="other" checked>
+  <label for="other">Other</label>
+</fieldset>
+' />
+
+Only the **selected** radio button's value is sent. Use `checked` for a default selection.
+
 ### Checkboxes
+
+Choose **zero or more** options from a group:
+
+<CodePlayground
+  title=""
+  html='
+<fieldset>
+  <legend>Interests</legend>
+  <input type="checkbox" id="coding" name="interests" value="coding">
+  <label for="coding">Coding</label>
+  <input type="checkbox" id="design" name="interests" value="design">
+  <label for="design">Design</label>
+  <input type="checkbox" id="music" name="interests" value="music" checked>
+  <label for="music">Music</label>
+</fieldset>
+' />
+
+Each checked checkbox sends its value. Use `checked` for defaults.
 
 ### Date and Time Inputs
 
+<CodePlayground
+  title=""
+  html='
+<input type="date" name="birthday">
+<input type="time" name="appointment">
+<input type="datetime-local" name="meeting">
+<input type="month" name="billing_month">
+<input type="week" name="event_week">
+' />
+
 ### Color Picker
+
+<CodePlayground
+  title=""
+  html='
+<input type="color" name="theme_color" value="#ff0000">
+' />
 
 ### Range Slider
 
+<CodePlayground
+  title=""
+  html='
+<input type="range" name="volume" min="0" max="100" value="50">
+' />
+
 ### Telephone Input
+
+<CodePlayground
+  title=""
+  html='
+<input type="tel" name="phone" placeholder="+1-555-0100">
+' />
 
 ### URL Input
 
+<CodePlayground
+  title=""
+  html='
+<input type="url" name="website" placeholder="https://example.com">
+' />
+
 ## Textarea Tag
+
+Multi-line text input. Use `rows` and `cols` for size:
+
+<CodePlayground
+  title=""
+  html='
+<label for="message">Message:</label>
+<textarea id="message" name="message" rows="5" cols="40"
+          placeholder="Write your message here..."
+          maxlength="500"></textarea>
+' />
+
+**Important:** `<textarea>` is NOT a void element — it needs a closing tag. Any whitespace between the tags appears in the textarea.
 
 ## Select Tag
 
+Creates a dropdown menu:
+
+<CodePlayground
+  title=""
+  html='
+<label for="country">Country:</label>
+<select id="country" name="country">
+  <option value="">— Select —</option>
+  <option value="us">United States</option>
+  <option value="uk">United Kingdom</option>
+  <option value="jp" selected>Japan</option>
+</select>
+' />
+
+- `<optgroup>` groups options into labelled categories:
+
+<CodePlayground
+  title=""
+  html='
+<select name="car">
+  <optgroup label="German">
+    <option value="bmw">BMW</option>
+    <option value="audi">Audi</option>
+  </optgroup>
+  <optgroup label="Japanese">
+    <option value="toyota">Toyota</option>
+    <option value="honda">Honda</option>
+  </optgroup>
+</select>
+' />
+
+- `multiple` attribute allows selecting multiple options (Ctrl+click):
+
+<CodePlayground
+  title=""
+  html='
+<select name="skills" multiple size="4">
+  <option>HTML</option>
+  <option>CSS</option>
+  <option>JavaScript</option>
+  <option>Python</option>
+</select>
+' />
+
 ## Detailed Table with Tag, attributes and attribute values
+
+| Tag | Attribute | Common Values | Description |
+|---|---|---|---|
+| `<form>` | `action` | URL | Submission endpoint |
+| `<form>` | `method` | `get`, `post` | HTTP method |
+| `<form>` | `enctype` | `application/x-www-form-urlencoded` (default), `multipart/form-data` (files), `text/plain` | Encoding type |
+| `<form>` | `novalidate` | (boolean) | Disable browser validation |
+| `<form>` | `target` | `_self`, `_blank`, `_parent`, `_top` | Where to display response |
+| `<input>` | `type` | `text`, `email`, `password`, `number`, `hidden`, `submit`, `radio`, `checkbox`, `file`, `date`, `color`, `range`, `tel`, `url`, `search` | Input type |
+| `<input>` | `name` | text | Key sent to server |
+| `<input>` | `value` | text | Default value / sent value |
+| `<input>` | `placeholder` | text | Hint text |
+| `<input>` | `required` | (boolean) | Must be filled |
+| `<input>` | `disabled` | (boolean) | Cannot be interacted with |
+| `<input>` | `readonly` | (boolean) | Cannot be edited |
+| `<input>` | `min` / `max` | number, date | Valid range |
+| `<input>` | `step` | number | Increment step |
+| `<input>` | `pattern` | regex | Validation pattern |
+| `<input>` | `accept` | MIME type, file extension | Accepted file types |
+| `<input>` | `multiple` | (boolean) | Allow multiple files/options |
+| `<input>` | `autocomplete` | `on`, `off`, `email`, `name`, etc. | Auto-fill behaviour |
+| `<textarea>` | `rows` | number | Visible height (lines) |
+| `<textarea>` | `cols` | number | Visible width (characters) |
+| `<textarea>` | `maxlength` | number | Max characters |
+| `<textarea>` | `wrap` | `soft`, `hard` | Line wrapping |
+| `<select>` | `name` | text | Key sent to server |
+| `<select>` | `multiple` | (boolean) | Allow multiple selections |
+| `<select>` | `size` | number | Number of visible options |
+| `<option>` | `value` | text | Sent value |
+| `<option>` | `selected` | (boolean) | Pre-selected option |
+| `<optgroup>` | `label` | text | Group label |

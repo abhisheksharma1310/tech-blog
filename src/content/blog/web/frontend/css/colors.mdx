@@ -1,0 +1,58 @@
+---
+title: "CSS Colors"
+description: "Ways to define colors in CSS"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-colors"
+author: "Abhishek Sharma"
+order: 12
+---
+
+## Colors
+
+CSS offers many ways to represent colors:
+
+<CodePlayground
+  title="Color Formats"
+  html='
+  <div class="named">Named: red</div>
+  <div class="hex">HEX: #6366f1</div>
+  <div class="rgb">RGB: rgb(5, 150, 105)</div>
+  <div class="rgba">RGBA: rgba(239,68,68,0.7)</div>
+  <div class="hsl">HSL: hsl(271, 81%, 56%)</div>'
+  css='
+  div { padding: 8px 16px; margin: 4px 0; border-radius: 6px; color: white; font-weight: bold; }
+  .named { background: red; }
+  .hex { background: #6366f1; }
+  .rgb { background: rgb(5, 150, 105); }
+  .rgba { background: rgba(239, 68, 68, 0.7); }
+  .hsl { background: hsl(271, 81%, 56%); }'
+/>
+
+### Color Formats
+
+| Format | Example | Notes |
+|---|---|---|
+| Named | `red`, `blue`, `tomato` | 148 named colors |
+| HEX | `#ff0000`, `#f00` | 6 or 3 digit hex |
+| RGB | `rgb(255, 0, 0)` | 0–255 each channel |
+| RGBA | `rgba(255, 0, 0, 0.5)` | RGB + alpha (transparency) |
+| HSL | `hsl(0, 100%, 50%)` | Hue, Saturation, Lightness |
+| HSLA | `hsla(0, 100%, 50%, 0.5)` | HSL + alpha |
+
+### Opacity
+
+You can also use the `opacity` property to make an entire element transparent:
+
+<CodePlayground
+  title="Opacity"
+  html='
+  <div class="opaque">opacity: 1</div>
+  <div class="semi">opacity: 0.6</div>
+  <div class="ghost">opacity: 0.3</div>'
+  css='
+  div { background: #6366f1; color: white; padding: 8px 16px; margin: 4px 0; border-radius: 6px; }
+  .semi { opacity: 0.6; }
+  .ghost { opacity: 0.3; }'
+/>

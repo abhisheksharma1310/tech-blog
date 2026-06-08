@@ -1,0 +1,95 @@
+---
+title: "CSS Z-Index"
+description: "Control stacking order of elements"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-z-index"
+author: "Abhishek Sharma"
+order: 29
+---
+
+## Z-Index
+
+`z-index` controls the **stacking order** of elements along the z-axis (front to back).
+
+<CodePlayground
+  title="Z-Index Stacking"
+  html='
+  <div class="box box1">z-index: 1</div>
+  <div class="box box2">z-index: 2</div>
+  <div class="box box3">z-index: 3</div>'
+  css='
+  .box {
+    position: relative;
+    width: 160px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    border-radius: 6px;
+  }
+  .box1 { background: #6366f1; top: 0; left: 0; z-index: 1; }
+  .box2 { background: #059669; top: -60px; left: 40px; z-index: 2; }
+  .box3 { background: #dc2626; top: -120px; left: 80px; z-index: 3; }'
+/>
+
+### How Z-Index Works
+
+1. Only works on **positioned** elements (not `static`)
+2. Higher values appear **on top** of lower values
+3. Elements with the same value stack in source order (later = on top)
+
+### Stacking Context
+
+A **stacking context** is a group of elements whose z-index values are scoped. Creating a new stacking context:
+
+```css
+/* These create a stacking context */
+position: relative/absolute;
+opacity: < 1;
+transform, filter, perspective, clip-path;
+isolation: isolate;
+mix-blend-mode: other than normal;
+```
+
+A child's `z-index` is relative to its stacking context, not the global page:
+
+<CodePlayground
+  title="Stacking Context"
+  html='
+  <div class="context">
+    <div class="inner">z-index: 99 (inside context)</div>
+  </div>
+  <div class="outside">z-index: 1 (outside)</div>'
+  css='
+  .context {
+    position: relative;
+    z-index: 1;
+    background: #eef2ff;
+    padding: 20px;
+    margin-bottom: 40px;
+    border: 2px solid #6366f1;
+  }
+  .inner {
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    z-index: 99;
+    background: #059669;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  .outside {
+    position: relative;
+    z-index: 2;
+    background: #fecaca;
+    padding: 12px;
+    border: 2px solid #dc2626;
+    font-weight: bold;
+  }'
+/>

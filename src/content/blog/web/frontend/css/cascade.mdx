@@ -1,0 +1,45 @@
+---
+title: "CSS Cascade"
+description: "How CSS resolves conflicting styles"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-cascade"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## Cascade
+
+The **cascade** is the algorithm that resolves conflicting style declarations. When multiple rules apply to the same element, the cascade determines which one wins.
+
+### Cascade Order (lowest to highest priority)
+
+1. **User Agent** — browser default styles
+2. **User** — browser preferences (e.g., larger font sizes)
+3. **Author** — your CSS (normal declarations)
+4. **Author !important** — your CSS with `!important`
+5. **User !important** — user styles with `!important`
+
+<CodePlayground
+  title="Cascade in Action"
+  html='
+  <p class="description">Which color wins?</p>'
+  css='
+  /* All three rules target the same element */
+  p { color: #64748b; }
+  .description { color: #6366f1; }
+  p.description { color: #059669; }'
+/>
+
+Within the same origin, **specificity** and **source order** break ties:
+
+```css
+/* Later rules override earlier ones when specificity is equal */
+p { color: red; }
+p { color: blue; } /* blue wins */
+```
+
+### Key Takeaway
+
+Think of the cascade as a scoring system: later in the stylesheet beats earlier, and more specific beats less specific.

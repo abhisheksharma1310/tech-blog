@@ -1,0 +1,103 @@
+---
+title: "CSS Transitions"
+description: "Smoothly animate property changes"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-transitions"
+author: "Abhishek Sharma"
+order: 39
+---
+
+## Transitions
+
+Transitions animate changes to CSS properties smoothly over time instead of instant jumps.
+
+<CodePlayground
+  title="Transition Demo (hover me)"
+  html='
+  <button class="btn">Hover Me</button>
+  <div class="card-transition">Hover this card</div>
+  <div class="multi">Multiple properties</div>'
+  css='
+  .btn {
+    padding: 12px 24px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+  .btn:hover { background: #4f46e5; transform: translateY(-2px); }
+  .card-transition {
+    padding: 16px;
+    background: #eef2ff;
+    border: 2px solid #6366f1;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+  .card-transition:hover { background: #6366f1; color: white; padding: 20px; }
+  .multi {
+    padding: 12px;
+    background: #059669;
+    color: white;
+    border-radius: 6px;
+    margin-top: 8px;
+    font-weight: bold;
+    text-align: center;
+    transition: background 0.5s, border-radius 0.3s, transform 0.2s;
+  }
+  .multi:hover {
+    background: #047857;
+    border-radius: 20px;
+    transform: scale(1.05);
+  }'
+/>
+
+### Transition Properties
+
+| Property | What It Does |
+|---|---|
+| `transition-property` | Which properties to animate |
+| `transition-duration` | How long the animation takes |
+| `transition-timing-function` | Speed curve (`ease`, `linear`, `ease-in-out`, etc.) |
+| `transition-delay` | Delay before starting |
+| `transition` | Shorthand for all |
+
+### Timing Functions
+
+<CodePlayground
+  title="Timing Functions Comparison"
+  html='
+  <div class="demo linear">linear</div>
+  <div class="demo ease">ease</div>
+  <div class="demo ease-in">ease-in</div>
+  <div class="demo ease-out">ease-out</div>'
+  css='
+  .demo {
+    width: 150px;
+    padding: 8px 16px;
+    margin: 4px 0;
+    background: #6366f1;
+    color: white;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: width 1s;
+  }
+  .demo:hover { width: 100%; }
+  .linear { transition-timing-function: linear; }
+  .ease { transition-timing-function: ease; }
+  .ease-in { transition-timing-function: ease-in; }
+  .ease-out { transition-timing-function: ease-out; }'
+/>
+
+```css
+/* Shorthand */
+transition: property duration timing-function delay;
+transition: background 0.3s ease 0.1s;
+```

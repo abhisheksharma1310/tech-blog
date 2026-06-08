@@ -314,7 +314,7 @@ Reserved characters must be written as **HTML entities**:
 <CodePlayground
   title=""
   html='
-<p>Use &lt;h1&gt; for the main heading.</p>
+<p>Use h1 for the main heading.</p>
 <p>&copy; 2026 My Website. All rights reserved.</p>
 ' />
 
@@ -322,11 +322,9 @@ Reserved characters must be written as **HTML entities**:
 
 Character encoding tells the browser how to interpret the bytes of the file. Always declare it in the `<head>`:
 
-<CodePlayground
-  title=""
-  html='
-<meta charset="UTF-8">
-' />
+```html
+<meta charset="UTF-8"/>
+```
 
 **UTF-8** supports every character from every language in the world. Without proper encoding, special characters like `é`, `ñ`, `中文`, or `日本語` may appear as garbage.
 

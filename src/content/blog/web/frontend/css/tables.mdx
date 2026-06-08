@@ -1,0 +1,85 @@
+---
+title: "CSS Tables"
+description: "Style HTML tables with CSS"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-tables"
+author: "Abhishek Sharma"
+order: 32
+---
+
+## Tables
+
+CSS provides properties specifically for styling HTML tables.
+
+<CodePlayground
+  title="Styled Table"
+  html='
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Role</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Alice</td><td>Developer</td><td>Active</td></tr>
+      <tr><td>Bob</td><td>Designer</td><td>Active</td></tr>
+      <tr><td>Charlie</td><td>Manager</td><td>Inactive</td></tr>
+    </tbody>
+  </table>'
+  css='
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: system-ui, sans-serif;
+  }
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 10px 16px;
+    text-align: left;
+  }
+  th {
+    background: #6366f1;
+    color: white;
+    font-weight: 600;
+  }
+  tr:nth-child(even) { background: #f1f5f9; }
+  tr:hover { background: #eef2ff; }'
+/>
+
+### Table-Specific Properties
+
+| Property | What It Does |
+|---|---|
+| `border-collapse` | Merge adjacent borders (`collapse`) or keep separate |
+| `border-spacing` | Space between cells (when `border-collapse: separate`) |
+| `caption-side` | Position of the `<caption>` element |
+| `empty-cells` | Show/hide empty cell borders |
+| `table-layout` | Fixed vs auto column width calculation |
+
+### border-collapse
+
+<CodePlayground
+  title="border-collapse: separate"
+  html='
+  <table class="separate">
+    <tr><td>Cell 1</td><td>Cell 2</td></tr>
+    <tr><td>Cell 3</td><td>Cell 4</td></tr>
+  </table>'
+  css='
+  .separate {
+    border-collapse: separate;
+    border-spacing: 4px;
+  }
+  .separate td {
+    border: 1px solid #6366f1;
+    padding: 8px 16px;
+    background: #eef2ff;
+    border-radius: 4px;
+  }'
+/>
+
+Stripe rows, hover effects, and proper spacing make tables much more readable.

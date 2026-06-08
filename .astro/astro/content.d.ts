@@ -901,6 +901,314 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"web/frontend/css/adding-css.mdx": {
+	id: "web/frontend/css/adding-css.mdx";
+  slug: "css-adding-css";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/animations.mdx": {
+	id: "web/frontend/css/animations.mdx";
+  slug: "css-animations";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/attribute-selectors.mdx": {
+	id: "web/frontend/css/attribute-selectors.mdx";
+  slug: "css-attribute-selectors";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/backgrounds.mdx": {
+	id: "web/frontend/css/backgrounds.mdx";
+  slug: "css-backgrounds";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/border.mdx": {
+	id: "web/frontend/css/border.mdx";
+  slug: "css-border";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/box-model.mdx": {
+	id: "web/frontend/css/box-model.mdx";
+  slug: "css-box-model";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/box-sizing.mdx": {
+	id: "web/frontend/css/box-sizing.mdx";
+  slug: "css-box-sizing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/calc.mdx": {
+	id: "web/frontend/css/calc.mdx";
+  slug: "css-calc";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/cascade.mdx": {
+	id: "web/frontend/css/cascade.mdx";
+  slug: "css-cascade";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/centering.mdx": {
+	id: "web/frontend/css/centering.mdx";
+  slug: "css-centering";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/colors.mdx": {
+	id: "web/frontend/css/colors.mdx";
+  slug: "css-colors";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/comments.mdx": {
+	id: "web/frontend/css/comments.mdx";
+  slug: "css-comments";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/custom-properties.mdx": {
+	id: "web/frontend/css/custom-properties.mdx";
+  slug: "css-custom-properties";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/display.mdx": {
+	id: "web/frontend/css/display.mdx";
+  slug: "css-display";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/error-handling.mdx": {
+	id: "web/frontend/css/error-handling.mdx";
+  slug: "css-error-handling";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/feature-queries.mdx": {
+	id: "web/frontend/css/feature-queries.mdx";
+  slug: "css-feature-queries";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/filters.mdx": {
+	id: "web/frontend/css/filters.mdx";
+  slug: "css-filters";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/flexbox.mdx": {
+	id: "web/frontend/css/flexbox.mdx";
+  slug: "css-flexbox";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/float-and-clear.mdx": {
+	id: "web/frontend/css/float-and-clear.mdx";
+  slug: "css-float-and-clear";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/fonts.mdx": {
+	id: "web/frontend/css/fonts.mdx";
+  slug: "css-fonts";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/grid.mdx": {
+	id: "web/frontend/css/grid.mdx";
+  slug: "css-grid";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/history.mdx": {
+	id: "web/frontend/css/history.mdx";
+  slug: "css-history";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/import.mdx": {
+	id: "web/frontend/css/import.mdx";
+  slug: "css-import";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/inheritance.mdx": {
+	id: "web/frontend/css/inheritance.mdx";
+  slug: "css-inheritance";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/introduction.mdx": {
+	id: "web/frontend/css/introduction.mdx";
+  slug: "css-introduction";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/lists.mdx": {
+	id: "web/frontend/css/lists.mdx";
+  slug: "css-lists";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/margin.mdx": {
+	id: "web/frontend/css/margin.mdx";
+  slug: "css-margin";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/media-queries.mdx": {
+	id: "web/frontend/css/media-queries.mdx";
+  slug: "css-media-queries";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/normalization.mdx": {
+	id: "web/frontend/css/normalization.mdx";
+  slug: "css-normalization";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/padding.mdx": {
+	id: "web/frontend/css/padding.mdx";
+  slug: "css-padding";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/positioning.mdx": {
+	id: "web/frontend/css/positioning.mdx";
+  slug: "css-positioning";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/print.mdx": {
+	id: "web/frontend/css/print.mdx";
+  slug: "css-print";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/pseudo-classes.mdx": {
+	id: "web/frontend/css/pseudo-classes.mdx";
+  slug: "css-pseudo-classes";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/pseudo-elements.mdx": {
+	id: "web/frontend/css/pseudo-elements.mdx";
+  slug: "css-pseudo-elements";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/selectors.mdx": {
+	id: "web/frontend/css/selectors.mdx";
+  slug: "css-selectors";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/specificity.mdx": {
+	id: "web/frontend/css/specificity.mdx";
+  slug: "css-specificity";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/tables.mdx": {
+	id: "web/frontend/css/tables.mdx";
+  slug: "css-tables";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/transforms.mdx": {
+	id: "web/frontend/css/transforms.mdx";
+  slug: "css-transforms";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/transitions.mdx": {
+	id: "web/frontend/css/transitions.mdx";
+  slug: "css-transitions";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/typography.mdx": {
+	id: "web/frontend/css/typography.mdx";
+  slug: "css-typography";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/units.mdx": {
+	id: "web/frontend/css/units.mdx";
+  slug: "css-units";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/url.mdx": {
+	id: "web/frontend/css/url.mdx";
+  slug: "css-url";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/vendor-prefixes.mdx": {
+	id: "web/frontend/css/vendor-prefixes.mdx";
+  slug: "css-vendor-prefixes";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/css/z-index.mdx": {
+	id: "web/frontend/css/z-index.mdx";
+  slug: "css-z-index";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "web/frontend/html/accessibility.mdx": {
 	id: "web/frontend/html/accessibility.mdx";
   slug: "accessibility-in-html";

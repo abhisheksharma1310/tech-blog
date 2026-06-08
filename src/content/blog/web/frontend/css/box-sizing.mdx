@@ -1,0 +1,64 @@
+---
+title: "CSS Box Sizing"
+description: "Control how element dimensions are calculated"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-box-sizing"
+author: "Abhishek Sharma"
+order: 25
+---
+
+## Box Sizing
+
+The `box-sizing` property controls how the total width/height of an element is calculated.
+
+<CodePlayground
+  title="content-box vs border-box"
+  html='
+  <div class="content">content-box</div>
+  <div class="border">border-box</div>'
+  css='
+  div { width: 200px; padding: 20px; border: 10px solid #6366f1; margin: 8px 0; background: #eef2ff; font-weight: bold; }
+  .content {
+    box-sizing: content-box;
+    /* total width = 200 + 40 + 20 = 260px */
+  }
+  .border {
+    box-sizing: border-box;
+    /* total width = 200px (content shrinks to 140px) */
+    border-color: #059669;
+  }'
+/>
+
+### Difference
+
+| `content-box` (default) | `border-box` |
+|---|---|
+| Width = content only | Width = content + padding + border |
+| Padding/border add to total size | Padding/border shrink content area |
+| Layout math can be tricky | Layout math is intuitive |
+
+### Best Practice: Global Reset
+
+Most developers apply `border-box` globally:
+
+```css
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+```
+
+This makes sizing predictable — a 100% wide element with 20px padding stays inside its container:
+
+<CodePlayground
+  title="Practical border-box"
+  html='
+  <div class="container">
+    <div class="child">This stays inside the container</div>
+  </div>'
+  css='
+  *, *::before, *::after { box-sizing: border-box; }
+  .container { width: 300px; border: 2px solid #cbd5e1; padding: 4px; }
+  .child { width: 100%; padding: 16px; background: #eef2ff; border: 2px solid #6366f1; font-weight: bold; }'
+/>

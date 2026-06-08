@@ -1,0 +1,104 @@
+---
+title: "CSS Media Queries"
+description: "Make responsive designs with media queries"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-media-queries"
+author: "Abhishek Sharma"
+order: 35
+---
+
+## Media Queries
+
+Media queries apply styles conditionally based on device characteristics like screen width, resolution, or orientation.
+
+<CodePlayground
+  title="Responsive Box (resize to see changes)"
+  html='
+  <div class="responsive-box">
+    Resize the output window to see me change!
+  </div>'
+  css='
+  .responsive-box {
+    background: #6366f1;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    transition: 0.3s;
+  }
+  @media (max-width: 400px) {
+    .responsive-box {
+      background: #dc2626;
+      font-size: 0.875rem;
+      padding: 12px;
+    }
+  }
+  @media (min-width: 600px) {
+    .responsive-box {
+      background: #059669;
+      font-size: 1.25rem;
+    }
+  }'
+/>
+
+### Common Breakpoints
+
+```css
+/* Mobile first */
+@media (min-width: 640px) { /* tablet */ }
+@media (min-width: 1024px) { /* desktop */ }
+@media (min-width: 1280px) { /* wide */ }
+```
+
+### Media Query Syntax
+
+```css
+@media (condition) {
+  /* styles */
+}
+
+/* Multiple conditions */
+@media (min-width: 768px) and (max-width: 1024px) { }
+
+/* OR condition */
+@media (max-width: 600px), (orientation: landscape) { }
+```
+
+### Media Features
+
+| Feature | Example |
+|---|---|
+| `width` / `min-width` / `max-width` | Viewport width |
+| `height` / `min-height` / `max-height` | Viewport height |
+| `orientation` | `portrait` or `landscape` |
+| `prefers-color-scheme` | `light` or `dark` |
+| `prefers-reduced-motion` | Accessibility preference |
+| `resolution` | Screen resolution |
+
+<CodePlayground
+  title="Dark Mode Example"
+  html='
+  <div class="theme-demo">
+    Check with prefers-color-scheme: dark
+  </div>'
+  css='
+  .theme-demo {
+    background: #ffffff;
+    color: #1e293b;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #cbd5e1;
+    font-weight: bold;
+    text-align: center;
+  }
+  @media (prefers-color-scheme: dark) {
+    .theme-demo {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-color: #475569;
+    }
+  }'
+/>

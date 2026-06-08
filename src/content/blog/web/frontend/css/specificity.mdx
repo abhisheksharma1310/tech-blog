@@ -1,0 +1,58 @@
+---
+title: "CSS Specificity"
+description: "Understand how specificity determines which styles apply"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-specificity"
+author: "Abhishek Sharma"
+order: 6
+---
+
+## Specificity
+
+When multiple CSS rules match the same element, **specificity** decides which one applies. Each selector type has a weight:
+
+### Specificity Hierarchy
+
+| Level | Examples | Weight |
+|---|---|---|
+| Inline styles | `style="..."` | 1,0,0,0 |
+| IDs | `#header` | 0,1,0,0 |
+| Classes, attributes, pseudo-classes | `.class`, `[type]`, `:hover` | 0,0,1,0 |
+| Elements, pseudo-elements | `div`, `::before` | 0,0,0,1 |
+
+<CodePlayground
+  title="Specificity Battle"
+  html='
+  <div id="box" class="highlight" style="color: #7c3aed;">
+    Which color wins?
+  </div>'
+  css='
+  div { color: #64748b; }
+  .highlight { color: #f59e0b; }
+  #box { color: #059669; }'
+/>
+
+Inline styles win — but avoid them. Use classes for clean, maintainable specificity.
+
+### Calculating Specificity
+
+```css
+p           → 0,0,0,1
+.highlight  → 0,0,1,0
+#header     → 0,1,0,0
+#header p   → 0,1,0,1
+```
+
+### !important
+
+`!important` overrides specificity entirely. Use it sparingly:
+
+<CodePlayground
+  title="!important Example"
+  html='<p class="override">This is important!</p>'
+  css='
+  p { color: #64748b !important; }
+  .override { color: #ef4444; } /* loses to !important */'
+/>

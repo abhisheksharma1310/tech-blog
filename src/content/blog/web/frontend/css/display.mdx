@@ -1,0 +1,68 @@
+---
+title: "CSS Display"
+description: "Control element layout behavior"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-display"
+author: "Abhishek Sharma"
+order: 26
+---
+
+## Display
+
+The `display` property is the most important CSS property for layout. It determines how an element behaves in the document flow.
+
+<CodePlayground
+  title="Display Values"
+  html='
+  <div class="block">Block element</div>
+  <span class="inline">Inline</span>
+  <span class="inline">Inline</span>
+  <div class="inline-block">Inline-block</div>
+  <div class="inline-block">Inline-block</div>
+  <div class="none">Hidden (display: none)</div>'
+  css='
+  .block { display: block; background: #eef2ff; padding: 10px; margin: 4px 0; border: 1px solid #6366f1; }
+  .inline { display: inline; background: #fef9c3; padding: 4px 8px; margin: 4px; border: 1px solid #f59e0b; }
+  .inline-block { display: inline-block; background: #ecfdf5; padding: 10px; margin: 4px; border: 1px solid #059669; width: 120px; }
+  .none { display: none; }'
+/>
+
+### Display Values
+
+| Value | Behavior |
+|---|---|
+| `block` | Takes full width, starts on new line |
+| `inline` | Flows with text, no width/height control |
+| `inline-block` | Inline flow but respects width/height |
+| `none` | Removed from layout (not visible) |
+| `flex` | Flexbox container |
+| `grid` | Grid container |
+
+### Block vs Inline
+
+| Block | Inline |
+|---|---|
+| Starts on a new line | Stays on the same line |
+| Fills parent width | Wraps content width |
+| `width`/`height` respected | `width`/`height` ignored |
+| `<div>`, `<p>`, `<h1>` | `<span>`, `<a>`, `<strong>` |
+
+### Visibility: hidden vs display: none
+
+<CodePlayground
+  title="hidden vs none"
+  html='
+  <div class="visible">Visible</div>
+  <div class="hidden">visibility: hidden</div>
+  <div class="gone">display: none</div>
+  <div class="visible">After hidden/gone</div>'
+  css='
+  div { padding: 10px; margin: 4px; border: 1px solid #64748b; }
+  .visible { background: #eef2ff; }
+  .hidden { visibility: hidden; background: #fef9c3; }
+  .gone { display: none; background: #fecaca; }'
+/>
+
+`visibility: hidden` hides the element but reserves its space. `display: none` removes it entirely.

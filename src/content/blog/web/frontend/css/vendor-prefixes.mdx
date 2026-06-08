@@ -1,0 +1,78 @@
+---
+title: "CSS Vendor Prefixes"
+description: "Experimental browser features with prefixes"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-vendor-prefixes"
+author: "Abhishek Sharma"
+order: 43
+---
+
+## Vendor Prefixes
+
+Vendor prefixes let browsers implement experimental CSS features before they become standard.
+
+<CodePlayground
+  title="Vendor Prefixes Demo"
+  html='
+  <div class="prefixed">This uses vendor-prefixed properties</div>'
+  css='
+  .prefixed {
+    padding: 20px;
+    background: #6366f1;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 8px;
+
+    /* Vendor prefixes for user-select */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }'
+/>
+
+### Common Prefixes
+
+| Prefix | Browser |
+|---|---|
+| `-webkit-` | Chrome, Safari, Edge, Opera |
+| `-moz-` | Firefox |
+| `-ms-` | Internet Explorer |
+| `-o-` | Opera (older versions) |
+
+### Prefix Example
+
+```css
+.element {
+  -webkit-transform: rotate(45deg);
+  -moz-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  -o-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+```
+
+Always put the unprefixed version **last** — it's the standard version that takes precedence once supported.
+
+### Autoprefixer
+
+Manually writing prefixes is tedious. Tools like **Autoprefixer** (integrated into build tools like PostCSS, Vite) add them automatically based on browser compatibility data:
+
+```css
+/* Input */
+.element {
+  display: flex;
+}
+
+/* Output (autoprefixed) */
+.element {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+```
+
+Prefixes are less necessary today since most modern browsers support standard properties. Always check [Can I Use](https://caniuse.com) before adding prefixes.

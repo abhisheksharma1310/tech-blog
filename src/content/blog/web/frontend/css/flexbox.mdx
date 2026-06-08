@@ -1,0 +1,104 @@
+---
+title: "CSS Flexbox"
+description: "One-dimensional layout with flexbox"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-flexbox"
+author: "Abhishek Sharma"
+order: 30
+---
+
+## Flexbox
+
+Flexbox provides a one-dimensional layout model — perfect for distributing space and aligning content in rows or columns.
+
+<CodePlayground
+  title="Basic Flexbox"
+  html='
+  <div class="flex-container">
+    <div class="item">1</div>
+    <div class="item">2</div>
+    <div class="item">3</div>
+  </div>'
+  css='
+  .flex-container {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    background: #eef2ff;
+    border-radius: 8px;
+  }
+  .item {
+    background: #6366f1;
+    color: white;
+    padding: 20px;
+    border-radius: 6px;
+    font-size: 1.25rem;
+    font-weight: bold;
+    text-align: center;
+  }'
+/>
+
+### Flex Direction
+
+Change the direction from row (default) to column:
+
+<CodePlayground
+  title="Flex Direction"
+  html='
+  <div class="flex-col">
+    <div class="item">Top</div>
+    <div class="item">Middle</div>
+    <div class="item">Bottom</div>
+  </div>'
+  css='
+  .flex-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: #ecfdf5;
+    border-radius: 8px;
+  }
+  .item {
+    background: #059669;
+    color: white;
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 1.125rem;
+    font-weight: bold;
+    text-align: center;
+  }'
+/>
+
+### Alignment
+
+| Property | What It Controls |
+|---|---|
+| `justify-content` | Main axis alignment (`flex-start`, `center`, `space-between`, etc.) |
+| `align-items` | Cross axis alignment (`stretch`, `center`, `flex-start`, etc.) |
+| `align-self` | Override alignment for a single item |
+| `gap` | Space between items |
+
+<CodePlayground
+  title="Justify Content"
+  html='
+  <div class="flex-demo start">flex-start</div>
+  <div class="flex-demo center">center</div>
+  <div class="flex-demo between">space-between</div>'
+  css='
+  .flex-demo { display: flex; padding: 8px; background: #f1f5f9; border-radius: 6px; margin: 4px 0; }
+  .start { justify-content: flex-start; }
+  .center { justify-content: center; }
+  .between { justify-content: space-between; }
+  .flex-demo div { background: #6366f1; color: white; padding: 8px 16px; border-radius: 4px; font-weight: bold; }'
+  js='
+  document.querySelectorAll(".flex-demo").forEach(el => {
+    for (let i = 0; i < 3; i++) {
+      const item = document.createElement("div");
+      item.textContent = i + 1;
+      el.appendChild(item);
+    }
+  });'
+/>

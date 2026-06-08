@@ -43,6 +43,10 @@ const cleanHtml = cleanCode(html);
 const cleanCss = cleanCode(css);
 const cleanJs = cleanCode(js);
 
+// Break up the script tags into substrings so esbuild does not scan them
+const scriptStart = "<" + "script>";
+const scriptEnd = "</" + "script>";
+
 // Pass the cleaned strings into the iframe output template
 const iframeSourceCode = `
   <!DOCTYPE html>
@@ -56,14 +60,14 @@ const iframeSourceCode = `
     </head>
     <body>
       ${cleanHtml}
-      <script>
+      ${scriptStart}
         try {
           ${cleanJs}
         } catch (err) {
           console.error(err);
           document.body.innerHTML += '<pre style="color:#ef4444; border:1px solid #fee2e2; background:#fef2f2; padding:12px; border-radius:6px; font-family:monospace; margin-top:12px;">' + err.message + '</pre>';
         }
-      <\/script>
+      ${scriptEnd}
     </body>
   </html>
 `;

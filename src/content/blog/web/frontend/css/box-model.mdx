@@ -1,0 +1,70 @@
+---
+title: "CSS Box Model"
+description: "Understand how elements occupy space"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-box-model"
+author: "Abhishek Sharma"
+order: 21
+---
+
+## Box Model
+
+Every element in CSS is a rectangular box. The **box model** describes how space is calculated:
+
+```
+┌─────────────────────────────┐
+│         Margin              │
+│  ┌───────────────────────┐  │
+│  │       Border          │  │
+│  │  ┌─────────────────┐  │  │
+│  │  │     Padding     │  │  │
+│  │  │  ┌───────────┐  │  │  │
+│  │  │  │  Content  │  │  │  │
+│  │  │  └───────────┘  │  │  │
+│  │  └─────────────────┘  │  │
+│  └───────────────────────┘  │
+└─────────────────────────────┘
+```
+
+<CodePlayground
+  title="Visual Box Model"
+  html='
+  <div class="box">
+    Content area
+  </div>'
+  css='
+  .box {
+    width: 200px;
+    height: 80px;
+    padding: 20px;
+    border: 4px solid #6366f1;
+    margin: 20px;
+    background: #eef2ff;
+    color: #1e293b;
+    font-weight: bold;
+    text-align: center;
+    line-height: 80px;
+  }'
+/>
+
+### Box Model Parts
+
+| Part | Description |
+|---|---|
+| **Content** | The actual text or child elements |
+| **Padding** | Space between content and border (inside) |
+| **Border** | The edge around padding |
+| **Margin** | Space between elements (outside) |
+
+### Total Width Calculation
+
+```
+Total width = content + padding-left + padding-right
+              + border-left + border-right
+              + margin-left + margin-right
+```
+
+For the example above:
+`200 + 20 + 20 + 4 + 4 + 20 + 20 = 288px` total width

@@ -1,0 +1,45 @@
+---
+title: "Attribute Selectors"
+description: "Target elements by their attributes"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-attribute-selectors"
+author: "Abhishek Sharma"
+order: 9
+---
+
+## Attribute Selectors
+
+Attribute selectors target elements based on the presence or value of their attributes.
+
+<CodePlayground
+  title="Attribute Selectors"
+  html='
+  <a href="https://example.com">External link</a><br>
+  <a href="/about">Internal link</a><br>
+  <input type="text" placeholder="Text input"><br>
+  <input type="password" placeholder="Password"><br>
+  <input type="email" placeholder="Email">'
+  css='
+  a[href^="https"] { color: #059669; font-weight: bold; }
+  a[href^="/"] { color: #6366f1; }
+  input[type="text"] { border: 2px solid #3b82f6; padding: 4px 8px; }
+  input[type="password"] { border: 2px solid #ef4444; padding: 4px 8px; }
+  input[type="email"] { border: 2px solid #f59e0b; padding: 4px 8px; }
+  .code-block-wrapper { display: none; }'
+/>
+
+### Attribute Selector Variants
+
+| Pattern | Matches |
+|---|---|
+| `[attr]` | Has the attribute |
+| `[attr="val"]` | Exact value |
+| `[attr^="val"]` | Starts with `val` |
+| `[attr$="val"]` | Ends with `val` |
+| `[attr*="val"]` | Contains `val` anywhere |
+| `[attr~="val"]` | Contains `val` in space-separated list |
+| `[attr|="val"]` | Starts with `val` followed by `-` |
+
+These are especially useful for styling links, form inputs, and language-specific content without adding extra classes.

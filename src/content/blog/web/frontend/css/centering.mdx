@@ -1,0 +1,85 @@
+---
+title: "CSS Centering"
+description: "All the ways to center in CSS"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-centering"
+author: "Abhishek Sharma"
+order: 33
+---
+
+## Centering
+
+Centering is a common layout challenge. Here are the most reliable techniques:
+
+### Horizontal Centering
+
+<CodePlayground
+  title="Horizontal Centering"
+  html='
+  <div class="parent">
+    <div class="child">margin: 0 auto</div>
+  </div>
+  <div class="text-center">text-align: center</div>'
+  css='
+  .parent { width: 100%; background: #f1f5f9; padding: 12px; border-radius: 6px; }
+  .child { width: 200px; margin: 0 auto; background: #6366f1; color: white; padding: 12px; text-align: center; border-radius: 4px; font-weight: bold; }
+  .text-center { text-align: center; background: #eef2ff; padding: 12px; border-radius: 6px; margin-top: 8px; font-weight: bold; }'
+/>
+
+### Vertical Centering
+
+<CodePlayground
+  title="Vertical Centering"
+  html='
+  <div class="flex-center">
+    <div>Flexbox centering</div>
+  </div>'
+  css='
+  .flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    background: #eef2ff;
+    border-radius: 8px;
+    font-weight: bold;
+    color: #6366f1;
+    font-size: 1.125rem;
+  }'
+/>
+
+### Grid Centering
+
+<CodePlayground
+  title="Grid Centering"
+  html='
+  <div class="grid-center">
+    <div>Grid place-items: center</div>
+  </div>'
+  css='
+  .grid-center {
+    display: grid;
+    place-items: center;
+    height: 120px;
+    background: #ecfdf5;
+    border-radius: 8px;
+    font-weight: bold;
+    color: #059669;
+    font-size: 1.125rem;
+  }'
+/>
+
+### Complete Centering Methods
+
+| Method | Horizontal | Vertical | Use Case |
+|---|---|---|---|
+| `margin: 0 auto` | Yes | No | Block elements with width |
+| `text-align: center` | Yes | No | Inline/inline-block content |
+| `line-height: height` | No | Yes | Single line text |
+| Flexbox | Yes | Yes | Most flexible approach |
+| Grid + `place-items` | Yes | Yes | Simplest for grid containers |
+| `position: absolute` + transform | Yes | Yes | Overlay/modal centering |
+
+For most cases, **Flexbox** is the most reliable centering solution.

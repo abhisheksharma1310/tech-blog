@@ -1,0 +1,71 @@
+---
+title: "CSS calc()"
+description: "Perform calculations in CSS"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-calc"
+author: "Abhishek Sharma"
+order: 15
+---
+
+## calc()
+
+The `calc()` function lets you perform mathematical operations right inside CSS:
+
+<CodePlayground
+  title="calc() Examples"
+  html='
+  <div class="calc-demo">100% - 40px</div>
+  <div class="calc-demo2">50% + 20px</div>
+  <div class="calc-demo3">(100% / 3) - 10px</div>'
+  css='
+  div { background: #6366f1; color: white; padding: 8px 16px; margin: 4px 0; border-radius: 6px; }
+  .calc-demo { width: calc(100% - 40px); }
+  .calc-demo2 { width: calc(50% + 20px); }
+  .calc-demo3 { width: calc((100% / 3) - 10px); }'
+/>
+
+### Supported Operators
+
+| Operator | Example |
+|---|---|
+| `+` | `calc(100% + 20px)` |
+| `-` | `calc(100% - 40px)` |
+| `*` | `calc(2 * 20px)` |
+| `/` | `calc(100% / 3)` |
+
+### Spacing Rule
+
+Spaces are **required** around `+` and `-` operators but optional for `*` and `/`:
+
+```css
+/* Correct */
+width: calc(100% - 40px);
+
+/* Incorrect — will not work */
+width: calc(100%-40px);
+```
+
+### Mixing Units
+
+`calc()` is especially useful when mixing different unit types:
+
+<CodePlayground
+  title="Practical calc()"
+  html='
+  <div class="card">
+    <p>This card uses calc() for responsive sizing</p>
+  </div>'
+  css='
+  .card {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    width: calc(100% - 2rem);
+    max-width: calc(600px - 2rem);
+    font-size: calc(0.875rem + 0.5vw);
+    margin: 0 auto;
+  }'
+/>

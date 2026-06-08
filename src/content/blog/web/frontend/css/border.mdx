@@ -1,0 +1,66 @@
+---
+title: "CSS Borders"
+description: "Style element borders"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-border"
+author: "Abhishek Sharma"
+order: 22
+---
+
+## Border
+
+Borders wrap around the padding and content of an element.
+
+<CodePlayground
+  title="Border Styles"
+  html='
+  <div class="solid">Solid</div>
+  <div class="dashed">Dashed</div>
+  <div class="dotted">Dotted</div>
+  <div class="rounded">Rounded</div>
+  <div class="left">Left border only</div>'
+  css='
+  div { padding: 10px 16px; margin: 4px 0; font-weight: bold; }
+  .solid { border: 2px solid #6366f1; }
+  .dashed { border: 2px dashed #059669; }
+  .dotted { border: 2px dotted #dc2626; }
+  .rounded { border: 2px solid #f59e0b; border-radius: 12px; }
+  .left { border-left: 4px solid #6366f1; background: #f1f5f9; }'
+/>
+
+### Border Properties
+
+| Property | What It Does |
+|---|---|
+| `border-width` | Thickness (px, em, thin, medium, thick) |
+| `border-style` | Visual style (solid, dashed, dotted, double, groove, ridge, inset, outset, none) |
+| `border-color` | Color of the border |
+| `border` | Shorthand for width, style, color |
+| `border-radius` | Rounded corners (can be different per corner) |
+| `border-image` | Use an image as border |
+
+### Individual Sides
+
+```css
+border-top: 2px solid #6366f1;
+border-right: 2px solid #059669;
+border-bottom: 2px solid #f59e0b;
+border-left: 2px solid #dc2626;
+```
+
+### Border Radius
+
+<CodePlayground
+  title="Border Radius Variations"
+  html='
+  <div class="circle">Circle</div>
+  <div class="pill">Pill shape</div>
+  <div class="asymmetric">Asymmetric</div>'
+  css='
+  div { display: inline-flex; align-items: center; justify-content: center; margin: 8px; font-weight: bold; }
+  .circle { width: 80px; height: 80px; background: #6366f1; color: white; border-radius: 50%; }
+  .pill { padding: 12px 32px; background: #059669; color: white; border-radius: 999px; }
+  .asymmetric { padding: 20px; background: #f59e0b; color: white; border-radius: 20px 4px; }'
+/>

@@ -1,0 +1,70 @@
+---
+title: "CSS Fonts"
+description: "Control text fonts in CSS"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-fonts"
+author: "Abhishek Sharma"
+order: 19
+---
+
+## Fonts
+
+CSS provides full control over text fonts on your page.
+
+<CodePlayground
+  title="Different Fonts"
+  html='
+  <p class="serif">Serif font (Georgia)</p>
+  <p class="sans">Sans-serif font (Arial)</p>
+  <p class="mono">Monospace font (Courier)</p>
+  <p class="cursive">Cursive font</p>'
+  css='
+  .serif { font-family: Georgia, "Times New Roman", serif; font-size: 1.25rem; }
+  .sans { font-family: Arial, Helvetica, sans-serif; font-size: 1.25rem; }
+  .mono { font-family: "Courier New", Courier, monospace; font-size: 1.25rem; }
+  .cursive { font-family: "Brush Script MT", cursive; font-size: 1.5rem; }'
+/>
+
+### The font-family Property
+
+```css
+font-family: "Helvetica Neue", Arial, sans-serif;
+```
+
+The browser uses the **first available** font in the list (the "font stack").
+
+### Web Fonts with @font-face
+
+```css
+@font-face {
+  font-family: "MyFont";
+  src: url("myfont.woff2") format("woff2");
+}
+```
+
+### Using Google Fonts
+
+<CodePlayground
+  title="Google Font"
+  html='<p class="inter">This uses the Inter font from Google Fonts</p>'
+  css='
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+  .inter {
+    font-family: Inter, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }'
+/>
+
+### Font Properties
+
+| Property | What It Does |
+|---|---|
+| `font-family` | Typeface (font stack) |
+| `font-size` | Size of text |
+| `font-weight` | Boldness (`normal`, `bold`, `400`, `700`, etc.) |
+| `font-style` | Italic or normal |
+| `font-variant` | Small-caps variant |
+| `font` | Shorthand for all font properties |

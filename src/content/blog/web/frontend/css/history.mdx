@@ -1,0 +1,55 @@
+---
+title: "History of CSS"
+description: "Understand how CSS evolved"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-history"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## History of CSS
+
+CSS was first proposed by **Håkon Wium Lie** in 1994 while working at CERN. Before CSS, web pages were styled with HTML-only attributes like `<font color="red">`, which was messy and repetitive.
+
+### CSS Versions Timeline
+
+| Version | Year | Key Features |
+|---|---|---|
+| CSS1 | 1996 | Fonts, colors, margins, paddings |
+| CSS2 | 1998 | Positioning, z-index, media types |
+| CSS2.1 | 2004 | Bug fixes, wider browser support |
+| CSS3 | 2011+ | Modular: Flexbox, Grid, animations, transitions |
+
+CSS3 broke CSS into **modules** (each versioned independently), allowing the spec to evolve faster.
+
+## Before CSS
+
+<CodePlayground
+  title="HTML Styling Before CSS"
+  html='<font color="red" size="5">Big Red Text</font>
+<br>
+<font color="blue" face="Arial">Blue Arial Text</font>'
+/>
+
+## With CSS
+
+<CodePlayground
+  title="Same Page With CSS"
+  html='
+  <p class="highlight">Big Red Text</p>
+  <p class="note">Blue Arial Text</p>'
+  css='
+  .highlight {
+    font-size: 2rem;
+    color: #ef4444;
+    font-weight: bold;
+  }
+  .note {
+    color: #3b82f6;
+    font-family: Arial, sans-serif;
+  }'
+/>
+
+Today, CSS is maintained by the **W3C** and powers the visual layer of the entire web.

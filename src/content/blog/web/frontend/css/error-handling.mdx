@@ -1,0 +1,77 @@
+---
+title: "CSS Error Handling"
+description: "How CSS handles errors gracefully"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-error-handling"
+author: "Abhishek Sharma"
+order: 42
+---
+
+## Error Handling
+
+CSS is designed to be **fault-tolerant** — errors do not break the page. The browser simply ignores invalid rules and continues parsing.
+
+<CodePlayground
+  title="Error Handling Demo"
+  html='
+  <p class="error-demo">Invalid CSS is ignored; valid CSS still works</p>'
+  css='
+  .error-demo {
+    color: #059669;
+    font-size: 1.125rem;
+    font-weight: bold;
+
+    /* This is invalid — the browser ignores it */
+    colr: #ff0000;
+
+    /* This is also invalid */
+    background-colour: hotpink;
+
+    /* This property does not exist */
+    super-style: amazing;
+  }'
+/>
+
+### What Happens with Errors
+
+```css
+/* Valid declaration */
+color: #333;
+
+/* Invalid property name — whole line ignored */
+colr: #333;
+
+/* Invalid value — declaration ignored */
+color: burple;
+
+/* Invalid selector — entire rule ignored */
+@unknown-rule { }
+```
+
+### Fallback Strategy
+
+Provide fallback values for newer properties:
+
+```css
+.element {
+  /* Fallback for older browsers */
+  background: #6366f1;
+
+  /* Modern browsers use this */
+  background: linear-gradient(135deg, #6366f1, #ec4899);
+}
+```
+
+### Common CSS Errors
+
+| Error | Example | Result |
+|---|---|---|
+| Misspelled property | `colr: red;` | Ignored |
+| Invalid value | `color: burple;` | Ignored |
+| Missing semicolon | `color: red` | Next property may fail too |
+| Invalid selector | `@unknown {}` | Entire rule ignored |
+| Wrong unit | `width: 100%px;` | Ignored |
+
+Because of this fault tolerance, CSS is safe to use with progressive enhancement — newer features degrade gracefully in older browsers.

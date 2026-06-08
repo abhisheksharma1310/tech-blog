@@ -1,0 +1,66 @@
+---
+title: "CSS Typography"
+description: "Fine-tune text appearance"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-typography"
+author: "Abhishek Sharma"
+order: 20
+---
+
+## Typography
+
+Beyond fonts, CSS offers many properties to control how text looks and reads.
+
+<CodePlayground
+  title="Typography Properties"
+  html='
+  <p class="demo1">Line height and letter spacing</p>
+  <p class="demo2">Text align and transform</p>
+  <p class="demo3">Text decoration and shadow</p>
+  <p class="demo4">White space wrapping behavior with a very long line of text that goes on and on</p>'
+  css='
+  .demo1 {
+    line-height: 1.8;
+    letter-spacing: 2px;
+    font-size: 1.125rem;
+  }
+  .demo2 {
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: bold;
+    color: #6366f1;
+  }
+  .demo3 {
+    text-decoration: underline wavy #f59e0b;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    font-size: 1.25rem;
+  }
+  .demo4 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #f1f5f9;
+    padding: 8px;
+    border-radius: 4px;
+  }'
+/>
+
+### Typography Properties
+
+| Property | What It Does |
+|---|---|
+| `line-height` | Vertical space between lines |
+| `letter-spacing` | Space between characters |
+| `word-spacing` | Space between words |
+| `text-align` | Horizontal alignment (`left`, `center`, `right`, `justify`) |
+| `text-transform` | Case control (`uppercase`, `lowercase`, `capitalize`) |
+| `text-decoration` | Underline, overline, line-through |
+| `text-shadow` | Shadow behind text |
+| `white-space` | Controls wrapping and whitespace |
+| `text-overflow` | How overflow text is indicated |
+| `word-break` | How words break at line endings |
+| `direction` | Text direction (`ltr`, `rtl`) |
+
+Good typography makes content easier to read and more professional.

@@ -1,0 +1,83 @@
+---
+title: "CSS Positioning"
+description: "Control element position with position property"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-positioning"
+author: "Abhishek Sharma"
+order: 27
+---
+
+## Positioning
+
+The `position` property controls how an element is placed in the document.
+
+<CodePlayground
+  title="Position Values"
+  html='
+  <div class="container">
+    <div class="static">static (default)</div>
+    <div class="relative">relative</div>
+    <div class="absolute">absolute</div>
+    <div class="fixed-demo">fixed</div>
+  </div>'
+  css='
+  .container {
+    position: relative;
+    background: #f1f5f9;
+    padding: 12px;
+    height: 180px;
+    margin-bottom: 60px;
+    border: 2px dashed #cbd5e1;
+  }
+  div[class] { padding: 8px 12px; margin: 4px; border-radius: 4px; font-weight: bold; color: white; }
+  .static { position: static; background: #64748b; }
+  .relative { position: relative; top: 8px; left: 16px; background: #6366f1; }
+  .absolute { position: absolute; bottom: 12px; right: 12px; background: #059669; }
+  .fixed-demo { position: absolute; top: -8px; right: -8px; background: #dc2626; padding: 4px 8px; font-size: 0.75rem; }'
+/>
+
+### Position Values
+
+| Value | Behavior |
+|---|---|
+| `static` | Normal document flow (default) |
+| `relative` | Offset from normal position using `top`, `right`, `bottom`, `left` |
+| `absolute` | Removed from flow, positioned relative to nearest positioned ancestor |
+| `fixed` | Removed from flow, positioned relative to viewport |
+| `sticky` | Toggles between relative and fixed based on scroll |
+
+### Offset Properties
+
+Once `position` is set to anything other than `static`, you can use:
+- `top` / `bottom` — vertical offset
+- `left` / `right` — horizontal offset
+
+<CodePlayground
+  title="Sticky Positioning"
+  html='
+  <div class="scroll-area">
+    <div class="sticky">I am sticky</div>
+    <p>Scrollable content line 1</p>
+    <p>Scrollable content line 2</p>
+    <p>Scrollable content line 3</p>
+  </div>'
+  css='
+  .scroll-area {
+    height: 150px;
+    overflow-y: auto;
+    border: 1px solid #cbd5e1;
+    padding: 8px;
+  }
+  .sticky {
+    position: sticky;
+    top: 0;
+    background: #6366f1;
+    color: white;
+    padding: 8px;
+    font-weight: bold;
+    z-index: 1;
+  }
+  p { margin: 8px 0; color: #475569; }'
+/>

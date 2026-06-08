@@ -1,0 +1,102 @@
+---
+title: "CSS Grid"
+description: "Two-dimensional layout with CSS Grid"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-grid"
+author: "Abhishek Sharma"
+order: 31
+---
+
+## Grid
+
+CSS Grid is a two-dimensional layout system — it handles **rows and columns** simultaneously.
+
+<CodePlayground
+  title="Basic Grid"
+  html='
+  <div class="grid">
+    <div class="item">1</div>
+    <div class="item">2</div>
+    <div class="item">3</div>
+    <div class="item">4</div>
+    <div class="item">5</div>
+    <div class="item">6</div>
+  </div>'
+  css='
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px;
+    background: #eef2ff;
+    border-radius: 8px;
+  }
+  .item {
+    background: #6366f1;
+    color: white;
+    padding: 20px;
+    border-radius: 6px;
+    font-size: 1.25rem;
+    font-weight: bold;
+    text-align: center;
+  }'
+/>
+
+### Grid Template
+
+Define columns and rows explicitly:
+
+<CodePlayground
+  title="Grid Template Areas"
+  html='
+  <div class="page-layout">
+    <header class="header">Header</header>
+    <nav class="nav">Nav</nav>
+    <main class="main">Main Content</main>
+    <aside class="aside">Sidebar</aside>
+    <footer class="footer">Footer</footer>
+  </div>'
+  css='
+  .page-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr 150px;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "header header header"
+      "nav    main   aside"
+      "footer footer footer";
+    gap: 4px;
+    padding: 8px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    min-height: 200px;
+  }
+  .page-layout > * {
+    padding: 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    color: white;
+  }
+  .header { grid-area: header; background: #6366f1; }
+  .nav { grid-area: nav; background: #059669; }
+  .main { grid-area: main; background: #3b82f6; }
+  .aside { grid-area: aside; background: #f59e0b; }
+  .footer { grid-area: footer; background: #64748b; }'
+/>
+
+### Key Grid Properties
+
+| Property | What It Does |
+|---|---|
+| `grid-template-columns` | Define column sizes |
+| `grid-template-rows` | Define row sizes |
+| `gap` | Space between cells |
+| `grid-column` | Span across columns |
+| `grid-row` | Span across rows |
+| `justify-items` / `align-items` | Align items within cells |
+| `place-items` | Shorthand for justify + align |
+
+Use `fr` units for flexible sizing (fraction of available space).

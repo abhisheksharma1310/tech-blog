@@ -1,0 +1,94 @@
+---
+title: "CSS Lists"
+description: "Style ordered and unordered lists"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-lists"
+author: "Abhishek Sharma"
+order: 34
+---
+
+## Lists
+
+CSS gives you control over list markers (bullets, numbers) and their positioning.
+
+<CodePlayground
+  title="List Styling"
+  html='
+  <ul class="custom-bullets">
+    <li>Custom circle bullets</li>
+    <li>Styled list item</li>
+    <li>With custom colors</li>
+  </ul>
+  <ol class="custom-numbers">
+    <li>Custom numbering</li>
+    <li>Using list-style</li>
+    <li>Properties</li>
+  </ol>'
+  css='
+  .custom-bullets {
+    list-style-type: circle;
+    color: #6366f1;
+  }
+  .custom-bullets li { margin: 4px 0; }
+  .custom-numbers {
+    list-style-type: upper-roman;
+    color: #059669;
+  }
+  .custom-numbers li { margin: 4px 0; }'
+/>
+
+### List Properties
+
+| Property | What It Does |
+|---|---|
+| `list-style-type` | Marker style (`disc`, `circle`, `decimal`, `upper-roman`, `none`, etc.) |
+| `list-style-position` | Inside vs outside the list item |
+| `list-style-image` | Custom image as marker |
+| `list-style` | Shorthand for all above |
+
+### Removing List Styles
+
+<CodePlayground
+  title="No Markers"
+  html='
+  <ul class="no-bullets">
+    <li>Navigation link</li>
+    <li>Navigation link</li>
+    <li>Navigation link</li>
+  </ul>'
+  css='
+  .no-bullets {
+    list-style: none;
+    padding-left: 0;
+  }
+  .no-bullets li {
+    padding: 8px 16px;
+    background: #eef2ff;
+    margin: 4px 0;
+    border-radius: 4px;
+    font-weight: bold;
+    color: #6366f1;
+  }
+  .no-bullets li:hover { background: #6366f1; color: white; cursor: pointer; }'
+/>
+
+### Custom Markers with ::marker
+
+<CodePlayground
+  title="Custom ::marker"
+  html='
+  <ul class="marker-demo">
+    <li>First item</li>
+    <li>Second item</li>
+    <li>Third item</li>
+  </ul>'
+  css='
+  .marker-demo li::marker {
+    color: #059669;
+    font-weight: bold;
+    content: "▶ ";
+  }
+  .marker-demo li { margin: 4px 0; padding-left: 8px; }'
+/>

@@ -1,0 +1,60 @@
+---
+title: "Pseudo Classes"
+description: "Style elements based on state or position"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-pseudo-classes"
+author: "Abhishek Sharma"
+order: 10
+---
+
+## Pseudo Classes
+
+Pseudo-classes target elements based on their **state** or **position** in the document. They start with a colon (`:`).
+
+<CodePlayground
+  title="Interactive Pseudo-Classes (hover me)"
+  html='
+  <button class="btn">Hover Me</button>
+  <a href="#" class="link">Visit this link</a>
+  <ul class="list">
+    <li>First item</li>
+    <li>Second item</li>
+    <li>Third item</li>
+    <li>Fourth item</li>
+  </ul>'
+  css='
+  .btn {
+    padding: 8px 20px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn:hover { background: #4f46e5; transform: scale(1.05); }
+  .link { color: #3b82f6; }
+  .link:visited { color: #7c3aed; }
+  .list li { padding: 4px 0; }
+  .list li:first-child { font-weight: bold; color: #059669; }
+  .list li:last-child { font-style: italic; color: #dc2626; }
+  .list li:nth-child(odd) { background: #f1f5f9; }'
+/>
+
+### Common Pseudo-Classes
+
+| Pseudo-Class | When It Applies |
+|---|---|
+| `:hover` | Mouse is over the element |
+| `:focus` | Element has keyboard focus |
+| `:active` | Element is being clicked |
+| `:visited` | Link has been visited |
+| `:first-child` | First child of its parent |
+| `:last-child` | Last child of its parent |
+| `:nth-child(n)` | Nth child of its parent |
+| `:not(sel)` | Does not match the selector |
+| `:empty` | Has no children |
+
+Pseudo-classes make your pages interactive and dynamic without JavaScript.

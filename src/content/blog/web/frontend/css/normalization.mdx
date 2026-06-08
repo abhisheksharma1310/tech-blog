@@ -1,0 +1,88 @@
+---
+title: "CSS Normalization"
+description: "Reset or normalize browser defaults"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-normalization"
+author: "Abhishek Sharma"
+order: 41
+---
+
+## Normalization
+
+Different browsers have slightly different default styles. Normalization makes them consistent.
+
+### CSS Reset
+
+A **CSS reset** removes all default browser styles so you start from scratch:
+
+```css
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+```
+
+<CodePlayground
+  title="Before vs After Reset"
+  html='
+  <div class="compare">
+    <div class="before-reset">
+      <h2>Default (no reset)</h2>
+      <p>Has default margin, padding, font sizes</p>
+      <ul><li>Item 1</li><li>Item 2</li></ul>
+    </div>
+    <div class="after-reset">
+      <h2>With Reset</h2>
+      <p>All margins and padding removed</p>
+      <ul><li>Item 1</li><li>Item 2</li></ul>
+    </div>
+  </div>'
+  css='
+  .compare { display: flex; gap: 16px; }
+  .compare > div { flex: 1; border: 1px solid #cbd5e1; padding: 16px; border-radius: 6px; }
+  .after-reset, .after-reset h2, .after-reset p, .after-reset ul, .after-reset li {
+    margin: 0;
+    padding: 0;
+  }
+  .after-reset ul { list-style: none; }
+  .after-reset li { margin: 4px 0; }'
+/>
+
+### CSS Normalize (Normalize.css)
+
+**Normalize.css** is a popular alternative to full resets. Instead of removing everything, it makes default styles consistent across browsers while preserving useful defaults:
+
+| Reset | Normalize |
+|---|---|
+| Removes ALL defaults | Preserves useful defaults |
+| You must re-add everything | Consistent styling out of the box |
+| More aggressive | More conservative |
+| Good for custom designs | Good for content-rich sites |
+
+### Common Reset Pattern
+
+```css
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+}
+```
+
+Most projects use either a reset or normalize — not both.

@@ -1,0 +1,57 @@
+---
+title: "Introduction to CSS"
+description: "Learn what CSS is and why it matters"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-introduction"
+author: "Abhishek Sharma"
+order: 1
+---
+
+# CSS
+
+CSS (Cascading Style Sheets) is the language used to style and layout web pages. While HTML provides the structure, CSS controls how that structure looks — colors, fonts, spacing, positioning, and more.
+
+## What Can CSS Do?
+
+CSS can transform a plain HTML page into a visually engaging experience:
+
+<CodePlayground
+  title="CSS in Action"
+  html='
+  <p class="plain">Plain HTML</p>
+  <p class="styled">Styled with CSS</p>'
+  css='
+  .plain {
+    font-size: 1rem;
+    color: #64748b;
+  }
+  .styled {
+    font-size: 1.5rem;
+    color: #6366f1;
+    font-weight: bold;
+    padding: 12px 20px;
+    background: #eef2ff;
+    border-radius: 8px;
+    border-left: 4px solid #6366f1;
+  }'
+/>
+
+## CSS is Declarative
+
+You describe **what** you want, not **how** to do it. The browser figures out the rendering:
+
+```css
+h1 {
+  color: navy;
+  font-size: 2rem;
+  text-align: center;
+}
+```
+
+This tells the browser: "Make all `<h1>` elements navy, 2rem, and centered."
+
+## Separation of Concerns
+
+CSS separates **content** (HTML) from **presentation** (styles). This makes code easier to maintain, reuse, and update.

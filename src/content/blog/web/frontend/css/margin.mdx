@@ -1,0 +1,52 @@
+---
+title: "CSS Margin"
+description: "Add space outside elements"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-margin"
+author: "Abhishek Sharma"
+order: 24
+---
+
+## Margin
+
+Margin is the space **outside** an element's border, separating it from other elements.
+
+<CodePlayground
+  title="Margin Comparison"
+  html='
+  <div class="no-margin">No margin</div>
+  <div class="no-margin">No margin</div>
+  <div class="margin">With margin</div>
+  <div class="margin">With margin</div>
+  <div class="auto">Centered with margin: auto</div>'
+  css='
+  div { padding: 10px; background: #6366f1; color: white; font-weight: bold; border-radius: 4px; }
+  .no-margin { margin: 0; }
+  .margin { margin: 16px; }
+  .auto { width: 200px; margin: 16px auto; background: #059669; }'
+/>
+
+### Auto Margin
+
+Setting `margin: 0 auto` on a block element with a defined width centers it horizontally.
+
+### Margin Collapsing
+
+When two vertical margins meet, they **collapse** into a single margin equal to the larger of the two:
+
+<CodePlayground
+  title="Margin Collapse"
+  html='
+  <div class="top">margin-bottom: 20px</div>
+  <div class="bottom">margin-top: 30px</div>
+  <p class="note">Total gap = 30px (the larger value), not 50px</p>'
+  css='
+  div { padding: 10px; background: #eef2ff; color: #1e293b; font-weight: bold; border-radius: 4px; }
+  .top { margin-bottom: 20px; border: 1px solid #6366f1; }
+  .bottom { margin-top: 30px; border: 1px solid #6366f1; }
+  .note { margin-top: 8px; color: #64748b; font-style: italic; }'
+/>
+
+Margin collapsing only happens for **vertical** margins (top/bottom), not horizontal (left/right).

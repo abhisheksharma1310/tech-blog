@@ -1,0 +1,74 @@
+---
+title: "CSS Custom Properties"
+description: "Use variables in CSS"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-custom-properties"
+author: "Abhishek Sharma"
+order: 18
+---
+
+## Custom Properties
+
+Custom properties (also called CSS variables) let you store reusable values:
+
+<CodePlayground
+  title="CSS Variables"
+  html='
+  <div class="card primary">Primary</div>
+  <div class="card secondary">Secondary</div>
+  <div class="card accent">Accent</div>'
+  css='
+  :root {
+    --primary: #6366f1;
+    --secondary: #059669;
+    --accent: #f59e0b;
+    --radius: 8px;
+    --padding: 12px 20px;
+  }
+  .card {
+    color: white;
+    font-weight: bold;
+    padding: var(--padding);
+    margin: 4px 0;
+    border-radius: var(--radius);
+  }
+  .primary { background: var(--primary); }
+  .secondary { background: var(--secondary); }
+  .accent { background: var(--accent); }'
+/>
+
+### Defining Variables
+
+```css
+:root {
+  --main-color: #6366f1;
+  --font-size: 1.125rem;
+}
+```
+
+### Using Variables
+
+```css
+.element {
+  color: var(--main-color);
+  font-size: var(--font-size);
+}
+```
+
+### Fallback Values
+
+Provide a fallback if the variable is not defined:
+
+<CodePlayground
+  title="Variable Fallbacks"
+  html='<p class="fallback">Color uses fallback if variable is missing</p>'
+  css='
+  p {
+    color: var(--undefined-var, #dc2626);
+    font-size: var(--font-size, 1.25rem);
+  }'
+/>
+
+Variables can be scoped to any selector, not just `:root`. This enables themes and contextual overrides.

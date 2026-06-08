@@ -1,0 +1,79 @@
+---
+title: "Float and Clear"
+description: "Wrap text around elements with float"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-float-and-clear"
+author: "Abhishek Sharma"
+order: 28
+---
+
+## Float and Clear
+
+`float` pushes an element to one side, allowing text and inline elements to wrap around it.
+
+<CodePlayground
+  title="Float Example"
+  html='
+  <div class="float-box">Floated</div>
+  <p>This text wraps around the floated box. Float was originally designed for this — wrapping text around images. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>'
+  css='
+  .float-box {
+    float: left;
+    width: 100px;
+    height: 80px;
+    margin: 0 12px 8px 0;
+    background: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 6px;
+  }
+  p { margin: 0; color: #334155; }'
+/>
+
+### Float Values
+
+| Value | Description |
+|---|---|
+| `left` | Float to the left side |
+| `right` | Float to the right side |
+| `none` | No float (default) |
+
+### Clear
+
+`clear` prevents elements from wrapping around floats:
+
+<CodePlayground
+  title="Clearfix"
+  html='
+  <div class="float-box left">Left</div>
+  <div class="float-box right">Right</div>
+  <div class="cleared">Cleared — starts below both floats</div>'
+  css='
+  .float-box { width: 80px; height: 60px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border-radius: 4px; }
+  .left { float: left; background: #6366f1; }
+  .right { float: right; background: #059669; }
+  .cleared {
+    clear: both;
+    margin-top: 8px;
+    padding: 8px;
+    background: #fef9c3;
+    border: 1px solid #f59e0b;
+    border-radius: 4px;
+    font-weight: bold;
+  }'
+/>
+
+### Clear Values
+
+| Value | Stops Wrapping |
+|---|---|
+| `left` | No wrapping on left side |
+| `right` | No wrapping on right side |
+| `both` | No wrapping on either side |
+
+> **Note:** For modern layouts, prefer Flexbox and Grid over float. Float is best kept for its original purpose — text wrapping around images.

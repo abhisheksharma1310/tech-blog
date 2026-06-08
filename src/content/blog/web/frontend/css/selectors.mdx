@@ -1,0 +1,62 @@
+---
+title: "CSS Selectors"
+description: "Target HTML elements with CSS selectors"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-selectors"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Selectors
+
+Selectors tell the browser which HTML elements to style. Here are the most common ones:
+
+<CodePlayground
+  title="Basic Selectors"
+  html='
+  <h1>Element Selector</h1>
+  <p class="highlight">Class Selector</p>
+  <p id="special">ID Selector</p>
+  <div>
+    <p>Descendant selector</p>
+  </div>'
+  css='
+  h1 { color: #6366f1; }
+  .highlight { background: #fef9c3; padding: 4px 8px; }
+  #special { color: #059669; font-weight: bold; }
+  div p { font-style: italic; }'
+/>
+
+### Selector Types
+
+| Selector | Syntax | Targets |
+|---|---|---|
+| Universal | `*` | Everything |
+| Type | `h1` | All `<h1>` elements |
+| Class | `.classname` | Elements with that class |
+| ID | `#idname` | The element with that ID |
+| Descendant | `div p` | `<p>` inside `<div>` |
+| Child | `div > p` | Direct child `<p>` |
+| Adjacent | `h1 + p` | `<p>` immediately after `<h1>` |
+| Attribute | `[type]` | Elements with that attribute |
+
+<CodePlayground
+  title="Combinators"
+  html='
+  <div class="card">
+    <p>Child (via descendant)</p>
+    <div>
+      <p>Nested descendant</p>
+    </div>
+  </div>
+  <p>Adjacent sibling</p>
+  <p>General sibling</p>'
+  css='
+  .card { border: 1px solid #cbd5e1; padding: 12px; border-radius: 6px; }
+  .card > p { color: #dc2626; font-weight: bold; }
+  .card p { border-left: 3px solid #6366f1; padding-left: 8px; }
+  .card + p { color: #059669; }
+  .card ~ p { font-style: italic; }'
+/>

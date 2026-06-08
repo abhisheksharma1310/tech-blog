@@ -1,0 +1,58 @@
+---
+title: "CSS Comments"
+description: "Document your CSS with comments"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-comments"
+author: "Abhishek Sharma"
+order: 17
+---
+
+## Comments
+
+CSS comments are ignored by the browser and help document your code:
+
+<CodePlayground
+  title="CSS Comments"
+  html='<p class="commented">Comments are visible in source but not in rendering</p>'
+  css='
+  /* This is a single-line comment */
+
+  /*
+    This is a
+    multi-line comment
+  */
+
+  .commented {
+    color: #6366f1;  /* inline comment */
+    font-size: 1.25rem;
+  }'
+/>
+
+### CSS vs HTML Comments
+
+| Language | Comment Syntax |
+|---|---|
+| CSS | `/* comment */` |
+| HTML | `<!-- comment -->` |
+| JavaScript | `// comment` or `/* comment */` |
+
+### Best Practices
+
+```css
+/* ================
+   Layout Sections
+   ================ */
+
+/* Header */
+.header { ... }
+
+/* Navigation */
+.nav { ... }
+
+/* Footer */
+.footer { ... }
+```
+
+Use comments to organize large stylesheets into logical sections — they make maintenance much easier.

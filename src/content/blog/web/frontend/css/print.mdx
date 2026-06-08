@@ -1,0 +1,90 @@
+---
+title: "CSS Print"
+description: "Style web pages for printing"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-print"
+author: "Abhishek Sharma"
+order: 44
+---
+
+## Print Styles
+
+CSS can create styles specifically for printed pages using the `print` media type.
+
+<CodePlayground
+  title="Print Style Sheet (Simulated)"
+  html='
+  <div class="print-preview">
+    <header class="no-print">Header (hidden in print)</header>
+    <main>
+      <h1>Article Title</h1>
+      <p>This content appears in print.</p>
+    </main>
+    <aside class="no-print">Sidebar (hidden in print)</aside>
+    <footer>Footer (visible in print)</footer>
+  </div>'
+  css='
+  @media print {
+    .no-print { display: none; }
+    body { font-size: 12pt; color: black; background: white; }
+    a::after { content: " (" attr(href) ")"; font-size: 0.8em; }
+    @page { margin: 2cm; }
+  }
+  .print-preview { font-family: Georgia, serif; max-width: 600px; }
+  header, footer, aside { padding: 10px; margin: 4px 0; border: 1px solid #cbd5e1; border-radius: 4px; }
+  header { background: #eef2ff; }
+  footer { background: #f1f5f9; }
+  aside { background: #fef9c3; }'
+/>
+
+### Common Print Techniques
+
+```css
+@media print {
+  /* Hide non-essential elements */
+  nav, .sidebar, .advertisement { display: none; }
+
+  /* Make links visible */
+  a[href]::after {
+    content: " (" attr(href) ")";
+  }
+
+  /* Page breaks */
+  h2 { page-break-before: always; }
+
+  /* Ensure backgrounds appear */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+```
+
+### @page Rule
+
+Control the printed page dimensions and margins:
+
+```css
+@page {
+  size: A4;
+  margin: 2cm;
+}
+
+@page :first {
+  margin-top: 4cm;
+}
+```
+
+### Print-Specific Properties
+
+| Property | What It Does |
+|---|---|
+| `page-break-before` | Break before an element (`always`, `avoid`) |
+| `page-break-after` | Break after an element |
+| `page-break-inside` | Avoid breaks inside an element |
+| `orphans` | Min lines at bottom of page |
+| `widows` | Min lines at top of page |
+
+Always test your print styles — what looks good on screen may not translate well to paper.

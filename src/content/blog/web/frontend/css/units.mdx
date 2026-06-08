@@ -1,0 +1,69 @@
+---
+title: "CSS Units"
+description: "Different measurement units in CSS"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-units"
+author: "Abhishek Sharma"
+order: 13
+---
+
+## Units
+
+CSS has both **absolute** and **relative** units for sizing.
+
+<CodePlayground
+  title="Absolute vs Relative Units"
+  html='
+  <div class="px">16px</div>
+  <div class="rem">1rem</div>
+  <div class="em">1em</div>
+  <div class="percent">50% width</div>
+  <div class="vw">10vw wide</div>'
+  css='
+  div { background: #6366f1; color: white; padding: 8px 16px; margin: 4px 0; border-radius: 6px; }
+  .px { width: 200px; }
+  .rem { width: 10rem; }
+  .em { width: 10em; font-size: 1rem; }
+  .percent { width: 50%; }
+  .vw { width: 30vw; }'
+/>
+
+### Absolute Units
+
+| Unit | Name | Equivalent |
+|---|---|---|
+| `px` | Pixels | 1px = 1/96th of an inch |
+| `pt` | Points | 1pt = 1/72nd of an inch |
+| `cm` | Centimeters | — |
+| `in` | Inches | 1in = 96px |
+
+### Relative Units
+
+| Unit | Relative To |
+|---|---|
+| `%` | Parent element |
+| `em` | Parent font size |
+| `rem` | Root (`html`) font size |
+| `vw` | Viewport width (1vw = 1%) |
+| `vh` | Viewport height (1vh = 1%) |
+| `ch` | Width of "0" character |
+| `ex` | Height of "x" character |
+
+**Recommendation:** Use `rem` for fonts, `%` for layout widths, and `px` for borders and small spacings.
+
+<CodePlayground
+  title="Responsive Units"
+  html='<div class="responsive">Resize the browser to see me change</div>'
+  css='
+  .responsive {
+    background: #059669;
+    color: white;
+    padding: 1rem;
+    border-radius: 6px;
+    width: 80vw;
+    max-width: 600px;
+    font-size: clamp(1rem, 3vw, 1.5rem);
+  }'
+/>

@@ -1,0 +1,66 @@
+---
+title: "Adding CSS"
+description: "Three ways to add CSS to a page"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-adding-css"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Adding CSS
+
+There are three ways to add CSS to an HTML page:
+
+### 1. Inline CSS
+
+Apply styles directly to an element using the `style` attribute:
+
+<CodePlayground
+  title="Inline CSS"
+  html='<p style="color: #6366f1; font-weight: bold;">This paragraph is styled inline.</p>'
+/>
+
+### 2. Internal CSS
+
+Use a `<style>` tag inside the `<head>`:
+
+<CodePlayground
+  title="Internal CSS"
+  html='
+  <style>
+    .highlight {
+      background: #fef9c3;
+      padding: 8px 16px;
+      border-radius: 4px;
+    }
+  </style>
+  <p class="highlight">This uses internal CSS.</p>'
+/>
+
+### 3. External CSS
+
+Link to a separate `.css` file — the most maintainable approach:
+
+<CodePlayground
+  title="External CSS (Simulated)"
+  html='<p class="external-demo">This would be styled via an external .css file.</p>'
+  css='
+  .external-demo {
+    color: #059669;
+    font-size: 1.125rem;
+    border-bottom: 2px solid #059669;
+    padding-bottom: 4px;
+  }'
+/>
+
+### Comparison
+
+| Method | Best For | Pros | Cons |
+|---|---|---|---|
+| Inline | One-off overrides | Quick, no extra file | Hard to maintain, high specificity |
+| Internal | Single-page demos | No extra request | Not reusable across pages |
+| External | Production sites | Reusable, cacheable, maintainable | Extra HTTP request |
+
+**Best practice:** Use external CSS files for production and inline/internal only for quick experiments or prototypes.

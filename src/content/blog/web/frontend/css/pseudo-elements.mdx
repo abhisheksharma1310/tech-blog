@@ -1,0 +1,46 @@
+---
+title: "Pseudo Elements"
+description: "Style parts of elements or insert content"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-pseudo-elements"
+author: "Abhishek Sharma"
+order: 11
+---
+
+## Pseudo Elements
+
+Pseudo-elements let you style specific **parts** of an element or insert content before/after it. They use double colons (`::`).
+
+<CodePlayground
+  title="Pseudo Elements in Action"
+  html='
+  <p class="quote">CSS is awesome</p>
+  <p class="tip">Hover over this text</p>
+  <ul class="custom-list">
+    <li>Learn CSS</li>
+    <li>Practice daily</li>
+    <li>Build projects</li>
+  </ul>'
+  css='
+  .quote::before { content: "“"; font-size: 2rem; color: #6366f1; }
+  .quote::after { content: "”"; font-size: 2rem; color: #6366f1; }
+  .tip::selection { background: #fef9c3; color: #1e293b; }
+  .custom-list li::marker { color: #059669; font-weight: bold; }
+  .tip::first-letter { font-size: 2rem; font-weight: bold; color: #dc2626; }'
+/>
+
+### Common Pseudo-Elements
+
+| Pseudo-Element | Purpose |
+|---|---|
+| `::before` | Insert content before element |
+| `::after` | Insert content after element |
+| `::first-line` | Style the first line of text |
+| `::first-letter` | Style the first letter |
+| `::selection` | Style selected/highlighted text |
+| `::marker` | Style list markers |
+| `::placeholder` | Style input placeholder text |
+
+The `content` property is **required** for `::before` and `::after` to render.

@@ -1,0 +1,69 @@
+---
+title: "CSS Feature Queries"
+description: "Detect browser support with @supports"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-feature-queries"
+author: "Abhishek Sharma"
+order: 36
+---
+
+## Feature Queries
+
+The `@supports` rule checks if the browser supports a specific CSS feature before applying styles.
+
+<CodePlayground
+  title="@supports Example"
+  html='
+  <div class="supports-demo">
+    This uses grid if supported, otherwise falls back
+  </div>'
+  css='
+  .supports-demo {
+    background: #f1f5f9;
+    padding: 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+  }
+  @supports (display: grid) {
+    .supports-demo {
+      display: grid;
+      place-items: center;
+      background: #eef2ff;
+      border: 2px solid #6366f1;
+      color: #6366f1;
+    }
+  }
+  @supports not (display: grid) {
+    .supports-demo {
+      border: 2px solid #dc2626;
+      color: #dc2626;
+    }
+  }'
+/>
+
+### Syntax
+
+```css
+/* Check support for a property:value pair */
+@supports (display: grid) { }
+
+/* Check NOT supported */
+@supports not (display: grid) { }
+
+/* Multiple conditions (AND) */
+@supports (display: flex) and (gap: 8px) { }
+
+/* Multiple conditions (OR) */
+@supports (display: grid) or (display: flex) { }
+```
+
+### Why Use Feature Queries?
+
+- **Progressive enhancement** — use modern features with graceful fallbacks
+- **No browser detection** needed — test features directly
+- **Future-proof** — styles automatically activate when browsers add support
+
+Unlike media queries that check the viewport, feature queries check the **browser capabilities**.

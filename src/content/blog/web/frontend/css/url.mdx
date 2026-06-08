@@ -1,0 +1,53 @@
+---
+title: "CSS url()"
+description: "Use URLs in CSS properties"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-url"
+author: "Abhishek Sharma"
+order: 14
+---
+
+## url()
+
+The `url()` function is used to reference external resources like images, fonts, and SVGs.
+
+<CodePlayground
+  title="url() Examples"
+  html='
+  <div class="bg-image">Background image</div>
+  <div class="bg-svg">SVG background</div>'
+  css='
+  div { padding: 32px 16px; margin: 4px 0; border-radius: 6px; color: white; font-weight: bold; text-align: center; }
+  .bg-image {
+    background: url("https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=100&fit=crop") center/cover;
+  }
+  .bg-svg {
+    background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%236366f1%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2210%22/%3E%3C/svg%3E") repeat;
+    background-size: 40px;
+    background-color: #1e293b;
+  }'
+/>
+
+### Where url() Is Used
+
+| Property | Example |
+|---|---|
+| `background-image` | `background-image: url("bg.png");` |
+| `list-style-image` | `list-style-image: url("bullet.svg");` |
+| `border-image` | `border-image: url("border.png");` |
+| `cursor` | `cursor: url("custom.cur"), auto;` |
+| `@font-face` | `src: url("font.woff2");` |
+
+### Relative vs Absolute URLs
+
+```css
+/* Relative — resolves relative to the CSS file */
+background: url("images/bg.png");
+
+/* Absolute — full URL */
+background: url("https://cdn.example.com/bg.png");
+```
+
+Always use quotes around the URL for clarity, though they are technically optional.

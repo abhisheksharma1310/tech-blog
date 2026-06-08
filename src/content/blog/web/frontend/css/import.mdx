@@ -1,0 +1,47 @@
+---
+title: "CSS Import"
+description: "Import stylesheets into other stylesheets"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-import"
+author: "Abhishek Sharma"
+order: 8
+---
+
+## Import
+
+The `@import` rule lets you load one CSS file inside another. It must appear at the top of the stylesheet, before any other rules.
+
+<CodePlayground
+  title="@import Example"
+  html='
+  <p class="imported">This is styled via an @import rule (simulated)</p>'
+  css='
+  /* Simulating @import "typography.css"; */
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+  .imported {
+    font-family: Inter, sans-serif;
+    font-size: 1.25rem;
+    color: #6366f1;
+  }'
+/>
+
+### Syntax
+
+```css
+@import url("styles.css");
+@import "styles.css";
+@import url("styles.css") screen and (min-width: 768px);
+```
+
+### @import vs &lt;link&gt;
+
+| Feature | `<link>` | `@import` |
+|---|---|---|
+| Parallel loading | Yes | No |
+| Browser support | All | All |
+| Performance | Better | Slower (sequential) |
+| Use in HTML | Yes | No (only in CSS) |
+
+**Best practice:** Use `<link>` in HTML for better performance. Use `@import` sparingly, mainly within CSS libraries.

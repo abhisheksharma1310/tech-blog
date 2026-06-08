@@ -1,0 +1,67 @@
+---
+title: "CSS Inheritance"
+description: "How properties are passed from parent to child"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-inheritance"
+author: "Abhishek Sharma"
+order: 7
+---
+
+## Inheritance
+
+Some CSS properties are **inherited** — child elements automatically get the same value as their parent. Others are not.
+
+<CodePlayground
+  title="Inheritance Example"
+  html='
+  <div class="parent">
+    <p>Child paragraph inherits color</p>
+    <p>Another child <span>span inside</span></p>
+  </div>'
+  css='
+  .parent {
+    color: #6366f1;
+    font-family: Georgia, serif;
+    border: 2px solid #cbd5e1;
+    padding: 16px;
+  }
+  p { margin: 8px 0; }'
+/>
+
+The `color` and `font-family` are inherited. The `border` and `padding` are not.
+
+### Inherited vs Non-inherited
+
+| Inherited | Not Inherited |
+|---|---|
+| `color` | `border` |
+| `font-*` | `margin` |
+| `text-*` | `padding` |
+| `line-height` | `background` |
+| `visibility` | `width` / `height` |
+| `cursor` | `display` |
+
+### Controlling Inheritance
+
+Use special keyword values to override inheritance behavior:
+
+<CodePlayground
+  title="Inherit, Initial, Unset"
+  html='
+  <div class="card">
+    <p>Normal inherited color</p>
+    <p class="inherit-border">Inherit border</p>
+    <p class="initial-color">Initial color</p>
+  </div>'
+  css='
+  .card {
+    color: #059669;
+    border: 2px solid #6366f1;
+    padding: 12px;
+  }
+  .card p { margin: 8px 0; }
+  .inherit-border { border: inherit; }
+  .initial-color { color: initial; }'
+/>

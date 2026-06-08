@@ -1,0 +1,54 @@
+---
+title: "CSS Padding"
+description: "Add space inside elements"
+date: "2026-05-30"
+category: ["Web Development", "Frontend", "CSS"]
+tags: ["CSS", "Web Development"]
+slug: "css-padding"
+author: "Abhishek Sharma"
+order: 23
+---
+
+## Padding
+
+Padding is the space between an element's **content** and its **border**. It creates breathing room inside the element.
+
+<CodePlayground
+  title="Padding Comparison"
+  html='
+  <div class="no-padding">No padding</div>
+  <div class="padding">With padding</div>
+  <div class="uneven">Uneven padding</div>'
+  css='
+  div { width: 200px; border: 2px solid #6366f1; margin: 4px 0; background: #eef2ff; }
+  .no-padding { padding: 0; }
+  .padding { padding: 20px; }
+  .uneven { padding: 10px 30px; }'
+/>
+
+### Padding Shorthand
+
+```css
+/* All four sides */
+padding: 10px;
+
+/* top/bottom | left/right */
+padding: 10px 20px;
+
+/* top | left/right | bottom */
+padding: 10px 20px 15px;
+
+/* top | right | bottom | left */
+padding: 10px 15px 20px 25px;
+```
+
+### Individual Properties
+
+| Property | What It Sets |
+|---|---|
+| `padding-top` | Space above content |
+| `padding-right` | Space to the right |
+| `padding-bottom` | Space below content |
+| `padding-left` | Space to the left |
+
+Padding is **inside** the border — it increases the element's total visible size unless `box-sizing: border-box` is used.

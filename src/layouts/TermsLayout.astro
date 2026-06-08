@@ -1,0 +1,57 @@
+---
+import Header from '../components/Header.tsx';
+import Footer from '../components/Footer.tsx';
+import '../styles/global.css';
+
+const { title, description, activeSlug } = Astro.props as {
+  title: string;
+  description: string;
+  activeSlug?: string;
+};
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <input id="mobile-menu-toggle" type="checkbox" hidden class="mobile-menu-toggle" aria-hidden="true" />
+    <Header />
+    <main>
+      <section class="content"><slot /></section>
+    </main>
+    <Footer />
+    <script type="text/javascript">
+      (function () {
+        var root = document.documentElement;
+        var stored = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = stored || (prefersDark ? 'dark' : 'light');
+        root.classList.toggle('dark', theme === 'dark');
+        root.classList.toggle('light', theme === 'light');
+
+        var toggle = document.getElementById('theme-toggle');
+        if (!toggle) return;
+
+        function updateButton() {
+          var isDark = root.classList.contains('dark');
+          toggle.textContent = isDark ? '☀️' : '🌙';
+          toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+
+        updateButton();
+
+        toggle.addEventListener('click', function () {
+          var next = root.classList.contains('dark') ? 'light' : 'dark';
+          root.classList.toggle('dark', next === 'dark');
+          root.classList.toggle('light', next === 'light');
+          localStorage.setItem('theme', next);
+          updateButton();
+        });
+      })();
+    </script>
+  </body>
+</html>

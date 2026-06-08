@@ -3,13 +3,13 @@ export default function Header() {
     <header className="site-header">
       <div className="brand">
         <h1>
-          <a href="/">Tech Blog</a>
+          <a href="/">LearnCodeLive</a>
         </h1>
       </div>
 
       <div className="nav-group">
         <nav>
-          <a href="/blog">Blog</a>
+          <a href="https://lab.learncode.live" target="_blank" style={{fontWeight: "bold"}}>Coding Lab</a>
         </nav>
 
         <button

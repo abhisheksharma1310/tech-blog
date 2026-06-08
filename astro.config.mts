@@ -3,7 +3,7 @@ import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
 
 export default defineConfig({
-  site: 'https://astro-tech-blog.example.com',
+  site: 'https://www.learncode.live',
   output: 'static',
   integrations: [react(), mdx()]
 });

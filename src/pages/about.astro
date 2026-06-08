@@ -1,0 +1,15 @@
+---
+import SEO from '../components/SEO.astro';
+import TermsLayout from '@/layouts/TermsLayout.astro';
+
+const title = 'About LearnCode.live';
+const description = 'LearnCode.live is a modern, interactive platform designed to help learners master web development through hands-on tutorials, quizzes, and real-world examples';
+---
+<TermsLayout title={title} description={description}>
+  <SEO title={title} description={description} />
+  <section class="hero" id="articles">
+    <h1>About LearnCode.live</h1>
+    <p>LearnCode.live is a modern, interactive platform designed to help learners master web development through hands-on tutorials, quizzes, and real-world examples.</p>
+    <p>Founded by passionate developers, our mission is to make high-quality coding education accessible, engaging, and free. Whether you're a beginner or brushing up on fundamentals, we’re here to support your journey.</p>
+  </section>
+</TermsLayout>

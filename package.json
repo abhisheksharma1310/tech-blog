@@ -1,9 +1,9 @@
 {
-  "name": "astro-tech-blog",
+  "name": "learncodelive-tech-blog",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://tech-blog-31y.pages.dev/",
+  "homepage": "https://www.learncode.live",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

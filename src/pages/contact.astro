@@ -1,0 +1,15 @@
+---
+import SEO from '../components/SEO.astro';
+import TermsLayout from '@/layouts/TermsLayout.astro';
+
+const title = 'Contact Us';
+const description = "Have a question, suggestion, or partnership idea? We'd love to hear from you.";
+---
+<TermsLayout title={title} description={description}>
+  <SEO title={title} description={description} />
+  <section class="hero" id="articles">
+    <h1>Contact Us</h1>
+    <p>Have a question, suggestion, or partnership idea? We'd love to hear from you.</p>
+    <a href="mailto://contact@learncode.live">Email: contact@learncode.live</a>
+  </section>
+</TermsLayout>

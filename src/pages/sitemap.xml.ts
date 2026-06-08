@@ -3,12 +3,15 @@ import { getPosts } from '../data/posts';
 export const prerender = true;
 
 export async function GET() {
-  const site = 'https://astro-tech-blog.example.com';
+  const site = 'https://learncode.live';
   const posts = getPosts();
 
   const urls = [
     `${site}/`,
-    `${site}/blog/`,
+    `${site}/about/`,
+    `${site}/contact/`,
+    `${site}/privacy-policy/`,
+    `${site}/terms/`,
     ...posts.map((post) => `${site}${post.url}`)
   ];
 

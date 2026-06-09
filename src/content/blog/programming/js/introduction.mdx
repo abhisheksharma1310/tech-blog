@@ -1,0 +1,142 @@
+---
+title: "An Introduction to JavaScript"
+description: "Learn what JavaScript is, its history, and how to get started with tools and the developer console"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Programming", "Web Development"]
+slug: "introduction-to-javascript"
+author: "Abhishek Sharma"
+order: 1
+---
+
+# An Introduction to JavaScript
+
+JavaScript (often abbreviated as JS) is a high-level, interpreted programming language that makes web pages interactive. Alongside HTML and CSS, it is one of the three core technologies of the World Wide Web.
+
+## What is JavaScript?
+
+JavaScript was created by **Brendan Eich** in 1995 while working at Netscape. Originally called **Mocha**, then **LiveScript**, it was renamed to JavaScript as a marketing move during the rise of Java.
+
+Today, JavaScript runs everywhere — browsers, servers (Node.js), mobile apps, desktop applications, and even IoT devices.
+
+Here's a simple taste of JavaScript:
+
+<CodePlayground
+  title="Your First JavaScript"
+  html="<p id='demo'></p>"
+  js="document.getElementById('demo').textContent = 'Hello, JavaScript!';"
+/>
+
+## What can JavaScript do?
+
+- **DOM Manipulation** — change HTML and CSS on the fly
+- **Event Handling** — respond to clicks, keystrokes, form submissions
+- **API Calls** — fetch data from servers
+- **Animations** — create smooth visual effects
+- **Full-stack development** — build servers with Node.js, Deno, Bun
+
+## What CAN'T JavaScript do?
+
+- **File system access** (in the browser) — browsers sandbox JS for security
+- **Raw network access** — no low-level socket control without APIs
+- **Multithreading** — JavaScript is single-threaded (but has Web Workers)
+
+## Manuals and Specifications
+
+When learning JavaScript, these resources are essential:
+
+| Resource | URL | Purpose |
+|---|---|---|
+| **MDN Web Docs** | `developer.mozilla.org` | The definitive JS reference |
+| **ECMAScript Spec** | `tc39.es/ecma262` | The official language specification |
+| **JavaScript Info** | `javascript.info` | Modern tutorial (what this series is based on) |
+| **Can I Use** | `caniuse.com` | Check browser compatibility |
+
+The language is formally called **ECMAScript** (ES). The version matters:
+
+| Version | Year | Key Features |
+|---|---|---|
+| ES5 | 2009 | Strict mode, JSON, Array methods |
+| ES6/ES2015 | 2015 | `let`/`const`, arrow functions, classes, modules, Promises |
+| ES2016 | 2016 | `**` operator, `Array.includes` |
+| ES2017 | 2017 | `async`/`await`, `Object.values/entries` |
+| ES2018 | 2018 | Rest/spread for objects, `Promise.finally` |
+| ES2019 | 2019 | `Array.flat`, `Object.fromEntries` |
+| ES2020 | 2020 | Optional chaining, nullish coalescing, `BigInt` |
+| ES2021 | 2021 | `String.replaceAll`, `Promise.any`, `WeakRef` |
+| ES2022 | 2022 | Class fields, `Array.at`, `Object.hasOwn` |
+| ES2023 | 2023 | `Array.findLast`, `Hashbang Grammar` |
+
+## Code Editors
+
+You need a good editor to write JavaScript. Here are popular choices:
+
+| Editor | Best For | Platform |
+|---|---|---|
+| **VS Code** | Everything — most popular | Windows, Mac, Linux |
+| **WebStorm** | Professional JS development | Windows, Mac, Linux |
+| **Sublime Text** | Lightweight, fast | Windows, Mac, Linux |
+| **Vim / Neovim** | Terminal-based, keyboard-driven | Windows, Mac, Linux |
+
+For this tutorial series, **VS Code** is recommended. Key extensions:
+
+- **ESLint** — catches errors as you type
+- **Prettier** — auto-formats your code
+- **JavaScript (ES6) code snippets** — boosts productivity
+
+## Developer Console
+
+Every browser has a **Developer Console** where you can experiment with JavaScript in real-time.
+
+### How to open it
+
+| Browser | Shortcut |
+|---|---|
+| Chrome / Edge | `Ctrl + Shift + J` (Win/Linux), `Cmd + Option + J` (Mac) |
+| Firefox | `Ctrl + Shift + K` (Win/Linux), `Cmd + Option + K` (Mac) |
+| Safari | `Cmd + Option + C` (Mac) |
+
+### Using the Console
+
+The console is a **REPL** (Read-Eval-Print-Loop). You type JavaScript, it runs immediately:
+
+```js
+console.log("Hello from the console!");
+// → Hello from the console!
+
+2 + 2
+// → 4
+
+typeof "hello"
+// → "string"
+```
+
+Try pasting this in your console:
+
+```js
+console.log('This appears in the console tab!');
+console.warn('This is a warning');
+console.error('This is an error');
+console.table([{name: 'Alice', age: 30}, {name: 'Bob', age: 25}]);
+```
+
+> **Pro tip:** Use `console.log()` frequently while learning — it's your best debugging friend.
+
+### Console Methods
+
+| Method | Purpose |
+|---|---|
+| `console.log()` | General logging |
+| `console.warn()` | Warning message (yellow) |
+| `console.error()` | Error message (red) |
+| `console.table()` | Display arrays/objects as a table |
+| `console.group()` | Group related logs together |
+| `console.time()` / `console.timeEnd()` | Measure execution time |
+| `console.count()` | Count how many times something runs |
+
+```js
+console.time("loop");
+for (let i = 0; i < 1000000; i++) {}
+console.timeEnd("loop");
+// → loop: 2.45ms
+```

@@ -1,0 +1,358 @@
+---
+title: "Modules"
+description: "Learn about ES6 modules, export, import, and dynamic imports in JavaScript"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Modules", "ES6", "Import", "Export"]
+slug: "javascript-modules"
+author: "Abhishek Sharma"
+order: 16
+---
+
+# Modules
+
+## Modules, Introduction
+
+Modules let you split code into separate files, each with its own scope. Before modules, JavaScript had global scope pollution — every script shared the same global namespace.
+
+### What Modules Solve
+
+- **Scope isolation** — variables don't leak to the global scope
+- **Reusability** — import/export code across files
+- **Dependency management** — explicit declarations of what each file needs
+- **Lazy loading** — load code only when needed
+
+### Module Syntax
+
+HTML:
+
+```html
+<script type="module">
+  import { greet } from "./utils.js";
+  console.log(greet("World"));
+</script>
+```
+
+JavaScript files are modules by default when loaded with `type="module"`.
+
+### Module vs Script
+
+| Feature | Regular Script | Module |
+|---|---|---|
+| Scope | Global | Own scope |
+| Strict mode | Optional | Always strict |
+| Top-level `this` | `window` | `undefined` |
+| Defer by default | No | Yes (scripts are deferred) |
+| `await` at top level | No | Yes (in some environments) |
+| Import/export | No | Yes |
+
+### Module-level "this"
+
+```js
+// script.js
+console.log(this); // → window
+
+// module.js
+console.log(this); // → undefined
+```
+
+### Modules are Deferred
+
+Module scripts are always **deferred** — they wait for HTML parsing to finish before executing:
+
+```html
+<!-- These execute in order, after the page loads -->
+<script type="module" src="app.js"></script>
+<script type="module" src="utils.js"></script>
+```
+
+## Export and Import
+
+### Named Exports
+
+```js
+// 📁 utils.js
+
+// Export individual items
+export const PI = 3.14159;
+export function add(a, b) { return a + b; }
+export class Calculator { ... }
+
+// Export at the end
+const PI = 3.14159;
+function add(a, b) { return a + b; }
+class Calculator {}
+export { PI, add, Calculator };
+```
+
+### Named Imports
+
+```js
+// 📁 app.js
+import { PI, add, Calculator } from "./utils.js";
+
+console.log(PI);           // → 3.14159
+console.log(add(2, 3));    // → 5
+let calc = new Calculator();
+```
+
+### Import All
+
+```js
+import * as utils from "./utils.js";
+
+console.log(utils.PI);
+console.log(utils.add(2, 3));
+```
+
+### Default Export
+
+Each module can have **one** default export:
+
+```js
+// 📁 user.js
+export default class User {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+// 📁 main.js
+import User from "./user.js"; // No curly braces!
+```
+
+### Mixed Exports
+
+```js
+// 📁 math.js
+export default function add(a, b) { return a + b; }
+export const PI = 3.14159;
+export const E = 2.71828;
+
+// 📁 app.js
+import add, { PI, E } from "./math.js";
+
+console.log(add(PI, E)); // → 5.85987
+```
+
+### Renaming Imports and Exports
+
+```js
+// Rename on export
+export { add as sum, PI as PI_VALUE };
+
+// Rename on import
+import { add as sum, PI } from "./math.js";
+console.log(sum(2, 3)); // → 5
+```
+
+### Re-exporting
+
+```js
+// 📁 index.js — barrel file
+export { add, subtract } from "./math.js";
+export { User } from "./user.js";
+export { formatDate } from "./date-utils.js";
+
+// Now consumers can import from a single file
+import { add, User, formatDate } from "./index.js";
+```
+
+### Re-export All
+
+```js
+export * from "./math.js";       // Re-export all named exports
+export { default } from "./user.js"; // Re-export default
+```
+
+### Module Rules
+
+```js
+// 1. Module code runs only once per import
+// 2. Modules are singletons — shared across all importers
+// 3. Modules are evaluated lazily (in some systems) or eagerly
+```
+
+### Module Evaluation Order
+
+```js
+// 📁 a.js
+console.log("A evaluated");
+export const a = 1;
+
+// 📁 b.js
+console.log("B evaluated");
+export const b = 2;
+
+// 📁 main.js
+import { a } from "./a.js";
+import { b } from "./b.js";
+
+// Output:
+// "A evaluated"
+// "B evaluated"
+```
+
+### export default function vs export function
+
+```js
+// Can import with any name:
+export default function greet() {}
+import myGreet from "./greet.js"; // Works
+import hello from "./greet.js";   // Also works
+
+// Must import with exact name:
+export function greet() {}
+import { greet } from "./greet.js"; // Must use { greet }
+```
+
+## Dynamic Imports
+
+Static imports must be at the top level. Dynamic imports (`import()`) let you load modules on demand.
+
+### Static vs Dynamic
+
+```js
+// Static import — at the top of file
+import { add } from "./math.js";
+
+// Dynamic import — anywhere in code
+const mathModule = await import("./math.js");
+console.log(mathModule.add(2, 3));
+```
+
+### When to Use Dynamic Imports
+
+```js
+// 1. Code splitting — load heavy modules lazily
+button.addEventListener("click", async () => {
+  const chart = await import("./heavy-chart-library.js");
+  chart.render(data);
+});
+
+// 2. Conditional loading — load based on conditions
+if (user.locale === "de") {
+  const i18n = await import("./locales/de.js");
+  applyTranslations(i18n);
+}
+
+// 3. Feature detection
+if ("IntersectionObserver" in window) {
+  const observer = await import("./lazy-loader.js");
+} else {
+  // Fallback
+}
+```
+
+### Dynamic Import API
+
+```js
+// Returns a module namespace object
+const module = await import("./utils.js");
+module.default;     // Default export
+module.namedExport; // Named export
+module.PI;          // Named constant
+```
+
+### Dynamic Import in Regular Scripts
+
+Dynamic imports work in regular scripts (not just modules):
+
+```html
+<script>
+  // Works in regular scripts too!
+  import("./utils.js").then(module => {
+    console.log(module.default());
+  });
+</script>
+```
+
+### Practical Example
+
+```js
+// 📁 helpers.js
+export function formatDate(date) {
+  return date.toLocaleDateString();
+}
+export function formatCurrency(amount) {
+  return `$${amount.toFixed(2)}`;
+}
+
+// 📁 main.js
+async function loadHelpers() {
+  try {
+    const helpers = await import("./helpers.js");
+    console.log(helpers.formatDate(new Date()));
+    console.log(helpers.formatCurrency(42.5));
+  } catch (err) {
+    console.error("Failed to load module:", err);
+  }
+}
+
+loadHelpers();
+```
+
+### Dynamic Import with Default Export
+
+```js
+// 📁 logger.js
+export default function log(message) {
+  console.log(`[LOG] ${message}`);
+}
+
+// 📁 app.js
+const { default: log } = await import("./logger.js");
+log("Application started");
+
+// Or:
+const logger = await import("./logger.js");
+logger.default("Application started");
+```
+
+### Batch Dynamic Loading
+
+```js
+async function loadAll() {
+  const [utils, api, ui] = await Promise.all([
+    import("./utils.js"),
+    import("./api.js"),
+    import("./ui.js")
+  ]);
+
+  return { ...utils, ...api, ...ui };
+}
+
+const app = await loadAll();
+app.formatDate(new Date());
+```
+
+<CodePlayground
+  title="Dynamic Import (Simulated)"
+  html=""
+  js="// Simulating dynamic imports since we can't use true modules here
+let modules = {
+  greet: { default: (name) => 'Hello, ' + name + '!' },
+  math: { add: (a, b) => a + b, multiply: (a, b) => a * b }
+};
+
+async function loadModule(name) {
+  // Simulate async module loading
+  await new Promise(r => setTimeout(r, 500));
+  return modules[name];
+}
+
+async function main() {
+  document.write('Loading modules...<br>');
+
+  let greet = await loadModule('greet');
+  document.write(greet.default('World') + '<br>');
+
+  let math = await loadModule('math');
+  document.write('2 + 3 = ' + math.add(2, 3) + '<br>');
+  document.write('4 × 5 = ' + math.multiply(4, 5) + '<br>');
+
+  document.write('<br>All modules loaded dynamically!');
+}
+
+main();"
+/>

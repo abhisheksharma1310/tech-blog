@@ -1,0 +1,346 @@
+---
+title: "Prototypes and Inheritance"
+description: "Learn about prototypal inheritance, F.prototype, native prototypes, and modern prototype methods"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Prototypes", "Inheritance", "OOP"]
+slug: "javascript-prototypes"
+author: "Abhishek Sharma"
+order: 11
+---
+
+# Prototypes, Inheritance
+
+JavaScript uses **prototypal inheritance** — objects can inherit properties from other objects.
+
+## Prototypal Inheritance
+
+Every object has a hidden `[[Prototype]]` property that references another object (or `null`). When you access a property that doesn't exist on the object, JavaScript looks it up on the prototype chain.
+
+```js
+let animal = {
+  eats: true,
+  walk() {
+    console.log("Animal walks");
+  }
+};
+
+let rabbit = {
+  jumps: true
+};
+
+rabbit.__proto__ = animal; // Set prototype (old way)
+
+console.log(rabbit.eats); // → true (inherited from animal)
+console.log(rabbit.jumps); // → true (own property)
+
+rabbit.walk(); // → "Animal walks" (inherited)
+```
+
+### The Prototype Chain
+
+```
+rabbit → animal → Object.prototype → null
+```
+
+```js
+let animal = { eats: true };
+let rabbit = { jumps: true };
+
+rabbit.__proto__ = animal;
+
+// rabbit → animal → Object.prototype → null
+
+console.log(rabbit.toString); // From Object.prototype
+```
+
+### Writing to Prototype
+
+Writing to a property only affects the object itself, not the prototype:
+
+```js
+let animal = {
+  eats: true,
+  walk() {
+    console.log("Animal walks");
+  }
+};
+
+let rabbit = { __proto__: animal };
+
+rabbit.walk = function() {
+  console.log("Rabbit hops!");
+};
+
+rabbit.walk(); // → "Rabbit hops!" (own method)
+animal.walk(); // → "Animal walks" (unchanged)
+```
+
+### "this" in Prototypes
+
+The value of `this` is always the object **before the dot**, even if the method is on the prototype:
+
+```js
+let animal = {
+  name: "Animal",
+  walk() {
+    console.log(this.name + " walks");
+  }
+};
+
+let rabbit = {
+  __proto__: animal,
+  name: "Rabbit"
+};
+
+rabbit.walk(); // → "Rabbit walks" (this = rabbit)
+```
+
+### for...in and Prototypes
+
+`for...in` iterates over **own + inherited** enumerable properties:
+
+```js
+let animal = { eats: true };
+let rabbit = { jumps: true, __proto__: animal };
+
+for (let key in rabbit) {
+  let isOwn = rabbit.hasOwnProperty(key);
+  console.log(`${key}: ${isOwn ? "own" : "inherited"}`);
+}
+// → "jumps: own"
+// → "eats: inherited"
+```
+
+## F.prototype
+
+The `F.prototype` property (note: not `[[Prototype]]`) is used with the `new` operator.
+
+```js
+function Animal(name) {
+  this.name = name;
+}
+
+// Animal.prototype is the object that becomes [[Prototype]] of new instances
+Animal.prototype.walk = function() {
+  console.log(this.name + " walks");
+};
+
+let rabbit = new Animal("Rabbit");
+let cat = new Animal("Cat");
+
+rabbit.walk(); // → "Rabbit walks"
+cat.walk();    // → "Cat walks"
+
+// Both share the same walk method via prototype
+console.log(rabbit.walk === cat.walk); // → true
+```
+
+### How it works
+
+When `new Animal()` is called:
+1. A new object `{}` is created
+2. Its `[[Prototype]]` is set to `Animal.prototype`
+3. The constructor runs with `this` set to the new object
+
+```js
+// Animal.prototype is just a regular object:
+console.log(Animal.prototype); // → { walk: [Function], constructor: Animal }
+console.log(Animal.prototype.constructor === Animal); // → true
+```
+
+### Default F.prototype
+
+Every function automatically has a `prototype` property pointing to an object with a single property `constructor`:
+
+```js
+function Foo() {}
+
+console.log(Foo.prototype.constructor === Foo); // → true
+
+let obj = new Foo();
+console.log(obj.constructor === Foo); // → true (inherited)
+```
+
+### Change F.prototype
+
+You can replace the prototype to provide a different set of methods:
+
+```js
+function Rabbit() {}
+
+// Replace the prototype entirely
+Rabbit.prototype = {
+  jumps: true
+};
+
+// But now constructor is gone!
+let r = new Rabbit();
+console.log(r.constructor === Rabbit); // → false
+
+// Fix it:
+Rabbit.prototype = {
+  jumps: true,
+  constructor: Rabbit // Explicitly set constructor
+};
+```
+
+## Native Prototypes
+
+Built-in objects like `Array`, `String`, `Number` all use prototypes.
+
+```js
+// Array methods are on Array.prototype
+let arr = [1, 2, 3];
+console.log(arr.__proto__ === Array.prototype); // → true
+
+// String methods are on String.prototype
+let str = "hello";
+console.log(str.__proto__ === String.prototype); // → true
+```
+
+### The Complete Chain
+
+```js
+let arr = [1, 2, 3];
+
+// arr → Array.prototype → Object.prototype → null
+
+console.log(arr.__proto__ === Array.prototype);        // → true
+console.log(arr.__proto__.__proto__ === Object.prototype); // → true
+console.log(arr.__proto__.__proto__.__proto__);            // → null
+```
+
+### Modifying Native Prototypes (Not Recommended)
+
+```js
+// ❌ This works but DON'T do it in production
+String.prototype.show = function() {
+  console.log(this);
+};
+
+"hello".show(); // → "hello" (but could conflict with future JS versions)
+```
+
+### Polyfills (this is OK)
+
+Adding methods to native prototypes is acceptable for **polyfills**:
+
+```js
+if (!String.prototype.startsWith) {
+  String.prototype.startsWith = function(str) {
+    return this.indexOf(str) === 0;
+  };
+}
+```
+
+## Prototype Methods, Objects without __proto__
+
+Modern ways to work with prototypes:
+
+### Modern Methods
+
+```js
+let animal = { eats: true };
+let rabbit = { jumps: true };
+
+// Get/set prototype
+console.log(Object.getPrototypeOf(rabbit)); // → {} (default)
+
+Object.setPrototypeOf(rabbit, animal);
+console.log(Object.getPrototypeOf(rabbit)); // → animal
+
+// Create object with given prototype
+let rabbit2 = Object.create(animal);
+rabbit2.jumps = true;
+```
+
+### Object.create
+
+Create objects with a specific prototype and property descriptors:
+
+```js
+let animal = { eats: true };
+
+// Simple
+let rabbit = Object.create(animal);
+rabbit.jumps = true;
+
+// With property descriptors
+let rabbit2 = Object.create(animal, {
+  jumps: {
+    value: true,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  }
+});
+```
+
+### Object.create for Object Copying
+
+```js
+let clone = Object.create(
+  Object.getPrototypeOf(obj),
+  Object.getOwnPropertyDescriptors(obj)
+);
+```
+
+### Why avoid __proto__?
+
+- It's a getter/setter on `Object.prototype`, which can cause performance issues
+- Not supported in all environments (though modern ones do)
+- The methods `getPrototypeOf`/`setPrototypeOf` are the proper way
+
+### Objects without Prototype
+
+Create a truly plain object (no prototype chain):
+
+```js
+let obj = Object.create(null);
+// obj has NO prototype — no toString, no hasOwnProperty, etc.
+
+obj.toString; // → undefined (no Object.prototype)
+
+console.log(Object.getPrototypeOf(obj)); // → null
+
+// Useful for pure dictionaries (no key collisions)
+let dict = Object.create(null);
+dict["toString"] = "value"; // No collision with Object.prototype.toString
+```
+
+<CodePlayground
+  title="Prototypes Demo"
+  html=""
+  js="// Inheritance chain
+let animal = {
+  eats: true,
+  sleep() {
+    return this.name + ' sleeps';
+  }
+};
+
+let rabbit = Object.create(animal);
+rabbit.jumps = true;
+rabbit.name = 'Buggs';
+
+document.write('Eats: ' + rabbit.eats + '<br>');
+document.write('Jumps: ' + rabbit.jumps + '<br>');
+document.write(rabbit.sleep() + '<br>');
+
+// Prototype chain
+document.write('<br>Prototype chain:<br>');
+document.write('rabbit → animal: ' + (Object.getPrototypeOf(rabbit) === animal) + '<br>');
+document.write('animal → Object.prototype: ' + (Object.getPrototypeOf(animal) === Object.prototype) + '<br>');
+document.write('Object.prototype → null: ' + (Object.getPrototypeOf(Object.prototype) === null) + '<br>');
+
+// hasOwnProperty
+document.write('<br>Own vs inherited:<br>');
+for (let key in rabbit) {
+  if (Object.hasOwn(rabbit, key)) {
+    document.write(key + ': own<br>');
+  } else {
+    document.write(key + ': inherited<br>');
+  }
+}"
+/>

@@ -1,0 +1,388 @@
+---
+title: "Generators and Advanced Iteration"
+description: "Learn about generators, yield, and async iteration in JavaScript"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Generators", "Iteration", "Async"]
+slug: "javascript-generators"
+author: "Abhishek Sharma"
+order: 15
+---
+
+# Generators, Advanced Iteration
+
+## Generators
+
+**Generators** are functions that can be paused and resumed, producing multiple values on demand.
+
+### Generator Function Syntax
+
+A generator is defined with `function*` and uses `yield` to produce values:
+
+```js
+function* numberGenerator() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+
+let gen = numberGenerator();
+
+console.log(gen.next()); // → { value: 1, done: false }
+console.log(gen.next()); // → { value: 2, done: false }
+console.log(gen.next()); // → { value: 3, done: false }
+console.log(gen.next()); // → { value: undefined, done: true }
+```
+
+### Generators are Iterable
+
+```js
+function* numberGenerator() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+
+for (let value of numberGenerator()) {
+  console.log(value); // → 1, 2, 3
+}
+
+console.log([...numberGenerator()]); // → [1, 2, 3]
+```
+
+### Infinite Generators
+
+```js
+function* infiniteSequence() {
+  let i = 0;
+  while (true) {
+    yield i++;
+  }
+}
+
+let gen = infiniteSequence();
+console.log(gen.next().value); // → 0
+console.log(gen.next().value); // → 1
+console.log(gen.next().value); // → 2
+// ... keeps going forever (but lazily!)
+```
+
+### Generator with Arguments
+
+```js
+function* range(start, end, step = 1) {
+  for (let i = start; i <= end; i += step) {
+    yield i;
+  }
+}
+
+console.log([...range(1, 10, 2)]); // → [1, 3, 5, 7, 9]
+console.log([...range(5, 1, -1)]); // → [5, 4, 3, 2, 1]
+```
+
+### Two-way Passing with yield
+
+You can pass values back into a generator:
+
+```js
+function* questionGenerator() {
+  let name = yield "What is your name?";
+  let age = yield `Hello, ${name}! How old are you?`;
+  return `${name} is ${age} years old.`;
+}
+
+let gen = questionGenerator();
+
+console.log(gen.next().value);        // → "What is your name?"
+console.log(gen.next("Alice").value); // → "Hello, Alice! How old are you?"
+console.log(gen.next(30).value);      // → "Alice is 30 years old."
+```
+
+### Generator.return() and Generator.throw()
+
+```js
+function* gen() {
+  try {
+    yield "One";
+    yield "Two";
+    yield "Three";
+  } catch (err) {
+    console.log("Caught:", err.message);
+  }
+}
+
+let g = gen();
+console.log(g.next());    // → { value: "One", done: false }
+
+// Return early
+console.log(g.return("Early exit")); // → { value: "Early exit", done: true }
+
+// Throw into generator
+g = gen();
+console.log(g.next());    // → { value: "One", done: false }
+g.throw(new Error("Boom!")); // → "Caught: Boom!"
+```
+
+### yield* — Delegating to Another Generator
+
+```js
+function* numbers() {
+  yield 1;
+  yield 2;
+}
+
+function* letters() {
+  yield "a";
+  yield "b";
+}
+
+function* combined() {
+  yield* numbers();
+  yield* letters();
+  yield* [true, false]; // Works with any iterable
+}
+
+console.log([...combined()]); // → [1, 2, "a", "b", true, false]
+
+// Without yield*, you'd have to manually iterate:
+function* combinedManual() {
+  for (let v of numbers()) yield v;
+  for (let v of letters()) yield v;
+}
+```
+
+### Practical Generator Examples
+
+```js
+// Lazy Fibonacci sequence
+function* fibonacci() {
+  let a = 0, b = 1;
+  while (true) {
+    yield a;
+    [a, b] = [b, a + b];
+  }
+}
+
+let fib = fibonacci();
+for (let i = 0; i < 10; i++) {
+  console.log(fib.next().value);
+}
+// → 0, 1, 1, 2, 3, 5, 8, 13, 21, 34
+
+// Pagination generator
+function* paginate(items, pageSize) {
+  for (let i = 0; i < items.length; i += pageSize) {
+    yield items.slice(i, i + pageSize);
+  }
+}
+
+let items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+for (let page of paginate(items, 3)) {
+  console.log(page); // → [1,2,3], [4,5,6], [7,8,9], [10]
+}
+```
+
+### State Machine with Generators
+
+```js
+function* trafficLight() {
+  while (true) {
+    yield "Green";
+    yield "Yellow";
+    yield "Red";
+  }
+}
+
+let light = trafficLight();
+console.log(light.next().value); // → "Green"
+console.log(light.next().value); // → "Yellow"
+console.log(light.next().value); // → "Red"
+console.log(light.next().value); // → "Green" (cycles)
+```
+
+<CodePlayground
+  title="Generators Demo"
+  html=""
+  js="// Custom range generator
+function* range(start, end) {
+  for (let i = start; i <= end; i++) {
+    yield i;
+  }
+}
+
+// Use it
+let squares = [];
+for (let n of range(1, 10)) {
+  squares.push(n * n);
+}
+document.write('Squares 1-10: ' + squares.join(', ') + '<br>');
+
+// Fibonacci
+function* fibonacci(n) {
+  let a = 0, b = 1;
+  for (let i = 0; i < n; i++) {
+    yield a;
+    [a, b] = [b, a + b];
+  }
+}
+
+document.write('Fibonacci: ' + [...fibonacci(10)].join(', ') + '<br>');
+
+// Even numbers with generator
+function* evens(limit) {
+  for (let i = 0; i <= limit; i += 2) {
+    yield i;
+  }
+}
+
+document.write('Evens to 20: ' + [...evens(20)].join(', ') + '<br>');"
+/>
+
+## Async Iteration and Generators
+
+### Async Iterables
+
+Objects with `Symbol.asyncIterator` support `for await...of`:
+
+```js
+let asyncRange = {
+  from: 1,
+  to: 5,
+
+  [Symbol.asyncIterator]() {
+    let current = this.from;
+    let end = this.to;
+
+    return {
+      next() {
+        if (current <= end) {
+          return new Promise(resolve => {
+            setTimeout(() => {
+              resolve({ value: current++, done: false });
+            }, 500);
+          });
+        }
+        return Promise.resolve({ done: true });
+      }
+    };
+  }
+};
+
+// Consume with for await...of
+(async () => {
+  for await (let value of asyncRange) {
+    console.log(value); // → 1, 2, 3, 4, 5 (each after 500ms)
+  }
+})();
+```
+
+### Async Generators
+
+Combine `async` and `generator` for lazy async sequences:
+
+```js
+async function* fetchPages(url, maxPages) {
+  for (let page = 1; page <= maxPages; page++) {
+    // Simulate API call
+    let response = await fetch(`${url}?page=${page}`);
+    let data = await response.json();
+
+    if (data.length === 0) break; // No more data
+    yield data;
+  }
+}
+
+(async () => {
+  for await (let page of fetchPages("/api/items", 10)) {
+    console.log("Got page:", page);
+  }
+})();
+```
+
+### Async Generator Example
+
+```js
+// Simulated async data stream
+async function* randomNumbers(count) {
+  for (let i = 0; i < count; i++) {
+    // Simulate async delay
+    let number = await new Promise(resolve =>
+      setTimeout(() => resolve(Math.random()), 200)
+    );
+    yield number;
+  }
+}
+
+(async () => {
+  let sum = 0;
+  let count = 0;
+
+  for await (let num of randomNumbers(5)) {
+    sum += num;
+    count++;
+    console.log(`Received: ${num.toFixed(3)}`);
+  }
+
+  console.log(`Average: ${(sum / count).toFixed(3)}`);
+})();
+```
+
+### Async Generator from Events
+
+```js
+// Convert DOM events to async iterator
+function fromEvent(element, eventName) {
+  return {
+    [Symbol.asyncIterator]() {
+      let resolvers = [];
+
+      element.addEventListener(eventName, (event) => {
+        let resolve = resolvers.shift();
+        if (resolve) resolve(event);
+      });
+
+      return {
+        next() {
+          return new Promise(resolve => {
+            resolvers.push(resolve);
+          });
+        }
+      };
+    }
+  };
+}
+
+// Usage (in browser):
+// let clicks = fromEvent(document, "click");
+// for await (let click of clicks) {
+//   console.log("Clicked at:", click.x, click.y);
+// }
+```
+
+### Async Iteration with Error Handling
+
+```js
+async function* asyncData() {
+  let i = 0;
+  while (i < 3) {
+    try {
+      let value = await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (Math.random() > 0.7) reject(new Error("Random failure"));
+          else resolve(i++);
+        }, 500);
+      });
+      yield value;
+    } catch (err) {
+      console.log("Caught error, continuing:", err.message);
+      // Continue iteration despite errors
+    }
+  }
+}
+
+(async () => {
+  for await (let value of asyncData()) {
+    console.log("Got:", value);
+  }
+})();
+```

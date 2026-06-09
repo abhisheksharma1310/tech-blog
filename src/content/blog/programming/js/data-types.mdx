@@ -1,0 +1,508 @@
+---
+title: "Data Types"
+description: "Deep dive into JavaScript data types: numbers, strings, arrays, and array methods"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Data Types", "Numbers", "Strings", "Arrays"]
+slug: "javascript-data-types"
+author: "Abhishek Sharma"
+order: 7
+---
+
+# Data Types in Depth
+
+Now that you know the basics, let's explore JavaScript's data types in detail.
+
+## Methods of Primitives
+
+Primitives (string, number, boolean, etc.) are not objects. But you can call methods on them:
+
+```js
+let str = "hello";
+console.log(str.toUpperCase()); // → "HELLO"
+```
+
+How does this work? JavaScript creates a **temporary wrapper object**:
+
+1. A special "object wrapper" is created
+2. The method runs
+3. The wrapper is destroyed
+
+```js
+// Behind the scenes:
+let str = "hello";
+// JS temporarily creates new String("hello")
+// Calls .toUpperCase()
+// Destroys the wrapper
+
+// Primitives stay primitive — the wrapper is temporary
+str.test = 5; // Wrapper created, property set, wrapper destroyed
+console.log(str.test); // → undefined (new wrapper has no test)
+```
+
+### Primitive Wrappers
+
+| Primitive | Wrapper | Example |
+|---|---|---|
+| `string` | `String` | `"hello".length` |
+| `number` | `Number` | `(3.14).toFixed(1)` |
+| `boolean` | `Boolean` | `true.toString()` |
+| `symbol` | `Symbol` | `Symbol("id").description` |
+| `bigint` | `BigInt` | `100n.toString()` |
+
+```js
+// null and undefined have no wrapper methods
+// null.toString(); // TypeError!
+```
+
+## Numbers
+
+### Writing Numbers
+
+```js
+let billion = 1000000000;
+let billion2 = 1_000_000_000; // Underscores as separators (ES2021)
+let billion3 = 1e9;           // Scientific notation
+let micro = 1e-6;             // 0.000001
+
+let hex = 0xFF;   // 255 (hexadecimal)
+let oct = 0o77;   // 63 (octal)
+let bin = 0b1010; // 10 (binary)
+```
+
+### Number Methods
+
+```js
+let num = 3.14159;
+
+// Round to n decimal places
+num.toFixed(2); // → "3.14" (returns string!)
+num.toFixed(0); // → "3"
+
+// Convert to string in different base
+num.toString(16); // → "3.243f..." (hex)
+
+// Parse from string
+parseInt("100px"); // → 100
+parseFloat("3.14em"); // → 3.14
+parseInt("0xFF", 16); // → 255 (explicit base)
+
+// Check if finite
+isFinite(Infinity);  // → false
+isFinite(42);        // → true
+isFinite("42");      // → true (converts)
+
+// Check if NaN (only reliable way)
+Number.isNaN(NaN);  // → true
+Number.isNaN("abc"); // → false (doesn't convert)
+isNaN("abc");        // → true (converts first)
+```
+
+### Imprecise Calculations
+
+```js
+console.log(0.1 + 0.2); // → 0.30000000000000004 (not 0.3!)
+console.log(0.1 + 0.2 === 0.3); // → false
+```
+
+This happens because numbers are stored in binary (base-2) and some decimal fractions can't be represented exactly.
+
+**Fix:** Round to a certain precision:
+
+```js
+let sum = 0.1 + 0.2;
+console.log(+sum.toFixed(2)); // → 0.3
+```
+
+### Safe Integer Range
+
+```js
+Number.MAX_SAFE_INTEGER; // → 9007199254740991
+Number.MIN_SAFE_INTEGER; // → -9007199254740991
+
+// Beyond this range, integer math is unreliable
+console.log(9007199254740991+1); // → 9007199254740992 (wrong!)
+console.log(9007199254740991+2); // → 9007199254740992 (same result!)
+```
+
+For larger integers, use BigInt.
+
+<CodePlayground
+  title="Numbers Demo"
+  html=""
+  js="document.write('PI to 2 decimals: ' + (Math.PI.toFixed(2)) + '<br>');
+document.write('Parse \'100px\': ' + parseInt('100px') + '<br>');
+document.write('Parse \'3.14em\': ' + parseFloat('3.14em') + '<br>');
+document.write('Hex 0xFF: ' + 0xFF + '<br>');
+document.write('Binary 0b1010: ' + 0b1010 + '<br>');
+document.write('0.1 + 0.2 = ' + (0.1 + 0.2) + '<br>');
+document.write('Fixed: ' + +(0.1 + 0.2).toFixed(2) + '<br>');
+document.write('Random 1-10: ' + Math.floor(Math.random() * 10 + 1) + '<br>');"
+/>
+
+## Strings
+
+### Creating Strings
+
+```js
+let single = 'Hello';
+let double = "Hello";
+let template = `Hello ${name}!`; // Template literal (ES6)
+```
+
+### Escape Sequences
+
+```js
+let str = "Line 1\nLine 2";  // Newline
+let str2 = "Tab\there";       // Tab
+let str3 = "Back\\slash";     // Backslash
+let str4 = "Quote: \"";       // Double quote
+```
+
+### String Length
+
+```js
+"hello".length; // → 5
+"".length;      // → 0
+"hello\n".length; // → 6 (newline counts as one character)
+```
+
+### Accessing Characters
+
+```js
+let str = "hello";
+
+str[0];      // → "h"
+str[1];      // → "e"
+str.at(-1);  // → "o" (ES2022 — negative indexing!)
+str.at(-2);  // → "l"
+str.charAt(0); // → "h"
+```
+
+### Changing Case
+
+```js
+"Hello".toUpperCase(); // → "HELLO"
+"Hello".toLowerCase(); // → "hello"
+```
+
+### Searching
+
+```js
+let str = "Hello World";
+
+str.indexOf("World");   // → 6
+str.indexOf("o");       // → 4 (first occurrence)
+str.indexOf("o", 5);    // → 7 (search from position 5)
+str.indexOf("xyz");     // → -1 (not found)
+
+str.includes("World");  // → true
+str.startsWith("He");   // → true
+str.endsWith("ld");     // → true
+```
+
+### Substrings
+
+```js
+let str = "JavaScript";
+
+str.slice(0, 4);    // → "Java" (start, end — end exclusive)
+str.slice(4);       // → "Script" (from index 4 to end)
+str.slice(-6);      // → "Script" (negative = from end)
+
+str.substring(0, 4); // → "Java" (same as slice)
+str.substring(4, 0); // → "Java" (swaps if start > end)
+
+str.substr(4, 3);    // → "Scr" (start, length — legacy, avoid)
+```
+
+### Splitting and Joining
+
+```js
+"a,b,c".split(","); // → ["a", "b", "c"]
+"hello".split("");  // → ["h", "e", "l", "l", "o"]
+
+["a", "b", "c"].join(","); // → "a,b,c"
+["a", "b", "c"].join("");  // → "abc"
+```
+
+### Trimming
+
+```js
+"  hello  ".trim();       // → "hello"
+"  hello  ".trimStart();  // → "hello  "
+"  hello  ".trimEnd();    // → "  hello"
+```
+
+### Padding
+
+```js
+"5".padStart(3, "0"); // → "005"
+"5".padEnd(3, "0");   // → "500"
+"abc".padStart(5);    // → "  abc" (default pad with spaces)
+```
+
+### Replace
+
+```js
+"Hello World".replace("World", "JS");     // → "Hello JS" (first only)
+"Hello World".replace(/o/g, "0");          // → "Hell0 W0rld" (global regex)
+"Hello World".replaceAll("o", "0");        // → "Hell0 W0rld" (ES2021 — all)
+```
+
+### Template Literals
+
+```js
+let name = "Alice";
+let age = 30;
+
+// Multi-line strings
+let html = `
+  <div>
+    <h1>${name}</h1>
+    <p>Age: ${age}</p>
+  </div>
+`;
+
+// Expressions inside ${}
+let total = `Sum: ${2 + 3}`; // → "Sum: 5"
+
+// Tagged templates (advanced)
+function highlight(strings, ...values) {
+  return strings.reduce((result, str, i) => {
+    return result + str + (values[i] ? `<mark>${values[i]}</mark>` : "");
+  }, "");
+}
+let result = highlight`Hello ${name}, you are ${age} years old`;
+```
+
+<CodePlayground
+  title="Strings Demo"
+  html=""
+  js="let str = 'JavaScript is awesome!';
+
+document.write('String: ' + str + '<br>');
+document.write('Length: ' + str.length + '<br>');
+document.write('First char: ' + str[0] + '<br>');
+document.write('Last char: ' + str.at(-1) + '<br>');
+document.write('Uppercase: ' + str.toUpperCase() + '<br>');
+document.write('Includes awesome': ' + str.includes('awesome') + '<br>');
+document.write('Slice(0,10): ' + str.slice(0, 10) + '<br>');
+document.write('Replace: ' + str.replace('awesome', 'great') + '<br>');"
+/>
+
+## Arrays
+
+Arrays store ordered collections:
+
+```js
+let fruits = ["Apple", "Banana", "Orange"];
+let mixed = [1, "hello", true, null, { name: "Alice" }];
+let empty = [];
+```
+
+### Array Access
+
+```js
+let fruits = ["Apple", "Banana", "Orange"];
+
+fruits[0];      // → "Apple"
+fruits[1];      // → "Banana"
+fruits.at(-1);  // → "Orange" (ES2022)
+fruits.length;  // → 3
+```
+
+### Array length is writable
+
+```js
+let arr = [1, 2, 3, 4, 5];
+arr.length = 3;
+console.log(arr); // → [1, 2, 3] (truncated!)
+
+arr.length = 0; // Clear the array
+```
+
+### Adding / Removing Elements
+
+```js
+let fruits = ["Apple"];
+
+// Push / Pop — end of array
+fruits.push("Banana");    // → ["Apple", "Banana"]  (add to end)
+fruits.pop();             // → "Banana", fruits is ["Apple"] (remove from end)
+
+// Shift / Unshift — beginning of array
+fruits.unshift("Orange"); // → ["Orange", "Apple"] (add to start)
+fruits.shift();           // → "Orange", fruits is ["Apple"] (remove from start)
+
+// Splice — general purpose
+let arr = [1, 2, 3, 4, 5];
+arr.splice(1, 2);         // → [2, 3] (removed), arr is [1, 4, 5]
+arr.splice(1, 0, 2, 3);   // Insert at index 1: arr is [1, 2, 3, 4, 5]
+arr.splice(2, 1, 99);     // Replace at index 2: arr is [1, 2, 99, 4, 5]
+```
+
+### Iterating Arrays
+
+```js
+let arr = [10, 20, 30];
+
+// for loop
+for (let i = 0; i < arr.length; i++) {
+  console.log(arr[i]);
+}
+
+// for...of (access values)
+for (let value of arr) {
+  console.log(value);
+}
+
+// forEach (functional)
+arr.forEach((value, index) => {
+  console.log(`${index}: ${value}`);
+});
+```
+
+### Array.isArray
+
+```js
+Array.isArray([1, 2, 3]); // → true
+Array.isArray({});         // → false
+Array.isArray("hello");    // → false
+
+typeof []; // → "object" (arrays are objects!)
+```
+
+## Array Methods
+
+### Transformative Methods
+
+```js
+let arr = [1, 2, 3, 4, 5];
+
+// map — transform each element
+let doubled = arr.map(n => n * 2); // → [2, 4, 6, 8, 10]
+
+// filter — keep elements that pass a test
+let evens = arr.filter(n => n % 2 === 0); // → [2, 4]
+
+// reduce — accumulate to a single value
+let sum = arr.reduce((acc, n) => acc + n, 0); // → 15
+
+// reduceRight — same but right to left
+```
+
+### Searching Methods
+
+```js
+let arr = [1, 2, 3, 4, 5, 3];
+
+arr.indexOf(3);       // → 2 (first occurrence)
+arr.lastIndexOf(3);   // → 5 (last occurrence)
+arr.includes(3);      // → true
+
+// find — returns the first element that passes
+arr.find(n => n > 3); // → 4
+
+// findIndex — returns the index
+arr.findIndex(n => n > 3); // → 3
+
+// findLast (ES2023)
+arr.findLast(n => n > 3); // → 5
+
+// some — tests if any element passes
+arr.some(n => n > 4); // → true
+
+// every — tests if ALL elements pass
+arr.every(n => n > 0); // → true
+```
+
+### Sorting
+
+```js
+let arr = [3, 1, 4, 1, 5, 9, 2, 6];
+
+arr.sort(); // → [1, 1, 2, 3, 4, 5, 6, 9]
+// But sort converts to strings first!
+[10, 2, 1].sort(); // → [1, 10, 2] (lexicographic!)
+
+// Fix — provide a comparator
+arr.sort((a, b) => a - b);  // Ascending: → [1, 2, 3, 4, 5, 6, 9]
+arr.sort((a, b) => b - a);  // Descending
+
+// reverse
+arr.reverse(); // Reverses the array in place
+```
+
+### Other Useful Methods
+
+```js
+let arr = [1, 2, 3];
+
+// concat
+arr.concat([4, 5]); // → [1, 2, 3, 4, 5]
+
+// slice (extract portion, no mutation)
+arr.slice(0, 2); // → [1, 2]
+arr.slice(-2);   // → [2, 3]
+
+// flat (ES2019) — flatten nested arrays
+[1, [2, [3]]].flat();       // → [1, 2, [3]] (default depth 1)
+[1, [2, [3]]].flat(2);      // → [1, 2, 3]
+[1, [2, [3]]].flat(Infinity); // → [1, 2, 3] (all levels)
+
+// flatMap — map then flat(1)
+["hello world", "foo bar"].flatMap(s => s.split(" "));
+// → ["hello", "world", "foo", "bar"]
+
+// fill
+[1, 2, 3].fill(0); // → [0, 0, 0]
+```
+
+### Chaining
+
+Array methods can be chained together:
+
+```js
+let students = [
+  { name: "Alice", score: 85 },
+  { name: "Bob", score: 62 },
+  { name: "Charlie", score: 92 },
+  { name: "Diana", score: 47 }
+];
+
+let topStudents = students
+  .filter(s => s.score >= 70)
+  .map(s => s.name)
+  .sort();
+
+console.log(topStudents); // → ["Alice", "Charlie"]
+```
+
+<CodePlayground
+  title="Array Methods Demo"
+  html=""
+  js="let numbers = [5, 2, 8, 1, 9, 3];
+
+document.write('Original: ' + numbers.join(', ') + '<br>');
+
+let doubled = numbers.map(n => n * 2);
+document.write('Doubled: ' + doubled.join(', ') + '<br>');
+
+let evens = numbers.filter(n => n % 2 === 0);
+document.write('Evens: ' + evens.join(', ') + '<br>');
+
+let sorted = [...numbers].sort((a, b) => a - b);
+document.write('Sorted: ' + sorted.join(', ') + '<br>');
+
+let sum = numbers.reduce((acc, n) => acc + n, 0);
+document.write('Sum: ' + sum + '<br>');
+
+// Practical example
+let words = ['hello', 'world', 'foo', 'bar'];
+let upper = words.map(w => w.toUpperCase());
+document.write('<br>Uppercased: ' + upper.join(', ') + '<br>');
+
+let longWords = words.filter(w => w.length > 3);
+document.write('Long words: ' + longWords.join(', ') + '<br>');"
+/>

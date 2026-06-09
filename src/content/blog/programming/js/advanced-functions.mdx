@@ -1,0 +1,694 @@
+---
+title: "Advanced Functions"
+description: "Deep dive into recursion, closures, scheduling, decorators, and function binding"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Functions", "Closure", "Recursion", "Decorators"]
+slug: "javascript-advanced-functions"
+author: "Abhishek Sharma"
+order: 9
+---
+
+# Advanced Working with Functions
+
+## Recursion and Stack
+
+**Recursion** is when a function calls itself.
+
+```js
+function countDown(n) {
+  if (n <= 0) {
+    console.log("Done!");
+    return;
+  }
+  console.log(n);
+  countDown(n - 1);
+}
+
+countDown(3);
+// → 3, 2, 1, "Done!"
+```
+
+### Recursive Factorial
+
+```js
+function factorial(n) {
+  if (n <= 1) return 1; // Base case
+  return n * factorial(n - 1); // Recursive call
+}
+
+console.log(factorial(5)); // → 120 (5 × 4 × 3 × 2 × 1)
+```
+
+### Recursive vs Iterative
+
+```js
+// Iterative
+function powIter(x, n) {
+  let result = 1;
+  for (let i = 0; i < n; i++) result *= x;
+  return result;
+}
+
+// Recursive
+function powRecur(x, n) {
+  if (n === 0) return 1;
+  return x * powRecur(x, n - 1);
+}
+
+console.log(powIter(2, 3));  // → 8
+console.log(powRecur(2, 3)); // → 8
+```
+
+### Execution Stack
+
+Each recursive call is pushed onto the call stack:
+
+```
+pow(2, 3)
+  → 2 * pow(2, 2)
+    → 2 * 2 * pow(2, 1)
+      → 2 * 2 * 2 * pow(2, 0)
+        → 2 * 2 * 2 * 1
+      → 2 * 2 * 2
+    → 2 * 4
+  → 8
+```
+
+### Deep Recursion
+
+```js
+// Recursive tree traversal
+let company = {
+  name: "Big Corp",
+  departments: [
+    { name: "Engineering", employees: 50 },
+    {
+      name: "Sales",
+      employees: 30,
+      sub: [
+        { name: "Domestic", employees: 20 },
+        { name: "International", employees: 10 }
+      ]
+    }
+  ]
+};
+
+function countEmployees(dept) {
+  let total = dept.employees || 0;
+  if (dept.sub) {
+    for (let sub of dept.sub) {
+      total += countEmployees(sub);
+    }
+  }
+  return total;
+}
+
+console.log(countEmployees(company)); // → 110
+```
+
+## Rest Parameters and Spread Syntax
+
+### Rest Parameters `...`
+
+Collect remaining arguments into an array:
+
+```js
+function sum(...nums) {
+  let total = 0;
+  for (let n of nums) total += n;
+  return total;
+}
+
+console.log(sum(1, 2, 3, 4, 5)); // → 15
+```
+
+Rest parameters must be the last parameter:
+
+```js
+function show(name, age, ...hobbies) {
+  console.log(name);     // → "Alice"
+  console.log(age);      // → 30
+  console.log(hobbies);  // → ["reading", "coding", "gaming"]
+}
+
+show("Alice", 30, "reading", "coding", "gaming");
+```
+
+### Spread Syntax `...`
+
+Spread expands an iterable into individual elements:
+
+```js
+// Arrays
+let arr1 = [1, 2, 3];
+let arr2 = [4, 5, 6];
+let combined = [...arr1, ...arr2]; // → [1, 2, 3, 4, 5, 6]
+
+// Copy array
+let copy = [...arr1];
+
+// String to characters
+let chars = [..."hello"]; // → ["h", "e", "l", "l", "o"]
+
+// Function arguments
+let numbers = [3, 8, 1, 6, 2];
+console.log(Math.max(...numbers)); // → 8
+
+// Objects (ES2018)
+let obj1 = { a: 1, b: 2 };
+let obj2 = { c: 3, ...obj1 }; // → { c: 3, a: 1, b: 2 }
+
+// Merge objects (later properties overwrite earlier)
+let merged = { ...obj1, ...obj2 }; // → { a: 1, b: 2, c: 3 }
+```
+
+## Variable Scope, Closure
+
+### Lexical Environment
+
+Every function, block, and script has an associated **Lexical Environment** that stores local variables.
+
+```js
+let x = 10; // Global
+
+function outer() {
+  let y = 20; // Outer
+
+  function inner() {
+    let z = 30; // Inner
+    console.log(x + y + z); // Can access all three!
+  }
+
+  inner();
+}
+
+outer(); // → 60
+```
+
+### Closure
+
+A **closure** is a function that "remembers" its lexical scope even when called outside of it.
+
+```js
+function createCounter() {
+  let count = 0; // Private variable
+
+  return function() {
+    count++;
+    return count;
+  };
+}
+
+let counter = createCounter();
+
+console.log(counter()); // → 1
+console.log(counter()); // → 2
+console.log(counter()); // → 3
+
+// count is not accessible from outside
+console.log(counter.count); // → undefined
+```
+
+### Practical Closures
+
+```js
+// Closure for private data
+function createBankAccount(initialBalance) {
+  let balance = initialBalance;
+
+  return {
+    deposit(amount) {
+      balance += amount;
+      return balance;
+    },
+    withdraw(amount) {
+      if (amount > balance) return "Insufficient funds";
+      balance -= amount;
+      return balance;
+    },
+    getBalance() {
+      return balance;
+    }
+  };
+}
+
+let account = createBankAccount(1000);
+console.log(account.deposit(500));  // → 1500
+console.log(account.withdraw(200)); // → 1300
+console.log(account.getBalance());  // → 1300
+// console.log(account.balance);    // → undefined — private!
+```
+
+### Closure in Loops (the classic problem)
+
+```js
+// ❌ Classic problem
+for (var i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 1000);
+}
+// → 3, 3, 3 (all reference the same `var i`)
+
+// ✅ Fix with let (block scope)
+for (let i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 1000);
+}
+// → 0, 1, 2
+
+// ✅ Fix with closure (pre-ES6)
+for (var i = 0; i < 3; i++) {
+  (function(j) {
+    setTimeout(() => console.log(j), 1000);
+  })(i);
+}
+// → 0, 1, 2
+```
+
+## The Old "var"
+
+Before ES6, `var` was the only way to declare variables. It's still used in older code.
+
+### var has no block scope
+
+```js
+if (true) {
+  var x = 10;
+  let y = 20;
+}
+
+console.log(x); // → 10 (var ignores blocks)
+// console.log(y); // ReferenceError!
+```
+
+### var hoisting
+
+```js
+console.log(z); // → undefined (not an error!)
+var z = 5;
+
+// Same as:
+// var z;
+// console.log(z);
+// z = 5;
+```
+
+### var in loops
+
+```js
+for (var i = 0; i < 5; i++) {
+  // i is visible outside the loop!
+}
+console.log(i); // → 5
+```
+
+### IIFE pattern with var
+
+Before modules, IIFEs were used to create private scopes:
+
+```js
+(function() {
+  var privateVar = "secret";
+  // Can't access from outside
+})();
+```
+
+> **Modern rule:** Use `let` and `const`. Never use `var` in new code.
+
+## Global Object
+
+In browsers, the global object is `window`. In Node.js, it's `global`. The modern standard is `globalThis`.
+
+```js
+// Browser
+console.log(window); // Global object
+console.log(globalThis); // Works everywhere
+
+// Variables declared with var become global properties
+var x = 10;
+console.log(window.x); // → 10 (var only)
+
+// let/const do NOT become global properties
+let y = 20;
+console.log(window.y); // → undefined
+
+// Global functions
+window.alert("Hello!");
+console.log(globalThis.parseInt === parseInt); // → true
+```
+
+## Function Object, NFE
+
+Functions are objects — they have properties and methods:
+
+```js
+function greet(name) {
+  return "Hello, " + name;
+}
+
+// Functions have properties
+console.log(greet.name); // → "greet"
+console.log(greet.length); // → 1 (number of parameters)
+
+// You can add custom properties
+greet.counter = 0;
+greet.counter++;
+console.log(greet.counter); // → 1
+```
+
+### Named Function Expression (NFE)
+
+```js
+// Anonymous function expression
+let sayHi = function(name) {
+  if (name) return "Hi, " + name;
+};
+
+// Named function expression — has a name for internal reference
+let sayHi = function greeting(name) {
+  if (name) return "Hi, " + name;
+  // return greeting("Guest"); // Can reference itself
+};
+
+console.log(sayHi.name); // → "greeting"
+```
+
+## The "new Function" Syntax
+
+Create a function from a string at runtime:
+
+```js
+let sum = new Function("a", "b", "return a + b");
+console.log(sum(2, 3)); // → 5
+
+// No parameters
+let sayHi = new Function('console.log("Hello")');
+sayHi(); // → "Hello"
+```
+
+> **Security note:** `new Function` is rarely used and can be dangerous if the string comes from user input (code injection risk).
+
+## Scheduling: setTimeout and setInterval
+
+### setTimeout
+
+Run a function once after a delay:
+
+```js
+function greet() {
+  console.log("Hello!");
+}
+
+// Run after 2 seconds
+setTimeout(greet, 2000);
+
+// With arguments
+setTimeout((name) => console.log("Hello, " + name), 1000, "Alice");
+
+// Cancel a timeout
+let timeoutId = setTimeout(() => console.log("Never runs"), 3000);
+clearTimeout(timeoutId);
+```
+
+### setInterval
+
+Run a function repeatedly at intervals:
+
+```js
+let count = 0;
+let intervalId = setInterval(() => {
+  count++;
+  console.log("Tick " + count);
+  if (count >= 5) clearInterval(intervalId);
+}, 1000);
+// → "Tick 1", "Tick 2", ... "Tick 5"
+```
+
+### Recursive setTimeout vs setInterval
+
+```js
+// setInterval — fixed interval, doesn't wait for execution
+let id = setInterval(() => {
+  console.log("Running...");
+}, 1000);
+
+// Recursive setTimeout — waits for execution to finish
+function recursiveTimeout() {
+  console.log("Running...");
+  setTimeout(recursiveTimeout, 1000);
+}
+
+// Recursive setTimeout guarantees the delay between completions
+```
+
+### Zero Delay setTimeout
+
+```js
+setTimeout(() => console.log("World"), 0);
+console.log("Hello");
+// → "Hello" then "World"
+
+// Even with 0ms delay, it runs after current code finishes
+// (scheduled on the macrotask queue)
+```
+
+<CodePlayground
+  title="Timers Demo"
+  html="<div id='timer'></div>"
+  js="let count = 0;
+let el = document.getElementById('timer');
+
+let intervalId = setInterval(() => {
+  count++;
+  el.textContent = 'Count: ' + count;
+  if (count >= 10) {
+    clearInterval(intervalId);
+    el.textContent = 'Done!';
+  }
+}, 500);"
+/>
+
+## Decorators and Forwarding, call/apply
+
+### Decorator — a function that wraps another function
+
+```js
+function slow(x) {
+  // Heavy computation
+  let result = 0;
+  for (let i = 0; i < x * 1e7; i++) result += i;
+  return result;
+}
+
+// Caching decorator
+function caching(fn) {
+  let cache = new Map();
+
+  return function(x) {
+    if (cache.has(x)) {
+      console.log("From cache: " + x);
+      return cache.get(x);
+    }
+
+    let result = fn(x);
+    cache.set(x, result);
+    return result;
+  };
+}
+
+let cachedSlow = caching(slow);
+console.log(cachedSlow(5)); // Computed
+console.log(cachedSlow(5)); // From cache
+```
+
+### Function.call
+
+Call a function with a specific `this`:
+
+```js
+function greet() {
+  console.log("Hello, " + this.name);
+}
+
+let user1 = { name: "Alice" };
+let user2 = { name: "Bob" };
+
+greet.call(user1); // → "Hello, Alice"
+greet.call(user2); // → "Hello, Bob"
+
+// With arguments
+function introduce(greeting, punctuation) {
+  console.log(greeting + ", " + this.name + punctuation);
+}
+
+introduce.call(user1, "Hi", "!"); // → "Hi, Alice!"
+```
+
+### Function.apply
+
+Same as call but arguments are passed as an array:
+
+```js
+introduce.apply(user1, ["Hello", "."]); // → "Hello, Alice."
+
+// Useful for spreading arrays
+let numbers = [3, 5, 1, 8, 2];
+console.log(Math.max.apply(null, numbers)); // → 8 (Math.max doesn't use this)
+```
+
+### Borrowing methods
+
+```js
+let obj = {
+  0: "hello",
+  1: "world",
+  length: 2
+};
+
+// Borrow Array.prototype.join
+let result = Array.prototype.join.call(obj, ", ");
+console.log(result); // → "hello, world"
+```
+
+## Function Binding
+
+When passing an object method as a callback, `this` is lost:
+
+```js
+let user = {
+  name: "Alice",
+  greet() {
+    console.log("Hello, " + this.name);
+  }
+};
+
+// Direct call works
+user.greet(); // → "Hello, Alice"
+
+// Passed as callback — this is lost
+setTimeout(user.greet, 1000); // → "Hello, undefined"
+```
+
+### Solution 1: Wrapper
+
+```js
+setTimeout(() => user.greet(), 1000); // → "Hello, Alice"
+```
+
+### Solution 2: Function.bind
+
+```js
+let boundGreet = user.greet.bind(user);
+boundGreet(); // → "Hello, Alice"
+setTimeout(boundGreet, 1000); // → "Hello, Alice"
+
+// bind with arguments (partial application)
+function multiply(a, b) {
+  return a * b;
+}
+
+let double = multiply.bind(null, 2); // Pre-fill first argument
+console.log(double(5)); // → 10
+```
+
+### Partial application
+
+```js
+function log(level, message) {
+  console.log(`[${level}] ${message}`);
+}
+
+let info = log.bind(null, "INFO");
+let error = log.bind(null, "ERROR");
+
+info("System started"); // → "[INFO] System started"
+error("Something broke"); // → "[ERROR] Something broke"
+```
+
+## Arrow Functions Revisited
+
+Arrow functions are not just shorter syntax — they have fundamental differences:
+
+### No "this"
+
+```js
+let user = {
+  name: "Alice",
+  greet() {
+    // Regular function — has own this
+    setTimeout(function() {
+      console.log("Hello, " + this.name); // this is window/undefined
+    }, 100);
+  },
+
+  greetArrow() {
+    // Arrow — inherits this from surrounding scope
+    setTimeout(() => {
+      console.log("Hello, " + this.name); // this is user
+    }, 100);
+  }
+};
+
+user.greet();       // → "Hello, undefined"
+user.greetArrow();  // → "Hello, Alice"
+```
+
+### No "arguments"
+
+```js
+function regular() {
+  console.log(arguments); // → [1, 2, 3]
+}
+
+let arrow = () => {
+  console.log(arguments); // ReferenceError (or inherits from parent)
+};
+
+regular(1, 2, 3);
+```
+
+### Can't be used with "new"
+
+```js
+let Foo = () => {};
+// new Foo(); // TypeError: Foo is not a constructor
+```
+
+### When to use arrows vs regular
+
+| Scenario | Use |
+|---|---|
+| Short callbacks, array methods | Arrow |
+| Object methods that need `this` | Regular |
+| Constructor functions | Regular |
+| Need `arguments` object | Regular |
+| Event handlers (need `this` = element) | Regular |
+
+<CodePlayground
+  title="Arrow vs Regular Demo"
+  html=""
+  js="let numbers = [1, 2, 3, 4, 5, 6];
+
+// Arrow functions shine in callbacks
+let evens = numbers.filter(n => n % 2 === 0);
+let squares = numbers.map(n => n * n);
+let sum = numbers.reduce((acc, n) => acc + n, 0);
+
+document.write('Evens: ' + evens.join(', ') + '<br>');
+document.write('Squares: ' + squares.join(', ') + '<br>');
+document.write('Sum: ' + sum + '<br>');
+
+// Arrow with this inheritance (demonstration)
+let timer = {
+  seconds: 0,
+  start() {
+    setInterval(() => {
+      this.seconds++;
+    }, 1000);
+  },
+  getTime() {
+    return this.seconds;
+  }
+};
+
+timer.start();"
+/>

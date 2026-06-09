@@ -1,0 +1,367 @@
+---
+title: "JavaScript Fundamentals"
+description: "Master the basics: Hello World, code structure, variables, data types, and type conversions"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Programming", "Basics"]
+slug: "javascript-fundamentals"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# JavaScript Fundamentals
+
+This chapter covers the core building blocks of the JavaScript language. Master these and you'll have a solid foundation.
+
+## Hello, World!
+
+The traditional first program:
+
+```js
+console.log("Hello, World!");
+// → Hello, World!
+```
+
+In a browser, you can also write directly to the page:
+
+<CodePlayground
+  title="Hello World in Browser"
+  html=""
+  js="document.write('<h2>Hello, World!</h2>');
+document.write('<p>Welcome to JavaScript!</p>');"
+/>
+
+Or create an alert:
+
+<CodePlayground
+  title="Alert"
+  html="<button onclick='alert('Hello!')'>Click me</button>"
+/>
+
+## Code Structure
+
+### Statements
+
+A **statement** is a single instruction. Statements are separated by a semicolon:
+
+```js
+alert("Hello");
+alert("World");
+```
+
+Semicolons are **optional** in most cases — JavaScript automatically inserts them (ASI — Automatic Semicolon Insertion):
+
+```js
+alert("Hello")
+alert("World")
+```
+
+But be careful — ASI doesn't always work as expected:
+
+```js
+// This works fine
+let x = 5
+let y = 10
+
+// But this breaks
+let a = 5
+[1, 2, 3].forEach(console.log)
+```
+
+> **Rule of thumb:** Use semicolons explicitly. It's safer and clearer.
+
+### Comments
+
+Comments are ignored by the engine. Use them to explain your code:
+
+```js
+// Single-line comment
+
+/*
+  Multi-line
+  comment
+*/
+
+/**
+ * JSDoc comment — describes functions
+ * @param {string} name
+ */
+function greet(name) {
+  // ...
+}
+```
+
+## The Modern Mode, "use strict"
+
+For a long time, JavaScript evolved without backward compatibility issues. New features were added without breaking old code. But this meant some old mistakes remained.
+
+The `"use strict"` directive fixes this by enabling a **strict mode** that catches common errors:
+
+```js
+"use strict";
+
+// Now this throws an error:
+// (without strict mode, it silently creates a global variable)
+x = 3.14;
+// → ReferenceError: x is not defined
+```
+
+### Key differences in strict mode:
+
+```js
+"use strict";
+
+// 1. No undeclared variables
+x = 5; // Error!
+
+// 2. No deleting variables, functions, or arguments
+let y = 10;
+delete y; // Error!
+
+// 3. Duplicate parameter names not allowed
+function sum(a, a, c) {} // Error!
+
+// 4. "this" is undefined in regular functions
+function show() {
+  console.log(this); // undefined (in non-strict: global object)
+}
+show();
+
+// 5. No octal literals
+let z = 010; // Error!
+```
+
+### How to use it
+
+Place `"use strict"` at the top of your script or function:
+
+```js
+"use strict"; // Top of file — applies to all code
+
+function myFunc() {
+  "use strict"; // Or just inside a function
+}
+```
+
+> **Note:** ES6 modules are automatically in strict mode. Classes are also strict by default.
+
+## Variables
+
+Variables store data. In JavaScript, we have three ways to declare them:
+
+### `let`
+
+Modern variable declaration. Block-scoped and can be reassigned:
+
+```js
+let message = "Hello";
+message = "World"; // Reassigning is fine
+console.log(message); // → World
+```
+
+### `const`
+
+Declares a constant — cannot be reassigned:
+
+```js
+const PI = 3.14159;
+PI = 3; // TypeError: Assignment to constant variable
+```
+
+> `const` does NOT make the value immutable — only the binding. For objects:
+
+```js
+const user = { name: "Alice" };
+user.name = "Bob"; // This is fine — the object itself changed
+// user = { name: "Charlie" }; // Error — can't reassign
+```
+
+### `var`
+
+The old way (pre-ES6). Function-scoped, not block-scoped. Avoid in modern code:
+
+```js
+var age = 30;
+age = 31; // Can be reassigned
+
+if (true) {
+  var x = 10; // var leaks out of blocks!
+}
+console.log(x); // → 10 (no error!)
+```
+
+| Feature | `let` | `const` | `var` |
+|---|---|---|---|
+| Scope | Block | Block | Function |
+| Reassignable | Yes | No | Yes |
+| Hoisting | Yes (TDZ) | Yes (TDZ) | Yes |
+| Redeclare | No | No | Yes |
+
+### Variable naming rules
+
+- Must start with a letter, `_`, or `$`
+- Can contain letters, digits, `_`, `$`
+- Case-sensitive (`myVar` ≠ `myvar`)
+- Cannot use reserved words (`if`, `for`, `class`, etc.)
+
+```js
+let userName = "Alice";    // camelCase — standard convention
+let _private = "secret";   // Leading underscore for "private"
+let $element = "button";   // jQuery-like convention
+let myVariable123 = "ok";  // Digits allowed (not at start)
+// let 123abc = "no";      // Error — starts with digit
+// let let = "no";         // Error — reserved word
+```
+
+## Data Types
+
+JavaScript has 8 data types. 7 are **primitive**, 1 is **non-primitive** (Object).
+
+### Primitive Types
+
+```js
+// 1. Number
+let age = 25;
+let price = 19.99;
+let infinity = Infinity;
+let notANumber = NaN;
+
+// 2. String
+let name = "Alice";
+let greeting = 'Hello';
+let template = `Hi, ${name}!`; // Template literal
+
+// 3. Boolean
+let isActive = true;
+let isComplete = false;
+
+// 4. Undefined — variable declared but no value assigned
+let nothing;
+console.log(nothing); // → undefined
+
+// 5. Null — intentional absence of value
+let empty = null;
+
+// 6. Symbol — unique identifier (ES6)
+let id = Symbol("id");
+
+// 7. BigInt — for very large integers (ES2020)
+let bigNumber = 9007199254740991n;
+```
+
+### typeof operator
+
+Check the type of a value:
+
+```js
+typeof 42;         // → "number"
+typeof "hello";    // → "string"
+typeof true;       // → "boolean"
+typeof undefined;  // → "undefined"
+typeof null;       // → "object"  ← historical bug!
+typeof Symbol();   // → "symbol"
+typeof 42n;        // → "bigint"
+typeof {};         // → "object"
+typeof [];         // → "object"
+typeof function(){}; // → "function"
+```
+
+## Interaction: alert, prompt, confirm
+
+These are browser-specific functions for interacting with the user:
+
+<CodePlayground
+  title="User Interaction"
+  js="let name = prompt('What is your name?', 'Guest');
+let confirmed = confirm('Are you sure?');
+document.write('<p>Hello, ' + name + '!</p>');
+document.write('<p>Confirmed: ' + confirmed + '</p>');"
+  html=""
+/>
+
+```js
+alert("Hello!");           // Shows a message
+let name = prompt("Name?"); // Asks for input (returns string or null)
+let ok = confirm("Sure?");  // Asks yes/no (returns boolean)
+```
+
+> **Note:** In Node.js, `alert`, `prompt`, and `confirm` don't exist. They are browser APIs.
+
+## Type Conversions
+
+JavaScript automatically converts types when needed. You can also convert explicitly.
+
+### String Conversion
+
+```js
+// Explicit
+String(123);       // → "123"
+String(true);      // → "true"
+String(null);      // → "null"
+String(undefined); // → "undefined"
+
+// Implicit — happens with + when a string is involved
+let value = 123 + ""; // → "123"
+```
+
+### Number Conversion
+
+```js
+// Explicit
+Number("123");      // → 123
+Number("12.5");     // → 12.5
+Number("abc");      // → NaN
+Number(true);       // → 1
+Number(false);      // → 0
+Number(null);       // → 0
+Number(undefined);  // → NaN
+
+// Unary + operator (shorthand)
+let str = "42";
+let num = +str;     // → 42
+
+// parseInt / parseFloat — more forgiving
+parseInt("100px");  // → 100
+parseFloat("3.14em"); // → 3.14
+```
+
+### Boolean Conversion
+
+```js
+// Explicit
+Boolean(1);         // → true
+Boolean(0);         // → false
+Boolean("hello");   // → true
+Boolean("");        // → false
+Boolean(null);      // → false
+Boolean(undefined); // → false
+Boolean(NaN);       // → false
+
+// Double NOT (shorthand)
+!!"hello";          // → true
+!!0;                // → false
+```
+
+### Falsy values (convert to false):
+
+| Value | Boolean |
+|---|---|
+| `0` | `false` |
+| `""` (empty string) | `false` |
+| `null` | `false` |
+| `undefined` | `false` |
+| `NaN` | `false` |
+| `false` | `false` |
+
+Everything else is truthy.
+
+```js
+console.log('String conversions:');
+console.log(String(123) + ' (type: ' + typeof String(123) + ')');
+console.log('Number conversions:');
+console.log(Number('42') + ' (type: ' + typeof Number('42') + ')');
+console.log('Boolean conversions:');
+console.log(Boolean(1) + ', ' + Boolean(0));
+console.log('Parsing:');
+console.log(parseInt('100px') + ', ' + parseFloat('3.14em'));
+```

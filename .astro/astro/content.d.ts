@@ -901,6 +901,125 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"programming/js/advanced-data-types.mdx": {
+	id: "programming/js/advanced-data-types.mdx";
+  slug: "javascript-advanced-data-types";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/advanced-functions.mdx": {
+	id: "programming/js/advanced-functions.mdx";
+  slug: "javascript-advanced-functions";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/classes.mdx": {
+	id: "programming/js/classes.mdx";
+  slug: "javascript-classes";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/code-quality.mdx": {
+	id: "programming/js/code-quality.mdx";
+  slug: "javascript-code-quality";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/data-types.mdx": {
+	id: "programming/js/data-types.mdx";
+  slug: "javascript-data-types";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/error-handling.mdx": {
+	id: "programming/js/error-handling.mdx";
+  slug: "javascript-error-handling";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/functions.mdx": {
+	id: "programming/js/functions.mdx";
+  slug: "javascript-functions";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/fundamentals.mdx": {
+	id: "programming/js/fundamentals.mdx";
+  slug: "javascript-fundamentals";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/generators.mdx": {
+	id: "programming/js/generators.mdx";
+  slug: "javascript-generators";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/introduction.mdx": {
+	id: "programming/js/introduction.mdx";
+  slug: "introduction-to-javascript";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/misc.mdx": {
+	id: "programming/js/misc.mdx";
+  slug: "javascript-miscellaneous";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/modules.mdx": {
+	id: "programming/js/modules.mdx";
+  slug: "javascript-modules";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/object-properties.mdx": {
+	id: "programming/js/object-properties.mdx";
+  slug: "javascript-object-properties";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/objects.mdx": {
+	id: "programming/js/objects.mdx";
+  slug: "javascript-objects";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/operators.mdx": {
+	id: "programming/js/operators.mdx";
+  slug: "javascript-operators-loops";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/promises.mdx": {
+	id: "programming/js/promises.mdx";
+  slug: "javascript-promises-async";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"programming/js/prototypes.mdx": {
+	id: "programming/js/prototypes.mdx";
+  slug: "javascript-prototypes";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "web/frontend/css/adding-css.mdx": {
 	id: "web/frontend/css/adding-css.mdx";
   slug: "css-adding-css";

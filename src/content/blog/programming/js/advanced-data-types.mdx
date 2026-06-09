@@ -1,0 +1,677 @@
+---
+title: "Advanced Data Types"
+description: "Learn about iterables, Map, Set, WeakMap, WeakSet, destructuring, Date, and JSON"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Iterables", "Map", "Set", "Destructuring", "Date", "JSON"]
+slug: "javascript-advanced-data-types"
+author: "Abhishek Sharma"
+order: 8
+---
+
+# Advanced Data Types
+
+## Iterables
+
+**Iterables** are objects that can be iterated over with `for...of`. Built-in iterables include arrays, strings, Map, Set, and more.
+
+```js
+for (let char of "hello") {
+  console.log(char); // → "h", "e", "l", "l", "o"
+}
+
+for (let num of [1, 2, 3]) {
+  console.log(num); // → 1, 2, 3
+}
+```
+
+### Making an object iterable (Symbol.iterator)
+
+```js
+let range = {
+  from: 1,
+  to: 5,
+
+  [Symbol.iterator]() {
+    this.current = this.from;
+    return {
+      next: () => {
+        if (this.current <= this.to) {
+          return { value: this.current++, done: false };
+        }
+        return { done: true };
+      }
+    };
+  }
+};
+
+for (let num of range) {
+  console.log(num); // → 1, 2, 3, 4, 5
+}
+
+// Spread also works
+console.log([...range]); // → [1, 2, 3, 4, 5]
+```
+
+### Explicit Iteration
+
+```js
+let arr = [10, 20, 30];
+let iterator = arr[Symbol.iterator]();
+
+console.log(iterator.next()); // → { value: 10, done: false }
+console.log(iterator.next()); // → { value: 20, done: false }
+console.log(iterator.next()); // → { value: 30, done: false }
+console.log(iterator.next()); // → { value: undefined, done: true }
+```
+
+### String is Iterable
+
+```js
+for (let char of "hi 🌍") {
+  console.log(char); // → "h", "i", " ", "🌍"
+}
+// Works with emojis (UTF-16 surrogate pairs) correctly!
+```
+
+### Array.from
+
+Creates an array from any iterable or array-like:
+
+```js
+Array.from("hello");    // → ["h", "e", "l", "l", "o"]
+Array.from(new Set([1, 2, 3])); // → [1, 2, 3]
+
+// With mapping function
+Array.from("hello", c => c.toUpperCase()); // → ["H", "E", "L", "L", "O"]
+
+// From array-like (has length, indexed)
+Array.from({ length: 5 }, (_, i) => i * 2); // → [0, 2, 4, 6, 8]
+```
+
+## Map and Set
+
+### Map
+
+A `Map` is a key-value collection where keys can be ANY type (not just strings):
+
+```js
+let map = new Map();
+
+map.set("name", "Alice");    // String key
+map.set(42, "answer");       // Number key
+map.set(true, "yes");        // Boolean key
+map.set({ id: 1 }, "user");  // Object key
+
+map.get("name");  // → "Alice"
+map.get(42);      // → "answer"
+map.get(true);    // → "yes"
+map.has(42);      // → true
+map.delete(42);   // → true
+map.size;         // → 3
+map.clear();      // Empty the map
+```
+
+### Map vs Object
+
+| Feature | Object | Map |
+|---|---|---|
+| Key type | String or Symbol | Any type |
+| Key order | Integer keys sorted, others insertion order | Insertion order |
+| Size | Manual counting | `.size` property |
+| Iteration | `for...in`, `Object.keys()` | `for...of`, `.forEach()` |
+| Performance | Optimized for few keys | Optimized for frequent additions/removals |
+
+### Iterating Map
+
+```js
+let map = new Map([
+  ["name", "Alice"],
+  ["age", 30],
+  ["city", "New York"]
+]);
+
+// Keys
+for (let key of map.keys()) {
+  console.log(key); // → "name", "age", "city"
+}
+
+// Values
+for (let value of map.values()) {
+  console.log(value); // → "Alice", 30, "New York"
+}
+
+// Entries
+for (let [key, value] of map) {
+  console.log(`${key}: ${value}`);
+}
+
+// forEach
+map.forEach((value, key) => console.log(`${key}: ${value}`));
+```
+
+### Creating Map from Object
+
+```js
+let obj = { name: "Alice", age: 30 };
+let map = new Map(Object.entries(obj));
+console.log(map.get("name")); // → "Alice"
+
+// Back to object
+let obj2 = Object.fromEntries(map);
+```
+
+### Set
+
+A `Set` stores **unique values** of any type:
+
+```js
+let set = new Set();
+
+set.add(1);
+set.add(2);
+set.add(3);
+set.add(2); // Duplicate — ignored!
+set.add(1); // Duplicate — ignored!
+
+set.size; // → 3
+set.has(2); // → true
+set.delete(2);
+set.has(2); // → false
+```
+
+### Iterating Set
+
+```js
+let set = new Set(["apple", "banana", "orange"]);
+
+for (let value of set) {
+  console.log(value);
+}
+
+set.forEach(value => console.log(value));
+
+console.log([...set]); // → ["apple", "banana", "orange"]
+```
+
+### Practical Set Usage
+
+```js
+// Remove duplicates from array
+let arr = [1, 2, 2, 3, 3, 3, 4];
+let unique = [...new Set(arr)]; // → [1, 2, 3, 4]
+
+// Set operations
+let a = new Set([1, 2, 3, 4]);
+let b = new Set([3, 4, 5, 6]);
+
+// Union
+let union = new Set([...a, ...b]); // → Set {1, 2, 3, 4, 5, 6}
+
+// Intersection
+let intersection = new Set([...a].filter(x => b.has(x))); // → Set {3, 4}
+
+// Difference
+let difference = new Set([...a].filter(x => !b.has(x))); // → Set {1, 2}
+```
+
+<CodePlayground
+  title="Map and Set Demo"
+  html=""
+  js="// Map with object keys
+let visits = new Map();
+let user1 = { name: 'Alice' };
+let user2 = { name: 'Bob' };
+
+visits.set(user1, new Date());
+visits.set(user2, new Date());
+
+document.write('Visits count: ' + visits.size + '<br>');
+document.write('Alice visited: ' + visits.get(user1) + '<br>');
+
+// Set — remove duplicates
+let numbers = [1, 2, 2, 3, 3, 3, 4, 5, 5];
+let unique = [...new Set(numbers)];
+document.write('Unique: ' + unique.join(', ') + '<br>');
+
+// Practical: word counting
+let text = 'the quick brown fox jumps over the lazy dog';
+let words = text.split(' ');
+let wordSet = new Set(words);
+document.write('Unique words: ' + wordSet.size + '<br>');
+document.write('Total words: ' + words.length + '<br>');"
+/>
+
+## WeakMap and WeakSet
+
+`WeakMap` and `WeakSet` are special collections where keys/values are **weakly referenced** — if an object has no other references, it gets garbage collected.
+
+### WeakMap
+
+Keys must be objects (not primitives). No iteration methods.
+
+```js
+let weakMap = new WeakMap();
+
+let obj = {};
+weakMap.set(obj, "some data");
+obj = null; // The entry is automatically removed from weakMap!
+
+// Use case: additional data for objects without leaking memory
+let visitsCount = new WeakMap();
+
+function countVisit(user) {
+  let count = visitsCount.get(user) || 0;
+  visitsCount.set(user, count + 1);
+}
+```
+
+### WeakSet
+
+Similar — objects only, no iteration:
+
+```js
+let weakSet = new WeakSet();
+
+let user1 = { name: "Alice" };
+let user2 = { name: "Bob" };
+
+weakSet.add(user1);
+weakSet.add(user2);
+
+weakSet.has(user1); // → true
+// When user1 is garbage collected, it's removed from weakSet
+```
+
+### Use Cases
+
+- Caching data tied to DOM elements
+- Tracking objects without preventing GC
+- Private data storage
+
+## Object.keys, values, entries
+
+These are methods for plain objects (not Map):
+
+```js
+let user = { name: "Alice", age: 30, city: "New York" };
+
+Object.keys(user);   // → ["name", "age", "city"]
+Object.values(user); // → ["Alice", 30, "New York"]
+Object.entries(user); // → [["name", "Alice"], ["age", 30], ["city", "New York"]]
+```
+
+### Loop with entries
+
+```js
+for (let [key, value] of Object.entries(user)) {
+  console.log(`${key}: ${value}`);
+}
+```
+
+### Transforming Objects
+
+```js
+let prices = { apple: 1.5, banana: 0.8, orange: 1.2 };
+
+// Double all prices
+let doubled = Object.fromEntries(
+  Object.entries(prices).map(([key, value]) => [key, value * 2])
+);
+// → { apple: 3, banana: 1.6, orange: 2.4 }
+
+// Filter — only items under $1
+let cheap = Object.fromEntries(
+  Object.entries(prices).filter(([key, value]) => value < 1)
+);
+// → { banana: 0.8 }
+```
+
+## Destructuring Assignment
+
+Extract values from arrays or objects into variables in one line.
+
+### Array Destructuring
+
+```js
+let arr = ["Alice", 30, "New York"];
+
+let [name, age, city] = arr;
+console.log(name); // → "Alice"
+console.log(age);  // → 30
+
+// Skip elements
+let [first, , third] = [1, 2, 3, 4, 5];
+console.log(first); // → 1
+console.log(third); // → 3
+
+// Rest pattern
+let [head, ...tail] = [1, 2, 3, 4];
+console.log(head); // → 1
+console.log(tail); // → [2, 3, 4]
+
+// Default values
+let [a = 0, b = 0] = [5];
+console.log(a); // → 5
+console.log(b); // → 0
+
+// Swapping variables
+let x = 10, y = 20;
+[x, y] = [y, x];
+console.log(x); // → 20
+console.log(y); // → 10
+```
+
+### Object Destructuring
+
+```js
+let user = { name: "Alice", age: 30, city: "New York" };
+
+let { name, age } = user;
+console.log(name); // → "Alice"
+console.log(age);  // → 30
+
+// Rename variables
+let { name: userName, age: userAge } = user;
+console.log(userName); // → "Alice"
+
+// Default values
+let { name, salary = 50000 } = user;
+console.log(salary); // → 50000
+
+// Rest
+let { name, ...rest } = user;
+console.log(rest); // → { age: 30, city: "New York" }
+
+// Nested destructuring
+let person = {
+  name: "Alice",
+  address: { city: "NYC", zip: 10001 }
+};
+
+let { address: { city, zip } } = person;
+console.log(city); // → "NYC"
+```
+
+### Function Parameter Destructuring
+
+```js
+function printUser({ name, age, city = "Unknown" }) {
+  console.log(`${name}, ${age}, ${city}`);
+}
+
+printUser({ name: "Alice", age: 30 });
+// → "Alice, 30, Unknown"
+
+// Array parameter
+function sum([a, b, ...rest]) {
+  return a + b + rest.reduce((s, n) => s + n, 0);
+}
+
+sum([1, 2, 3, 4, 5]); // → 15
+```
+
+<CodePlayground
+  title="Destructuring Demo"
+  html=""
+  js="// Array destructuring
+let colors = ['red', 'green', 'blue', 'yellow'];
+let [primary, secondary, ...others] = colors;
+
+document.write('Primary: ' + primary + '<br>');
+document.write('Secondary: ' + secondary + '<br>');
+document.write('Others: ' + others.join(', ') + '<br>');
+
+// Object destructuring
+let user = { name: 'Alice', age: 30, email: 'alice@example.com' };
+let { name, email } = user;
+
+document.write('<br>Name: ' + name + '<br>');
+document.write('Email: ' + email + '<br>');
+
+// Practical: function with options object
+function createUser({ name, age = 18, role = 'user' }) {
+  return { name, age, role };
+}
+
+let alice = createUser({ name: 'Alice', age: 25 });
+document.write('<br>Created user:<br>');
+for (let [key, val] of Object.entries(alice)) {
+  document.write(key + ': ' + val + '<br>');
+}"
+/>
+
+## Date and Time
+
+JavaScript's `Date` object handles dates and times.
+
+### Creating Dates
+
+```js
+// Current date/time
+let now = new Date();
+console.log(now); // → "Tue Jun 09 2026 12:00:00 GMT+..."
+
+// From timestamp (milliseconds since Jan 1, 1970 UTC)
+let epoch = new Date(0);
+console.log(epoch); // → "Thu Jan 01 1970 01:00:00 GMT+..."
+
+// From string
+let date = new Date("2026-06-09");
+let date2 = new Date("2026-06-09T10:30:00");
+
+// From components (month is 0-based!)
+let date3 = new Date(2026, 5, 9, 10, 30, 0); // June 9, 2026, 10:30:00
+```
+
+### Getting Date Components
+
+```js
+let date = new Date(2026, 5, 9, 10, 30, 45);
+
+date.getFullYear();   // → 2026
+date.getMonth();      // → 5 (0-based! 0=Jan, 5=Jun)
+date.getDate();       // → 9 (day of month)
+date.getDay();        // → 2 (0=Sun, 1=Mon, 2=Tue)
+date.getHours();      // → 10
+date.getMinutes();    // → 30
+date.getSeconds();    // → 45
+date.getMilliseconds(); // → 0
+date.getTime();       // → timestamp in ms
+
+// UTC versions
+date.getUTCFullYear();
+date.getUTCMonth();
+// etc.
+```
+
+### Setting Date Components
+
+```js
+let date = new Date();
+
+date.setFullYear(2027);
+date.setMonth(0);     // January
+date.setDate(15);
+date.setHours(12);
+date.setMinutes(0);
+date.setSeconds(0);
+```
+
+### Date Math
+
+```js
+let start = new Date(2026, 5, 1);
+let end = new Date(2026, 5, 15);
+
+let diffMs = end - start;        // Difference in milliseconds
+let diffDays = diffMs / (1000 * 60 * 60 * 24); // → 14
+
+// Add days
+let future = new Date();
+future.setDate(future.getDate() + 7); // +7 days
+```
+
+### Formatting
+
+```js
+let date = new Date();
+
+date.toString();       // → "Tue Jun 09 2026 12:00:00 GMT+..."
+date.toDateString();   // → "Tue Jun 09 2026"
+date.toTimeString();   // → "12:00:00 GMT+..."
+date.toISOString();    // → "2026-06-09T10:30:00.000Z"
+date.toLocaleDateString(); // → "6/9/2026"
+date.toLocaleTimeString(); // → "12:00:00 PM"
+
+// Custom formatting with options
+date.toLocaleDateString("en-US", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric"
+}); // → "Tuesday, June 9, 2026"
+```
+
+### Date.now()
+
+```js
+let timestamp = Date.now(); // Current time in ms — faster than new Date().getTime()
+```
+
+## JSON Methods, toJSON
+
+JSON (JavaScript Object Notation) is a lightweight data format.
+
+### JSON.stringify
+
+Converts a JavaScript value to a JSON string:
+
+```js
+let user = {
+  name: "Alice",
+  age: 30,
+  isAdmin: false,
+  courses: ["JS", "HTML"],
+  address: null
+};
+
+let json = JSON.stringify(user);
+console.log(json);
+// → {"name":"Alice","age":30,"isAdmin":false,"courses":["JS","HTML"],"address":null}
+```
+
+### What JSON.stringify handles
+
+```js
+JSON.stringify(1);          // → "1"
+JSON.stringify("hello");    // → "\"hello\""
+JSON.stringify(true);       // → "true"
+JSON.stringify(null);       // → "null"
+JSON.stringify([1, 2, 3]); // → "[1,2,3]"
+JSON.stringify({ a: 1 });  // → "{\"a\":1}"
+```
+
+### What it skips
+
+```js
+JSON.stringify(undefined);  // → undefined (not string)
+JSON.stringify(Symbol());   // → undefined
+JSON.stringify(function(){}); // → undefined
+
+let obj = {
+  a: 1,
+  b: undefined,  // Skipped
+  c: Symbol(),   // Skipped
+  d: function(){} // Skipped
+};
+// → "{\"a\":1}"
+```
+
+### Replacer — custom filtering
+
+```js
+let user = { name: "Alice", age: 30, password: "secret" };
+
+// Array of keys to include
+JSON.stringify(user, ["name", "age"]);
+// → "{\"name\":\"Alice\",\"age\":30}"
+
+// Function
+JSON.stringify(user, (key, value) => {
+  if (key === "password") return undefined; // Skip
+  return value;
+});
+```
+
+### JSON.parse
+
+Parses JSON string back to JavaScript:
+
+```js
+let str = '{"name":"Alice","age":30,"isAdmin":false}';
+let user = JSON.parse(str);
+
+console.log(user.name); // → "Alice"
+```
+
+### Reviver — transform values during parse
+
+```js
+let data = '{"name":"Alice","birth":"2026-06-09T10:30:00.000Z"}';
+
+let user = JSON.parse(data, (key, value) => {
+  if (key === "birth") return new Date(value);
+  return value;
+});
+
+console.log(user.birth); // → Date object
+
+// Now you can use date methods
+console.log(user.birth.getFullYear()); // → 2026
+```
+
+### toJSON
+
+Objects can define custom JSON serialization:
+
+```js
+let user = {
+  name: "Alice",
+  age: 30,
+  toJSON() {
+    return { name: this.name, age: this.age, type: "user" };
+  }
+};
+
+JSON.stringify(user);
+// → {"name":"Alice","age":30,"type":"user"}
+
+// Date has built-in toJSON
+let date = new Date();
+date.toJSON(); // → "2026-06-09T10:30:00.000Z"
+```
+
+<CodePlayground
+  title="JSON Demo"
+  html=""
+  js="let user = {
+  name: 'Alice',
+  age: 30,
+  skills: ['JS', 'Python', 'HTML']
+};
+
+// Convert to JSON string
+let json = JSON.stringify(user, null, 2);
+document.write('<pre>' + json + '</pre>');
+
+// Parse back
+let parsed = JSON.parse(json);
+document.write('<br>Parsed name: ' + parsed.name + '<br>');
+document.write('Parsed skills: ' + parsed.skills.join(', ') + '<br>');
+
+// Deep clone with JSON
+let clone = JSON.parse(JSON.stringify(user));
+clone.name = 'Bob';
+document.write('Original: ' + user.name + ', Clone: ' + clone.name + '<br>');"
+/>

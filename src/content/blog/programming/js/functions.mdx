@@ -1,0 +1,370 @@
+---
+title: "Functions"
+description: "Master JavaScript functions, function expressions, arrow functions, and key special behaviors"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Functions", "Arrow Functions"]
+slug: "javascript-functions"
+author: "Abhishek Sharma"
+order: 4
+---
+
+# Functions in JavaScript
+
+Functions are the building blocks of JavaScript. They allow you to encapsulate reusable code, create abstractions, and organize your programs.
+
+## Functions
+
+A function is a block of code designed to perform a specific task.
+
+### Function Declaration
+
+```js
+function greet(name) {
+  return "Hello, " + name + "!";
+}
+
+console.log(greet("Alice")); // → "Hello, Alice!"
+```
+
+### Parts of a Function
+
+```
+function   greet    (name)   { return "Hi"; }
+    ↑        ↑        ↑            ↑
+keyword    name   parameter      body
+```
+
+### Local Variables
+
+Variables declared inside a function are only visible within that function:
+
+```js
+function showMessage() {
+  let message = "Hello!";
+  console.log(message);
+}
+
+showMessage();    // → "Hello!"
+// console.log(message); // ReferenceError!
+```
+
+### Outer Variables
+
+Functions can access variables defined outside them:
+
+```js
+let userName = "Alice";
+
+function showMessage() {
+  console.log("Hello, " + userName); // Accesses outer variable
+}
+
+showMessage(); // → "Hello, Alice"
+```
+
+If a function declares a variable with the same name as an outer one, it **shadows** (takes precedence over) the outer one:
+
+```js
+let message = "Outer";
+
+function showMessage() {
+  let message = "Inner";
+  console.log(message); // → "Inner"
+}
+
+showMessage();
+console.log(message); // → "Outer"
+```
+
+### Parameters
+
+Functions can accept data through parameters:
+
+```js
+function sum(a, b) {
+  return a + b;
+}
+
+console.log(sum(3, 5)); // → 8
+```
+
+**Default parameters** (ES6):
+
+```js
+function greet(name = "Guest") {
+  return "Hello, " + name;
+}
+
+console.log(greet());      // → "Hello, Guest"
+console.log(greet("Bob")); // → "Hello, Bob"
+```
+
+### Return Values
+
+A function can return a value using `return`:
+
+```js
+function multiply(a, b) {
+  return a * b;
+}
+
+let result = multiply(4, 5); // result is 20
+```
+
+Without a `return`, the function returns `undefined`:
+
+```js
+function doNothing() {
+  // no return
+}
+console.log(doNothing()); // → undefined
+```
+
+`return` immediately exits the function:
+
+```js
+function checkAge(age) {
+  if (age < 18) {
+    return "Access denied";
+  }
+  return "Access granted";
+}
+```
+
+> **Note:** You can put a line break after `return`, but JS will insert a semicolon. Always put the value on the same line:
+> ```js
+> return    // JS inserts ; here → returns undefined
+>   "Hello";
+> ```
+
+### Function Naming
+
+Functions should describe their action. Common prefixes:
+
+```js
+getAge();        // returns a value
+createUser();    // creates something
+checkAccess();   // checks something and returns boolean
+showMessage();   // displays something
+updateProfile(); // modifies data
+isValid();       // boolean check
+```
+
+<CodePlayground
+  title="Function Demo"
+  html=""
+  js="function greet(name = 'World') {
+  return 'Hello, ' + name + '!';
+}
+
+function add(a, b) {
+  return a + b;
+}
+
+document.write(greet('Alice') + '<br>');
+document.write('2 + 3 = ' + add(2, 3) + '<br>');
+document.write(greet() + '<br>');"
+/>
+
+## Function Expressions
+
+A function can also be assigned to a variable:
+
+```js
+let greet = function(name) {
+  return "Hello, " + name;
+};
+
+console.log(greet("Alice")); // → "Hello, Alice"
+```
+
+This is a **function expression** — the function is created and assigned to `greet`.
+
+### Function Declarations vs Expressions
+
+| Feature | Declaration | Expression |
+|---|---|---|
+| Hoisted | Yes (can call before definition) | No |
+| Syntax | `function name() {}` | `let name = function() {}` |
+| Block scope | No (function-scoped) | Yes (variable-scoped) |
+
+```js
+// Declaration — works before definition
+sayHello(); // → "Hello!"
+function sayHello() {
+  console.log("Hello!");
+}
+
+// Expression — does NOT work before definition
+sayHi(); // TypeError: sayHi is not a function
+let sayHi = function() {
+  console.log("Hi!");
+};
+```
+
+### Callback Functions
+
+Functions passed as arguments to other functions:
+
+```js
+function ask(question, yes, no) {
+  if (confirm(question)) yes();
+  else no();
+}
+
+function showOk() { console.log("You agreed"); }
+function showCancel() { console.log("You canceled"); }
+
+ask("Do you agree?", showOk, showCancel);
+```
+
+This is the foundation of **callbacks** — a core pattern in JavaScript.
+
+## Arrow Functions, the Basics
+
+Arrow functions are a shorter syntax (ES6):
+
+```js
+// Regular function expression
+let sum = function(a, b) {
+  return a + b;
+};
+
+// Arrow function — same thing
+let sum = (a, b) => {
+  return a + b;
+};
+
+// Even shorter — single expression, implicit return
+let sum = (a, b) => a + b;
+```
+
+### Syntax Variations
+
+```js
+// No parameters
+let sayHi = () => console.log("Hi!");
+
+// One parameter (parentheses optional)
+let double = n => n * 2;
+
+// Multiple parameters (parentheses required)
+let add = (a, b) => a + b;
+
+// Multi-line body needs braces and explicit return
+let process = (a, b) => {
+  let result = a * b;
+  return result;
+};
+
+// Returning an object literal — wrap in parentheses
+let createUser = (name, age) => ({ name: name, age: age });
+```
+
+### When to use Arrow Functions
+
+- Short one-liners (great for callbacks)
+- When you don't need `this` binding (arrows have no own `this`)
+- As anonymous functions
+
+```js
+// Perfect for array methods
+let numbers = [1, 2, 3, 4, 5];
+let doubled = numbers.map(n => n * 2);
+let evens = numbers.filter(n => n % 2 === 0);
+
+console.log(doubled); // → [2, 4, 6, 8, 10]
+console.log(evens);   // → [2, 4]
+```
+
+<CodePlayground
+  title="Arrow Functions"
+  html=""
+  js="let numbers = [1, 2, 3, 4, 5, 6];
+
+let doubled = numbers.map(n => n * 2);
+let evens = numbers.filter(n => n % 2 === 0);
+let sum = numbers.reduce((total, n) => total + n, 0);
+
+document.write('Original: ' + numbers.join(', ') + '<br>');
+document.write('Doubled: ' + doubled.join(', ') + '<br>');
+document.write('Evens: ' + evens.join(', ') + '<br>');
+document.write('Sum: ' + sum + '<br>');"
+/>
+
+## JavaScript Specials
+
+A quick summary of important special behaviors:
+
+### Hoisting
+
+`var` declarations and function declarations are "hoisted" (moved to the top of their scope):
+
+```js
+console.log(x); // → undefined (not an error!)
+var x = 5;
+
+// The above is interpreted as:
+// var x;
+// console.log(x);
+// x = 5;
+```
+
+`let` and `const` are hoisted but in a "Temporal Dead Zone" (TDZ) — accessing them before declaration throws:
+
+```js
+console.log(y); // ReferenceError!
+let y = 5;
+```
+
+### Immediately Invoked Function Expressions (IIFE)
+
+A function that runs as soon as it's defined:
+
+```js
+(function() {
+  let message = "Hi!";
+  console.log(message);
+})(); // → "Hi!"
+
+// Arrow version
+(() => {
+  console.log("IIFE with arrow!");
+})();
+```
+
+Used for creating private scopes (before modules existed).
+
+### typeof quirks
+
+```js
+typeof null;  // → "object" — this is a known JS bug since 1995
+typeof function(){} // → "function" (not "object")
+```
+
+### Automatic Semicolon Insertion
+
+```js
+// This works:
+let x = 5
+let y = 10
+
+// But this fails:
+let a = 5
+[1, 2].forEach(console.log) // Treated as a[1,2] — error!
+
+// Best practice: always use semicolons
+```
+
+<CodePlayground
+  title="JavaScript Specials"
+  html=""
+  js="document.write('typeof null: ' + typeof null + '<br>');
+document.write('typeof []: ' + typeof [] + '<br>');
+document.write('typeof function: ' + typeof function(){} + '<br>');
+
+// NaN is the only value not equal to itself
+document.write('NaN === NaN: ' + (NaN === NaN) + '<br>');
+document.write('isNaN(NaN): ' + isNaN(NaN) + '<br>');"
+/>

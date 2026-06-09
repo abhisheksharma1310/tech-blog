@@ -1,0 +1,568 @@
+---
+title: "Miscellaneous JavaScript Topics"
+description: "Learn Proxy, Reflect, eval, currying, BigInt, Unicode, and more advanced JavaScript features"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Proxy", "BigInt", "Currying", "Unicode"]
+slug: "javascript-miscellaneous"
+author: "Abhishek Sharma"
+order: 17
+---
+
+# Miscellaneous
+
+## Proxy and Reflect
+
+### Proxy
+
+A **Proxy** wraps an object and lets you intercept operations on it:
+
+```js
+let target = { name: "Alice", age: 30 };
+
+let handler = {
+  get(obj, prop) {
+    console.log(`Getting ${prop}`);
+    return prop in obj ? obj[prop] : "Not found";
+  },
+  set(obj, prop, value) {
+    console.log(`Setting ${prop} = ${value}`);
+    obj[prop] = value;
+    return true;
+  }
+};
+
+let proxy = new Proxy(target, handler);
+
+console.log(proxy.name);  // → "Getting name" then "Alice"
+console.log(proxy.email); // → "Getting email" then "Not found"
+proxy.age = 31;           // → "Setting age = 31"
+```
+
+### Proxy Traps
+
+```js
+let handler = {
+  get(target, prop, receiver) {},          // Reading property
+  set(target, prop, value, receiver) {},   // Writing property
+  has(target, prop) {},                     // 'prop' in obj
+  deleteProperty(target, prop) {},          // delete obj.prop
+  ownKeys(target) {},                       // Object.keys/for...in
+  apply(target, thisArg, args) {},          // Function call
+  construct(target, args) {},              // new operator
+  getPrototypeOf(target) {},               // Object.getPrototypeOf
+  setPrototypeOf(target, proto) {},        // Object.setPrototypeOf
+  isExtensible(target) {},                 // Object.isExtensible
+  preventExtensions(target) {},            // Object.preventExtensions
+  defineProperty(target, prop, desc) {},   // Object.defineProperty
+  getOwnPropertyDescriptor(target, prop) {} // Object.getOwnPropertyDescriptor
+};
+```
+
+### Practical Proxy Examples
+
+```js
+// Validation with Proxy
+let user = {
+  name: "Alice",
+  age: 30
+};
+
+let validator = {
+  set(target, prop, value) {
+    if (prop === "age") {
+      if (!Number.isInteger(value)) {
+        throw new TypeError("Age must be an integer");
+      }
+      if (value < 0 || value > 150) {
+        throw new RangeError("Age must be 0-150");
+      }
+    }
+    if (prop === "name" && value.length < 2) {
+      throw new Error("Name must be at least 2 characters");
+    }
+    target[prop] = value;
+    return true;
+  }
+};
+
+let protectedUser = new Proxy(user, validator);
+protectedUser.age = 25; // ✅ OK
+// protectedUser.age = -5; // ❌ RangeError
+// protectedUser.name = "A"; // ❌ Error
+```
+
+```js
+// Property defaults with Proxy
+function withDefaults(defaults) {
+  return {
+    get(target, prop) {
+      if (prop in target) {
+        return target[prop];
+      }
+      return defaults[prop];
+    }
+  };
+}
+
+let config = { theme: "dark" };
+let configProxy = new Proxy(config, withDefaults({
+  theme: "light",
+  fontSize: 14,
+  lang: "en"
+}));
+
+console.log(configProxy.theme);   // → "dark" (own property)
+console.log(configProxy.fontSize); // → 14 (from defaults)
+console.log(configProxy.lang);    // → "en" (from defaults)
+```
+
+```js
+// Read-only view
+function readOnly(obj) {
+  return new Proxy(obj, {
+    set() { throw new Error("Read-only"); },
+    deleteProperty() { throw new Error("Read-only"); },
+    defineProperty() { throw new Error("Read-only"); }
+  });
+}
+
+let data = { secret: "1234" };
+let safeData = readOnly(data);
+// safeData.secret = "5678"; // Error: Read-only
+```
+
+### Reflect
+
+`Reflect` is a built-in object with methods that correspond to proxy traps:
+
+```js
+let obj = { name: "Alice", age: 30 };
+
+// Instead of:
+console.log(obj.name);           // Property access
+console.log("age" in obj);       // in operator
+delete obj.name;                 // delete
+
+// Use Reflect:
+console.log(Reflect.get(obj, "name"));    // → "Alice"
+console.log(Reflect.has(obj, "age"));     // → true
+Reflect.deleteProperty(obj, "name");
+```
+
+### Proxy + Reflect = Forwarding
+
+```js
+let target = { name: "Alice" };
+
+let proxy = new Proxy(target, {
+  get(target, prop, receiver) {
+    // Do something custom
+    console.log(`Accessed: ${prop}`);
+    // Forward to the target with proper receiver
+    return Reflect.get(target, prop, receiver);
+  },
+  set(target, prop, value, receiver) {
+    console.log(`Set: ${prop} = ${value}`);
+    return Reflect.set(target, prop, value, receiver);
+  }
+});
+
+proxy.name;    // → "Accessed: name" then "Alice"
+proxy.age = 5; // → "Set: age = 5"
+```
+
+## Eval: run a code string
+
+`eval()` executes a string as JavaScript code. **Avoid it unless absolutely necessary.**
+
+```js
+let x = 10;
+let y = 20;
+let code = "x + y";
+
+console.log(eval(code)); // → 30
+```
+
+### Why avoid eval?
+
+```js
+// 1. Security — code injection
+let userInput = "alert('Hacked!')";
+// eval(userInput); // DANGEROUS
+
+// 2. Performance — can't be optimized by JS engines
+// 3. Debugging — harder to trace
+// 4. Scope — can access/modify local variables
+```
+
+### Alternatives to eval
+
+```js
+// Instead of eval for parsing JSON:
+// ❌ eval('(' + jsonString + ')')
+// ✅ JSON.parse(jsonString)
+
+// Instead of eval for dynamic property access:
+// ❌ eval('obj.' + propName)
+// ✅ obj[propName]
+
+// Instead of eval for dynamic function creation:
+// ❌ eval('function sum(a, b) { return a + b; }')
+// ✅ new Function('a', 'b', 'return a + b')
+```
+
+## Currying
+
+**Currying** transforms a function that takes multiple arguments into a series of functions that each take one argument.
+
+```js
+// Normal function
+function add(a, b, c) {
+  return a + b + c;
+}
+console.log(add(1, 2, 3)); // → 6
+
+// Curried version
+function curriedAdd(a) {
+  return function(b) {
+    return function(c) {
+      return a + b + c;
+    };
+  };
+}
+console.log(curriedAdd(1)(2)(3)); // → 6
+```
+
+### Currying with Arrow Functions
+
+```js
+let add = a => b => c => a + b + c;
+console.log(add(1)(2)(3)); // → 6
+```
+
+### Why Currying?
+
+```js
+// Partial application — pre-fill arguments
+let addFive = add(5); // Fix first argument
+console.log(addFive(10)(20)); // → 35 (5 + 10 + 20)
+
+// Useful for configuration
+function createLogger(level) {
+  return function(message) {
+    console.log(`[${level}] ${message}`);
+  };
+}
+
+let info = createLogger("INFO");
+let error = createLogger("ERROR");
+
+info("System started"); // → "[INFO] System started"
+error("Failed!");       // → "[ERROR] Failed!"
+```
+
+### Generic Currying Function
+
+```js
+function curry(fn) {
+  return function curried(...args) {
+    if (args.length >= fn.length) {
+      return fn.apply(this, args);
+    } else {
+      return function(...args2) {
+        return curried.apply(this, args.concat(args2));
+      };
+    }
+  };
+}
+
+function sum(a, b, c) {
+  return a + b + c;
+}
+
+let curriedSum = curry(sum);
+
+console.log(curriedSum(1, 2, 3)); // → 6
+console.log(curriedSum(1)(2, 3)); // → 6
+console.log(curriedSum(1)(2)(3)); // → 6
+```
+
+## Reference Type
+
+The **Reference Type** is an internal JavaScript mechanism that explains how method calls lose their `this`.
+
+```js
+let user = {
+  name: "Alice",
+  greet() {
+    console.log("Hello, " + this.name);
+  }
+};
+
+// Direct call — user.greet has the reference type (user, greet)
+user.greet(); // → "Hello, Alice"
+
+// Assigned — loses the reference type
+let fn = user.greet;
+fn(); // → "Hello, undefined" (this lost)
+```
+
+### Why this happens
+
+`obj.method()` passes **two** pieces of information:
+1. The object (`obj`)
+2. The method name (`method`)
+
+`obj.method` alone returns just the function, losing the object reference.
+
+## BigInt
+
+`BigInt` represents integers larger than 2^53 - 1 (the safe integer limit for `Number`).
+
+### Creating BigInt
+
+```js
+// With 'n' suffix
+let big = 123456789012345678901234567890n;
+
+// With BigInt() function
+let big2 = BigInt("123456789012345678901234567890");
+```
+
+### BigInt Operations
+
+```js
+let a = 100n;
+let b = 200n;
+
+a + b;  // → 300n
+a - b;  // → -100n
+a * b;  // → 20000n
+b / a;  // → 2n (division truncates toward zero)
+b % a;  // → 0n
+a ** 2n; // → 10000n
+```
+
+### Cannot Mix with Regular Numbers
+
+```js
+// ❌ Error
+// let result = 100n + 50;
+
+// ✅ Must convert
+let result = 100n + BigInt(50); // → 150n
+let result2 = Number(100n) + 50; // → 150
+
+// Comparisons work across types:
+100n > 50;  // → true
+100n == 100; // → true
+100n === 100; // → false (different types)
+```
+
+### BigInt Operations
+
+```js
+// Math operations
+let n = 1n;
+n++; // → 2n
+++n; // → 3n
+
+// Bitwise operations
+5n & 3n;  // → 1n
+5n | 3n;  // → 7n
+5n ^ 3n;  // → 6n
+~5n;      // → -6n
+
+// NOT supported with BigInt:
+// Math.floor(5n)    // TypeError
+// +5n               // TypeError
+// parseInt(5n)      // OK (converts to number)
+```
+
+### BigInt Conversions
+
+```js
+String(100n);   // → "100"
+Boolean(0n);    // → false
+Boolean(1n);    // → true
+Number(100n);   // → 100 (might lose precision for large BigInts)
+BigInt("100");  // → 100n
+BigInt(true);   // → 1n
+```
+
+## Unicode, String Internals
+
+### Unicode in JavaScript
+
+JavaScript strings are UTF-16 encoded. Characters outside the Basic Multilingual Plane (BMP) use **surrogate pairs** (2 code units).
+
+```js
+let emoji = "😀";
+console.log(emoji.length); // → 2 (surrogate pair!)
+
+// Code points vs code units
+for (let char of emoji) {
+  console.log(char); // → "😀" (iterates by code point, correct)
+}
+
+// Surrogate pair breakdown
+console.log(emoji.charCodeAt(0)); // → 55357 (high surrogate)
+console.log(emoji.charCodeAt(1)); // → 56832 (low surrogate)
+```
+
+### String Methods for Unicode
+
+```js
+let str = "Hello 😀 World";
+
+// Code point at position
+console.log(str.codePointAt(6)); // → 128512 (the emoji code point)
+
+// From code point
+console.log(String.fromCodePoint(128512)); // → "😀"
+
+// Correct length (in code points)
+console.log([...str].length); // → 13 (correct)
+console.log(str.length);      // → 14 (includes surrogate pair as 2)
+```
+
+### Unicode Escape Sequences
+
+```js
+// Hex escape (BMP only)
+console.log("\u00E9"); // → "é"
+
+// Code point escape (any Unicode)
+console.log("\u{1F600}"); // → "😀"
+console.log("\u{1F431}"); // → "🐱"
+
+// Named escape (in some environments)
+// console.log("\N{LATIN SMALL LETTER E WITH ACUTE}"); // Not standard in JS
+```
+
+### Normalization
+
+Some characters can be represented in multiple ways:
+
+```js
+// Precomposed vs decomposed
+let n1 = "\u00F1";  // "ñ" (single code point)
+let n2 = "n\u0303"; // "n" + combining tilde
+
+console.log(n1 === n2); // → false (visually identical, different bytes)
+
+// Normalize
+console.log(n1.normalize() === n2.normalize()); // → true
+```
+
+### localeCompare
+
+```js
+// String comparison respecting locale
+let words = ["réservé", "reserve", "RESERVE"];
+
+words.sort((a, b) => a.localeCompare(b));
+// → ["reserve", "RESERVE", "réservé"] (locale-aware order)
+```
+
+## WeakRef and FinalizationRegistry
+
+### WeakRef (ES2021)
+
+A `WeakRef` holds a weak reference to an object — it doesn't prevent garbage collection:
+
+```js
+let obj = { data: "important" };
+let weakRef = new WeakRef(obj);
+
+// Get the object (might be undefined if GC'd)
+console.log(weakRef.deref()); // → { data: "important" }
+console.log(weakRef.deref()?.data); // → "important"
+
+// If obj is set to null and GC runs, deref() returns undefined
+obj = null;
+// After GC: weakRef.deref() → undefined
+```
+
+### FinalizationRegistry
+
+Run a callback when an object is garbage collected:
+
+```js
+let registry = new FinalizationRegistry((heldValue) => {
+  console.log(`Object ${heldValue} was garbage collected`);
+});
+
+let obj = { data: "temp" };
+registry.register(obj, "someId");
+
+// When obj is GC'd, the callback runs with "someId"
+obj = null;
+// → After GC: "Object someId was garbage collected"
+```
+
+### Use Cases
+
+```js
+// Cache with WeakRef — entries can be GC'd when memory is needed
+class WeakCache {
+  constructor() {
+    this.cache = new Map();
+  }
+
+  get(key) {
+    let ref = this.cache.get(key);
+    if (ref) {
+      let value = ref.deref();
+      if (value !== undefined) return value;
+    }
+    return null;
+  }
+
+  set(key, value) {
+    this.cache.set(key, new WeakRef(value));
+  }
+
+  cleanup() {
+    for (let [key, ref] of this.cache) {
+      if (ref.deref() === undefined) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+```
+
+> **Warning:** WeakRef and FinalizationRegistry are advanced features. They should be used sparingly — the timing of GC is unpredictable and implementation-dependent.
+
+<CodePlayground
+  title="Miscellaneous Features Demo"
+  html=""
+  js="// BigInt
+let big = 12345678901234567890n;
+document.write('BigInt: ' + big + '<br>');
+document.write('BigInt * 2n = ' + (big * 2n) + '<br>');
+
+// Unicode
+let str = 'Hello 🌍!';
+document.write('String: ' + str + '<br>');
+document.write('Length: ' + str.length + ' (surrogate pairs make it longer)<br>');
+document.write('Actual chars: ' + [...str].length + '<br>');
+document.write('Unicode escape: ' + '\u{1F30D}' + '<br>');
+
+// Proxy simple example
+let handler = {
+  get(target, prop) {
+    if (prop in target) {
+      return target[prop];
+    }
+    return 'Property ' + prop + 'not found';
+  }
+};
+
+let obj = new Proxy({ name: 'Alice', age: 30 }, handler);
+document.write('<br>Proxy:<br>');
+document.write('obj.name: ' + obj.name + '<br>');
+document.write('obj.email: ' + obj.email + '<br>');"
+/>

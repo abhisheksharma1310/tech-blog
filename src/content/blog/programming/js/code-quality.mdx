@@ -1,0 +1,422 @@
+---
+title: "Code Quality"
+description: "Learn debugging, coding style, automated testing, polyfills, and transpilers in JavaScript"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Debugging", "Testing", "Code Quality"]
+slug: "javascript-code-quality"
+author: "Abhishek Sharma"
+order: 5
+---
+
+# Code Quality
+
+Writing code that works is just the start. Writing code that's readable, maintainable, and reliable — that's what separates good developers from great ones.
+
+## Debugging in the Browser
+
+### Sources Panel
+
+Modern browsers have powerful developer tools. The **Sources** panel in Chrome/Edge lets you:
+
+- Set **breakpoints** — pause execution at a specific line
+- **Step through** code line by line
+- Inspect **variables** and the **call stack**
+- **Watch** expressions
+
+### Debugger Statement
+
+Add the `debugger` keyword to pause execution:
+
+<CodePlayground
+  title="Debugger Demo"
+  html=""
+  js="function calculate(a, b) {
+  // Open DevTools → Sources to see this pause
+  debugger;
+  let result = a * b + a / b;
+  return result;
+}
+
+let output = calculate(10, 3);
+document.write('Result: ' + output);"
+/>
+
+When you run this with DevTools open, execution pauses at the `debugger` line.
+
+### Chrome DevTools Debugging Tips
+
+| Feature | How To |
+|---|---|
+| Set breakpoint | Click line number in Sources panel |
+| Conditional breakpoint | Right-click line number, enter condition |
+| Step over | `F10` — execute current line, go to next |
+| Step into | `F11` — enter a function call |
+| Step out | `Shift + F11` — finish current function |
+| Watch | Right-click variable → "Add to Watch" |
+
+```js
+function processUser(user) {
+  // Set a conditional breakpoint here:
+  // user.age > 30
+  console.log(user.name);
+}
+```
+
+## Coding Style
+
+Consistent code style makes your code readable by others (and your future self).
+
+### Indentation
+
+```js
+// Good — 2 spaces
+function greet(name) {
+  if (name) {
+    console.log("Hello, " + name);
+  }
+}
+
+// Also good — 4 spaces
+function greet(name) {
+    if (name) {
+        console.log("Hello, " + name);
+    }
+}
+
+// Bad — inconsistent
+function greet(name) {
+  if (name) {
+       console.log("Hello, " + name);
+    }
+}
+```
+
+### Semicolons
+
+Always use them, even though they're technically optional:
+
+```js
+// Good
+let x = 5;
+console.log(x);
+
+// Bad (can break)
+let y = 5
+console.log(y)
+```
+
+### Naming Conventions
+
+```js
+// camelCase for variables and functions
+let userName = "Alice";
+function getUserData() {}
+
+// PascalCase for classes and constructors
+class UserAccount {}
+function CarModel() {}
+
+// UPPER_SNAKE_CASE for constants
+const MAX_SIZE = 100;
+const API_KEY = "abc123";
+
+// _prefixed for "private" (convention, not enforced)
+let _internalCounter = 0;
+```
+
+### Line Length
+
+Keep lines under 80-100 characters:
+
+```js
+// Good
+let result = someLongFunctionName(param1, param2, param3);
+
+// Better — break into multiple lines
+let result = someLongFunctionName(
+  param1,
+  param2,
+  param3
+);
+```
+
+### Braces
+
+Always use braces, even for single-line blocks:
+
+```js
+// Good
+if (condition) {
+  doSomething();
+}
+
+// Bad — easy to miss when adding another line
+if (condition) doSomething();
+```
+
+### Whitespace
+
+```js
+// Good — spaces around operators
+let sum = a + b;
+
+// Good — space after keywords
+if (condition) { ... }
+for (let i = 0; i < 10; i++) { ... }
+while (condition) { ... }
+
+// Good — space after commas
+function sum(a, b, c) {}
+
+// Good — empty lines between logical blocks
+function process() {
+  let user = getUser();
+
+  if (!user) {
+    return;
+  }
+
+  saveUser(user);
+}
+```
+
+### Use Linters
+
+**ESLint** is the standard JavaScript linter. It catches bugs and enforces style automatically:
+
+```bash
+# Install
+npm install eslint --save-dev
+
+# Initialize config
+npx eslint --init
+
+# Check your code
+npx eslint your-file.js
+```
+
+## Ninja Code
+
+> **What NOT to do.** These are anti-patterns — writing "clever" code that's hard to understand.
+
+### Bad Practices to Avoid
+
+```js
+// ❌ Short variable names that mean nothing
+let a = 32;
+let b = "Alice";
+
+// ✅ Descriptive names
+let age = 32;
+let userName = "Alice";
+
+// ❌ Abusing abbreviations
+let usrNm = "Bob";
+let cnfrmPwd = "123";
+
+// ✅ Full, clear words
+let userName = "Bob";
+let confirmPassword = "123";
+
+// ❌ Using similar looking names
+let data = { a: 1 };
+let data2 = { a: 2 };
+let data_2 = { a: 3 };
+
+// ❌ Side effects in conditions
+if (user = getUser()) { // Assignment instead of comparison!
+  console.log(user);
+}
+
+// ❌ Magic numbers
+let total = price * 1.18; // What is 1.18?
+
+// ✅ Named constants
+const TAX_RATE = 1.18;
+let total = price * TAX_RATE;
+
+// ❌ Overly clever one-liners
+let result = arr.filter(x => x.active).map(x => x.value).reduce((a, b) => a + b, 0) / arr.length;
+
+// ✅ Clear and readable
+let activeItems = arr.filter(item => item.active);
+let values = activeItems.map(item => item.value);
+let average = values.reduce((sum, val) => sum + val, 0) / values.length;
+```
+
+### The Golden Rule
+
+> Write code for **humans to read**, not just for machines to execute.
+
+## Automated Testing with Mocha
+
+Testing ensures your code works correctly and keeps working as you make changes.
+
+### Why Test?
+
+- **Confidence** — refactor without fear
+- **Documentation** — tests show how code should behave
+- **Catch bugs early** — before they reach production
+
+### Testing Frameworks
+
+| Framework | Description |
+|---|---|
+| **Mocha** | Flexible test framework |
+| **Jest** | All-in-one (most popular) |
+| **Vitest** | Modern, fast (Vite-based) |
+| **Jasmine** | Older but widely used |
+
+### Basic Mocha Test
+
+```js
+// math.js
+function add(a, b) {
+  return a + b;
+}
+function subtract(a, b) {
+  return a - b;
+}
+
+module.exports = { add, subtract };
+```
+
+```js
+// test.js
+const assert = require("assert");
+const { add, subtract } = require("./math");
+
+describe("Math functions", function() {
+  it("should add two numbers", function() {
+    assert.equal(add(2, 3), 5);
+    assert.equal(add(-1, 1), 0);
+  });
+
+  it("should subtract two numbers", function() {
+    assert.equal(subtract(5, 3), 2);
+    assert.equal(subtract(0, 5), -5);
+  });
+});
+```
+
+### Jest Example (more modern)
+
+```js
+// math.js
+export function add(a, b) {
+  return a + b;
+}
+```
+
+```js
+// math.test.js
+import { add } from "./math";
+
+test("adds 1 + 2 to equal 3", () => {
+  expect(add(1, 2)).toBe(3);
+});
+
+test("adds negative numbers", () => {
+  expect(add(-1, -1)).toBe(-2);
+});
+```
+
+Run with: `npx jest`
+
+### Test-Driven Development (TDD)
+
+1. Write a **failing test** first
+2. Write the **minimum code** to make it pass
+3. **Refactor** while keeping tests green
+
+```js
+// 1. Write test first
+test("returns true when age >= 18", () => {
+  expect(isAdult(18)).toBe(true);
+  expect(isAdult(25)).toBe(true);
+  expect(isAdult(16)).toBe(false);
+});
+
+// 2. Then implement
+function isAdult(age) {
+  return age >= 18;
+}
+```
+
+## Polyfills and Transpilers
+
+### The Problem
+
+New JavaScript features are great, but older browsers don't support them. You want to use modern syntax but still support IE11 or older Chrome versions.
+
+### Transpilers
+
+A **transpiler** converts modern JS to older JS that all browsers understand.
+
+**Babel** is the most popular:
+
+```js
+// Modern code (ES6 arrow function)
+const double = (n) => n * 2;
+
+// Transpiled by Babel to ES5:
+var double = function(n) {
+  return n * 2;
+};
+```
+
+### Polyfills
+
+A **polyfill** is code that adds a missing feature to older environments.
+
+```js
+// Check if Array.includes exists
+if (!Array.prototype.includes) {
+  // Polyfill it
+  Array.prototype.includes = function(element) {
+    return this.indexOf(element) !== -1;
+  };
+}
+
+// Now you can safely use it everywhere
+[1, 2, 3].includes(2); // → true
+```
+
+### Using Babel
+
+```bash
+# Install
+npm install --save-dev @babel/core @babel/cli @babel/preset-env
+
+# Config file: babel.config.json
+{
+  "presets": ["@babel/preset-env"]
+}
+
+# Transpile
+npx babel src --out-dir dist
+```
+
+### Using core-js (Polyfill Library)
+
+```bash
+npm install core-js
+```
+
+```js
+import "core-js/stable";
+// Now all modern features are polyfilled automatically
+```
+
+### Build Tools
+
+Modern build tools like **Vite**, **Webpack**, and **Parcel** include transpilation and polyfilling out of the box:
+
+```bash
+# Vite — modern, fast
+npm create vite@latest my-app
+
+# Or use a starter
+npm create vite@latest my-app -- --template vanilla
+```

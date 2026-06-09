@@ -1,0 +1,498 @@
+---
+title: "Operators, Comparisons, Conditionals, and Loops"
+description: "Master JavaScript operators, comparisons, conditional branching, logical operators, and loops"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Operators", "Loops", "Conditionals"]
+slug: "javascript-operators-loops"
+author: "Abhishek Sharma"
+order: 3
+---
+
+# Operators, Comparisons, Conditionals, and Loops
+
+This chapter covers the tools that control the flow of your JavaScript programs.
+
+## Basic Operators, Maths
+
+### Arithmetic Operators
+
+```js
+let a = 10;
+let b = 3;
+
+a + b;  // → 13  (addition)
+a - b;  // → 7   (subtraction)
+a * b;  // → 30  (multiplication)
+a / b;  // → 3.333... (division)
+a % b;  // → 1   (modulus / remainder)
+a ** b; // → 1000 (exponentiation, ES2016)
+```
+
+### String Concatenation with +
+
+If any operand is a string, `+` becomes concatenation:
+
+```js
+"Hello" + " " + "World"; // → "Hello World"
+"3" + 4;                // → "34"
+3 + 4 + "5";            // → "75" (left to right: 3+4=7, 7+"5"="75")
+```
+
+### Numeric Conversion with Unary +
+
+```js
++"42";    // → 42
++true;    // → 1
++false;   // → 0
++"";      // → 0
+```
+
+### Assignment Operators
+
+```js
+let x = 5;
+
+x += 3;  // x = x + 3  → 8
+x -= 2;  // x = x - 2  → 6
+x *= 4;  // x = x * 4  → 24
+x /= 3;  // x = x / 3  → 8
+x %= 5;  // x = x % 5  → 3
+x **= 2; // x = x ** 2 → 9
+```
+
+### Increment / Decrement
+
+```js
+let count = 0;
+
+count++;  // Post-increment: returns 0, then count becomes 1
+++count;  // Pre-increment: count becomes 2, returns 2
+count--;  // Post-decrement: returns 2, then count becomes 1
+--count;  // Pre-decrement: count becomes 0, returns 0
+```
+
+### Operator Precedence
+
+Some operators have higher priority than others, just like math:
+
+```js
+(2 + 3) * 4; // → 20  (parentheses first)
+2 + 3 * 4;   // → 14  (multiplication before addition)
+```
+
+<CodePlayground
+  title="Operators Demo"
+  html=""
+  js="let a = 10, b = 3;
+document.write('a = ' + a + ', b = ' + b + '<br>');
+document.write('a + b = ' + (a + b) + '<br>');
+document.write('a - b = ' + (a - b) + '<br>');
+document.write('a * b = ' + (a * b) + '<br>');
+document.write('a / b = ' + (a / b) + '<br>');
+document.write('a % b = ' + (a % b) + '<br>');
+document.write('a ** b = ' + (a ** b) + '<br>');"
+/>
+
+## Comparisons
+
+Comparisons return a boolean (`true` or `false`):
+
+```js
+5 > 3;   // → true
+5 < 3;   // → false
+5 >= 5;  // → true
+5 <= 4;  // → false
+```
+
+### String Comparison
+
+Strings are compared letter-by-letter lexicographically (dictionary order):
+
+```js
+"a" < "b";   // → true
+"Z" < "a";   // → true (uppercase have lower Unicode values)
+"2" > "10";  // → true (compares "2" vs "1" — character by character!)
+```
+
+### Different Types
+
+When comparing different types, JavaScript converts them to numbers:
+
+```js
+"2" > 1; // → true (string "2" becomes number 2)
+"01" == 1; // → true ("01" becomes 1)
+true == 1; // → true
+false == 0; // → true
+```
+
+### Strict Equality === vs Loose Equality ==
+
+This is critical to understand:
+
+```js
+// Loose == — converts types before comparing
+5 == "5";   // → true
+0 == false; // → true
+null == undefined; // → true
+
+// Strict === — no type conversion (check value AND type)
+5 === "5";   // → false
+0 === false; // → false
+null === undefined; // → false
+```
+
+> **Always use `===` and `!==`** unless you have a specific reason to use `==`.
+
+### null and undefined comparisons
+
+```js
+null == undefined;  // → true (special rule)
+null === undefined; // → false
+
+// Comparisons with null/undefined can be tricky:
+null > 0;  // → false
+null == 0; // → false
+null >= 0; // → true (null converts to 0 for >=)
+```
+
+## Conditional Branching: if, '?'
+
+### if Statement
+
+```js
+let age = 18;
+
+if (age >= 18) {
+  console.log("You can vote");
+} else if (age >= 16) {
+  console.log("You can drive");
+} else {
+  console.log("Too young");
+}
+```
+
+### Ternary Operator `?`
+
+Short form for simple conditionals:
+
+```js
+let access = age >= 18 ? "Allowed" : "Denied";
+// Same as:
+// let access;
+// if (age >= 18) access = "Allowed";
+// else access = "Denied";
+```
+
+Nested ternaries (use sparingly — hard to read):
+
+```js
+let category = age >= 18 ? "Adult" : age >= 13 ? "Teen" : "Child";
+```
+
+### Truthy and Falsy in Conditionals
+
+Values that evaluate to `false` in conditions:
+
+```js
+if (0) {}      // false
+if ("") {}     // false
+if (null) {}   // false
+if (undefined) {} // false
+if (NaN) {}    // false
+if (false) {}  // false
+```
+
+Everything else is truthy — including `"0"`, `"false"`, empty arrays `[]`, and empty objects `{}`.
+
+## Logical Operators
+
+### `||` (OR)
+
+Returns the **first truthy** value, or the last if all are falsy:
+
+```js
+true || false;        // → true
+false || false;       // → false
+0 || 1 || 2;          // → 1 (first truthy)
+null || undefined || 0; // → 0 (all falsy — returns last)
+
+// Practical: default value
+let name = userInput || "Guest";
+```
+
+### `&&` (AND)
+
+Returns the **first falsy** value, or the last if all are truthy:
+
+```js
+true && false;        // → false
+1 && 2 && 3;          // → 3 (all truthy — returns last)
+1 && 0 && 2;          // → 0 (first falsy)
+null && "hello";      // → null
+
+// Practical: guard check
+user && user.name;    // → user.name if user exists, else null
+```
+
+### `!` (NOT)
+
+Returns the inverse boolean:
+
+```js
+!true;          // → false
+!0;             // → true
+!!"hello";      // → true (double NOT — converts to boolean)
+```
+
+### Short-circuit Evaluation
+
+`&&` and `||` don't evaluate the second operand if the first is sufficient:
+
+```js
+false && console.log("Never runs");   // Short-circuits
+true || console.log("Never runs");    // Short-circuits
+```
+
+<CodePlayground
+  title="Logical Operators"
+  html=""
+  js="let age = 22;
+let hasLicense = true;
+
+if (age >= 18 && hasLicense) {
+  document.write('You can drive!');
+} else {
+  document.write('You cannot drive.');
+}
+
+document.write('<br>');
+
+let user = null;
+let displayName = user || 'Guest';
+document.write('Welcome, ' + displayName);"
+/>
+
+## Nullish Coalescing Operator `??`
+
+Returns the right side only if the left is `null` or `undefined`:
+
+```js
+let name = null;
+let display = name ?? "Anonymous"; // → "Anonymous"
+
+let age = 0;
+let displayAge = age ?? 25; // → 0 (because 0 is neither null nor undefined)
+```
+
+Compare with `||`:
+
+```js
+let count = 0;
+count || 10;  // → 10 (0 is falsy)
+count ?? 10;  // → 0 (0 is not nullish)
+```
+
+> Use `??` for default values when `0` or `""` are valid values. Use `||` when you want to catch all falsy values.
+
+`??` cannot be combined with `||` or `&&` without parentheses:
+
+```js
+let x = 1 && 2 ?? 3; // SyntaxError!
+let y = (1 && 2) ?? 3; // → 2 (OK with parentheses)
+```
+
+## Loops: while and for
+
+### while Loop
+
+```js
+let i = 0;
+while (i < 5) {
+  console.log(i);
+  i++;
+}
+// → 0, 1, 2, 3, 4
+```
+
+### do...while Loop
+
+Always executes at least once:
+
+```js
+let i = 0;
+do {
+  console.log(i);
+  i++;
+} while (i < 3);
+// → 0, 1, 2
+```
+
+### for Loop
+
+```js
+for (let i = 0; i < 5; i++) {
+  console.log(i);
+}
+// → 0, 1, 2, 3, 4
+```
+
+Parts of the `for` loop:
+
+```
+for (initialization; condition; step) {
+  // body
+}
+```
+
+Any part can be skipped:
+
+```js
+let i = 0;
+for (; i < 3; ) { // initialization and step are outside
+  console.log(i++);
+}
+```
+
+### Breaking the Loop
+
+```js
+// break — exits the loop entirely
+for (let i = 0; i < 10; i++) {
+  if (i === 3) break;
+  console.log(i);
+}
+// → 0, 1, 2
+
+// continue — skips to the next iteration
+for (let i = 0; i < 5; i++) {
+  if (i === 2) continue;
+  console.log(i);
+}
+// → 0, 1, 3, 4
+```
+
+### Labels for Nested Loops
+
+```js
+outer: for (let i = 0; i < 3; i++) {
+  for (let j = 0; j < 3; j++) {
+    if (i === 1 && j === 1) break outer;
+    console.log(`(${i},${j})`);
+  }
+}
+// → (0,0), (0,1), (0,2), (1,0)
+```
+
+<CodePlayground
+  title="Loops Demo"
+  html=""
+  js="document.write('<h3>Counting to 5:</h3>');
+for (let i = 1; i <= 5; i++) {
+  document.write(i + ' ');
+}
+
+document.write('<h3>Even numbers:</h3>');
+let n = 0;
+while (n <= 10) {
+  if (n % 2 === 0) document.write(n + ' ');
+  n++;
+}
+
+document.write('<h3>Multiplication table (3):</h3>');
+for (let i = 1; i <= 10; i++) {
+  document.write('3 × ' + i + ' = ' + (3 * i) + '<br>');
+}"
+/>
+
+## The "switch" Statement
+
+A cleaner alternative to multiple `if...else if` chains:
+
+```js
+let day = 3;
+let dayName;
+
+switch (day) {
+  case 1:
+    dayName = "Monday";
+    break;
+  case 2:
+    dayName = "Tuesday";
+    break;
+  case 3:
+    dayName = "Wednesday";
+    break;
+  case 4:
+    dayName = "Thursday";
+    break;
+  case 5:
+    dayName = "Friday";
+    break;
+  default:
+    dayName = "Weekend";
+}
+console.log(dayName); // → "Wednesday"
+```
+
+### How it works
+
+- `switch` compares using **strict equality** (`===`)
+- The `break` is essential — without it, execution **falls through** to the next case:
+
+```js
+let fruit = "apple";
+
+switch (fruit) {
+  case "apple":
+  case "pear":
+    console.log("Common fruit");
+    break;
+  case "mango":
+    console.log("Tropical");
+    break;
+}
+// → "Common fruit" (because apple and pear share the same block)
+```
+
+### Grouping cases
+
+```js
+let grade = "B";
+
+switch (grade) {
+  case "A":
+  case "B":
+    console.log("Great job!");
+    break;
+  case "C":
+    console.log("Good");
+    break;
+  case "D":
+  case "F":
+    console.log("Needs improvement");
+    break;
+  default:
+    console.log("Invalid grade");
+}
+```
+
+<CodePlayground
+  title="Switch Demo"
+  html=""
+  js="let day = new Date().getDay();
+let dayName;
+
+switch (day) {
+  case 0: dayName = 'Sunday'; break;
+  case 1: dayName = 'Monday'; break;
+  case 2: dayName = 'Tuesday'; break;
+  case 3: dayName = 'Wednesday'; break;
+  case 4: dayName = 'Thursday'; break;
+  case 5: dayName = 'Friday'; break;
+  case 6: dayName = 'Saturday'; break;
+  default: dayName = 'Unknown';
+}
+
+document.write('Today is ' + dayName);"
+/>

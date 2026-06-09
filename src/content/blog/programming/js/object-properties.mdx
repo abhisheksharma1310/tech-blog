@@ -1,0 +1,327 @@
+---
+title: "Object Properties Configuration"
+description: "Learn about property flags, descriptors, getters, and setters in JavaScript"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Objects", "Properties", "Getters", "Setters"]
+slug: "javascript-object-properties"
+author: "Abhishek Sharma"
+order: 10
+---
+
+# Object Properties Configuration
+
+## Property Flags and Descriptors
+
+Object properties have more than just a value. Each property has three **flags**:
+
+- **writable** — can the value be changed?
+- **enumerable** — does it show up in `for...in` loops?
+- **configurable** — can the property be deleted or modified?
+
+### Property Descriptor
+
+```js
+let user = { name: "Alice" };
+
+let descriptor = Object.getOwnPropertyDescriptor(user, "name");
+console.log(descriptor);
+// → { value: "Alice", writable: true, enumerable: true, configurable: true }
+```
+
+### Defining Properties with Flags
+
+```js
+let user = {};
+
+Object.defineProperty(user, "name", {
+  value: "Alice",
+  writable: false,   // Can't change
+  enumerable: false, // Won't appear in loops
+  configurable: false // Can't delete or reconfigure
+});
+
+user.name = "Bob";     // Fails silently (in strict mode: TypeError)
+console.log(user.name); // → "Alice"
+
+for (let key in user) console.log(key); // Nothing — not enumerable
+
+delete user.name;        // Fails silently
+console.log(user.name);  // → "Alice"
+```
+
+### Non-writable
+
+```js
+let user = {};
+Object.defineProperty(user, "id", {
+  value: 42,
+  writable: false // Read-only
+});
+
+user.id = 100; // Silently ignored (or TypeError in strict)
+console.log(user.id); // → 42
+```
+
+### Non-enumerable
+
+```js
+let user = {
+  name: "Alice",
+  age: 30
+};
+
+// Make a property hidden from loops
+Object.defineProperty(user, "internalId", {
+  value: "SECRET",
+  enumerable: false
+});
+
+for (let key in user) console.log(key);
+// → "name", "age" (internalId is hidden)
+
+console.log(Object.keys(user)); // → ["name", "age"]
+console.log(user.internalId);   // → "SECRET" (still accessible directly)
+```
+
+### Non-configurable
+
+A non-configurable property can't be deleted or redefined:
+
+```js
+let user = {};
+Object.defineProperty(user, "name", {
+  value: "Alice",
+  configurable: false
+});
+
+delete user.name;     // Silently ignored
+// Object.defineProperty(user, "name", { writable: false }); // TypeError!
+```
+
+### Object.defineProperties (multiple at once)
+
+```js
+let user = {};
+
+Object.defineProperties(user, {
+  name: { value: "Alice", writable: true, enumerable: true },
+  age: { value: 30, writable: false, enumerable: true },
+  id: { value: 42, writable: false, configurable: false }
+});
+```
+
+### Object.getOwnPropertyDescriptors
+
+Get all property descriptors at once:
+
+```js
+let user = { name: "Alice", age: 30 };
+
+let descriptors = Object.getOwnPropertyDescriptors(user);
+console.log(descriptors);
+// → {
+//   name: { value: "Alice", writable: true, enumerable: true, configurable: true },
+//   age: { value: 30, writable: true, enumerable: true, configurable: true }
+// }
+```
+
+### Sealing and Freezing Objects
+
+```js
+let user = { name: "Alice", age: 30 };
+
+// Seal — prevent adding/removing properties (sets configurable: false)
+Object.seal(user);
+delete user.age;     // Silently ignored
+user.email = "test"; // Silently ignored (can't add)
+user.name = "Bob";   // ✅ Allowed (writable)
+
+// Freeze — make completely immutable
+Object.freeze(user);
+user.name = "Charlie"; // Silently ignored
+delete user.age;       // Silently ignored
+
+// Check state
+Object.isSealed(user);  // → true
+Object.isFrozen(user);  // → true
+Object.isExtensible(user); // → false
+```
+
+| Method | Add | Delete | Write | Reconfigure |
+|---|---|---|---|---|
+| `seal()` | ❌ | ❌ | ✅ | ❌ |
+| `freeze()` | ❌ | ❌ | ❌ | ❌ |
+| `preventExtensions()` | ❌ | ✅ | ✅ | ✅ |
+
+## Property Getters and Setters
+
+Accessor properties are functions that look like regular properties.
+
+### Getter and Setter Syntax
+
+```js
+let user = {
+  firstName: "Alice",
+  lastName: "Johnson",
+
+  // Getter
+  get fullName() {
+    return `${this.firstName} ${this.lastName}`;
+  },
+
+  // Setter
+  set fullName(value) {
+    [this.firstName, this.lastName] = value.split(" ");
+  }
+};
+
+console.log(user.fullName); // → "Alice Johnson"
+user.fullName = "Bob Smith";
+console.log(user.firstName); // → "Bob"
+console.log(user.lastName);  // → "Smith"
+```
+
+### Why use getters/setters?
+
+- **Computed properties** — derive a value from other properties
+- **Validation** — check values before setting
+- **Encapsulation** — hide internal representation
+
+### Validation with Setter
+
+```js
+let user = {
+  _age: 0, // _ prefix by convention means "internal"
+
+  get age() {
+    return this._age;
+  },
+
+  set age(value) {
+    if (value < 0 || value > 150) {
+      throw new Error("Invalid age");
+    }
+    this._age = value;
+  }
+};
+
+user.age = 25;
+console.log(user.age); // → 25
+
+// user.age = -5; // → Error: Invalid age
+```
+
+### Using defineProperty for accessors
+
+```js
+let user = { firstName: "Alice", lastName: "Johnson" };
+
+Object.defineProperty(user, "fullName", {
+  get() {
+    return `${this.firstName} ${this.lastName}`;
+  },
+  set(value) {
+    [this.firstName, this.lastName] = value.split(" ");
+  },
+  enumerable: true,
+  configurable: true
+});
+
+console.log(user.fullName); // → "Alice Johnson"
+```
+
+### Getter/Setter Descriptors
+
+Accessor descriptors don't have `value` or `writable`:
+
+```js
+let descriptor = Object.getOwnPropertyDescriptor(user, "fullName");
+console.log(descriptor);
+// → { get: [Function], set: [Function], enumerable: true, configurable: true }
+```
+
+### Smart Getter — Lazy Computation
+
+```js
+let data = {
+  _cache: null,
+
+  get bigData() {
+    if (!this._cache) {
+      console.log("Computing...");
+      this._cache = heavyComputation();
+    }
+    return this._cache;
+  }
+};
+
+console.log(data.bigData); // → "Computing..." then result
+console.log(data.bigData); // → From cache (no computation)
+```
+
+### Compatibility with Getters/Setters
+
+Getters/setters let you add logic without breaking existing code:
+
+```js
+// Before — simple property
+let user = { name: "Alice" };
+
+// After — refactored to getter (code using user.name still works)
+let user = {
+  _name: "Alice",
+  get name() { return this._name; },
+  set name(value) {
+    if (value.length < 2) throw new Error("Name too short");
+    this._name = value;
+  }
+};
+```
+
+<CodePlayground
+  title="Getters and Setters Demo"
+  html=""
+  js="let user = {
+  _name: 'Alice',
+  _age: 30,
+
+  get name() {
+    return this._name;
+  },
+
+  set name(value) {
+    if (!value) throw new Error('Name required');
+    this._name = value;
+  },
+
+  get age() {
+    return this._age;
+  },
+
+  set age(value) {
+    if (value < 0 || value > 150) throw new Error('Invalid age');
+    this._age = value;
+  },
+
+  get isAdult() {
+    return this._age >= 18;
+  },
+
+  get description() {
+    return this._name + ' is ' + this._age + ' years old';
+  }
+};
+
+document.write('Name: ' + user.name + '<br>');
+document.write('Age: ' + user.age + '<br>');
+document.write('Adult: ' + user.isAdult + '<br>');
+document.write('Description: ' + user.description + '<br>');
+
+// Try setting
+user.name = 'Bob';
+user.age = 25;
+document.write('<br>After update:<br>');
+document.write('Name: ' + user.name + '<br>');
+document.write('Description: ' + user.description + '<br>');"
+/>

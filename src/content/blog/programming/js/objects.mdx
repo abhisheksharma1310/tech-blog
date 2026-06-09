@@ -1,0 +1,604 @@
+---
+title: "Objects"
+description: "Master JavaScript objects, references, garbage collection, methods, constructors, and more"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Objects", "OOP"]
+slug: "javascript-objects"
+author: "Abhishek Sharma"
+order: 6
+---
+
+# Objects: The Basics
+
+Objects are one of the most important data types in JavaScript. They let you store collections of key-value pairs.
+
+## Objects
+
+An object is created with curly braces `{}`:
+
+```js
+let user = {
+  name: "Alice",
+  age: 30,
+  isAdmin: true
+};
+
+console.log(user.name); // → "Alice"
+console.log(user.age);  // → 30
+```
+
+### Creating Objects
+
+```js
+// Object literal
+let person = {
+  firstName: "John",
+  lastName: "Doe"
+};
+
+// Using new Object()
+let car = new Object();
+car.brand = "Tesla";
+car.model = "Model 3";
+
+// Empty object, then add properties
+let book = {};
+book.title = "JavaScript Guide";
+book.pages = 400;
+```
+
+### Property Access
+
+```js
+let user = { name: "Alice", age: 30 };
+
+// Dot notation
+console.log(user.name); // → "Alice"
+
+// Bracket notation — for dynamic keys or invalid identifiers
+console.log(user["name"]); // → "Alice"
+
+let key = "age";
+console.log(user[key]); // → 30
+
+// Property names with spaces need brackets
+user["full name"] = "Alice Johnson";
+```
+
+### Computed Properties
+
+You can use expressions as property names with brackets:
+
+```js
+let fruit = "apple";
+let bag = {
+  [fruit]: 5,        // → apple: 5
+  [fruit + "s"]: 10  // → apples: 10
+};
+
+console.log(bag.apple);  // → 5
+console.log(bag.apples); // → 10
+```
+
+### Property Value Shorthand
+
+When variable and property names match, you can shorten:
+
+```js
+let name = "Alice";
+let age = 30;
+
+// Long
+let user1 = { name: name, age: age };
+
+// Short (ES6)
+let user2 = { name, age };
+```
+
+### Property Existence Check
+
+```js
+let user = { name: "Alice", age: 30 };
+
+// Using in operator
+console.log("name" in user); // → true
+console.log("email" in user); // → false
+
+// Using undefined check
+console.log(user.email === undefined); // → true
+
+// But careful — the property might exist with value undefined
+user.email = undefined;
+console.log("email" in user); // → true (property exists!)
+console.log(user.email); // → undefined
+```
+
+### for...in Loop
+
+Iterates over all enumerable keys:
+
+```js
+let user = { name: "Alice", age: 30, isAdmin: true };
+
+for (let key in user) {
+  console.log(`${key}: ${user[key]}`);
+}
+// → name: Alice
+// → age: 30
+// → isAdmin: true
+```
+
+### Ordering of Properties
+
+- Integer keys are sorted in ascending order
+- Other keys are in insertion order
+
+```js
+let codes = { "3": "three", "1": "one", "2": "two" };
+for (let key in codes) {
+  console.log(key); // → "1", "2", "3" (sorted!)
+}
+
+let user = { name: "Alice", age: 30 };
+for (let key in user) {
+  console.log(key); // → "name", "age" (insertion order)
+}
+```
+
+<CodePlayground
+  title="Objects Demo"
+  html=""
+  js="let user = {
+  name: 'Alice',
+  age: 30,
+  greet() {
+    return 'Hi, I\'m ' + this.name;
+  }
+};
+
+document.write('User: ' + user.name + '<br>');
+document.write('Age: ' + user.age + '<br>');
+document.write(user.greet() + '<br>');
+
+// Add new property
+user.email = 'alice@example.com';
+document.write('Email: ' + user.email + '<br>');
+
+// List all properties
+document.write('<br>All properties:<br>');
+for (let key in user) {
+  document.write(key + ': ' + user[key] + '<br>');
+}"
+/>
+
+## Object References and Copying
+
+Primitives are copied "by value":
+
+```js
+let a = 10;
+let b = a;
+
+b = 20;
+console.log(a); // → 10 (unchanged!)
+console.log(b); // → 20
+```
+
+Objects are copied "by reference":
+
+```js
+let user1 = { name: "Alice" };
+let user2 = user1; // Both point to the same object
+
+user2.name = "Bob";
+console.log(user1.name); // → "Bob" (changed!)
+console.log(user2.name); // → "Bob"
+```
+
+### Copying an Object (Cloning)
+
+```js
+let user = { name: "Alice", age: 30 };
+
+// Method 1: Object.assign (shallow copy)
+let clone1 = Object.assign({}, user);
+
+// Method 2: Spread operator (ES6)
+let clone2 = { ...user };
+
+// Method 3: Manual loop
+let clone3 = {};
+for (let key in user) {
+  clone3[key] = user[key];
+}
+```
+
+### Deep Cloning
+
+For nested objects, shallow copy isn't enough:
+
+```js
+let user = {
+  name: "Alice",
+  address: {
+    city: "New York",
+    zip: 10001
+  }
+};
+
+let clone = { ...user };
+clone.address.city = "Boston";
+
+console.log(user.address.city); // → "Boston" (nested object still shared!)
+```
+
+**Deep clone options:**
+
+```js
+// Method 1: JSON (works for simple data)
+let deepClone = JSON.parse(JSON.stringify(user));
+
+// Method 2: structuredClone (modern browsers, Node 17+)
+let deepClone2 = structuredClone(user);
+
+// Method 3: _.cloneDeep from Lodash
+// import _ from 'lodash';
+// let deepClone3 = _.cloneDeep(user);
+```
+
+### Const objects
+
+`const` prevents reassignment, but the object contents can change:
+
+```js
+const user = { name: "Alice" };
+user.name = "Bob"; // ✅ Allowed — modifying the object
+// user = { name: "Charlie" }; // ❌ Error — reassigning
+```
+
+## Garbage Collection
+
+JavaScript automatically manages memory. When an object becomes unreachable, it gets garbage collected.
+
+```js
+let user = { name: "Alice" };
+user = null; // The object is now unreachable → GC collects it
+```
+
+### How GC Works (Mark-and-Sweep)
+
+The garbage collector:
+1. Starts from **roots** (global objects, local variables, the call stack)
+2. **Marks** all objects reachable from roots
+3. **Removes** (sweeps) unmarked objects
+
+```js
+function marry(a, b) {
+  a.spouse = b;
+  b.spouse = a;
+}
+
+let alice = { name: "Alice" };
+let bob = { name: "Bob" };
+marry(alice, bob); // They reference each other
+
+alice = null; // Alice's object is no longer globally reachable
+
+// Bob's object is still reachable from global "bob", so it stays
+// But Alice's object is reachable from Bob (bob.spouse), so actually it stays too!
+
+// If we also do:
+bob = null; // Now the entire island is unreachable → both get collected
+```
+
+### Memory Leaks
+
+```js
+// ❌ Accidental global variables
+function createLeak() {
+  leakedVar = "I'm global now!"; // No let/const!
+}
+
+// ❌ Forgotten timers
+let data = getHugeData();
+setInterval(() => {
+  console.log(data); // data can never be GC'd
+}, 1000);
+
+// ❌ Detached DOM references
+let element = document.getElementById("button");
+document.body.removeChild(element);
+// element still references the DOM node in memory
+```
+
+## Object Methods, "this"
+
+Functions stored in objects are called **methods**:
+
+```js
+let user = {
+  name: "Alice",
+  greet: function() {
+    console.log("Hello!");
+  }
+};
+
+// Shorthand (ES6)
+let user2 = {
+  name: "Bob",
+  greet() {
+    console.log("Hello!");
+  }
+};
+
+user.greet(); // → "Hello!"
+```
+
+### The "this" Keyword
+
+Inside a method, `this` refers to the object the method was called on:
+
+```js
+let user = {
+  name: "Alice",
+  greet() {
+    console.log("Hello, " + this.name);
+  }
+};
+
+user.greet(); // → "Hello, Alice"
+```
+
+### "this" is NOT bound to the function
+
+In JavaScript, `this` is determined by **how the function is called**, not where it's defined:
+
+```js
+let user = { name: "Alice" };
+let admin = { name: "Admin" };
+
+function greet() {
+  console.log("Hello, " + this.name);
+}
+
+user.f = greet;
+admin.f = greet;
+
+user.f();  // → "Hello, Alice"  (this = user)
+admin.f(); // → "Hello, Admin"  (this = admin)
+```
+
+### Losing "this"
+
+```js
+let user = {
+  name: "Alice",
+  greet() {
+    console.log("Hello, " + this.name);
+  }
+};
+
+let fn = user.greet;
+fn(); // → "Hello, undefined" — this is lost!
+// In non-strict mode: this → global object
+// In strict mode: this → undefined
+```
+
+### Arrow Functions have no "this"
+
+Arrow functions inherit `this` from the surrounding (lexical) scope:
+
+```js
+let user = {
+  name: "Alice",
+  greet() {
+    let arrow = () => console.log("Hello, " + this.name);
+    arrow(); // "Hello, Alice" — inherits this from greet()
+  }
+};
+
+user.greet();
+
+// But with a regular function, this is lost:
+let user2 = {
+  name: "Bob",
+  greet() {
+    let regular = function() {
+      console.log("Hello, " + this.name);
+    };
+    regular(); // "Hello, undefined"
+  }
+};
+user2.greet();
+```
+
+## Constructor, operator "new"
+
+Constructor functions create multiple objects with the same structure:
+
+```js
+function User(name, age) {
+  // this = {} (implicitly created)
+
+  this.name = name;
+  this.age = age;
+  this.isAdmin = false;
+
+  // return this (implicitly)
+}
+
+let user1 = new User("Alice", 30);
+let user2 = new User("Bob", 25);
+
+console.log(user1.name); // → "Alice"
+console.log(user2.name); // → "Bob"
+```
+
+### How `new` works
+
+1. Creates a new empty object `{}`
+2. Sets `this` to that object
+3. Executes the function body (modifies `this`)
+4. Returns `this`
+
+### Constructor Convention
+
+- Constructor names start with a **capital letter**
+- They are called with `new`
+
+```js
+// Correct
+let date = new Date();
+
+// Constructors vs regular functions — constructors use new
+function Car(brand) {
+  if (!new.target) {
+    // If called without new, we can still make it work
+    return new Car(brand);
+  }
+  this.brand = brand;
+}
+```
+
+### Constructor Return
+
+Constructors usually don't have a `return`. If they return an object, that object is used instead of `this`. If they return a primitive, it's ignored:
+
+```js
+function User(name) {
+  this.name = name;
+  return { name: "Override" }; // Returns this object, not this
+}
+
+console.log(new User("Alice").name); // → "Override"
+```
+
+### Optional Chaining '?.'
+
+Safely access nested properties without throwing if something is `null`/`undefined`:
+
+```js
+let user = null;
+
+// Without optional chaining — error!
+// console.log(user.address.city); // TypeError!
+
+// With optional chaining — safe
+console.log(user?.address?.city); // → undefined (no error)
+
+// For methods
+let obj = null;
+obj?.method(); // → undefined (safe)
+
+// For dynamic access
+let key = "name";
+console.log(user?.[key]); // → undefined
+
+// Optional chaining with delete
+delete user?.address; // Safe
+```
+
+> `?.` checks if the left side is `null`/`undefined`. If it is, the expression short-circuits to `undefined`.
+
+## Symbol Type
+
+Symbols are **unique identifiers** introduced in ES6:
+
+```js
+let id1 = Symbol("id");
+let id2 = Symbol("id");
+
+console.log(id1 === id2); // → false — each Symbol is unique!
+console.log(id1); // → Symbol(id)
+console.log(id1.description); // → "id"
+```
+
+### Hidden Properties
+
+Symbols let you add "hidden" properties that won't accidentally collide:
+
+```js
+let user = { name: "Alice" };
+let id = Symbol("id");
+
+user[id] = 123; // Symbol-keyed property
+console.log(user[id]); // → 123
+
+// Symbols are skipped in for...in
+for (let key in user) {
+  console.log(key); // Only → "name"
+}
+
+// Object.keys also skips symbols
+console.log(Object.keys(user)); // → ["name"]
+
+// But Object.getOwnPropertySymbols finds them
+console.log(Object.getOwnPropertySymbols(user)); // → [Symbol(id)]
+```
+
+### Global Symbols
+
+If you need the same symbol across your app, use the **global symbol registry**:
+
+```js
+let id1 = Symbol.for("id"); // Creates or retrieves global symbol
+let id2 = Symbol.for("id"); // Retrieves the same symbol
+
+console.log(id1 === id2); // → true
+
+// Get key from global symbol
+console.log(Symbol.keyFor(id1)); // → "id"
+```
+
+## Object to Primitive Conversion
+
+JavaScript automatically calls conversion methods when needed:
+
+### Hints
+
+- **string** — when an object is used as a string (e.g., template literal)
+- **number** — when doing math
+- **default** — when the operator is unsure (e.g., `+`)
+
+```js
+let user = {
+  name: "Alice",
+  age: 30,
+
+  // String conversion
+  toString() {
+    return `User: ${this.name}`;
+  },
+
+  // Numeric conversion
+  valueOf() {
+    return this.age;
+  }
+};
+
+console.log(String(user));   // → "User: Alice"
+console.log(+user);          // → 30
+console.log(user + 5);       // → 35 (uses valueOf)
+```
+
+### Symbol.toPrimitive
+
+A universal method for all conversion types:
+
+```js
+let user = {
+  name: "Alice",
+  age: 30,
+
+  [Symbol.toPrimitive](hint) {
+    if (hint === "string") return `User: ${this.name}`;
+    if (hint === "number") return this.age;
+    return this.age; // default
+  }
+};
+
+console.log(`${user}`); // → "User: Alice" (string hint)
+console.log(+user);     // → 30 (number hint)
+console.log(user + 5);  // → 35 (default hint)
+```

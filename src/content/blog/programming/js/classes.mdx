@@ -1,0 +1,637 @@
+---
+title: "Classes"
+description: "Master ES6 classes, inheritance, static methods, private properties, and mixins in JavaScript"
+date: "2026-06-09"
+category: ["Programming", "JavaScript"]
+tags: ["JavaScript", "Classes", "OOP", "Inheritance"]
+slug: "javascript-classes"
+author: "Abhishek Sharma"
+order: 12
+---
+
+# Classes
+
+ES6 introduced the `class` syntax — a cleaner way to work with prototypal inheritance.
+
+## Class Basic Syntax
+
+```js
+class User {
+  constructor(name, age) {
+    this.name = name;
+    this.age = age;
+  }
+
+  greet() {
+    return `Hello, I'm ${this.name}`;
+  }
+
+  isAdult() {
+    return this.age >= 18;
+  }
+}
+
+let alice = new User("Alice", 30);
+console.log(alice.greet());   // → "Hello, I'm Alice"
+console.log(alice.isAdult()); // → true
+```
+
+### What a Class Really Is
+
+A class is "syntactic sugar" over prototypes — it's still a function:
+
+```js
+console.log(typeof User); // → "function"
+console.log(User === User.prototype.constructor); // → true
+console.log(User.prototype.greet); // → the greet method
+console.log(Object.getOwnPropertyNames(User.prototype));
+// → ["constructor", "greet", "isAdult"]
+```
+
+### Class vs Function Constructor
+
+```js
+// Class
+class User {
+  constructor(name) { this.name = name; }
+  greet() { console.log("Hi"); }
+}
+
+// Equivalent function constructor
+function User(name) {
+  this.name = name;
+}
+User.prototype.greet = function() {
+  console.log("Hi");
+};
+```
+
+### Key Differences
+
+```js
+class User {
+  constructor(name) { this.name = name; }
+}
+
+// 1. Class must be called with new
+// User("Alice"); // TypeError!
+
+// 2. Class is not hoisted
+// let u = new User(); // ReferenceError (if used before definition)
+
+// 3. Class methods are non-enumerable
+console.log(Object.keys(User.prototype)); // → [] (constructor + methods not enumerable)
+
+// 4. Class body is always in strict mode
+```
+
+### Getters/Setters in Classes
+
+```js
+class User {
+  constructor(name) {
+    this._name = name;
+  }
+
+  get name() {
+    return this._name;
+  }
+
+  set name(value) {
+    if (value.length < 2) {
+      throw new Error("Name too short");
+    }
+    this._name = value;
+  }
+}
+
+let user = new User("Alice");
+console.log(user.name); // → "Alice"
+user.name = "Bob";
+console.log(user.name); // → "Bob"
+```
+
+### Computed Methods
+
+```js
+let methodName = "greet";
+
+class User {
+  constructor(name) {
+    this.name = name;
+  }
+
+  [methodName]() {
+    return `Hello, ${this.name}`;
+  }
+}
+
+let user = new User("Alice");
+console.log(user.greet()); // → "Hello, Alice"
+```
+
+### Class Fields
+
+Class fields are properties set on individual instances (not the prototype):
+
+```js
+class User {
+  name = "Anonymous"; // Class field — default value
+  age;
+
+  constructor(name, age) {
+    if (name) this.name = name;
+    this.age = age;
+  }
+}
+
+let user = new User("Alice", 30);
+console.log(user.name); // → "Alice"
+console.log(user.age);  // → 30
+
+let guest = new User(null, 0);
+console.log(guest.name); // → "Anonymous" (default)
+```
+
+## Class Inheritance
+
+Use `extends` to inherit from another class:
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+
+  walk() {
+    return `${this.name} walks`;
+  }
+}
+
+class Rabbit extends Animal {
+  jump() {
+    return `${this.name} jumps`;
+  }
+}
+
+let rabbit = new Rabbit("Buggs");
+console.log(rabbit.walk()); // → "Buggs walks" (inherited)
+console.log(rabbit.jump()); // → "Buggs jumps" (own)
+```
+
+### Overriding Methods
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+
+  makeSound() {
+    return "Some sound";
+  }
+}
+
+class Dog extends Animal {
+  makeSound() {
+    return "Woof!";
+  }
+}
+
+class Cat extends Animal {
+  makeSound() {
+    return "Meow!";
+  }
+}
+
+let dog = new Dog("Rex");
+let cat = new Cat("Whiskers");
+
+console.log(dog.makeSound()); // → "Woof!"
+console.log(cat.makeSound()); // → "Meow!"
+```
+
+### Using super
+
+`super` is used to call parent class methods or constructors:
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+
+  walk() {
+    return `${this.name} walks`;
+  }
+}
+
+class Rabbit extends Animal {
+  constructor(name, earLength) {
+    super(name); // Must call parent constructor first!
+    this.earLength = earLength;
+  }
+
+  walk() {
+    // Extend parent method
+    return super.walk() + " and hops";
+  }
+}
+
+let rabbit = new Rabbit("Buggs", 10);
+console.log(rabbit.walk()); // → "Buggs walks and hops"
+```
+
+### Overriding Constructor
+
+If a child class has a constructor, it **must** call `super()` before using `this`:
+
+```js
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+class Rabbit extends Animal {
+  constructor(name, earLength) {
+    // this.name = name; // ❌ Error before super()
+    super(name);
+    this.earLength = earLength; // ✅ OK after super()
+  }
+}
+```
+
+### Overriding Class Fields
+
+```js
+class Parent {
+  name = "Parent";
+
+  getName() {
+    return this.name;
+  }
+}
+
+class Child extends Parent {
+  name = "Child";
+}
+
+let child = new Child();
+console.log(child.getName()); // → "Child" (child's field overrides parent's)
+```
+
+## Static Properties and Methods
+
+Static methods belong to the class itself, not instances:
+
+```js
+class MathUtils {
+  static add(a, b) {
+    return a + b;
+  }
+
+  static multiply(a, b) {
+    return a * b;
+  }
+}
+
+// Called on the class, not instances
+console.log(MathUtils.add(2, 3));       // → 5
+console.log(MathUtils.multiply(2, 3));  // → 6
+
+// Cannot call on instances
+let utils = new MathUtils();
+// utils.add(2, 3); // TypeError!
+```
+
+### Static Properties
+
+```js
+class Config {
+  static APP_NAME = "My App";
+  static VERSION = "1.0.0";
+  static MAX_USERS = 100;
+}
+
+console.log(Config.APP_NAME);  // → "My App"
+console.log(Config.VERSION);   // → "1.0.0"
+```
+
+### Static Inheritance
+
+Static properties and methods are inherited:
+
+```js
+class Animal {
+  static planet = "Earth";
+
+  static identify() {
+    return "I am an animal";
+  }
+}
+
+class Rabbit extends Animal {}
+
+console.log(Rabbit.planet);   // → "Earth" (inherited)
+console.log(Rabbit.identify()); // → "I am an animal" (inherited)
+```
+
+### Use Cases for Static
+
+```js
+class User {
+  constructor(name, role) {
+    this.name = name;
+    this.role = role;
+  }
+
+  // Factory methods
+  static createAdmin(name) {
+    return new User(name, "admin");
+  }
+
+  static createGuest() {
+    return new User("Guest", "guest");
+  }
+
+  // Utility
+  static isValidRole(role) {
+    return ["admin", "user", "guest"].includes(role);
+  }
+}
+
+let admin = User.createAdmin("Alice");
+console.log(admin.name); // → "Alice"
+console.log(User.isValidRole("admin")); // → true
+console.log(User.isValidRole("super")); // → false
+```
+
+## Private and Protected Properties
+
+### Protected (convention)
+
+By convention, properties starting with `_` are considered "protected" — not meant to be accessed outside:
+
+```js
+class User {
+  _balance = 0; // Protected by convention
+
+  getBalance() {
+    return this._balance;
+  }
+
+  deposit(amount) {
+    if (amount > 0) this._balance += amount;
+  }
+}
+
+let user = new User();
+user.deposit(100);
+console.log(user.getBalance()); // → 100
+// console.log(user._balance);  // → 100 (accessible but "please don't")
+```
+
+### Private (genuine)
+
+Using `#` prefix (ES2022) — truly private, can't be accessed outside:
+
+```js
+class BankAccount {
+  #balance = 0; // Private field
+  #pin;
+
+  constructor(pin) {
+    this.#pin = pin;
+  }
+
+  deposit(amount) {
+    if (amount > 0) this.#balance += amount;
+  }
+
+  #validatePin(pin) { // Private method
+    return this.#pin === pin;
+  }
+
+  withdraw(amount, pin) {
+    if (!this.#validatePin(pin)) {
+      return "Invalid PIN";
+    }
+    if (amount > this.#balance) {
+      return "Insufficient funds";
+    }
+    this.#balance -= amount;
+    return `Withdrew ${amount}. Balance: ${this.#balance}`;
+  }
+}
+
+let account = new BankAccount("1234");
+account.deposit(500);
+console.log(account.withdraw(100, "1234")); // → "Withdrew 100. Balance: 400"
+// console.log(account.#balance); // SyntaxError!
+// console.log(account.#pin);    // SyntaxError!
+```
+
+## Extending Built-in Classes
+
+You can extend built-in classes like Array, Map, Error, etc.:
+
+```js
+class PowerArray extends Array {
+  isEmpty() {
+    return this.length === 0;
+  }
+
+  average() {
+    return this.reduce((sum, n) => sum + n, 0) / this.length;
+  }
+}
+
+let arr = new PowerArray(1, 2, 3, 4, 5);
+console.log(arr.isEmpty()); // → false
+console.log(arr.average()); // → 3
+console.log(arr.filter(n => n > 2).average()); // → 4.5 (returns PowerArray!)
+```
+
+### Inheriting from Map
+
+```js
+class DefaultMap extends Map {
+  constructor(defaultValue) {
+    super();
+    this.defaultValue = defaultValue;
+  }
+
+  get(key) {
+    if (!this.has(key)) {
+      return this.defaultValue;
+    }
+    return super.get(key);
+  }
+}
+
+let counts = new DefaultMap(0);
+counts.set("apple", 5);
+console.log(counts.get("apple"));  // → 5
+console.log(counts.get("banana")); // → 0 (default)
+```
+
+## Class Checking: "instanceof"
+
+Check if an object belongs to a class:
+
+```js
+class Animal {}
+class Dog extends Animal {}
+
+let dog = new Dog();
+let animal = new Animal();
+
+console.log(dog instanceof Dog);    // → true
+console.log(dog instanceof Animal); // → true (inheritance)
+console.log(dog instanceof Object); // → true (all objects)
+console.log(animal instanceof Dog); // → false
+```
+
+### instanceof with Constructor Functions
+
+```js
+function Car() {}
+let tesla = new Car();
+
+console.log(tesla instanceof Car);  // → true
+console.log(tesla instanceof Object); // → true
+```
+
+### Custom instanceof with Symbol.hasInstance
+
+```js
+class Zero {
+  static [Symbol.hasInstance](obj) {
+    return obj === 0 || obj === "0";
+  }
+}
+
+console.log(0 instanceof Zero);     // → true
+console.log("0" instanceof Zero);   // → true
+console.log(5 instanceof Zero);     // → false
+```
+
+## Mixins
+
+Mixins allow objects to inherit from multiple sources (JS doesn't support multiple inheritance, but mixins are a workaround).
+
+### Simple Mixin
+
+```js
+// Mixins as objects of methods
+let sayHiMixin = {
+  sayHi() {
+    return `Hello, ${this.name}`;
+  }
+};
+
+let sayByeMixin = {
+  sayBye() {
+    return `Goodbye, ${this.name}`;
+  }
+};
+
+class User {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+// Copy mixin methods to prototype
+Object.assign(User.prototype, sayHiMixin, sayByeMixin);
+
+let user = new User("Alice");
+console.log(user.sayHi());  // → "Hello, Alice"
+console.log(user.sayBye()); // → "Goodbye, Alice"
+```
+
+### Mixin with Inheritance
+
+```js
+let eventMixin = {
+  _events: {},
+
+  on(eventName, handler) {
+    if (!this._events[eventName]) {
+      this._events[eventName] = [];
+    }
+    this._events[eventName].push(handler);
+  },
+
+  trigger(eventName, ...args) {
+    let handlers = this._events[eventName];
+    if (!handlers) return;
+    handlers.forEach(handler => handler.apply(this, args));
+  },
+
+  off(eventName, handler) {
+    let handlers = this._events[eventName];
+    if (!handlers) return;
+    this._events[eventName] = handlers.filter(h => h !== handler);
+  }
+};
+
+class Button {
+  constructor(text) {
+    this.text = text;
+  }
+
+  click() {
+    this.trigger("click", this.text);
+  }
+}
+
+Object.assign(Button.prototype, eventMixin);
+
+let btn = new Button("Submit");
+btn.on("click", (text) => console.log(`Button "${text}" clicked`));
+btn.click(); // → "Button \"Submit\" clicked"
+```
+
+<CodePlayground
+  title="Classes Demo"
+  html=""
+  js="class Shape {
+  constructor(color) {
+    this.color = color;
+  }
+
+  describe() {
+    return 'A ' + this.color + ' shape';
+  }
+
+  static createRed() {
+    return new Shape('red');
+  }
+}
+
+class Circle extends Shape {
+  constructor(color, radius) {
+    super(color);
+    this.radius = radius;
+  }
+
+  area() {
+    return Math.PI * this.radius ** 2;
+  }
+
+  describe() {
+    return super.describe() + ' with radius ' + this.radius;
+  }
+}
+
+let redCircle = new Circle('red', 5);
+document.write(redCircle.describe() + '<br>');
+document.write('Area: ' + redCircle.area().toFixed(2) + '<br>');
+document.write('Instanceof Circle: ' + (redCircle instanceof Circle) + '<br>');
+document.write('Instanceof Shape: ' + (redCircle instanceof Shape) + '<br>');
+
+let defaultShape = Shape.createRed();
+document.write('<br>' + defaultShape.describe() + '<br>');"
+/>

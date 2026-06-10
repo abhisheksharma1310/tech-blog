@@ -1,0 +1,192 @@
+---
+title: "The Clickjacking Attack"
+description: "Understanding clickjacking attacks and how to defend against them"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Frames-Windows"]
+tags: ["JavaScript", "DOM", "Security", "Clickjacking"]
+slug: "js-clickjacking-attack"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## The Clickjacking Attack
+
+**Clickjacking** tricks users into clicking something they didn't intend to. An attacker overlays an invisible iframe on top of a decoy page — the user thinks they're clicking a button, but actually clicks something on the hidden page.
+
+## How It Works
+
+```
+Visible page:
+┌─────────────────────────┐
+│  Click here to win!     │
+│  ┌───────────────────┐  │
+│  │ [CLAIM PRIZE]     │  │  ← User thinks they click this
+│  └───────────────────┘  │
+└─────────────────────────┘
+
+Invisible iframe (opacity:0):
+┌─────────────────────────┐
+│                         │
+│  Twitter.com (hidden)   │
+│  ┌───────────────────┐  │
+│  │ [TWEET]           │  │  ← Actually clicks this
+│  └───────────────────┘  │
+└─────────────────────────┘
+```
+
+## The Attack HTML
+
+```html
+<style>
+  iframe {
+    width: 500px;
+    height: 500px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    z-index: 100;
+  }
+  .decoy-button {
+    position: absolute;
+    top: 200px;
+    left: 100px;
+    z-index: 10;
+  }
+</style>
+
+<div class="decoy-button">Click me for a prize!</div>
+<iframe src="https://victim-site.com/tweet"></iframe>
+```
+
+The user clicks the visible button, but actually clicks the invisible iframe's "Tweet" button.
+
+## Defending Against Clickjacking
+
+### 1. `X-Frame-Options` Header
+
+The simplest defense. Send this HTTP header:
+
+```
+X-Frame-Options: DENY           // never allow in iframe
+X-Frame-Options: SAMEORIGIN     // allow if same origin
+```
+
+Set it on the server:
+
+```javascript
+// Express.js
+res.setHeader('X-Frame-Options', 'DENY');
+
+// Nginx
+add_header X-Frame-Options "SAMEORIGIN" always;
+
+// Apache
+Header always set X-Frame-Options "DENY"
+```
+
+### 2. `Content-Security-Policy` frame-ancestors
+
+The modern approach — more flexible:
+
+```
+Content-Security-Policy: frame-ancestors 'none';
+Content-Security-Policy: frame-ancestors 'self';
+Content-Security-Policy: frame-ancestors https://trusted-site.com;
+```
+
+### 3. Frame Busting with JavaScript
+
+A client-side defense (works if JS is enabled):
+
+```javascript
+if (window.top !== window.self) {
+  window.top.location = window.self.location;
+}
+```
+
+But this can be bypassed. The `sandbox` attribute on the attacker's iframe can prevent it:
+
+```html
+<iframe sandbox="allow-scripts" src="..."></iframe>
+```
+
+Without `allow-top-navigation`, the frame-busting JS can't redirect the top window.
+
+### 4. The Cookie-Based Double Submit Pattern
+
+Generate a random token, store it in a cookie and session, and verify on sensitive actions:
+
+```javascript
+// On sensitive form submission
+if (req.cookies.csrf_token !== req.session.csrf_token) {
+  // reject — likely clickjacking or CSRF
+}
+```
+
+## Detecting Iframe Embedding
+
+<CodePlayground
+  title="Frame Detection"
+  html="
+<div id='frame-detect' style='padding:16px;background:#f1f5f9;border-radius:8px;'>
+  <p id='detect-status'>Checking if we're in an iframe...</p>
+  <pre id='detect-log' style='background:white;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const log = document.getElementById('detect-log');
+const status = document.getElementById('detect-status');
+
+try {
+  if (window.top !== window.self) {
+    status.textContent = '⚠️ I am embedded in an iframe!';
+    status.style.color = '#ef4444';
+    log.textContent =
+      'window.self: ' + window.self.location.href + '\\n' +
+      'window.top: ' + window.top.location.href + '\\n' +
+      'These are DIFFERENT — we are framed!';
+  } else {
+    status.textContent = '✅ I am the top-level window. Not framed.';
+    status.style.color = '#22c55e';
+    log.textContent =
+      'window.self === window.top: true' + '\\n' +
+      'This page is not embedded in any iframe.';
+  }
+} catch (e) {
+  // Cross-origin access to top.location throws
+  status.textContent = '⚠️ Cannot access top — likely cross-origin iframe';
+  status.style.color = '#eab308';
+  log.textContent = 'SecurityError: ' + e.message + '\\n' + 'This means we\\'re likely in a cross-origin iframe.';
+}
+"
+/>
+
+## `window.self` vs `window.top`
+
+| Property | What it is |
+|---|---|
+| `window.self` | The current window/iframe |
+| `window.top` | The topmost browser window |
+| `window.parent` | The direct parent (might be an iframe too) |
+
+When `window.self !== window.top`, you're inside an iframe.
+
+## Best Practices
+
+1. **Always** set `X-Frame-Options: DENY` on auth pages (login, payment)
+2. Use `Content-Security-Policy: frame-ancestors` for fine-grained control
+3. Don't rely solely on JavaScript frame busting — headers are the primary defense
+4. For pages that legitimately need framing (widgets, embeds), restrict to specific origins:
+   ```
+   Content-Security-Policy: frame-ancestors https://partner.com;
+   ```
+5. Consider adding `SameSite=Strict` cookies for sensitive operations
+
+## Key Takeaways
+
+- Clickjacking hides a victim site in an **invisible iframe** over a decoy page
+- **`X-Frame-Options: DENY`** is the simplest server-side defense
+- **`CSP frame-ancestors`** is the modern, more flexible approach
+- Frame-busting JS (`if (top !== self)`) is a secondary defense
+- Always protect login, payment, and social-action pages from framing
+- The `sandbox` attribute can be used to restrict what framed content can do

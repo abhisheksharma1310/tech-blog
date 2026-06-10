@@ -1,0 +1,259 @@
+---
+title: "Blob"
+description: "Work with Blob objects for binary data, downloads, and URLs"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Binary-Data"]
+tags: ["JavaScript", "Binary", "Blob", "File"]
+slug: "js-blob"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Blob
+
+A **Blob** (Binary Large Object) represents immutable raw data — images, text, audio, or any binary content. It's the foundation for files, downloads, and object URLs.
+
+## Creating a Blob
+
+```javascript
+const blob = new Blob(parts, options);
+```
+
+- `parts` — array of strings, ArrayBuffer, TypedArrays, or other Blobs
+- `options` — `{ type: 'mime/type' }`
+
+<CodePlayground
+  title="Creating Blobs"
+  html="
+<div>
+  <button id='text-blob'>Create Text Blob</button>
+  <button id='json-blob'>Create JSON Blob</button>
+  <button id='html-blob'>Create HTML Blob</button>
+  <pre id='blob-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('blob-out');
+
+document.getElementById('text-blob').onclick = function() {
+  const blob = new Blob(['Hello, Blob World!'], { type: 'text/plain' });
+  out.textContent =
+    'Size: ' + blob.size + ' bytes' + '\\n' +
+    'Type: ' + blob.type + '\\n' +
+    'Content: Hello, Blob World!';
+};
+
+document.getElementById('json-blob').onclick = function() {
+  const data = { name: 'Alice', role: 'admin' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  out.textContent =
+    'Size: ' + blob.size + ' bytes' + '\\n' +
+    'Type: ' + blob.type + '\\n' +
+    'Content: ' + JSON.stringify(data);
+};
+
+document.getElementById('html-blob').onclick = function() {
+  const blob = new Blob(['<h1>Hello</h1><p>Blob content</p>'], { type: 'text/html' });
+  out.textContent =
+    'Size: ' + blob.size + ' bytes' + '\\n' +
+    'Type: ' + blob.type + '\\n' +
+    'Content: <h1>Hello</h1><p>Blob content</p>';
+};
+"
+/>
+
+## Blob as Object URL
+
+`URL.createObjectURL()` creates a temporary URL you can use in `<a>`, `<img>`, `<iframe>`, etc.:
+
+```javascript
+const url = URL.createObjectURL(blob);
+
+// Use it
+img.src = url;
+a.href = url;
+
+// Release when done
+URL.revokeObjectURL(url);
+```
+
+<CodePlayground
+  title="Blob URL Preview"
+  html="
+<div>
+  <button id='blob-url-btn'>Create Blob URL</button>
+  <div id='blob-preview' style='margin-top:8px;'></div>
+  <pre id='blob-url-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('blob-url-out');
+const preview = document.getElementById('blob-preview');
+
+document.getElementById('blob-url-btn').onclick = function() {
+  // Create a simple SVG blob
+  const svg = <svg xmlns='http://www.w3.org/2000/svg' width='200' height='60'> 
+    <rect width='200' height='60' rx='8' fill='#6366f1/>
+    <text x='100' y='38' fill='white' font-size='18' text-anchor='middle'>Blob SVG</text> +
+    </svg>;
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  out.textContent = 'Blob URL created: ' + url.substring(0, 30) + '...';
+
+  const img = document.createElement('img');
+  img.src = url;
+  img.style.borderRadius = '8px';
+  preview.innerHTML = '';
+  preview.appendChild(img);
+
+  // Revoke after some time (not immediately so image can load)
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  out.textContent += '\\n(URL will be revoked after 10s)';
+};
+"
+/>
+
+## Blob Methods
+
+```javascript
+blob.size                 // size in bytes
+blob.type                 // MIME type
+
+// Convert to other formats
+const text = await blob.text();
+const buffer = await blob.arrayBuffer();
+const stream = blob.stream();
+```
+
+<CodePlayground
+  title="Blob Conversion"
+  html="
+<div>
+  <button id='blob-convert'>Create Blob → All Formats</button>
+  <pre id='convert-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('convert-out');
+
+document.getElementById('blob-convert').onclick = async function() {
+  const blob = new Blob(['Hello from Blob!'], { type: 'text/plain' });
+  this.disabled = true;
+  this.textContent = 'Converting...';
+
+  const text = await blob.text();
+  const buffer = await blob.arrayBuffer();
+  const uint8 = new Uint8Array(buffer);
+
+  out.textContent =
+    'blob.size: ' + blob.size + ' bytes' + '\\n' +
+    'blob.type: ' + blob.type + '\\n' +
+    '---' + '\\n' +
+    'blob.text(): ' + text + '\\n' +
+    'blob.arrayBuffer() -> Uint8Array: [' + uint8.join(', ') + ']';
+
+  this.disabled = false;
+  this.textContent = 'Create Blob → All Formats';
+};
+"
+/>
+
+## Blob as Download
+
+Trigger a file download with a Blob:
+
+```javascript
+function download(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+```
+
+<CodePlayground
+  title="Blob Download"
+  html="
+<div>
+  <button id='download-txt'>Download Text File</button>
+  <button id='download-json'>Download JSON</button>
+  <pre id='download-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('download-out');
+
+function download(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  out.textContent = 'Downloaded: ' + filename + ' (' + blob.size + ' bytes)';
+}
+
+document.getElementById('download-txt').onclick = function() {
+  const blob = new Blob(['This is a text file created with Blob!\\nLine 2'], { type: 'text/plain' });
+  download('hello.txt', blob);
+};
+
+document.getElementById('download-json').onclick = function() {
+  const data = { users: ['Alice', 'Bob', 'Charlie'], count: 3 };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  download('users.json', blob);
+};
+"
+/>
+
+## Blob Slice
+
+Extract a portion of a Blob (useful for chunked uploads):
+
+```javascript
+const chunk = blob.slice(start, end, contentType);
+```
+
+<CodePlayground
+  title="Blob Slice"
+  html="
+<div>
+  <button id='slice-btn'>Slice Blob</button>
+  <pre id='slice-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('slice-out');
+
+document.getElementById('slice-btn').onclick = async function() {
+  const blob = new Blob(['The quick brown fox jumps over the lazy dog']);
+  const chunk = blob.slice(4, 15);
+  const text = await chunk.text();
+
+  out.textContent =
+    'Original: 'The quick brown fox jumps over the lazy dog' + '\n' +
+    'Original size: ' + blob.size + ' bytes' + '\n' +
+    '---' + '\\n' +
+    'blob.slice(4, 15): ' + text + ' + '\n' +
+    'Chunk size: ' + chunk.size + ' bytes';
+};
+"
+/>
+
+## Blob vs ArrayBuffer
+
+| Blob | ArrayBuffer |
+|---|---|
+| Immutable | Mutable (via views) |
+| Has MIME type | Raw bytes |
+| File/network friendly | Memory manipulation |
+| `blob.text()`, `blob.arrayBuffer()` | TypedArray, DataView |
+
+## Key Takeaways
+
+- `new Blob([data], { type })` creates a blob with MIME type
+- `URL.createObjectURL(blob)` creates a temporary URL for downloads/previews
+- Always call `URL.revokeObjectURL()` to free memory
+- Blobs convert easily: `await blob.text()`, `await blob.arrayBuffer()`
+- `blob.slice()` extracts a portion — great for chunked uploads
+- Blobs are **immutable** — you can't modify them in place
+- Blobs are the foundation of **File**, **FileReader**, and **downloads**

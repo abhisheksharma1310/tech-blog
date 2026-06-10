@@ -1,0 +1,264 @@
+---
+title: "XMLHttpRequest"
+description: "Make HTTP requests with the classic XMLHttpRequest API"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Network"]
+tags: ["JavaScript", "Network", "XHR", "XMLHttpRequest"]
+slug: "js-xmlhttprequest"
+author: "Abhishek Sharma"
+order: 8
+---
+
+## XMLHttpRequest
+
+`XMLHttpRequest` (XHR) is the original browser API for making HTTP requests. While `fetch` is the modern alternative, XHR is still widely used and has unique features like **upload progress tracking**.
+
+## Basic XHR GET
+
+```javascript
+const xhr = new XMLHttpRequest();
+xhr.open('GET', 'https://api.example.com/data');
+xhr.responseType = 'json';
+
+xhr.onload = function() {
+  if (xhr.status === 200) {
+    console.log(xhr.response);
+  }
+};
+
+xhr.onerror = function() {
+  console.error('Network error');
+};
+
+xhr.send();
+```
+
+<CodePlayground
+  title="XHR GET Request"
+  html="
+<div>
+  <button id='xhr-get'>XHR GET Request</button>
+  <pre id='xhr-out' style='background:#f1f5f9;padding:12px;border-radius:6px;min-height:60px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('xhr-out');
+
+document.getElementById('xhr-get').onclick = function() {
+  const xhr = new XMLHttpRequest();
+  out.textContent = 'Loading...';
+
+  xhr.open('GET', 'https://jsonplaceholder.typicode.com/todos/1');
+  xhr.responseType = 'json';
+
+  xhr.onload = function() {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      out.textContent =
+        'Status: ' + xhr.status + ' ' + xhr.statusText + '\\n' +
+        'Response:' + '\\n' +
+        JSON.stringify(xhr.response, null, 2);
+    } else {
+      out.textContent = 'Error: HTTP ' + xhr.status;
+    }
+  };
+
+  xhr.onerror = function() {
+    out.textContent = 'Network error occurred';
+  };
+
+  xhr.onprogress = function(e) {
+    if (e.lengthComputable) {
+      out.textContent = 'Loading: ' + Math.round(e.loaded / e.total * 100) + '%';
+    }
+  };
+
+  xhr.send();
+};
+"
+/>
+
+## XHR POST with JSON
+
+```javascript
+const xhr = new XMLHttpRequest();
+xhr.open('POST', 'https://api.example.com/data');
+xhr.setRequestHeader('Content-Type', 'application/json');
+
+xhr.onload = function() {
+  console.log(xhr.response);
+};
+
+xhr.send(JSON.stringify({ name: 'Alice' }));
+```
+
+<CodePlayground
+  title="XHR POST Request"
+  html="
+<div>
+  <button id='xhr-post'>XHR POST Request</button>
+  <pre id='xhr-post-out' style='background:#f1f5f9;padding:12px;border-radius:6px;min-height:60px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('xhr-post-out');
+
+document.getElementById('xhr-post').onclick = function() {
+  const xhr = new XMLHttpRequest();
+  out.textContent = 'Sending...';
+
+  xhr.open('POST', 'https://jsonplaceholder.typicode.com/posts');
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.responseType = 'json';
+
+  xhr.onload = function() {
+    out.textContent =
+      'Status: ' + xhr.status + '\\n' +
+      'Response:' + '\\n' +
+      JSON.stringify(xhr.response, null, 2);
+  };
+
+  xhr.send(JSON.stringify({
+    title: 'XHR Post',
+    body: 'Posted via XMLHttpRequest',
+    userId: 1
+  }));
+};
+"
+/>
+
+## XHR Events
+
+| Event | When |
+|---|---|
+| `loadstart` | Request starts |
+| `progress` | Data is being received (download) |
+| `load` | Request successful |
+| `error` | Network error |
+| `abort` | Request aborted |
+| `timeout` | Request timed out |
+| `loadend` | Request finished (success or fail) |
+
+## XHR Properties
+
+```javascript
+xhr.status           // 200, 404, etc.
+xhr.statusText       // "OK", "Not Found"
+xhr.response         // response body
+xhr.responseType     // "json", "text", "blob", "arraybuffer", "document"
+xhr.responseURL      // final URL after redirects
+xhr.readyState       // 0=UNSENT, 1=OPENED, 2=HEADERS_RECEIVED, 3=LOADING, 4=DONE
+xhr.timeout          // timeout in ms
+xhr.withCredentials  // send cookies cross-origin
+```
+
+## Upload Progress
+
+Unlike fetch, XHR natively tracks **upload** progress:
+
+```javascript
+const xhr = new XMLHttpRequest();
+xhr.open('POST', '/upload');
+
+xhr.upload.onprogress = function(e) {
+  if (e.lengthComputable) {
+    const percent = (e.loaded / e.total) * 100;
+    console.log('Upload: ' + percent + '%');
+  }
+};
+
+xhr.onload = function() { console.log('Upload complete'); };
+xhr.send(formData);
+```
+
+<CodePlayground
+  title="Upload Progress (Simulated)"
+  html="
+<div>
+  <button id='xhr-upload'>Simulate Upload with Progress</button>
+  <div style='margin-top:8px;height:20px;background:#e2e8f0;border-radius:10px;overflow:hidden;'>
+    <div id='upload-bar' style='height:100%;width:0%;background:#22c55e;border-radius:10px;transition:width 0.3s;'></div>
+  </div>
+  <pre id='upload-progress-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const bar = document.getElementById('upload-bar');
+const out = document.getElementById('upload-progress-out');
+
+document.getElementById('xhr-upload').onclick = function() {
+  const xhr = new XMLHttpRequest();
+  bar.style.width = '0%';
+  out.textContent = 'Upload starting...';
+  this.disabled = true;
+
+  const formData = new FormData();
+  formData.append('file', new Blob(['x'.repeat(1024 * 100)]), 'demo.txt');
+
+  xhr.upload.onprogress = function(e) {
+    if (e.lengthComputable) {
+      const pct = Math.round(e.loaded / e.total * 100);
+      bar.style.width = pct + '%';
+      out.textContent = 'Uploaded: ' + pct + '%';
+    }
+  };
+
+  xhr.onload = function() {
+    bar.style.width = '100%';
+    const data = JSON.parse(xhr.response);
+    out.textContent = 'Upload complete! Status: ' + xhr.status;
+    document.getElementById('xhr-upload').disabled = false;
+  };
+
+  xhr.onerror = function() {
+    out.textContent = 'Upload failed';
+    document.getElementById('xhr-upload').disabled = false;
+  };
+
+  xhr.open('POST', 'https://httpbin.org/post');
+  xhr.send(formData);
+};
+"
+/>
+
+## Aborting XHR
+
+```javascript
+const xhr = new XMLHttpRequest();
+xhr.open('GET', url);
+xhr.send();
+
+// Later
+xhr.abort();
+
+xhr.onabort = function() {
+  console.log('Request aborted');
+};
+```
+
+## XHR Response Types
+
+| `responseType` | Returns |
+|---|---|
+| `""` (default) | String |
+| `"text"` | String |
+| `"json"` | Parsed JS object |
+| `"blob"` | Blob |
+| `"arraybuffer"` | ArrayBuffer |
+| `"document"` | XML Document |
+
+## XHR vs Fetch
+
+| Feature | XHR | Fetch |
+|---|---|---|
+| Upload progress | ✅ Yes | ❌ No (needs XHR) |
+| Download progress | ✅ Yes | ✅ With ReadableStream |
+| Promise-based | ❌ Callbacks | ✅ Promises |
+| Abort | ✅ `xhr.abort()` | ✅ `AbortController` |
+| Simpler API | ❌ Verbose | ✅ Clean |
+| Service Workers | ❌ Read-only | ✅ Full support |
+
+## Key Takeaways
+
+- XHR uses **callbacks** (onload, onerror, onprogress) instead of Promises
+- XHR is the **only** way to track **upload progress** natively
+- Set `responseType` to control how the response is parsed
+- `xhr.abort()` cancels the request
+- Use `xhr.upload.onprogress` for upload progress bars
+- For most new code, prefer `fetch()` — but keep XHR for upload tracking

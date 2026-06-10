@@ -1,0 +1,287 @@
+---
+title: "Selection and Range"
+description: "Work with text selection and ranges in the DOM"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Misc"]
+tags: ["JavaScript", "DOM", "Selection", "Range"]
+slug: "js-selection-range"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Selection and Range
+
+The **Selection** and **Range** APIs let you work with selected text and manipulate document ranges programmatically.
+
+## The `Selection` Object
+
+Access the user's current selection via `window.getSelection()`:
+
+```javascript
+const selection = window.getSelection();
+selection.toString()     // the selected text (as plain string)
+selection.type           // "Range", "Caret", or "None"
+selection.isCollapsed    // true if cursor (no selected text)
+selection.rangeCount     // number of ranges (usually 0 or 1)
+```
+
+<CodePlayground
+  title="Reading Selection"
+  html="
+<p id='select-demo'>Select some of this text to see what's selected. Try double-clicking words or dragging to select a range.</p>
+<pre id='selection-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const out = document.getElementById('selection-output');
+
+document.addEventListener('mouseup', function() {
+  const sel = window.getSelection();
+  if (sel.type === 'Range') {
+    out.textContent =
+      'Selected:' + sel.toString() + '\\n' +
+      'length: ' + sel.toString().length + '\\n' +
+      'isCollapsed: ' + sel.isCollapsed + '\\n' +
+      'rangeCount: ' + sel.rangeCount;
+  } else {
+    out.textContent = 'No text selected (cursor only)';
+  }
+});
+"
+/>
+
+## The `Range` Object
+
+A `Range` represents a **continuous fragment** of the document. Get it from a selection:
+
+```javascript
+const range = sel.getRangeAt(0); // first range (usually the only one)
+```
+
+Or create one directly:
+
+```javascript
+const range = document.createRange();
+range.setStart(startNode, startOffset);
+range.setEnd(endNode, endOffset);
+```
+
+## Range Properties
+
+```javascript
+range.startContainer    // node where range starts
+range.startOffset       // offset within start container
+range.endContainer      // node where range ends
+range.endOffset         // offset within end container
+range.collapsed         // true if start === end
+range.commonAncestorContainer // deepest common parent of start and end
+```
+
+## Range Methods
+
+```javascript
+range.deleteContents()          // remove selected content
+range.extractContents()         // remove and return as DocumentFragment
+range.cloneContents()           // clone the selected content
+range.insertNode(newNode)       // insert a node at range start
+range.surroundContents(surroundingNode) // wrap range in an element
+range.cloneRange()              // deep copy
+```
+
+<CodePlayground
+  title="Working with Range"
+  html="
+<div id='range-demo' style='padding:12px;border:2px solid #6366f1;border-radius:8px;'>
+  <p id='range-text'>This is a paragraph with <strong>bold</strong> and <em>italic</em> text inside.</p>
+</div>
+<div style='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;'>
+  <button id='highlight-range'>Highlight Selection</button>
+  <button id='delete-range'>Delete Selection</button>
+  <button id='wrap-range'>Wrap Selection in &lt;u&gt;</button>
+</div>
+<pre id='range-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('range-log');
+
+function getRange() {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) {
+    log.textContent = 'No text selected — select some text first!';
+    return null;
+  }
+  return sel.getRangeAt(0);
+}
+
+document.getElementById('highlight-range').onclick = function() {
+  const range = getRange();
+  if (!range) return;
+  const span = document.createElement('span');
+  span.style.cssText = 'background:#fef9c3;padding:2px 4px;border-radius:3px;';
+  range.surroundContents(span);
+  log.textContent = 'Selection highlighted';
+};
+
+document.getElementById('delete-range').onclick = function() {
+  const range = getRange();
+  if (!range) return;
+  range.deleteContents();
+  log.textContent = 'Selection deleted';
+};
+
+document.getElementById('wrap-range').onclick = function() {
+  const range = getRange();
+  if (!range) return;
+  const u = document.createElement('u');
+  range.surroundContents(u);
+  log.textContent = 'Selection wrapped in underline';
+};
+"
+/>
+
+## Creating Ranges Programmatically
+
+You don't need a user selection — create ranges from code:
+
+```javascript
+const p = document.querySelector('p');
+const range = document.createRange();
+
+range.setStart(p.firstChild, 0);    // start at first char
+range.setEnd(p.firstChild, 5);      // end at 5th char
+range.toString();                   // first 5 chars
+```
+
+<CodePlayground
+  title="Programmatic Range"
+  html="
+<p id='prog-p'>Hello World! This is a paragraph.</p>
+<button id='extract-first5'>Extract first 5 chars</button>
+<button id='bold-middle'>Bold middle word</button>
+<button id='select-programmatic'>Select programmatically</button>
+<pre id='prog-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const p = document.getElementById('prog-p');
+const log = document.getElementById('prog-log');
+
+document.getElementById('extract-first5').onclick = function() {
+  const range = document.createRange();
+  range.setStart(p.firstChild, 0);
+  range.setEnd(p.firstChild, 5);
+  log.textContent = 'Range text:' + range.toString();
+};
+
+document.getElementById('bold-middle').onclick = function() {
+  const range = document.createRange();
+  const text = p.firstChild;
+  const word = 'World';
+  const start = text.textContent.indexOf(word);
+  range.setStart(text, start);
+  range.setEnd(text, start + word.length);
+  const b = document.createElement('strong');
+  range.surroundContents(b);
+  log.textContent = 'Made' + word + 'bold';
+};
+
+document.getElementById('select-programmatic').onclick = function() {
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  const range = document.createRange();
+  range.selectNodeContents(p);
+  sel.addRange(range);
+  log.textContent = 'Selected entire paragraph programmatically';
+};
+"
+/>
+
+## Selection Events
+
+```javascript
+document.addEventListener('selectionchange', function() {
+  // fires whenever selection changes
+});
+```
+
+<CodePlayground
+  title="Selection Change Event"
+  html="
+<p id='selection-event-demo'>Select text here and see the event fire. <strong>Try it</strong> with different selections.</p>
+<pre id='sel-event-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('sel-event-log');
+let count = 0;
+
+document.addEventListener('selectionchange', function() {
+  const sel = window.getSelection();
+  if (sel.type === 'Range') {
+    count++;
+    log.textContent = 'Selection changed #' + count + ':' + sel.toString().substring(0, 50) + (sel.toString().length > 50 ? '...' : '');
+  }
+});
+"
+/>
+
+## `Range` vs `Selection`
+
+| Concept | What it is |
+|---|---|
+| `Selection` | What the user has selected (can have multiple ranges) |
+| `Range` | A continuous document fragment (building block of selection) |
+
+A selection **contains** a range. Most of the time there's one range per selection.
+
+## Practical: Highlight Search Terms
+
+<CodePlayground
+  title="Search Highlight"
+  html="
+<div id='search-demo'>
+  <input id='search-term' type='text' placeholder='Search term' style='padding:8px;border:1px solid #cbd5e1;border-radius:4px;'>
+  <button id='search-btn'>Highlight</button>
+  <button id='clear-highlights'>Clear</button>
+  <div id='search-text' style='margin-top:8px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;'>
+    The Document Object Model (DOM) is a programming interface for web documents. It represents the page so that programs can change the document structure, style, and content. The DOM represents the document as nodes and objects.
+  </div>
+  <pre id='search-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const searchInput = document.getElementById('search-term');
+const container = document.getElementById('search-text');
+const log = document.getElementById('search-log');
+
+document.getElementById('search-btn').onclick = function() {
+  const term = searchInput.value.trim().toLowerCase();
+  if (!term) return;
+
+  // Get original text (remove old highlights first)
+  const original = container.textContent;
+  container.innerHTML = '';
+
+  // Walk and wrap matches
+  const parts = original.split(new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\\\]/g, '\\\\$&') + ')', 'gi'));
+  parts.forEach(part => {
+    if (part.toLowerCase() === term) {
+      const mark = document.createElement('mark');
+      mark.style.cssText = 'background:#fef9c3;padding:2px 4px;border-radius:3px;';
+      mark.textContent = part;
+      container.appendChild(mark);
+    } else {
+      container.appendChild(document.createTextNode(part));
+    }
+  });
+  log.textContent = 'Found and highlighted ' + Math.floor(parts.length / 2) + ' occurrences of' + term;
+};
+
+document.getElementById('clear-highlights').onclick = function() {
+  container.innerHTML = container.textContent;
+  log.textContent = 'Highlights cleared';
+};
+"
+/>
+
+## Key Takeaways
+
+- `window.getSelection()` gets the user's **selection**
+- A `Range` is a **document fragment** defined by start and end points
+- `setStart(node, offset)` and `setEnd(node, offset)` define a range
+- `range.surroundContents(element)` wraps the range in an element
+- `range.deleteContents()` and `range.extractContents()` remove content
+- Use `selectionchange` event on `document` to track selection changes
+- Create ranges programmatically to manipulate document sections without user selection

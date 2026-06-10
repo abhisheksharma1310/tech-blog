@@ -1,0 +1,252 @@
+---
+title: "IndexedDB"
+description: "Client-side database with IndexedDB — store structured data in the browser"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Storage"]
+tags: ["JavaScript", "Storage", "IndexedDB", "Database"]
+slug: "js-indexeddb"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## IndexedDB
+
+**IndexedDB** is a full client-side database built into the browser. It stores structured data (objects), supports indexes for fast lookups, and handles large amounts of data (hundreds of MB/GB).
+
+## Key Concepts
+
+| Concept | Description |
+|---|---|
+| **Database** | One per origin (e.g., `myApp`) |
+| **Object Store** | Like a table — holds records |
+| **Index** | Like a SQL index — fast lookups by a property |
+| **Key** | Unique identifier for each record |
+| **Transaction** | Atomic read/write operations |
+| **Cursor** | Iterate over multiple records |
+
+## Opening a Database
+
+```javascript
+const request = indexedDB.open('MyApp', 1);
+
+request.onupgradeneeded = function(event) {
+  const db = event.target.result;
+  // Create object stores here (only on version upgrade)
+};
+
+request.onsuccess = function(event) {
+  const db = event.target.result;
+  // Use the database
+};
+
+request.onerror = function(event) {
+  console.error('Database error:', event.target.error);
+};
+```
+
+<CodePlayground
+  title="Open IndexedDB Database"
+  html="
+<div>
+  <button id='idb-open'>Open/Create Database</button>
+  <pre id='idb-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('idb-out');
+let db = null;
+
+document.getElementById('idb-open').onclick = function() {
+  const request = indexedDB.open('DemoDB', 1);
+
+  request.onupgradeneeded = function(e) {
+    const database = e.target.result;
+    out.textContent = 'onupgradeneeded: Creating object stores...\\n';
+
+    if (!database.objectStoreNames.contains('notes')) {
+      const store = database.createObjectStore('notes', { keyPath: 'id', autoIncrement: true });
+      store.createIndex('title', 'title', { unique: false });
+      store.createIndex('created', 'created', { unique: false });
+      out.textContent += '  Created 'notes' store with indexes\\n';
+    }
+  };
+
+  request.onsuccess = function(e) {
+    db = e.target.result;
+    out.textContent += '✅ Database opened! Version: ' + db.version + '\\n';
+    out.textContent += '  Object stores: ' + Array.from(db.objectStoreNames).join(', ');
+    this.disabled = true;
+    this.textContent = 'Database Ready';
+  };
+
+  request.onerror = function() {
+    out.textContent = '❌ Error opening database';
+  };
+};
+"
+/>
+
+## Adding Data
+
+```javascript
+const transaction = db.transaction('notes', 'readwrite');
+const store = transaction.objectStore('notes');
+
+const note = { title: 'My Note', body: 'Hello IndexedDB!', created: new Date() };
+const request = store.add(note);
+
+request.onsuccess = function() {
+  console.log('Added with id:', request.result);
+};
+```
+
+<CodePlayground
+  title="Adding Data to IndexedDB"
+  html="
+<div>
+  <button id='idb-open2' disabled>1. Open DB First</button>
+  <button id='idb-add' disabled>2. Add Record</button>
+  <pre id='idb-add-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('idb-add-out');
+let db = null;
+
+const openBtn = document.getElementById('idb-open2');
+const addBtn = document.getElementById('idb-add');
+
+openBtn.onclick = function() {
+  const req = indexedDB.open('NotesDB', 1);
+
+  req.onupgradeneeded = function(e) {
+    const d = e.target.result;
+    if (!d.objectStoreNames.contains('notes')) {
+      d.createObjectStore('notes', { keyPath: 'id', autoIncrement: true });
+    }
+  };
+
+  req.onsuccess = function(e) {
+    db = e.target.result;
+    out.textContent = '✅ Database ready';
+    openBtn.disabled = true;
+    openBtn.textContent = 'Ready';
+    addBtn.disabled = false;
+  };
+
+  req.onerror = function() {
+    out.textContent = '❌ Error opening';
+  };
+};
+
+addBtn.onclick = function() {
+  if (!db) return;
+
+  const note = {
+    title: 'Note ' + (Math.random() * 1000).toFixed(0),
+    body: 'Created at ' + new Date().toLocaleTimeString(),
+    created: new Date()
+  };
+
+  const tx = db.transaction('notes', 'readwrite');
+  const store = tx.objectStore('notes');
+  const req = store.add(note);
+
+  req.onsuccess = function() {
+    out.textContent = '✅ Added: id=' + req.result + ', title=' + note.title + '';
+  };
+
+  req.onerror = function() {
+    out.textContent = '❌ Add failed: ' + req.error;
+  };
+};
+"
+/>
+
+## Reading Data
+
+```javascript
+// Get by key
+const request = store.get(1);
+request.onsuccess = function() {
+  console.log(request.result);
+};
+
+// Get all
+const request = store.getAll();
+request.onsuccess = function() {
+  console.log(request.result); // array
+};
+```
+
+## Using Indexes
+
+```javascript
+// Get by index (title)
+const index = store.index('title');
+const request = index.get('My Note');
+
+// Cursor — iterate all records
+const cursor = store.openCursor();
+cursor.onsuccess = function(event) {
+  const cursor = event.target.result;
+  if (cursor) {
+    console.log(cursor.key, cursor.value);
+    cursor.continue(); // next
+  }
+};
+```
+
+## IndexedDB vs localStorage
+
+| Feature | IndexedDB | localStorage |
+|---|---|---|
+| Data type | Objects, Blobs, Files | Strings only |
+| Indexes | ✅ Multiple indexes | ❌ None |
+| Capacity | Hundreds of MB+ | ~5-10MB |
+| Async | ✅ (transactions) | ❌ (sync) |
+| Complex queries | ✅ (cursors, ranges) | ❌ None |
+| Complexity | Higher | Very simple |
+
+## Transaction Modes
+
+| Mode | Description |
+|---|---|
+| `readonly` | Can only read (multiple can run in parallel) |
+| `readwrite` | Can read and write (one at a time) |
+| `versionchange` | Schema changes (onupgradeneeded) |
+
+## Key Range Queries
+
+```javascript
+// All records with key >= 5 and <= 10
+const range = IDBKeyRange.bound(5, 10);
+store.openCursor(range);
+
+// All records with key > 5
+const range = IDBKeyRange.lowerBound(5, true);
+
+// All records with key < 10
+const range = IDBKeyRange.upperBound(10, true);
+
+// Single key
+const range = IDBKeyRange.only(5);
+```
+
+## Practical: Note Taking App
+
+IndexedDB is ideal for offline-first apps, draft saving, and client-side caches. The pattern:
+
+1. Open database on app start
+2. On create/update/delete, write to IndexedDB
+3. On read, query IndexedDB
+4. Sync with server in the background
+
+## Key Takeaways
+
+- IndexedDB stores **structured objects** with **indexes** for fast lookups
+- Always create/modify object stores in `onupgradeneeded`
+- Use **transactions** (`readonly` / `readwrite`) for all operations
+- Keys can be auto-incrementing or a property you define
+- Indexes enable **fast lookups** by non-key properties
+- Cursors **iterate** over matching records
+- Much more powerful than localStorage for complex data
+- Async API — uses `onsuccess`/`onerror` callbacks (or wrap in Promises)

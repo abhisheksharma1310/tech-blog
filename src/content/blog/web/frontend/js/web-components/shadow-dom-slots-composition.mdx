@@ -1,0 +1,229 @@
+---
+title: "Shadow DOM Slots and Composition"
+description: "Compose light DOM content into shadow components with slots"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Web Components"]
+tags: ["JavaScript", "Web Components", "Shadow DOM", "Slots"]
+slug: "js-shadow-dom-slots"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## Shadow DOM Slots and Composition
+
+**Slots** are placeholders in your shadow DOM that get filled with content from the light DOM (the user's markup). This enables component composition.
+
+## Named Slots
+
+Define named slots in the shadow DOM and project content into them:
+
+```javascript
+class PageLayout extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        header { background: #eef2ff; padding: 16px; border-radius: 8px 8px 0 0; }
+        main { padding: 16px; min-height: 100px; }
+        footer { background: #f1f5f9; padding: 12px; border-radius: 0 0 8px 8px; font-size: 0.875rem; color: #64748b; }
+      </style>
+      <header><slot name="header">Header</slot></header>
+      <main><slot>Main content</slot></main>
+      <footer><slot name="footer">Footer</slot></footer>
+    `;
+  }
+}
+```
+
+Usage:
+
+```html
+<page-layout>
+  <h1 slot="header">Welcome</h1>
+  <p>This is the main content area.</p>
+  <small slot="footer">© 2026</small>
+</page-layout>
+```
+
+<CodePlayground
+  title="Named Slots"
+  html="
+<slot-demo>
+  <h2 slot='title'>Custom Title</h2>
+  <p>This is the body content projected into the default slot.</p>
+  <span slot='footer'>Custom footer text</span>
+</slot-demo>
+<pre id='slot-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class SlotDemo extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        .container { border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; }
+        .title { background: #eef2ff; padding: 12px 16px; }
+        .body { padding: 16px; }
+        .footer { background: #f1f5f9; padding: 8px 16px; font-size: 0.875rem; color: #64748b; }
+        ::slotted(h2) { margin: 0; color: #6366f1; }
+      </style>
+      <div class='container'>
+        <div class='title'><slot name='title'>Default Title</slot></div>
+        <div class='body'><slot>Default body content</slot></div>
+        <div class='footer'><slot name='footer'>Default footer</slot></div>
+      </div>
+    `;
+  }
+}
+customElements.define('slot-demo', SlotDemo);
+
+document.getElementById('slot-out').textContent =
+  'Content from light DOM is projected into slots.\\n' +
+  'The <h2 slot='title'> fills the title slot.\\n' +
+  'The <p> fills the default (unnamed) slot.\\n' +
+  'The <span slot='footer'> fills the footer slot.';
+"
+/>
+
+## The Default Slot
+
+A `<slot>` without a `name` attribute is the **default slot**. Content without a `slot` attribute goes there:
+
+```html
+<slot>Fallback content if nothing provided</slot>
+```
+
+## Slot Fallback Content
+
+If no content is provided for a slot, the **fallback content** inside the `<slot>` element is displayed:
+
+```html
+<slot name="title">Default Title</slot>
+```
+
+## `slotchange` Event
+
+Fires when the slotted content changes:
+
+```javascript
+class SlotWatcher extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `<slot onslotchange="this.dispatchEvent(new CustomEvent('slotchange', {bubbles:true}))"></slot>`;
+
+    shadow.querySelector('slot').addEventListener('slotchange', (e) => {
+      const assigned = e.target.assignedNodes();
+      console.log('Slotted content changed:', assigned);
+    });
+  }
+}
+```
+
+## `assignedNodes()` and `assignedElements()`
+
+Get the nodes/elements projected into a slot:
+
+```javascript
+const slot = shadowRoot.querySelector('slot[name="items"]');
+
+// All nodes (including text)
+const nodes = slot.assignedNodes();
+
+// Elements only
+const elements = slot.assignedElements();
+
+// With flatten: includes fallback content if no slotted content
+const elements = slot.assignedElements({ flatten: true });
+```
+
+<CodePlayground
+  title="assignedElements"
+  html="
+<slot-inspector>
+  <span slot='items'>Item A</span>
+  <span slot='items'>Item B</span>
+  <span slot='items'>Item C</span>
+</slot-inspector>
+<pre id='assigned-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class SlotInspector extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <div style='padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #22c55e;'>
+        <slot name='items' style='display:block;'></slot>
+      </div>
+    `;
+  }
+
+  connectedCallback() {
+    const slot = this.shadowRoot.querySelector('slot');
+    const elements = slot.assignedElements();
+    const out = document.getElementById('assigned-out');
+    out.textContent =
+      'assignedElements() for slot[name='items']:' + '\\n' +
+      'Count: ' + elements.length + '\\n' +
+      'Content: ' + elements.map(el => el.textContent).join(', ');
+  }
+}
+customElements.define('slot-inspector', SlotInspector);
+"
+/>
+
+## Multiple Slots with Same Name
+
+If multiple elements have the same slot attribute, they all project into that slot:
+
+```html
+<my-list>
+  <li slot="item">One</li>
+  <li slot="item">Two</li>
+  <li slot="item">Three</li>
+</my-list>
+```
+
+```html
+<slot name="item"></slot>  <!-- renders all three -->
+```
+
+## Slot Styling with `::slotted()`
+
+The `::slotted()` pseudo-element selects slotted content:
+
+```css
+/* Style ALL slotted elements */
+::slotted(*) { color: #334155; }
+
+/* Style slotted <h2> elements */
+::slotted(h2) { margin: 0; }
+
+/* Style elements with a specific class */
+::slotted(.highlight) { background: #fef9c3; }
+```
+
+Limitations:
+- `::slotted` can only style **top-level** slotted children (not descendants)
+- You can't use `::slotted` with complex selectors like `::slotted(div p)`
+
+## Composition Pattern
+
+The typical Web Component composition pattern:
+
+1. Component defines **slots** in its shadow template
+2. User provides **light DOM content** with `slot` attributes
+3. Content is **projected** into the appropriate slots
+4. Component styles slotted content with `::slotted()`
+5. `slotchange` events notify the component of content changes
+
+## Key Takeaways
+
+- Named slots (`<slot name="header">`) let users project content to specific locations
+- The **default slot** (unnamed) catches content without a `slot` attribute
+- **Fallback content** in `<slot>` shows when nothing is projected
+- `slotchange` event fires when slotted content changes
+- `assignedNodes()` / `assignedElements()` inspect projected content
+- `::slotted()` styles the projected content from inside shadow
+- Slots make components **composable** — users control the content structure

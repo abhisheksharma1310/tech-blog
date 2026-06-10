@@ -1,0 +1,186 @@
+---
+title: "TextDecoder and TextEncoder"
+description: "Convert between strings and binary data with TextEncoder and TextDecoder"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Binary-Data"]
+tags: ["JavaScript", "Binary", "Encoding", "TextDecoder"]
+slug: "js-text-decoder-encoder"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## TextDecoder and TextEncoder
+
+`TextEncoder` and `TextDecoder` convert between JavaScript strings and `Uint8Array` (binary) representations.
+
+## TextEncoder
+
+Converts a **string → bytes** (Uint8Array). Always uses **UTF-8**:
+
+```javascript
+const encoder = new TextEncoder();
+const bytes = encoder.encode('Hello');
+// Uint8Array(5) [72, 101, 108, 108, 111]
+```
+
+<CodePlayground
+  title="TextEncoder"
+  html="
+<div>
+  <input id='encode-input' type='text' value='Hello 🌍' style='width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;'>
+  <button id='encode-btn'>Encode</button>
+  <pre id='encode-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+document.getElementById('encode-btn').onclick = function() {
+  const text = document.getElementById('encode-input').value;
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(text);
+  const out = document.getElementById('encode-out');
+
+  out.textContent =
+    'String: ' + text + '\\n' +
+    'Length: ' + text.length + ' characters' + '\\n' +
+    'Encoded: ' + bytes.length + ' bytes' + '\\n' +
+    'Hex: ' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ') + '\\n' +
+    'Decimal: [' + bytes.join(', ') + ']';
+};
+"
+/>
+
+## TextDecoder
+
+Converts **bytes → string**. Supports many encodings:
+
+```javascript
+const decoder = new TextDecoder();
+const text = decoder.decode(bytes);
+// "Hello"
+```
+
+<CodePlayground
+  title="TextDecoder"
+  html="
+<div>
+  <p>Bytes (decimal): <code id='decode-bytes'>[72, 101, 108, 108, 111]</code></p>
+  <button id='decode-btn'>Decode to String</button>
+  <pre id='decode-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+document.getElementById('decode-btn').onclick = function() {
+  const bytes = new Uint8Array([72, 101, 108, 108, 111, 32, 240, 159, 140, 141]);
+  const decoder = new TextDecoder();
+  const text = decoder.decode(bytes);
+  const out = document.getElementById('decode-out');
+
+  out.textContent =
+    'Bytes: [' + bytes.join(', ') + ']' + '\\n' +
+    'Encodings:' + '\\n' +
+    '  UTF-8: ' + new TextDecoder('utf-8').decode(bytes) + '' + '\n' +
+    '  ascii: ' + new TextDecoder('ascii').decode(bytes) + '' + '\\n' +
+    '---' + '\\n' +
+    'Note: ASCII can\\'t handle multi-byte characters (emoji)';
+};
+"
+/>
+
+## Supported Encodings
+
+`TextDecoder` supports many encodings:
+
+| Encoding | Description |
+|---|---|
+| `utf-8` (default) | Variable-width, all of Unicode |
+| `ascii` | 7-bit, English only |
+| `utf-16le` | UTF-16 little-endian |
+| `utf-16be` | UTF-16 big-endian |
+| `iso-8859-1` | Latin-1 (Western European) |
+| `windows-1251` | Cyrillic |
+| `shift-jis` | Japanese |
+
+```javascript
+// Decode with specific encoding
+const decoder = new TextDecoder('shift-jis');
+const text = decoder.decode(bytes);
+```
+
+## Encoding vs Decoding
+
+```
+              TextEncoder                TextDecoder
+String  ───────────────────▶  Uint8Array ──────────────────▶  String
+          (always UTF-8)                    (any encoding)
+```
+
+## Handling Partial Data
+
+For streaming data, use `stream: true` to handle incomplete sequences:
+
+```javascript
+const decoder = new TextDecoder();
+
+// First chunk
+const part1 = decoder.decode(chunk1, { stream: true });
+// Second chunk
+const part2 = decoder.decode(chunk2, { stream: true });
+// Finalize
+const part3 = decoder.decode(chunk3); // no stream = finalize
+```
+
+This is useful for fetching large text progressively.
+
+## Practical: Encoding Roundtrip
+
+<CodePlayground
+  title="Encoding Roundtrip"
+  html="
+<div>
+  <input id='roundtrip-input' type='text' value='JavaScript 🔥 DOM' style='width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;'>
+  <button id='roundtrip-btn'>Roundtrip</button>
+  <pre id='roundtrip-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+document.getElementById('roundtrip-btn').onclick = function() {
+  const original = document.getElementById('roundtrip-input').value;
+  const out = document.getElementById('roundtrip-out');
+
+  // Encode
+  const bytes = new TextEncoder().encode(original);
+
+  // Decode
+  const decoded = new TextDecoder().decode(bytes);
+
+  out.textContent =
+    'Original string: ' + original + '\\n' +
+    'String length: ' + original.length + ' chars' + '\\n' +
+    '---' + '\\n' +
+    'Encoded bytes: ' + bytes.length + ' bytes' + '\\n' +
+    'Byte values: [' + bytes.join(', ') + ']' + '\\n' +
+    '---' + '\\n' +
+    'Decoded string: ' + decoded + '\\n' +
+    'Match: ' + (original === decoded ? '✅ YES' : '❌ NO');
+};
+"
+/>
+
+## Blob to String
+
+Convert a Blob to a string:
+
+```javascript
+const text = await blob.text(); // built-in
+// or
+const text = await new Response(blob).text();
+// or
+const text = new TextDecoder().decode(await blob.arrayBuffer());
+```
+
+## Key Takeaways
+
+- `TextEncoder` converts **string → Uint8Array** (always UTF-8)
+- `TextDecoder` converts **bytes → string** (many encodings)
+- The default encoding for `TextDecoder` is `utf-8`
+- Use `{ stream: true }` for decoding partial chunks
+- For Blob to string, use `blob.text()` as the simplest path
+- Emoji and non-Latin characters take **multiple bytes** in UTF-8
+- Always verify roundtrip: `decode(encode(str)) === str`

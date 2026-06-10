@@ -1,0 +1,192 @@
+---
+title: "Mouse Events"
+description: "Handle mouse clicks, buttons, and modifier keys with JavaScript"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "UI Events"]
+tags: ["JavaScript", "DOM", "Mouse Events"]
+slug: "js-mouse-events"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Mouse Events
+
+Mouse events cover everything from simple clicks to complex interactions. Let's explore the most common ones.
+
+## Mouse Event Types
+
+| Event | Fires When |
+|---|---|
+| `mousedown` | Mouse button is pressed |
+| `mouseup` | Mouse button is released |
+| `click` | `mousedown` + `mouseup` on the same element |
+| `dblclick` | Two clicks in quick succession |
+| `contextmenu` | Right-click (or menu key) |
+
+<CodePlayground
+  title="Mouse Event Sequence"
+  html="
+<style>
+  #mouse-seq { height: 120px; background: #f1f5f9; border: 2px dashed #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
+  #mouse-seq:active { background: #eef2ff; }
+</style>
+<div id='mouse-seq'>Click or right-click me</div>
+<pre id='mouse-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const area = document.getElementById('mouse-seq');
+const log = document.getElementById('mouse-log');
+let count = 0;
+
+['mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu'].forEach(type => {
+  area.addEventListener(type, function(e) {
+    e.preventDefault();
+    count++;
+    log.textContent = '#' + count + ' ' + type + ' (button: ' + e.button + ')';
+  });
+});
+"
+/>
+
+## Mouse Button Properties
+
+The `event.button` property tells you which button was pressed:
+
+| Value | Button |
+|---|---|
+| `0` | Left button (primary) |
+| `1` | Middle button (wheel) |
+| `2` | Right button (secondary) |
+
+Use `event.buttons` (plural) to check **which buttons are currently pressed** (bitmask):
+
+```javascript
+element.addEventListener('mousedown', function(e) {
+  if (e.button === 0) console.log('Left click');
+  if (e.button === 2) console.log('Right click');
+});
+```
+
+<CodePlayground
+  title="Button Detection"
+  html="
+<div id='btn-area' style='height:100px;background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;display:flex;align-items:center;justify-content:center;'>
+  Click with different buttons
+</div>
+<pre id='btn-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+document.getElementById('btn-area').addEventListener('mousedown', function(e) {
+  const map = { 0: 'Left', 1: 'Middle', 2: 'Right' };
+  document.getElementById('btn-output').textContent =
+    'Button pressed: ' + map[e.button] + ' (e.button = ' + e.button + ')';
+});
+"
+/>
+
+## Modifier Keys
+
+Check if Ctrl, Alt, Shift, or Meta (Cmd) keys were held during the click:
+
+```javascript
+element.addEventListener('click', function(e) {
+  if (e.ctrlKey)  console.log('Ctrl held');
+  if (e.shiftKey) console.log('Shift held');
+  if (e.altKey)   console.log('Alt held');
+  if (e.metaKey)  console.log('Meta (Cmd) held');
+});
+```
+
+<CodePlayground
+  title="Modifier Keys"
+  html="
+<div id='mod-area' style='height:100px;background:#fef9c3;border:2px solid #eab308;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;'>
+  Click while holding Ctrl / Shift / Alt
+</div>
+<pre id='mod-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+document.getElementById('mod-area').addEventListener('click', function(e) {
+  const parts = [];
+  if (e.ctrlKey) parts.push('Ctrl');
+  if (e.shiftKey) parts.push('Shift');
+  if (e.altKey) parts.push('Alt');
+  if (e.metaKey) parts.push('Cmd');
+  document.getElementById('mod-output').textContent =
+    'Modifiers: ' + (parts.length ? parts.join(' + ') : '(none)');
+});
+"
+/>
+
+## Coordinates in Mouse Events
+
+Mouse events provide both **client** (viewport) and **page** (document) coordinates:
+
+```javascript
+element.addEventListener('click', function(e) {
+  e.clientX  // relative to viewport
+  e.clientY
+  e.pageX    // relative to document (includes scroll)
+  e.pageY
+  e.screenX  // relative to physical screen
+  e.screenY
+});
+```
+
+## Click vs Dblclick
+
+A `dblclick` event fires **after** two `click` events. If you listen for both, add a delay to differentiate:
+
+```javascript
+let clickTimer;
+element.addEventListener('click', function(e) {
+  clickTimer = setTimeout(() => {
+    console.log('Single click');
+  }, 250);
+});
+element.addEventListener('dblclick', function(e) {
+  clearTimeout(clickTimer);
+  console.log('Double click');
+});
+```
+
+<CodePlayground
+  title="Click vs Double Click"
+  html="
+<div id='click-demo' style='height:100px;background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;'>
+  Click or double-click me
+</div>
+<pre id='click-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+let timer;
+const log = document.getElementById('click-log');
+
+document.getElementById('click-demo').addEventListener('click', function() {
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    log.textContent = 'Single click detected';
+  }, 250);
+});
+
+document.getElementById('click-demo').addEventListener('dblclick', function() {
+  clearTimeout(timer);
+  log.textContent = 'Double click detected!';
+});
+"
+/>
+
+## Preventing Selection on Clicks
+
+When clicking rapidly, the browser may select text. Prevent it:
+
+```javascript
+element.addEventListener('mousedown', function(e) {
+  e.preventDefault(); // prevents text selection
+});
+```
+
+## Key Takeaways
+
+- `click` = `mousedown` + `mouseup` on the same element
+- `e.button` identifies **which button** was pressed (0=left, 1=middle, 2=right)
+- `e.ctrlKey`, `e.shiftKey`, `e.altKey`, `e.metaKey` check modifier keys
+- Client vs Page coordinates differ by scroll position
+- `dblclick` fires after two `click` events — use a timer to differentiate
+- Right-click fires `contextmenu` (which also triggers `click` on left-click)

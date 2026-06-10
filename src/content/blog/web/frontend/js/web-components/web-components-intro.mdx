@@ -1,0 +1,140 @@
+---
+title: "Web Components"
+description: "Introduction to Web Components — reusable custom HTML elements"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Web Components"]
+tags: ["JavaScript", "Web Components", "Custom Elements"]
+slug: "js-web-components-intro"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Web Components
+
+**Web Components** are a set of browser APIs that let you create **reusable, encapsulated custom HTML elements**. They work across frameworks — use the same component in React, Vue, Angular, or vanilla HTML.
+
+## The Three Pillars
+
+```
+Web Components
+├── Custom Elements  — Define your own HTML tags
+├── Shadow DOM       — Encapsulated DOM and styles
+└── HTML Templates   — Declarative markup fragments
+```
+
+## What They Look Like
+
+```html
+<!-- Your custom element, used like any HTML tag -->
+<user-card name="Alice" role="Developer"></user-card>
+<my-dialog>Hello World</my-dialog>
+<star-rating value="4"></star-rating>
+```
+
+## Browser Support
+
+Web Components are supported in **all modern browsers**:
+
+| Feature | Chrome | Firefox | Safari | Edge |
+|---|---|---|---|---|
+| Custom Elements v1 | ✅ | ✅ | ✅ | ✅ |
+| Shadow DOM v1 | ✅ | ✅ | ✅ | ✅ |
+| HTML Templates | ✅ | ✅ | ✅ | ✅ |
+| ES Modules | ✅ | ✅ | ✅ | ✅ |
+
+## Why Web Components?
+
+| Benefit | Description |
+|---|---|
+| **Framework agnostic** | Works anywhere HTML works |
+| **Encapsulated** | Styles don't leak in or out |
+| **Reusable** | Write once, use everywhere |
+| **Standard** | Native browser API, no build tools needed |
+| **Interoperable** | Combine with any framework |
+
+## Simple Custom Element
+
+```javascript
+class MyGreeting extends HTMLElement {
+  connectedCallback() {
+    this.textContent = 'Hello, Web Components!';
+  }
+}
+
+customElements.define('my-greeting', MyGreeting);
+```
+
+<CodePlayground
+  title="Hello Web Component"
+  html="
+<my-greeting></my-greeting>
+<my-greeting></my-greeting>
+<pre id='wc-intro-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class MyGreeting extends HTMLElement {
+  connectedCallback() {
+    this.textContent = 'Hello from Web Component!';
+    this.style.cssText = 'display:block;padding:12px;background:#eef2ff;border-radius:6px;border:1px solid #c7d2fe;margin:4px 0;';
+  }
+}
+
+customElements.define('my-greeting', MyGreeting);
+
+document.getElementById('wc-intro-out').textContent =
+  'Defined custom element: <my-greeting>\\n' +
+  'Each instance is independent.\\n' +
+  'Note: Define a custom element name must contain a hyphen (-).';
+"
+/>
+
+## The Component Lifecycle
+
+Custom elements have lifecycle callbacks:
+
+| Callback | When it fires |
+|---|---|
+| `constructor()` | Element is created (before being added to DOM) |
+| `connectedCallback()` | Element is added to the DOM |
+| `disconnectedCallback()` | Element is removed from the DOM |
+| `attributeChangedCallback(name, oldVal, newVal)` | Observed attribute changes |
+| `adoptedCallback()` | Element is moved to a new document |
+
+## Observed Attributes
+
+```javascript
+class UserCard extends HTMLElement {
+  static get observedAttributes() {
+    return ['name', 'role'];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === 'name') {
+      this.querySelector('.name').textContent = newValue;
+    }
+  }
+}
+```
+
+## Without Shadow DOM (Light DOM)
+
+By default, custom elements use the **light DOM** — their content is part of the main document. Styles from the page affect them, and their styles affect the page.
+
+## What's Next
+
+This section covers the foundation. Next topics dive deeper into:
+
+- **Custom Elements** — full API with attributes, methods, events
+- **Shadow DOM** — true style and DOM encapsulation
+- **Template Element** — reusable markup with `<template>`
+- **Slots** — composing content with named slots
+- **Shadow DOM Styling** — CSS custom properties and parts
+- **Shadow DOM Events** — event retargeting and composed events
+
+## Key Takeaways
+
+- Web Components are a **browser-native** component model
+- Three APIs: **Custom Elements** + **Shadow DOM** + **Templates**
+- Custom element names **must include a hyphen** (`my-element`)
+- Lifecycle callbacks: `connectedCallback`, `disconnectedCallback`, `attributeChangedCallback`
+- Framework-agnostic — use anywhere HTML works
+- No build tools or frameworks required — just vanilla JavaScript

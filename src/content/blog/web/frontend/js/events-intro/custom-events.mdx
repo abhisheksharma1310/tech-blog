@@ -1,0 +1,220 @@
+---
+title: "Dispatching Custom Events"
+description: "Create and dispatch your own DOM events for custom interactions"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Events"]
+tags: ["JavaScript", "DOM", "Events", "Custom Events"]
+slug: "js-custom-events"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## Dispatching Custom Events
+
+You can create your **own** events and dispatch them on any element. This is great for decoupling components — one part of your code triggers an event, and another part handles it.
+
+## Creating Events
+
+```javascript
+// Simple event
+const event = new Event('hello');
+
+// With custom data
+const event = new CustomEvent('userLogin', {
+  detail: { username: 'alice', role: 'admin' }
+});
+```
+
+## Dispatching Events
+
+```javascript
+element.dispatchEvent(event);
+```
+
+<CodePlayground
+  title="Creating and Dispatching Events"
+  html="
+<button id='fire-custom'>Fire Custom Event</button>
+<div id='custom-receiver' style='margin-top:8px;padding:12px;background:#eef2ff;border-radius:6px;border:1px solid #c7d2fe;'>
+  Waiting for events...
+</div>
+<pre id='custom-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const receiver = document.getElementById('custom-receiver');
+const log = document.getElementById('custom-log');
+
+// Listen for the custom event
+receiver.addEventListener('greeting', function(e) {
+  receiver.textContent = 'Greeting received! Message: ' + e.detail.message;
+  log.textContent += 'Event received at ' + new Date().toLocaleTimeString() + '\\n';
+});
+
+document.getElementById('fire-custom').onclick = function() {
+  const event = new CustomEvent('greeting', {
+    detail: { message: 'Hello from CustomEvent!', timestamp: Date.now() }
+  });
+  receiver.dispatchEvent(event);
+  log.textContent += 'Event dispatched at ' + new Date().toLocaleTimeString() + '\\n';
+};
+"
+/>
+
+## Event Options
+
+The `CustomEvent` constructor accepts a second parameter with options:
+
+```javascript
+const event = new CustomEvent('type', {
+  bubbles: true,      // event bubbles up the DOM tree
+  cancelable: true,    // can be prevented with preventDefault()
+  composed: true,      // event escapes shadow DOM
+  detail: { ... }      // custom data (CustomEvent only)
+});
+```
+
+<CodePlayground
+  title="Bubbling Custom Events"
+  html="
+<div id='outer-custom' style='padding:20px;border:2px solid #6366f1;border-radius:8px;background:#eef2ff;'>
+  OUTER DIV
+  <div id='inner-custom' style='padding:16px;margin-top:8px;border:2px dashed #059669;border-radius:6px;background:#f0fdf4;'>
+    INNER DIV — source of events
+  </div>
+</div>
+<pre id='bubble-custom-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('bubble-custom-log');
+
+// Listen on OUTER — will catch bubbled events from inner
+document.getElementById('outer-custom').addEventListener('statusChange', function(e) {
+  log.textContent += 'OUTER caught event. Target: ' + e.target.id + ', status: ' + e.detail.status + '\\n';
+});
+
+// Fire from INNER
+document.getElementById('inner-custom').onclick = function() {
+  const event = new CustomEvent('statusChange', {
+    bubbles: true,
+    detail: { status: 'active' }
+  });
+  this.dispatchEvent(event);
+  log.textContent += 'Event dispatched from INNER' + '\\n';
+};
+"
+/>
+
+## `new Event()` vs `new CustomEvent()`
+
+| Constructor | Custom Data |
+|---|---|
+| `new Event('type')` | No `detail` property |
+| `new CustomEvent('type', { detail: {} })` | Has `detail` property for custom data |
+
+Always use `CustomEvent` when you want to pass data.
+
+## Built-in Events Can Be Dispatched Too
+
+You can dispatch **built-in** events programmatically:
+
+```javascript
+// Simulate a click
+element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+// Simulate form submission
+form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+```
+
+<CodePlayground
+  title="Dispatching Built-in Events"
+  html="
+<button id='real-btn' style='padding:8px 16px;'>Real Button</button>
+<button id='fake-click' style='padding:8px 16px;'>Simulate Click on Real Button</button>
+<pre id='simulate-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('simulate-log');
+
+document.getElementById('real-btn').addEventListener('click', function() {
+  log.textContent = 'Real button clicked at ' + new Date().toLocaleTimeString();
+});
+
+document.getElementById('fake-click').onclick = function() {
+  document.getElementById('real-btn').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  log.textContent += '(Simulated click dispatched)' + '\\n';
+};
+"
+/>
+
+## Checking `isTrusted`
+
+Events triggered by the user have `isTrusted: true`. Programmatically dispatched events have `isTrusted: false`:
+
+```javascript
+element.addEventListener('click', function(e) {
+  if (e.isTrusted) {
+    // real user action
+  } else {
+    // script-triggered
+  }
+});
+```
+
+## Practical: Custom Loader Events
+
+<CodePlayground
+  title="Practical Custom Events"
+  html="
+<div id='app-area' style='padding:16px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;'>
+  <p>App Status: <span id='app-status'>idle</span></p>
+  <button id='start-load'>Start Loading</button>
+  <button id='complete-load'>Complete</button>
+  <button id='fail-load'>Fail</button>
+</div>
+<pre id='app-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const statusSpan = document.getElementById('app-status');
+const log = document.getElementById('app-log');
+
+// Listen for custom load events
+document.getElementById('app-area').addEventListener('app:loading', function() {
+  statusSpan.textContent = 'loading...';
+  statusSpan.style.color = '#eab308';
+  log.textContent += 'Event: loading started' + '\\n';
+});
+
+document.getElementById('app-area').addEventListener('app:loaded', function(e) {
+  statusSpan.textContent = 'loaded (' + e.detail.items + ' items)';
+  statusSpan.style.color = '#22c55e';
+  log.textContent += 'Event: loaded successfully' + '\\n';
+});
+
+document.getElementById('app-area').addEventListener('app:error', function(e) {
+  statusSpan.textContent = 'error: ' + e.detail.reason;
+  statusSpan.style.color = '#ef4444';
+  log.textContent += 'Event: error — ' + e.detail.reason + '\\n';
+});
+
+document.getElementById('start-load').onclick = function() {
+  document.getElementById('app-area').dispatchEvent(
+    new CustomEvent('app:loading', { bubbles: true })
+  );
+};
+document.getElementById('complete-load').onclick = function() {
+  document.getElementById('app-area').dispatchEvent(
+    new CustomEvent('app:loaded', { bubbles: true, detail: { items: 42 } })
+  );
+};
+document.getElementById('fail-load').onclick = function() {
+  document.getElementById('app-area').dispatchEvent(
+    new CustomEvent('app:error', { bubbles: true, detail: { reason: 'Network timeout' } })
+  );
+};
+"
+/>
+
+## Key Takeaways
+
+- Use `new CustomEvent('name', { detail: {} })` to create events with data
+- `element.dispatchEvent(event)` fires the event
+- Set `bubbles: true` to make custom events bubble up the DOM
+- Use `e.isTrusted` to distinguish real user events from script-triggered ones
+- Custom events are great for **decoupling components** and building event-driven architectures
+- Naming convention: use namespaced names like `app:loading` to avoid collisions

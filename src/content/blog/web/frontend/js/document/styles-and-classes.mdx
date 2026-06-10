@@ -1,0 +1,226 @@
+---
+title: "Styles and Classes"
+description: "Manage CSS classes and inline styles with JavaScript"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "CSS", "Styles"]
+slug: "js-styles-classes"
+author: "Abhishek Sharma"
+order: 8
+---
+
+## Styles and Classes
+
+JavaScript gives you full control over how elements look — both through **classes** and **inline styles**.
+
+## Managing Classes with `classList`
+
+The modern way to work with classes:
+
+```javascript
+element.classList.add('active')       // add a class
+element.classList.remove('active')    // remove a class
+element.classList.toggle('active')    // toggle on/off
+element.classList.contains('active')  // check if class exists
+element.classList.replace('old', 'new') // replace class
+```
+
+<CodePlayground
+  title="classList in Action"
+  html="
+<style>
+  .box { padding: 20px; border-radius: 8px; transition: all 0.3s; font-size: 1.2rem; }
+  .box.default { background: #f1f5f9; border: 2px solid #cbd5e1; }
+  .box.highlight { background: #fef9c3; border: 2px solid #eab308; box-shadow: 0 4px 12px rgba(234,179,8,0.3); }
+  .box.error { background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; }
+  .box.success { background: #f0fdf4; border: 2px solid #22c55e; color: #166534; }
+</style>
+<div id='class-box' class='box default'>I change appearance!</div>
+<div style='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;'>
+  <button id='btn-highlight'>Highlight</button>
+  <button id='btn-error'>Error</button>
+  <button id='btn-success'>Success</button>
+  <button id='btn-default'>Default</button>
+</div>
+<pre id='class-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const box = document.getElementById('class-box');
+const out = document.getElementById('class-output');
+
+function update() {
+  out.textContent = 'Classes:' + box.className;
+}
+
+document.getElementById('btn-highlight').onclick = () => {
+  box.className = 'box';
+  box.classList.add('highlight');
+  update();
+};
+document.getElementById('btn-error').onclick = () => {
+  box.className = 'box';
+  box.classList.add('error');
+  update();
+};
+document.getElementById('btn-success').onclick = () => {
+  box.className = 'box';
+  box.classList.add('success');
+  update();
+};
+document.getElementById('btn-default').onclick = () => {
+  box.className = 'box default';
+  update();
+};
+update();
+"
+/>
+
+## The `className` Property
+
+The older way — sets all classes as a single string:
+
+```javascript
+element.className = 'card active'  // replaces ALL classes
+```
+
+**Warning**: `className` overwrites existing classes. Use `classList` to preserve them.
+
+## Inline Styles with `style`
+
+The `style` property represents inline styles as an object:
+
+```javascript
+element.style.color = 'red'
+element.style.backgroundColor = '#6366f1'  // camelCase!
+element.style.fontSize = '1.5rem'
+element.style.cssText = 'color: red; background: blue;'  // set all at once
+```
+
+CSS properties become **camelCase** in JavaScript:
+
+| CSS | JavaScript |
+|---|---|
+| `background-color` | `style.backgroundColor` |
+| `font-size` | `style.fontSize` |
+| `margin-top` | `style.marginTop` |
+| `border-left-width` | `style.borderLeftWidth` |
+
+<CodePlayground
+  title="Inline Styles"
+  html="
+<div id='style-box' style='padding:20px;border-radius:8px;font-size:1.2rem;'>
+  Style me!
+</div>
+<div style='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;'>
+  <button id='btn-red'>Red BG</button>
+  <button id='btn-blue'>Blue Text</button>
+  <button id='btn-big'>Big Font</button>
+  <button id='btn-border'>Add Border</button>
+  <button id='btn-reset'>Reset</button>
+</div>
+<pre id='style-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const box = document.getElementById('style-box');
+const out = document.getElementById('style-output');
+
+function update() {
+  out.textContent = box.getAttribute('style');
+}
+
+document.getElementById('btn-red').onclick = () => {
+  box.style.backgroundColor = '#fef2f2';
+  update();
+};
+document.getElementById('btn-blue').onclick = () => {
+  box.style.color = '#6366f1';
+  update();
+};
+document.getElementById('btn-big').onclick = () => {
+  box.style.fontSize = '2rem';
+  box.style.fontWeight = 'bold';
+  update();
+};
+document.getElementById('btn-border').onclick = () => {
+  box.style.border = '3px solid #6366f1';
+  update();
+};
+document.getElementById('btn-reset').onclick = () => {
+  box.style.cssText = 'padding:20px;border-radius:8px;font-size:1.2rem;';
+  update();
+};
+update();
+"
+/>
+
+## Computed Styles
+
+To read the **actual** applied style (not just inline), use `getComputedStyle`:
+
+```javascript
+const styles = getComputedStyle(element);
+styles.color       // computed color
+styles.fontSize    // computed font size
+```
+
+<CodePlayground
+  title="getComputedStyle"
+  html="
+<style>
+  #computed-box { color: #6366f1; font-size: 1.5rem; font-weight: bold; padding: 16px; }
+</style>
+<div id='computed-box'>Check my computed styles</div>
+<pre id='comp-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const box = document.getElementById('computed-box');
+const styles = getComputedStyle(box);
+const out = document.getElementById('comp-output');
+
+out.textContent =
+  'Computed color: ' + styles.color + '\\n' +
+  'Computed fontSize: ' + styles.fontSize + '\\n' +
+  'Computed fontWeight: ' + styles.fontWeight + '\\n' +
+  'Computed padding: ' + styles.padding;
+"
+/>
+
+## Classes vs Inline Styles
+
+| Approach | When to Use |
+|---|---|
+| **Classes** (`classList`) | For predefined styles, state changes, theming |
+| **Inline styles** (`style`) | For dynamic values computed at runtime |
+| **CSS custom properties** | For theming and dynamic design tokens |
+
+## CSS Custom Properties (Variables)
+
+You can read and set CSS variables through `style.setProperty`:
+
+<CodePlayground
+  title="CSS Custom Properties"
+  html="
+<style>
+  :root { --accent: #6366f1; --radius: 8px; }
+  #var-box { background: var(--accent); border-radius: var(--radius); padding: 24px; color: white; text-align: center; font-size: 1.2rem; }
+</style>
+<div id='var-box'>Customizable Box</div>
+<div style='margin-top:8px;display:flex;gap:8px;'>
+  <button id='btn-purple'>Purple</button>
+  <button id='btn-green'>Green</button>
+  <button id='btn-round'>Round</button>
+</div>"
+  js="
+document.getElementById('btn-purple').onclick = () =>
+  document.documentElement.style.setProperty('--accent', '#6366f1');
+document.getElementById('btn-green').onclick = () =>
+  document.documentElement.style.setProperty('--accent', '#22c55e');
+document.getElementById('btn-round').onclick = () =>
+  document.documentElement.style.setProperty('--radius', '50%');
+"
+/>
+
+## Key Takeaways
+
+- Use `classList` for **toggling preset styles**
+- Use `style` for **dynamic inline values**
+- CSS properties become **camelCase** in JavaScript
+- `getComputedStyle` reads the **final applied** styles
+- CSS custom properties + `style.setProperty` enable powerful theming

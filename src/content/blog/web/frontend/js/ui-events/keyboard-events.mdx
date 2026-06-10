@@ -1,0 +1,215 @@
+---
+title: "Keyboard Events"
+description: "Handle keyboard input with keydown, keyup, and understand key vs code"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "UI Events"]
+tags: ["JavaScript", "DOM", "Keyboard Events"]
+slug: "js-keyboard-events"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## Keyboard Events
+
+Keyboard events let you respond when a user presses a key — essential for shortcuts, games, forms, and accessibility.
+
+## Keyboard Event Types
+
+| Event | Fires When |
+|---|---|
+| `keydown` | Key is pressed (repeats while held) |
+| `keyup` | Key is released |
+| `keypress` | Deprecated — don't use |
+
+The sequence is: `keydown` → (repeat) → `keyup`
+
+## `event.key` vs `event.code`
+
+This is the most important distinction:
+
+| Property | What it returns | Example ('z' on QWERTY) |
+|---|---|---|
+| `event.key` | The **character** typed | `"z"` or `"Z"` (with Shift) |
+| `event.code` | The **physical key** position | `"KeyZ"` |
+
+Use `event.key` when you care about **what character** was typed (e.g., text input).
+
+Use `event.code` when you care about the **physical key** (e.g., games, shortcuts like WASD).
+
+<CodePlayground
+  title="key vs code"
+  html="
+<input id='key-input' type='text' placeholder='Type any key' style='width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;'>
+<pre id='key-detail' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+document.getElementById('key-input').addEventListener('keydown', function(e) {
+  document.getElementById('key-detail').textContent =
+    'event.key: ' + e.key + '\\n' +
+    'event.code: ' + e.code + '\\n' +
+    'event.ctrlKey: ' + e.ctrlKey + '\\n' +
+    'event.shiftKey: ' + e.shiftKey + '\\n' +
+    'event.altKey: ' + e.altKey + '\\n' +
+    'event.repeat: ' + e.repeat + ' (true if held down)';
+});
+"
+/>
+
+## Common Key Values
+
+| `event.key` | Description |
+|---|---|
+| `"Enter"` | Enter key |
+| `"Escape"` | Esc key |
+| `" "` | Spacebar |
+| `"ArrowUp"`, `"ArrowDown"`, `"ArrowLeft"`, `"ArrowRight"` | Arrow keys |
+| `"Tab"` | Tab |
+| `"Backspace"` | Backspace |
+| `"Delete"` | Delete |
+| `"Shift"`, `"Control"`, `"Alt"`, `"Meta"` | Modifier keys |
+
+## Keyboard Shortcuts
+
+Detect combinations like Ctrl+S or Cmd+K:
+
+<CodePlayground
+  title="Keyboard Shortcuts"
+  html="
+<div id='shortcut-area' style='padding:24px;background:#eef2ff;border:2px solid #6366f1;border-radius:8px;text-align:center;'>
+  Try shortcuts: <kbd>Ctrl+S</kbd>, <kbd>Ctrl+Z</kbd>, <kbd>Escape</kbd>
+</div>
+<pre id='shortcut-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('shortcut-log');
+
+document.addEventListener('keydown', function(e) {
+  // Ctrl+S
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    log.textContent = 'Ctrl+S — Save action';
+    return;
+  }
+  // Ctrl+Z
+  if (e.ctrlKey && e.key === 'z') {
+    e.preventDefault();
+    log.textContent = 'Ctrl+Z — Undo action';
+    return;
+  }
+  // Escape
+  if (e.key === 'Escape') {
+    log.textContent = 'Escape — Close/Cancel';
+    return;
+  }
+  // Ctrl+Shift+F
+  if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+    e.preventDefault();
+    log.textContent = 'Ctrl+Shift+F — Advanced search';
+    return;
+  }
+});
+"
+/>
+
+## Game Controls (WASD)
+
+Use `event.code` for physical key positions:
+
+<CodePlayground
+  title="WASD Controls"
+  html="
+<style>
+  #game-area { width: 300px; height: 200px; background: #0f172a; border-radius: 8px; position: relative; overflow: hidden; }
+  #player { width: 30px; height: 30px; background: #6366f1; border-radius: 50%; position: absolute; left: 135px; top: 85px; transition: none; }
+</style>
+<div id='game-area'>
+  <div id='player'></div>
+</div>
+<p style='color:#64748b;font-size:0.875rem;'>Use W A S D to move</p>
+<pre id='game-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const player = document.getElementById('player');
+const area = document.getElementById('game-area');
+const log = document.getElementById('game-log');
+const step = 10;
+const keys = {};
+
+document.addEventListener('keydown', function(e) {
+  keys[e.code] = true;
+  movePlayer();
+  e.preventDefault();
+});
+
+document.addEventListener('keyup', function(e) {
+  keys[e.code] = false;
+});
+
+function movePlayer() {
+  let x = player.offsetLeft;
+  let y = player.offsetTop;
+
+  if (keys['KeyW']) y -= step;
+  if (keys['KeyS']) y += step;
+  if (keys['KeyA']) x -= step;
+  if (keys['KeyD']) x += step;
+
+  // Constrain
+  x = Math.max(0, Math.min(x, area.clientWidth - player.offsetWidth));
+  y = Math.max(0, Math.min(y, area.clientHeight - player.offsetHeight));
+
+  player.style.left = x + 'px';
+  player.style.top = y + 'px';
+  log.textContent = 'Position: (' + x + ', ' + y + ')';
+}
+"
+/>
+
+## Tab Trapping
+
+For modals, you often want to **trap focus** — prevent Tab from leaving the modal:
+
+```javascript
+modal.addEventListener('keydown', function(e) {
+  if (e.key === 'Tab') {
+    const focusable = modal.querySelectorAll('button, input, [tabindex]');
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        last.focus();
+        e.preventDefault();
+      }
+    } else {
+      if (document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    }
+  }
+});
+```
+
+## Preventing Default Key Actions
+
+Sometimes you need to prevent a key's default behavior:
+
+```javascript
+input.addEventListener('keydown', function(e) {
+  // Prevent Enter from submitting
+  if (e.key === 'Enter') {
+    e.preventDefault();
+  }
+  // Prevent numbers
+  if (e.key >= '0' && e.key <= '9') {
+    e.preventDefault();
+  }
+});
+```
+
+## Key Takeaways
+
+- Use `keydown` and `keyup` (avoid deprecated `keypress`)
+- `event.key` = **character typed**; `event.code` = **physical key position**
+- Use `event.key` for text input; `event.code` for game controls and shortcuts
+- `event.repeat` is `true` when a key is held down
+- Always `e.preventDefault()` on shortcuts to avoid browser default actions
+- Check `ctrlKey`, `shiftKey`, `altKey`, `metaKey` for modifier combinations

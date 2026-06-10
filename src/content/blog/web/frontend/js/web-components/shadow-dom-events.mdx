@@ -1,0 +1,236 @@
+---
+title: "Shadow DOM and Events"
+description: "Event retargeting, composed events, and custom events in Shadow DOM"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Web Components"]
+tags: ["JavaScript", "Web Components", "Shadow DOM", "Events"]
+slug: "js-shadow-dom-events"
+author: "Abhishek Sharma"
+order: 7
+---
+
+## Shadow DOM and Events
+
+Events that cross the shadow boundary behave differently. Understanding **event retargeting** and the **composed** flag is essential for building interactive Web Components.
+
+## Event Retargeting
+
+When an event fires inside Shadow DOM and bubbles out, the **target** property is **retargeted** to the host element:
+
+```javascript
+// Inside shadow DOM, a button is clicked
+// event.target inside shadow → the button
+// event.target in light DOM → the custom element (retargeted!)
+```
+
+```
+Light DOM listener sees:
+event.target = <my-element> (host)
+
+Shadow DOM listener sees:
+event.target = <button> (original)
+```
+
+<CodePlayground
+  title="Event Retargeting"
+  html="
+<retarget-demo></retarget-demo>
+<pre id='retarget-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class RetargetDemo extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        .inner { padding: 16px; background: #eef2ff; border: 2px solid #6366f1; border-radius: 8px; cursor: pointer; text-align: center; }
+      </style>
+      <div class='inner' id='shadow-btn'>Click me (inside Shadow DOM)</div>
+    `;
+
+    // Inside shadow — sees original target
+    shadow.querySelector('#shadow-btn').addEventListener('click', function(e) {
+      const out = document.getElementById('retarget-out');
+      out.textContent = '[Shadow] event.target: ' + e.target.id + ' (' + e.target.tagName + ')\\n';
+    });
+  }
+
+  connectedCallback() {
+    // Light DOM — sees retargeted target
+    this.addEventListener('click', function(e) {
+      const out = document.getElementById('retarget-out');
+      out.textContent += '[Light] event.target: ' + e.target.tagName + ' (retargeted to host!)';
+    });
+  }
+}
+customElements.define('retarget-demo', RetargetDemo);
+"
+/>
+
+## Composed Events
+
+Some events **compose** (cross the shadow boundary) and some don't:
+
+| Event | Composed? |
+|---|---|
+| `click`, `mousedown`, `mouseup` | ✅ Yes |
+| `focus`, `blur` | ✅ Yes |
+| `keydown`, `keyup` | ✅ Yes |
+| `touchstart`, `touchend` | ✅ Yes |
+| `mouseenter`, `mouseleave` | ❌ No |
+| `load`, `error` | ❌ No |
+| `scroll` | ❌ No |
+
+## Custom Events and `composed`
+
+When dispatching custom events from inside Shadow DOM, set `composed: true` to let them cross the boundary:
+
+```javascript
+// Inside shadow DOM
+this.dispatchEvent(new CustomEvent('my-event', {
+  bubbles: true,
+  composed: true,   // 🔑 needed to cross shadow boundary
+  detail: { message: 'Hello from shadow' }
+}));
+```
+
+<CodePlayground
+  title="Composed Custom Events"
+  html="
+<composed-demo></composed-demo>
+<pre id='composed-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class ComposedDemo extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        .box { padding: 16px; background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; margin: 8px 0; text-align: center; }
+        button { padding: 8px 16px; cursor: pointer; }
+      </style>
+      <div class='box'>
+        <p>Inside Shadow DOM</p>
+        <button id='composed-btn'>Fire Composed</button>
+        <button id='noncomposed-btn'>Fire Non-Composed</button>
+      </div>
+    `;
+
+    shadow.querySelector('#composed-btn').onclick = () => {
+      this.dispatchEvent(new CustomEvent('shadow-event', {
+        bubbles: true,
+        composed: true,
+        detail: { type: 'composed' }
+      }));
+    };
+
+    shadow.querySelector('#noncomposed-btn').onclick = () => {
+      this.dispatchEvent(new CustomEvent('shadow-event', {
+        bubbles: true,
+        composed: false,
+        detail: { type: 'non-composed' }
+      }));
+    };
+  }
+}
+customElements.define('composed-demo', ComposedDemo);
+
+// Listen on document for the custom events
+document.addEventListener('shadow-event', function(e) {
+  const out = document.getElementById('composed-out');
+  out.textContent =
+    'Received event at document level!\\n' +
+    '  composed: ' + e.composed + '\\n' +
+    '  detail.type: ' + e.detail.type + '\\n' +
+    '  target: ' + e.target.tagName + '\\n' +
+    '---\\n' +
+    (e.detail.type === 'composed'
+      ? '✅ Composed event crossed the shadow boundary!'
+      : '❌ Non-composed event was blocked at the boundary.');
+});
+"
+/>
+
+## `event.composedPath()`
+
+Returns the **full path** the event traveled through, including shadow roots:
+
+```javascript
+element.addEventListener('click', function(e) {
+  const path = e.composedPath();
+  // [button, div, #shadow-root, my-element, body, html, document]
+});
+```
+
+This is useful for understanding the exact propagation path across shadow boundaries.
+
+<CodePlayground
+  title="composedPath"
+  html="
+<path-demo></path-demo>
+<pre id='path-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class PathDemo extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        .box { padding: 16px; background: #fef9c3; border: 2px solid #eab308; border-radius: 8px; cursor: pointer; }
+      </style>
+      <div class='box' id='inner-box'>
+        Click here — see composedPath
+      </div>
+    `;
+
+    shadow.querySelector('#inner-box').addEventListener('click', function(e) {
+      const out = document.getElementById('path-out');
+      const path = e.composedPath();
+      out.textContent = 'composedPath():\\n';
+      path.forEach((node, i) => {
+        let name = node.tagName || node.nodeName;
+        if (node.nodeType === 11) name = '#shadow-root';
+        out.textContent += '  [' + i + '] ' + name + '\\n';
+      });
+    });
+  }
+}
+customElements.define('path-demo', PathDemo);
+"
+/>
+
+## Event Delegation with Shadow DOM
+
+When using event delegation on the light DOM, remember that targets are **retargeted** to the host element:
+
+```javascript
+document.addEventListener('click', function(e) {
+  // e.target is always the host element, never internal shadow elements
+  const host = e.target.closest('my-component');
+  if (host) {
+    // handle component-level clicks
+  }
+});
+```
+
+## Focus Events
+
+`focus` and `blur` compose by default. `focusin` and `focusout` also work across shadow boundaries. The `activeElement` is correctly tracked across shadow roots.
+
+## Best Practices
+
+1. Always set `composed: true` on custom events that need to cross shadow boundaries
+2. Use `bubbles: true` along with `composed: true` for maximum compatibility
+3. Use `event.composedPath()` for debugging event propagation
+4. Remember that `event.target` is **retargeted** — use `event.composedPath()[0]` for the original target
+5. For delegation on light DOM, use `event.target.closest('my-element')`
+
+## Key Takeaways
+
+- Event **retargeting** changes `event.target` to the host element when crossing shadow boundary
+- Set `composed: true` on custom events to **cross the shadow boundary**
+- `bubbles` alone is not enough — events also need `composed`
+- `event.composedPath()` returns the **full propagation path** including shadow roots
+- Most native UI events (`click`, `keydown`, `focus`) are composed by default
+- Some events (`mouseenter`, `scroll`) **don't compose** by design
+- For custom elements that fire events, always set `{ bubbles: true, composed: true }`

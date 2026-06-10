@@ -1,0 +1,119 @@
+---
+title: "DOM Tree"
+description: "Understand the DOM tree — how browsers represent HTML as a document tree"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "HTML"]
+slug: "js-dom-tree"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## The DOM Tree
+
+When a browser loads an HTML page, it creates a **tree structure** called the DOM (Document Object Model). Each HTML element becomes a **node** in this tree.
+
+```
+                  document
+                     │
+                    html
+                   ╱    ╲
+                head    body
+               ╱  │     ╱ ╲
+          title meta  h1   nav
+               │          ╱ ╲
+           "Page"      a    a
+```
+
+## Every HTML Element is a Node
+
+The DOM represents everything as a node:
+
+| Node Type | Example | `nodeType` |
+|---|---|---|
+| Element node | `<h1>`, `<p>`, `<div>` | `1` |
+| Text node | "Hello World" | `3` |
+| Comment node | `<!-- comment -->` | `8` |
+| Document node | `document` | `9` |
+
+<CodePlayground
+  title="Exploring the DOM Tree"
+  html="
+<div id='tree-demo'>
+  <h1>Hello</h1>
+  <p>This is a <strong>paragraph</strong> with text.</p>
+  <!-- This is a comment -->
+</div>"
+  js="
+const div = document.getElementById('tree-demo');
+const output = document.createElement('pre');
+output.style.cssText = 'background:#f1f5f9;padding:12px;border-radius:6px;font-size:14px;';
+
+function walkTree(node, depth = 0) {
+  let indent = '  '.repeat(depth);
+  let info = '';
+  if (node.nodeType === 1) {
+    info = `&lt;${node.tagName.toLowerCase()}&gt;`;
+  } else if (node.nodeType === 3) {
+    let text = node.textContent.trim();
+    if (text) info = `${text}`;
+  } else if (node.nodeType === 8) {
+    info = `&lt;!-- ${node.nodeType} --&gt;`;
+  }
+  if (info) output.innerHTML += indent + info + '\\n';
+  for (let child of node.childNodes) {
+    walkTree(child, depth + 1);
+  }
+}
+walkTree(div);
+div.parentNode.replaceChild(output, div);
+"
+/>
+
+## The Document Node
+
+`document` is the **entry point** to the DOM. From it, you can reach any element:
+
+```javascript
+document.documentElement  // the <html> element
+document.head             // the <head> element
+document.body             // the <body> element
+document.title            // the page title
+```
+
+## Children: Elements vs Nodes
+
+A key distinction:
+
+- **Child nodes** — all children (elements, text, comments)
+- **Children elements** — only HTML element children
+
+<CodePlayground
+  title="Nodes vs Elements"
+  html="
+<ul id='list'>
+  <li>Item 1</li>
+  <li>Item 2</li>
+  <!-- Comment -->
+  <li>Item 3</li>
+</ul>"
+  js="
+const ul = document.getElementById('list');
+const out = document.getElementById('output') || (() => {
+  const p = document.createElement('p'); p.id = 'output';
+  ul.after(p); return p;
+})();
+
+out.innerHTML =
+  'childNodes count: ' + ul.childNodes.length + ' (includes text & comments)<br>' +
+  'children count: ' + ul.children.length + ' (only &lt;li&gt; elements)';
+"
+/>
+
+## Key Takeaways
+
+- The DOM is a **tree** with nodes for every HTML element, text, and comment
+- `document` is the **root** — everything starts there
+- `childNodes` includes **all node types**
+- `children` includes **only elements**
+- Understanding the tree helps you navigate and manipulate pages effectively

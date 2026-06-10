@@ -1412,6 +1412,454 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"web/frontend/js/animation/bezier-curve.mdx": {
+	id: "web/frontend/js/animation/bezier-curve.mdx";
+  slug: "js-bezier-curve";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/animation/css-animations.mdx": {
+	id: "web/frontend/js/animation/css-animations.mdx";
+  slug: "js-css-animations";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/animation/javascript-animations.mdx": {
+	id: "web/frontend/js/animation/javascript-animations.mdx";
+  slug: "js-javascript-animations";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/binary-data/arraybuffer-binary-arrays.mdx": {
+	id: "web/frontend/js/binary-data/arraybuffer-binary-arrays.mdx";
+  slug: "js-arraybuffer-binary-arrays";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/binary-data/blob.mdx": {
+	id: "web/frontend/js/binary-data/blob.mdx";
+  slug: "js-blob";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/binary-data/file-filereader.mdx": {
+	id: "web/frontend/js/binary-data/file-filereader.mdx";
+  slug: "js-file-filereader";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/binary-data/text-decoder-encoder.mdx": {
+	id: "web/frontend/js/binary-data/text-decoder-encoder.mdx";
+  slug: "js-text-decoder-encoder";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/attributes-and-properties.mdx": {
+	id: "web/frontend/js/document/attributes-and-properties.mdx";
+  slug: "js-attributes-properties";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/browser-environment.mdx": {
+	id: "web/frontend/js/document/browser-environment.mdx";
+  slug: "js-browser-environment";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/coordinates.mdx": {
+	id: "web/frontend/js/document/coordinates.mdx";
+  slug: "js-coordinates";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/dom-tree.mdx": {
+	id: "web/frontend/js/document/dom-tree.mdx";
+  slug: "js-dom-tree";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/element-size-scroll.mdx": {
+	id: "web/frontend/js/document/element-size-scroll.mdx";
+  slug: "js-element-size-scroll";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/modifying-document.mdx": {
+	id: "web/frontend/js/document/modifying-document.mdx";
+  slug: "js-modifying-document";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/node-properties.mdx": {
+	id: "web/frontend/js/document/node-properties.mdx";
+  slug: "js-node-properties";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/searching-elements.mdx": {
+	id: "web/frontend/js/document/searching-elements.mdx";
+  slug: "js-searching-elements";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/styles-and-classes.mdx": {
+	id: "web/frontend/js/document/styles-and-classes.mdx";
+  slug: "js-styles-classes";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/walking-the-dom.mdx": {
+	id: "web/frontend/js/document/walking-the-dom.mdx";
+  slug: "js-walking-dom";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/document/window-sizes-scroll.mdx": {
+	id: "web/frontend/js/document/window-sizes-scroll.mdx";
+  slug: "js-window-sizes-scroll";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/events-intro/browser-default-actions.mdx": {
+	id: "web/frontend/js/events-intro/browser-default-actions.mdx";
+  slug: "js-browser-default-actions";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/events-intro/browser-events.mdx": {
+	id: "web/frontend/js/events-intro/browser-events.mdx";
+  slug: "js-browser-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/events-intro/bubbling-capturing.mdx": {
+	id: "web/frontend/js/events-intro/bubbling-capturing.mdx";
+  slug: "js-bubbling-capturing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/events-intro/custom-events.mdx": {
+	id: "web/frontend/js/events-intro/custom-events.mdx";
+  slug: "js-custom-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/events-intro/event-delegation.mdx": {
+	id: "web/frontend/js/events-intro/event-delegation.mdx";
+  slug: "js-event-delegation";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/forms/focus-blur.mdx": {
+	id: "web/frontend/js/forms/focus-blur.mdx";
+  slug: "js-focus-blur";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/forms/form-events.mdx": {
+	id: "web/frontend/js/forms/form-events.mdx";
+  slug: "js-form-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/forms/form-properties.mdx": {
+	id: "web/frontend/js/forms/form-properties.mdx";
+  slug: "js-form-properties";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/forms/form-submit.mdx": {
+	id: "web/frontend/js/forms/form-submit.mdx";
+  slug: "js-form-submit";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/frames-windows/clickjacking-attack.mdx": {
+	id: "web/frontend/js/frames-windows/clickjacking-attack.mdx";
+  slug: "js-clickjacking-attack";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/frames-windows/cross-window-communication.mdx": {
+	id: "web/frontend/js/frames-windows/cross-window-communication.mdx";
+  slug: "js-cross-window-communication";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/frames-windows/popups-window-methods.mdx": {
+	id: "web/frontend/js/frames-windows/popups-window-methods.mdx";
+  slug: "js-popups-window-methods";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/misc/event-loop.mdx": {
+	id: "web/frontend/js/misc/event-loop.mdx";
+  slug: "js-event-loop";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/misc/mutation-observer.mdx": {
+	id: "web/frontend/js/misc/mutation-observer.mdx";
+  slug: "js-mutation-observer";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/misc/selection-range.mdx": {
+	id: "web/frontend/js/misc/selection-range.mdx";
+  slug: "js-selection-range";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/fetch-abort.mdx": {
+	id: "web/frontend/js/network/fetch-abort.mdx";
+  slug: "js-fetch-abort";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/fetch-api.mdx": {
+	id: "web/frontend/js/network/fetch-api.mdx";
+  slug: "js-fetch-api";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/fetch-basics.mdx": {
+	id: "web/frontend/js/network/fetch-basics.mdx";
+  slug: "js-fetch-basics";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/fetch-cors.mdx": {
+	id: "web/frontend/js/network/fetch-cors.mdx";
+  slug: "js-fetch-cors";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/fetch-download-progress.mdx": {
+	id: "web/frontend/js/network/fetch-download-progress.mdx";
+  slug: "js-fetch-download-progress";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/fetch-formdata.mdx": {
+	id: "web/frontend/js/network/fetch-formdata.mdx";
+  slug: "js-fetch-formdata";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/long-polling.mdx": {
+	id: "web/frontend/js/network/long-polling.mdx";
+  slug: "js-long-polling";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/resumable-file-upload.mdx": {
+	id: "web/frontend/js/network/resumable-file-upload.mdx";
+  slug: "js-resumable-file-upload";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/server-sent-events.mdx": {
+	id: "web/frontend/js/network/server-sent-events.mdx";
+  slug: "js-server-sent-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/url-objects.mdx": {
+	id: "web/frontend/js/network/url-objects.mdx";
+  slug: "js-url-objects";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/websocket.mdx": {
+	id: "web/frontend/js/network/websocket.mdx";
+  slug: "js-websocket";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/network/xmlhttprequest.mdx": {
+	id: "web/frontend/js/network/xmlhttprequest.mdx";
+  slug: "js-xmlhttprequest";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/resource-loading/page-lifecycle.mdx": {
+	id: "web/frontend/js/resource-loading/page-lifecycle.mdx";
+  slug: "js-page-lifecycle";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/resource-loading/resource-loading.mdx": {
+	id: "web/frontend/js/resource-loading/resource-loading.mdx";
+  slug: "js-resource-loading";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/resource-loading/scripts-async-defer.mdx": {
+	id: "web/frontend/js/resource-loading/scripts-async-defer.mdx";
+  slug: "js-scripts-async-defer";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/storage/cookies.mdx": {
+	id: "web/frontend/js/storage/cookies.mdx";
+  slug: "js-cookies";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/storage/indexeddb.mdx": {
+	id: "web/frontend/js/storage/indexeddb.mdx";
+  slug: "js-indexeddb";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/storage/localstorage-sessionstorage.mdx": {
+	id: "web/frontend/js/storage/localstorage-sessionstorage.mdx";
+  slug: "js-localstorage-sessionstorage";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/ui-events/drag-and-drop.mdx": {
+	id: "web/frontend/js/ui-events/drag-and-drop.mdx";
+  slug: "js-drag-and-drop";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/ui-events/keyboard-events.mdx": {
+	id: "web/frontend/js/ui-events/keyboard-events.mdx";
+  slug: "js-keyboard-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/ui-events/mouse-events.mdx": {
+	id: "web/frontend/js/ui-events/mouse-events.mdx";
+  slug: "js-mouse-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/ui-events/mouse-movement.mdx": {
+	id: "web/frontend/js/ui-events/mouse-movement.mdx";
+  slug: "js-mouse-movement";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/ui-events/pointer-events.mdx": {
+	id: "web/frontend/js/ui-events/pointer-events.mdx";
+  slug: "js-pointer-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/ui-events/scrolling-events.mdx": {
+	id: "web/frontend/js/ui-events/scrolling-events.mdx";
+  slug: "js-scrolling-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/web-components/custom-elements.mdx": {
+	id: "web/frontend/js/web-components/custom-elements.mdx";
+  slug: "js-custom-elements";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/web-components/shadow-dom-events.mdx": {
+	id: "web/frontend/js/web-components/shadow-dom-events.mdx";
+  slug: "js-shadow-dom-events";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/web-components/shadow-dom-slots-composition.mdx": {
+	id: "web/frontend/js/web-components/shadow-dom-slots-composition.mdx";
+  slug: "js-shadow-dom-slots";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/web-components/shadow-dom-styling.mdx": {
+	id: "web/frontend/js/web-components/shadow-dom-styling.mdx";
+  slug: "js-shadow-dom-styling";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/web-components/shadow-dom.mdx": {
+	id: "web/frontend/js/web-components/shadow-dom.mdx";
+  slug: "js-shadow-dom";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/web-components/template-element.mdx": {
+	id: "web/frontend/js/web-components/template-element.mdx";
+  slug: "js-template-element";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/frontend/js/web-components/web-components-intro.mdx": {
+	id: "web/frontend/js/web-components/web-components-intro.mdx";
+  slug: "js-web-components-intro";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 };
 
 	};

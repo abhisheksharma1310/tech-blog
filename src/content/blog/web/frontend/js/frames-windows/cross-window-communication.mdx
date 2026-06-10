@@ -1,0 +1,184 @@
+---
+title: "Cross-Window Communication"
+description: "Communicate between browser windows, tabs, and iframes with postMessage"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Frames-Windows"]
+tags: ["JavaScript", "DOM", "postMessage", "Cross-origin"]
+slug: "js-cross-window-communication"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Cross-Window Communication
+
+Modern web apps often need to communicate between windows, tabs, or iframes — even across different origins. The `postMessage` API makes this possible.
+
+## The Same-Origin Policy
+
+For security, browsers restrict cross-origin access:
+
+```javascript
+// This throws if iframe is different origin
+iframe.contentDocument.getElementById('data');
+```
+
+But `postMessage` is designed for **safe cross-origin messaging**.
+
+## `postMessage` Basics
+
+**Sender** (parent window):
+
+```javascript
+otherWindow.postMessage(message, targetOrigin);
+```
+
+- `otherWindow` — reference to the target window (iframe.contentWindow, window.opener, etc.)
+- `message` — data to send (can be objects, strings, etc.)
+- `targetOrigin` — restrict to specific origin (`'*'` for any)
+
+**Receiver** (target window):
+
+```javascript
+window.addEventListener('message', function(event) {
+  event.origin     // sender's origin
+  event.source     // reference to sender window
+  event.data       // the message
+});
+```
+
+<CodePlayground
+  title="Cross-Window Messaging"
+  html="
+<style>
+  .msg-frame { width: 100%; height: 180px; border: 2px solid #6366f1; border-radius: 8px; background: #f8fafc; }
+</style>
+<div style='padding:8px;background:#eef2ff;border-radius:6px;margin-bottom:8px;'>
+  <strong>Parent Window</strong>
+</div>
+<iframe id='child-frame' class='msg-frame' srcdoc='
+<div style='padding:8px;background:#fef9c3;border-radius:6px;margin-bottom:8px;'>
+  <strong>Child iframe</strong>
+</div>
+<div id='display' style='padding:8px;min-height:60px;'>Waiting for messages...</div>
+<script>
+  window.addEventListener('message', function(e) {
+    document.getElementById('display').innerHTML =
+      'Received from parent: <strong>' + JSON.stringify(e.data) + '</strong><br>' +
+      'Origin:' + e.origin + '<br>' +
+      'Reply sent back!';
+    e.source.postMessage({ reply: 'Hello from child!' }, '*');
+  });
+  parent.postMessage({ status: 'Child loaded' }, '*');
+<\/script>
+'></iframe>
+<div style='margin-top:8px;display:flex;gap:8px;'>
+  <button id='send-msg'>Send Message to Child</button>
+  <input id='msg-input' type='text' value='Hello, child!' style='padding:6px;border:1px solid #cbd5e1;border-radius:4px;flex:1;'>
+</div>
+<pre id='msg-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('msg-log');
+const iframe = document.getElementById('child-frame');
+
+// Listen for messages from the iframe
+window.addEventListener('message', function(e) {
+  if (e.source !== iframe.contentWindow) return;
+  log.textContent += 'Received: ' + JSON.stringify(e.data) + ' (origin: ' + e.origin + ')' + '\\n';
+});
+
+document.getElementById('send-msg').onclick = function() {
+  const msg = document.getElementById('msg-input').value;
+  iframe.contentWindow.postMessage({ text: msg }, '*');
+  log.textContent += 'Sent: ' + JSON.stringify({ text: msg }) + '\\n';
+};
+"
+/>
+
+## `message` Event Properties
+
+| Property | Description |
+|---|---|
+| `data` | The message payload |
+| `origin` | Origin of the sender (`https://example.com`) |
+| `source` | Reference to the sender window (for replying) |
+
+## Always Validate the Origin
+
+Never trust messages blindly — always check `event.origin`:
+
+```javascript
+window.addEventListener('message', function(e) {
+  // Only accept messages from your own domain
+  if (e.origin !== 'https://myapp.com') return;
+
+  // Only accept from known windows
+  if (e.source !== trustedWindow) return;
+
+  // Process the message
+  processData(e.data);
+});
+```
+
+## Replying to Messages
+
+Use `event.source` to reply:
+
+```javascript
+// In the receiver
+window.addEventListener('message', function(e) {
+  // Process message...
+
+  // Reply back
+  e.source.postMessage({ response: 'Got it!' }, e.origin);
+});
+```
+
+## Two-Way Communication Pattern
+
+```
+Parent                          Child
+  │                               │
+  ├──postMessage({cmd:'ping'})───▶│
+  │                               ├──check origin
+  │                               ├──process
+  │◀──postMessage({res:'pong'})───┤
+  │                               │
+  ├──check origin                 │
+  ├──process                      │
+```
+
+## Practical: Resizable Iframe
+
+Tell the parent the iframe's content height so it can resize:
+
+```javascript
+// In the iframe
+const height = document.body.scrollHeight;
+parent.postMessage({ type: 'resize', height: height }, '*');
+
+// In the parent
+window.addEventListener('message', function(e) {
+  if (e.data.type === 'resize') {
+    iframe.style.height = e.data.height + 'px';
+  }
+});
+```
+
+## `window.frames` Collection
+
+Access child frames by index or name:
+
+```javascript
+window.frames[0]          // first iframe
+window.frames['sidebar']  // iframe with name="sidebar"
+frames.length             // number of iframes
+```
+
+## Key Takeaways
+
+- `postMessage` is the **only safe way** for cross-origin communication
+- Always validate `event.origin` before trusting messages
+- Use `event.source` to reply to the sender
+- Works between windows, tabs, iframes, and popups
+- The message can be any structured data (objects, arrays, primitives)
+- For same-origin, direct DOM access is simpler — use `postMessage` only when needed

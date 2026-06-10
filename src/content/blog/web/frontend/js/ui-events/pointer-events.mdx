@@ -1,0 +1,194 @@
+---
+title: "Pointer Events"
+description: "Unified pointer event handling for mouse, touch, and stylus input"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "UI Events"]
+tags: ["JavaScript", "DOM", "Pointer Events"]
+slug: "js-pointer-events"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Pointer Events
+
+**Pointer Events** unify mouse, touch, and stylus input into a single API. Instead of separate `mouse*` and `touch*` events, you get `pointer*` events.
+
+## Why Pointer Events?
+
+Before pointer events, you needed:
+
+```javascript
+// Mouse
+element.addEventListener('mousedown', handler);
+// Touch
+element.addEventListener('touchstart', handler);
+// Stylus
+// ... more complexity
+```
+
+With pointer events — **one handler for all input types**:
+
+```javascript
+element.addEventListener('pointerdown', handler);
+```
+
+## Pointer Event Types
+
+| Event | Mouse Equivalent |
+|---|---|
+| `pointerdown` | `mousedown` |
+| `pointerup` | `mouseup` |
+| `pointermove` | `mousemove` |
+| `pointerover` | `mouseover` |
+| `pointerout` | `mouseout` |
+| `pointerenter` | `mouseenter` |
+| `pointerleave` | `mouseleave` |
+| `pointercancel` | — (touch-specific) |
+
+## Pointer Properties
+
+Pointer events include all mouse properties **plus**:
+
+```javascript
+element.addEventListener('pointerdown', function(e) {
+  e.pointerType   // "mouse", "touch", or "pen"
+  e.pointerId     // unique ID for this pointer
+  e.width         // width of contact area (for touch/stylus)
+  e.height        // height of contact area
+  e.pressure      // 0 to 1 (0 = no pressure, 0.5 = normal, 1 = full)
+  e.tiltX, e.tiltY // stylus tilt angles
+  e.twist         // stylus rotation
+});
+```
+
+<CodePlayground
+  title="Pointer Event Info"
+  html="
+<style>
+  #pointer-area { height: 150px; background: #f1f5f9; border: 2px dashed #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; touch-action: none; }
+</style>
+<div id='pointer-area'>Interact here (mouse, touch, or pen/stylus)</div>
+<pre id='pointer-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const area = document.getElementById('pointer-area');
+const out = document.getElementById('pointer-output');
+
+area.addEventListener('pointerdown', function(e) {
+  out.textContent =
+    'pointerType: ' + e.pointerType + '\\n' +
+    'pointerId: ' + e.pointerId + '\\n' +
+    'pressure: ' + e.pressure.toFixed(2) + '\\n' +
+    'width: ' + e.width.toFixed(0) + ', height: ' + e.height.toFixed(0) + '\\n' +
+    'clientX: ' + e.clientX + ', clientY: ' + e.clientY;
+});
+
+area.addEventListener('pointermove', function(e) {
+  if (e.pressure > 0) {
+    out.textContent = 'Pressure: ' + e.pressure.toFixed(2) + ' — drawing!';
+  }
+});
+"
+/>
+
+## Touch-Action CSS
+
+To prevent the browser from handling touch gestures (scrolling, zooming), set CSS on your interactive element:
+
+```css
+.draggable {
+  touch-action: none;
+}
+```
+
+This is **essential** for pointer-based drag-and-drop on mobile.
+
+## Pointer Capture
+
+Pointer capture **redirects all pointer events** to a specific element, even if the pointer moves outside it:
+
+```javascript
+element.addEventListener('pointerdown', function(e) {
+  element.setPointerCapture(e.pointerId);
+});
+
+element.addEventListener('pointermove', function(e) {
+  // continues to fire on element even if outside
+});
+```
+
+This simplifies drag-and-drop — no need to listen on `document`.
+
+<CodePlayground
+  title="Pointer Capture for Drag"
+  html="
+<style>
+  #capture-dot { width: 60px; height: 60px; background: #6366f1; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; cursor: grab; position: absolute; left: 120px; top: 80px; user-select: none; touch-action: none; font-size: 0.75rem; text-align: center; }
+  #capture-area { width: 300px; height: 200px; background: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 8px; position: relative; }
+</style>
+<div id='capture-area'>
+  <div id='capture-dot'>Drag me</div>
+</div>
+<pre id='capture-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const dot = document.getElementById('capture-dot');
+const area = document.getElementById('capture-area');
+const out = document.getElementById('capture-out');
+
+dot.addEventListener('pointerdown', function(e) {
+  this.setPointerCapture(e.pointerId);
+  this.style.cursor = 'grabbing';
+  this.dataset.dragging = true;
+  const rect = this.getBoundingClientRect();
+  this.dataset.shiftX = e.clientX - rect.left;
+  this.dataset.shiftY = e.clientY - rect.top;
+  out.textContent = 'Pointer captured — drag started';
+});
+
+dot.addEventListener('pointermove', function(e) {
+  if (!this.dataset.dragging) return;
+  const areaRect = area.getBoundingClientRect();
+  let x = e.clientX - areaRect.left - parseFloat(this.dataset.shiftX);
+  let y = e.clientY - areaRect.top - parseFloat(this.dataset.shiftY);
+  x = Math.max(0, Math.min(x, area.clientWidth - this.offsetWidth));
+  y = Math.max(0, Math.min(y, area.clientHeight - this.offsetHeight));
+  this.style.left = x + 'px';
+  this.style.top = y + 'px';
+  out.textContent = 'Position: (' + x + ', ' + y + ')';
+});
+
+dot.addEventListener('pointerup', function(e) {
+  this.style.cursor = 'grab';
+  this.dataset.dragging = false;
+  out.textContent += ' — dropped';
+});
+
+dot.addEventListener('pointercancel', function() {
+  this.style.cursor = 'grab';
+  this.dataset.dragging = false;
+  out.textContent = 'Pointer cancelled';
+});
+"
+/>
+
+## `pointercancel`
+
+The `pointercancel` event fires when the browser determines the pointer interaction is no longer valid (e.g., a touch gesture was recognized as a scroll). Always handle `pointercancel` to clean up your state.
+
+## Preventing Mouse Events
+
+When pointer events are handled, the browser also fires **compatibility mouse events** (mouse click, etc.). To prevent this, use `event.preventDefault()` in your pointer handler.
+
+However, it's often simpler to just handle both or use `pointer-events: none` CSS.
+
+## Browser Support
+
+Pointer Events are supported in **all modern browsers**. For older browsers, you can use the `pointerevents-polyfill` or fall back to mouse/touch events.
+
+## Key Takeaways
+
+- Pointer Events unify **mouse, touch, and stylus** input
+- Use `e.pointerType` to distinguish input types (`"mouse"`, `"touch"`, `"pen"`)
+- Set `touch-action: none` on draggable elements to prevent scroll interference
+- **Pointer capture** (`setPointerCapture`) simplifies drag by routing all events to one element
+- Always handle `pointercancel` to reset drag states
+- Pointer events are the **modern standard** — use them for new projects

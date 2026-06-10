@@ -1,0 +1,183 @@
+---
+title: "Scripts: async and defer"
+description: "Control script loading and execution with async and defer attributes"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Resource-Loading"]
+tags: ["JavaScript", "DOM", "Scripts", "Performance"]
+slug: "js-scripts-async-defer"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Scripts: async and defer
+
+How you load your scripts impacts page performance. The `async` and `defer` attributes give you control over when scripts download and execute.
+
+## The Problem
+
+A regular `<script>` tag **blocks** HTML parsing while it downloads and executes:
+
+```html
+<script src="heavy.js"></script>
+<!-- HTML parsing stops here until heavy.js downloads and runs -->
+```
+
+This is why putting scripts in `<head>` without `defer` or `async` slows down page load.
+
+## The Three Modes
+
+| Attribute | Download | Execution | Order |
+|---|---|---|---|
+| **(none)** | Blocks HTML parsing | Immediately when downloaded | In document order |
+| `async` | Non-blocking | **As soon as downloaded** | No guarantee |
+| `defer` | Non-blocking | **After HTML parsed**, before `DOMContentLoaded` | In document order |
+
+```
+Normal:     HTML ──────┤ script ├────── HTML ──────▶
+                
+Async:      HTML ────────────┤ script ├──▶
+            (script downloads in parallel)
+
+Defer:      HTML ────────────────────┤ script ├──▶
+            (script runs after HTML parsed, before DOMContentLoaded)
+```
+
+## `defer` — Safe, Ordered Execution
+
+`defer` tells the browser: "Download the script, but wait until HTML is parsed to execute it."
+
+```html
+<script defer src="analytics.js"></script>
+<script defer src="app.js"></script>
+```
+
+- Both download **in parallel** during HTML parsing
+- Both execute **in order** (analytics.js first, then app.js)
+- Both execute **before** `DOMContentLoaded`
+
+**Use `defer`** for scripts that need the DOM and depend on each other.
+
+## `async` — Independent Execution
+
+`async` tells the browser: "Download as soon as possible, run as soon as downloaded."
+
+```html
+<script async src="analytics.js"></script>
+<script async src="widget.js"></script>
+```
+
+- Both download **in parallel**
+- Each executes **immediately** when downloaded
+- **Order is not guaranteed** (analytics may run after widget)
+
+**Use `async`** for independent scripts (analytics, ads, counters) that don't depend on the DOM or other scripts.
+
+## Visual Comparison
+
+```
+Normal script in <head>:
+Parsing ──┤script├──▶ DOMContentLoaded ──▶ load
+            (blocked)
+
+Deferred script:
+Parsing ────────────────▶ DOMContentLoaded ──▶ load
+            ├──defer──▶  (after parse)
+
+Async script:
+Parsing ──────▶ DOMContentLoaded ──▶ load
+     ├async┤   (when ready)
+```
+
+## When to Use Which
+
+| Scenario | Best Choice |
+|---|---|
+| Script uses DOM APIs | `defer` |
+| Script depends on another script | `defer` (order preserved) |
+| Analytics / tracking | `async` |
+| Third-party widgets | `async` |
+| Small inline script | Inline at end of `<body>` |
+| Script doesn't need DOM | `async` |
+
+## Dynamic Script Loading
+
+You can also load scripts dynamically:
+
+```javascript
+const script = document.createElement('script');
+script.src = 'app.js';
+script.async = true; // or false for defer-like behavior
+document.head.appendChild(script);
+```
+
+By default, dynamically created scripts behave like `async` (they don't block, but execute as soon as downloaded). Set `script.async = false` to make them behave like `defer` (ordered, but still execute after DOM).
+
+## Detecting Script Load
+
+Use the `load` event on script elements:
+
+```javascript
+script.onload = function() {
+  console.log('Script loaded!');
+};
+script.onerror = function() {
+  console.error('Failed to load script');
+};
+```
+
+<CodePlayground
+  title="Dynamic Script Loading"
+  html="
+<div id='dynamic-script-demo'>
+  <p><button id='load-script'>Load external script dynamically</button></p>
+  <pre id='script-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const log = document.getElementById('script-log');
+
+document.getElementById('load-script').onclick = function() {
+  const script = document.createElement('script');
+  script.src = 'data:text/javascript,' + encodeURIComponent(
+    'document.getElementById('script-log').textContent += 'Dynamic script executed!' + new Date().toLocaleTimeString() + '\n;'
+  );
+  script.async = true;
+
+  script.onload = function() {
+    log.textContent += 'Script load event fired\\n';
+    this.disabled = true;
+    this.textContent = 'Loaded';
+  };
+
+  script.onerror = function() {
+    log.textContent = 'Script failed to load';
+  };
+
+  document.head.appendChild(script);
+  log.textContent = 'Script element created and appended\\n';
+};
+"
+/>
+
+## Module Scripts
+
+For modern JavaScript (ES modules), the `type="module"` attribute behaves like `defer` by default:
+
+```html
+<script type="module" src="app.js"></script>
+```
+
+Module scripts:
+- Are **deferred** by default (download in parallel, execute after parse)
+- Can use `import` and `export`
+- Strict mode by default
+- Execute only once (even if included multiple times)
+
+## Key Takeaways
+
+- Regular scripts **block HTML parsing** — avoid them in `<head>`
+- `defer` = download in parallel, execute **in order** after DOM ready
+- `async` = download in parallel, execute **immediately** when ready
+- Use `defer` for **your code** (needs DOM, depends on other scripts)
+- Use `async` for **third-party** scripts (analytics, widgets)
+- Dynamic scripts behave like `async` by default
+- `type="module"` behaves like `defer` automatically

@@ -1,0 +1,230 @@
+---
+title: "Resumable File Upload"
+description: "Upload large files with resume capability using the File API and fetch"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Network"]
+tags: ["JavaScript", "Network", "Upload", "File"]
+slug: "js-resumable-file-upload"
+author: "Abhishek Sharma"
+order: 9
+---
+
+## Resumable File Upload
+
+Uploading large files is unreliable — connections drop, browsers crash, users navigate away. **Resumable upload** splits a file into chunks and uploads them independently, so you can resume from where you left off.
+
+## The Strategy
+
+```
+File (10 MB)
+├── Chunk 1 (1 MB) ──── ✅ Uploaded
+├── Chunk 2 (1 MB) ──── ✅ Uploaded
+├── Chunk 3 (1 MB) ──── ❌ Failed (retry)
+├── Chunk 4 (1 MB) ──── ⏳ Pending
+└── ...
+```
+
+## Splitting a File into Chunks
+
+```javascript
+const CHUNK_SIZE = 1024 * 1024; // 1 MB
+
+function getChunks(file) {
+  const chunks = [];
+  let start = 0;
+
+  while (start < file.size) {
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    chunks.push(file.slice(start, end));
+    start = end;
+  }
+
+  return chunks;
+}
+```
+
+## Uploading Chunks Sequentially
+
+```javascript
+async function uploadFile(file) {
+  const chunks = getChunks(file);
+  const total = chunks.length;
+
+  for (let i = 0; i < total; i++) {
+    const formData = new FormData();
+    formData.append('chunk', chunks[i]);
+    formData.append('index', i);
+    formData.append('total', total);
+    formData.append('filename', file.name);
+    formData.append('fileId', fileId);
+
+    try {
+      await fetch('/upload', { method: 'POST', body: formData });
+      updateProgress((i + 1) / total * 100);
+    } catch (err) {
+      // Retry this chunk
+      i--;
+      await wait(1000);
+    }
+  }
+}
+```
+
+<CodePlayground
+  title="Simulated Resumable Upload"
+  html="
+<div>
+  <p>Simulated file upload with chunking and resume:</p>
+  <button id='simulate-upload'>Start Simulated Upload</button>
+  <button id='simulate-fail' style='margin-left:8px;'>Simulate Failure</button>
+  <div style='margin-top:8px;height:24px;background:#e2e8f0;border-radius:12px;overflow:hidden;'>
+    <div id='sim-bar' style='height:100%;width:0%;background:#6366f1;border-radius:12px;transition:width 0.5s;'></div>
+  </div>
+  <pre id='sim-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const bar = document.getElementById('sim-bar');
+const out = document.getElementById('sim-out');
+let shouldFail = false;
+let currentChunk = 0;
+const totalChunks = 10;
+
+document.getElementById('simulate-fail').onclick = function() {
+  shouldFail = !shouldFail;
+  this.textContent = shouldFail ? '✅ Failure On' : '❌ Failure Off';
+  this.style.background = shouldFail ? '#fef9c3' : '';
+};
+
+document.getElementById('simulate-upload').onclick = async function() {
+  this.disabled = true;
+  currentChunk = 0;
+  bar.style.width = '0%';
+  out.textContent = 'Starting upload...\\n';
+
+  for (let i = 0; i < totalChunks; i++) {
+    out.textContent += 'Uploading chunk ' + (i + 1) + '/' + totalChunks + '... ';
+
+    // Simulate failure
+    if (shouldFail && i === 3) {
+      out.textContent += '❌ FAILED!\\n';
+      out.textContent += 'Retrying chunk ' + (i + 1) + '... ';
+      shouldFail = false;
+      document.getElementById('simulate-fail').textContent = '✅ Failure Off';
+      i--; // retry
+      await new Promise(r => setTimeout(r, 500));
+      continue;
+    }
+
+    await new Promise(r => setTimeout(r, 300));
+    bar.style.width = ((i + 1) / totalChunks * 100) + '%';
+    out.textContent += '✅\\n';
+  }
+
+  out.textContent += '\\n🎉 Upload complete!';
+  this.disabled = false;
+};
+"
+/>
+
+## Resume from Last Successful Chunk
+
+Query the server for progress on page reload:
+
+```javascript
+async function getUploadProgress(fileId) {
+  const res = await fetch(`/upload/${fileId}/progress`);
+  const data = await res.json();
+  return data.lastChunkIndex; // -1 if no chunks uploaded
+}
+
+async function uploadWithResume(file) {
+  const fileId = generateFileId(file);
+  const lastIndex = await getUploadProgress(fileId);
+  const chunks = getChunks(file);
+
+  for (let i = lastIndex + 1; i < chunks.length; i++) {
+    await uploadChunk(chunks[i], i, fileId);
+  }
+}
+```
+
+## Generating a File ID
+
+```javascript
+function generateFileId(file) {
+  // Simple: name + size + last modified
+  return `${file.name}_${file.size}_${file.lastModified}`;
+}
+
+// Or use crypto for a hash
+async function generateFileHash(file) {
+  const buffer = await file.arrayBuffer();
+  const hash = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+```
+
+## Server-Side Assembly
+
+The server needs to:
+
+1. Accept individual chunks with metadata (index, total, fileId)
+2. Store chunks in a temporary directory
+3. When all chunks are received, assemble them into the final file
+4. Report progress via an endpoint
+
+```javascript
+// Conceptual server endpoint (Node.js)
+app.post('/upload', async (req, res) => {
+  const { index, total, filename, fileId } = req.body;
+  const chunk = req.file; // multer or similar
+
+  // Save chunk
+  await saveChunk(fileId, index, chunk.buffer);
+
+  // If last chunk, assemble
+  if (index == total - 1) {
+    await assembleFile(fileId, filename);
+  }
+
+  res.json({ ok: true });
+});
+
+app.get('/upload/:fileId/progress', (req, res) => {
+  const chunks = getUploadedChunks(req.params.fileId);
+  res.json({ lastChunkIndex: chunks.length - 1 });
+});
+```
+
+## Retry Strategy
+
+```javascript
+async function uploadChunkWithRetry(chunk, index, fileId, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const formData = new FormData();
+      formData.append('chunk', chunk);
+      formData.append('index', index);
+      formData.append('fileId', fileId);
+
+      const res = await fetch('/upload', { method: 'POST', body: formData });
+      if (res.ok) return;
+    } catch (err) {
+      if (attempt === maxRetries - 1) throw err;
+      await wait(1000 * Math.pow(2, attempt)); // exponential backoff
+    }
+  }
+}
+```
+
+## Key Takeaways
+
+- Split files into **fixed-size chunks** using `file.slice()`
+- Upload chunks with metadata (index, total, fileId, filename)
+- Track progress on the **server** so uploads survive page reloads
+- Implement **retry logic** with exponential backoff for failed chunks
+- The server **reassembles** chunks when all are received
+- Use a unique **file ID** (name + size + hash) to map chunks to files
+- This pattern handles **gigabyte-sized files** that would otherwise be impractical

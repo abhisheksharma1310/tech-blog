@@ -1,0 +1,162 @@
+---
+title: "Attributes and Properties"
+description: "Understanding the difference between HTML attributes and DOM properties"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "Attributes"]
+slug: "js-attributes-properties"
+author: "Abhishek Sharma"
+order: 6
+---
+
+## Attributes vs Properties
+
+When the browser parses HTML, it creates DOM objects. Each HTML attribute becomes a **DOM property**. But there's a subtle difference:
+
+- **Attributes** — written in HTML, always strings
+- **Properties** — DOM object properties, can be any type (boolean, object, number)
+
+## How They Relate
+
+Most standard attributes automatically become properties:
+
+```html
+<input id="email" type="text" value="hello">
+```
+
+```javascript
+input.id       // "email" (property)
+input.type     // "text" (property)
+input.value    // "hello" (property)
+```
+
+<CodePlayground
+  title="Attributes become Properties"
+  html="
+<input id='my-input' type='email' value='test@example.com' disabled>
+<pre id='ap-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const inp = document.getElementById('my-input');
+const out = document.getElementById('ap-output');
+
+out.textContent =
+  'property .id: ' + inp.id + '\\n' +
+  'property .type: ' + inp.type + '\\n' +
+  'property .value: ' + inp.value + '\\n' +
+  'property .disabled: ' + inp.disabled + ' (boolean!)' + '\\n' +
+  '---' + '\\n' +
+  'attribute .getAttribute('disabled'): ' + inp.getAttribute('disabled') + ' (string or null)';
+"
+/>
+
+## Working with Attributes
+
+Use these methods to work with attributes directly:
+
+```javascript
+element.hasAttribute(name)     // check if attribute exists
+element.getAttribute(name)     // get attribute value (always string or null)
+element.setAttribute(name, value)  // set attribute
+element.removeAttribute(name)  // remove attribute
+element.attributes             // get all attributes (NamedNodeMap)
+```
+
+<CodePlayground
+  title="Attribute Methods"
+  html="
+<div id='card' class='box' data-id='123' style='padding:12px;border:1px solid #cbd5e1;border-radius:6px;'>
+  Hover to see my attributes
+</div>
+<pre id='attr-output' style='background:#f1f5f9;padding:8px;border-radius:4px;margin-top:8px;'></pre>"
+  js="
+const card = document.getElementById('card');
+const out = document.getElementById('attr-output');
+
+out.textContent =
+  'hasAttribute('class'): ' + card.hasAttribute('class') + '\\n' +
+  'getAttribute('data-id'): ' + card.getAttribute('data-id') + '\\n' +
+  'getAttribute('style'): ' + card.getAttribute('style') + '\\n' +
+  '---' + '\\n';
+
+// Iterate all attributes
+let attrList = 'All attributes:\\n';
+for (let attr of card.attributes) {
+  attrList += '  ' + attr.name + '=' + attr.value + '\n';
+}
+out.textContent += attrList;
+"
+/>
+
+## When Properties and Attributes Diverge
+
+Some attributes don't map 1:1 to properties:
+
+| Attribute | Property | Notes |
+|---|---|---|
+| `class` | `className` | `class` is reserved in JS |
+| `for` | `htmlFor` | `for` is a loop keyword |
+| `style` | `style` (object) | Attribute is a string, property is a CSSStyleDeclaration |
+| `href` | `href` (full URL) | Property returns resolved URL, attribute returns literal |
+| `value` | `value` (current) | Property = current input value; attribute = default value |
+
+<CodePlayground
+  title="Attribute vs Property Differences"
+  html="
+<a id='mylink' href='/page'>Click me</a>
+<input id='myfield' type='text' value='default'>
+<pre id='diff-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const link = document.getElementById('mylink');
+const field = document.getElementById('myfield');
+const out = document.getElementById('diff-output');
+
+out.textContent =
+  'Link:' + '\\n' +
+  '  getAttribute('href'): ' + link.getAttribute('href') + '\\n' +
+  '  .href property: ' + link.href + '\\n' +
+  '---' + '\\n' +
+  'Input before typing:' + '\\n' +
+  '  getAttribute('value'): ' + field.getAttribute('value') + '\\n' +
+  '  .value property: ' + field.value;
+"
+/>
+
+## Data Attributes
+
+HTML5 introduced `data-*` attributes. Access them via the `dataset` property:
+
+```javascript
+<div data-user-id="42" data-role="admin">
+div.dataset.userId   // "42" (camelCase!)
+div.dataset.role     // "admin"
+```
+
+<CodePlayground
+  title="Data Attributes"
+  html="
+<div id='user-profile' data-user-id='42' data-user-role='admin' data-last-login='2026-06-01'>
+  User Profile Card
+</div>
+<pre id='data-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const profile = document.getElementById('user-profile');
+const out = document.getElementById('data-output');
+
+out.innerHTML =
+  'dataset.userId = ' + profile.dataset.userId + '<br>' +
+  'dataset.userRole = ' + profile.dataset.userRole + '<br>' +
+  'dataset.lastLogin = ' + profile.dataset.lastLogin + '<br>' +
+  '<br>Setting dataset.userRole = 'editor'...';
+
+profile.dataset.userRole = 'editor';
+"
+/>
+
+## Key Takeaways
+
+- **Attributes** are HTML strings; **properties** are DOM object values
+- Use `getAttribute`/`setAttribute` for the HTML source value
+- Use the DOM property for the **live/current** value
+- `class` → `className`, `for` → `htmlFor` in JS
+- `data-*` attributes are accessed via `dataset` (camelCase)
+- Properties can be **any type** (boolean, object); attributes are **always strings**

@@ -1,0 +1,221 @@
+---
+title: "Fetch API"
+description: "Make network requests with the modern Fetch API"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Network"]
+tags: ["JavaScript", "Network", "Fetch", "API"]
+slug: "js-fetch-basics"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Fetch
+
+The `fetch()` API makes HTTP requests — GET, POST, PUT, DELETE, and more. It's the modern replacement for `XMLHttpRequest`.
+
+## Basic GET Request
+
+```javascript
+const response = await fetch('https://api.example.com/data');
+const data = await response.json();
+```
+
+`fetch()` returns a `Promise<Response>`. The response must be **awaited** to extract the body.
+
+<CodePlayground
+  title="Basic Fetch GET"
+  html="
+<div>
+  <button id='fetch-get'>Fetch Sample Data</button>
+  <pre id='fetch-out' style='background:#f1f5f9;padding:12px;border-radius:6px;min-height:60px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('fetch-out');
+
+document.getElementById('fetch-get').onclick = async function() {
+  try {
+    out.textContent = 'Fetching...';
+    this.disabled = true;
+    this.textContent = 'Loading...';
+
+    const response = await fetch('https://jsonplaceholder.typicode.com/todos/1');
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+    const data = await response.json();
+    out.textContent =
+      'Status: ' + response.status + ' ' + response.statusText + '\\n' +
+      '---' + '\\n' +
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    out.textContent = 'Error: ' + err.message;
+  } finally {
+    this.disabled = false;
+    this.textContent = 'Fetch Sample Data';
+  }
+};
+"
+/>
+
+## Response Properties
+
+```javascript
+const response = await fetch(url);
+
+response.status       // 200, 404, 500, etc.
+response.ok           // true if status 200-299
+response.statusText   // "OK", "Not Found"
+response.headers      // Headers object
+response.url          // final URL (after redirects)
+response.type         // "basic", "cors", "error"
+```
+
+## Reading the Response
+
+| Method | Returns |
+|---|---|
+| `response.json()` | Parsed JSON object |
+| `response.text()` | String |
+| `response.blob()` | Blob (for binary data) |
+| `response.arrayBuffer()` | ArrayBuffer |
+| `response.formData()` | FormData object |
+
+<CodePlayground
+  title="Response Methods"
+  html="
+<div>
+  <button id='fetch-methods'>Fetch & Show Response</button>
+  <pre id='methods-out' style='background:#f1f5f9;padding:12px;border-radius:6px;min-height:60px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('methods-out');
+
+document.getElementById('fetch-methods').onclick = async function() {
+  try {
+    out.textContent = 'Fetching...';
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
+
+    let info = 'Status: ' + response.status + ' ' + response.statusText + '\\n';
+    info += 'Content-Type: ' + response.headers.get('content-type') + '\\n';
+    info += 'Content-Length: ' + response.headers.get('content-length') + '\\n';
+    info += '---\\n';
+
+    const data = await response.json();
+    info += 'Title: ' + data.title + '\\n';
+    info += 'Body: ' + data.body.substring(0, 80) + '...';
+
+    out.textContent = info;
+  } catch (err) {
+    out.textContent = 'Error: ' + err.message;
+  }
+};
+"
+/>
+
+## POST Request
+
+```javascript
+const response = await fetch(url, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'Alice', role: 'admin' })
+});
+```
+
+<CodePlayground
+  title="POST Request"
+  html="
+<div>
+  <button id='fetch-post'>POST Sample Data</button>
+  <pre id='post-out' style='background:#f1f5f9;padding:12px;border-radius:6px;min-height:60px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('post-out');
+
+document.getElementById('fetch-post').onclick = async function() {
+  try {
+    out.textContent = 'Sending POST...';
+    this.disabled = true;
+
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'My Post',
+        body: 'This is the content',
+        userId: 1
+      })
+    });
+
+    const data = await response.json();
+    out.textContent =
+      'Status: ' + response.status + '\\n' +
+      'Response:' + '\\n' +
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    out.textContent = 'Error: ' + err.message;
+  } finally {
+    this.disabled = false;
+  }
+};
+"
+/>
+
+## Request Options
+
+```javascript
+const response = await fetch(url, {
+  method: 'GET',       // or POST, PUT, DELETE, PATCH
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer token123'
+  },
+  body: JSON.stringify(data), // not used for GET
+  mode: 'cors',        // cors, no-cors, same-origin
+  credentials: 'include', // omit, same-origin, include
+  cache: 'no-cache',   // default, no-cache, reload, force-cache
+  redirect: 'follow',  // follow, error, manual
+  referrerPolicy: 'no-referrer',
+  signal: AbortSignal  // for cancellation
+});
+```
+
+## Error Handling
+
+`fetch()` only rejects on **network errors**, not HTTP errors (404, 500):
+
+```javascript
+try {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error('HTTP error ' + response.status);
+  }
+
+  const data = await response.json();
+} catch (err) {
+  // Network error OR HTTP error
+  console.error(err);
+}
+```
+
+## Getting Response Headers
+
+```javascript
+response.headers.get('content-type')      // single header
+response.headers.has('x-custom')           // check existence
+for (const [key, value] of response.headers) {
+  console.log(key, value);
+}
+```
+
+## Key Takeaways
+
+- `fetch()` returns a **Promise** — use `await` or `.then()`
+- Check `response.ok` to handle HTTP errors (404, 500)
+- Read the body with the appropriate method: `.json()`, `.text()`, `.blob()`
+- For POST/PUT, set `Content-Type` header and stringify the body
+- `fetch()` doesn't reject on 4xx/5xx — only on network failures
+- Use `response.headers.get()` to read response headers
+- `credentials: 'include'` sends cookies cross-origin

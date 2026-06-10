@@ -1,0 +1,167 @@
+---
+title: "Searching Elements"
+description: "Find DOM elements using getElement*, querySelector*, and more"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "Selectors"]
+slug: "js-searching-elements"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Searching the DOM
+
+Before you can manipulate an element, you need to **find it**. JavaScript provides several methods to search the DOM.
+
+## Modern Methods: `querySelector` / `querySelectorAll`
+
+These are the **most versatile** — they accept any CSS selector:
+
+```javascript
+document.querySelector('.card')           // first .card element
+document.querySelector('#main h2')        // first h2 inside #main
+document.querySelectorAll('li')           // all li elements (NodeList)
+document.querySelectorAll('[data-type]')  // all elements with data-type
+```
+
+<CodePlayground
+  title="querySelector in action"
+  html="
+<div id='catalog'>
+  <div class='card' data-type='fruit'>Apple</div>
+  <div class='card' data-type='fruit'>Banana</div>
+  <div class='card' data-type='veg'>Carrot</div>
+  <div class='card' data-type='veg'>Daikon</div>
+</div>
+<pre id='sel-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const allCards = document.querySelectorAll('.card');
+const fruits = document.querySelectorAll('[data-type=fruit]');
+const veg = document.querySelectorAll('[data-type=veg]');
+const firstCard = document.querySelector('.card');
+
+const out = document.getElementById('sel-output');
+out.textContent =
+  'All cards: ' + allCards.length + '\\n' +
+  'Fruits: ' + fruits.length + ' (' + fruits[0].textContent + ', ' + fruits[1].textContent + ')' + '\\n' +
+  'Vegetables: ' + veg.length + '\\n' +
+  'First card: ' + firstCard.textContent;
+"
+/>
+
+## Legacy Methods: `getElement*`
+
+These are **faster** but less flexible. Use them when you know the exact ID, tag, or class:
+
+```javascript
+document.getElementById('header')     // by ID (fastest)
+document.getElementsByTagName('p')     // by tag name (live HTMLCollection)
+document.getElementsByClassName('card') // by class (live HTMLCollection)
+document.getElementsByName('email')   // by name attribute (NodeList)
+```
+
+## Live vs Static Collections
+
+This is important!
+
+| Method | Returns | Live? |
+|---|---|---|
+| `getElementById` | Single element | N/A |
+| `getElementsByTagName` | HTMLCollection | **Yes** |
+| `getElementsByClassName` | HTMLCollection | **Yes** |
+| `querySelectorAll` | NodeList | **No** |
+| `querySelector` | Single element | N/A |
+
+**Live** means the collection updates automatically when the DOM changes.
+
+<CodePlayground
+  title="Live vs Static Collections"
+  html="
+<ul id='live-demo'>
+  <li>Item 1</li>
+  <li>Item 2</li>
+</ul>
+<button id='add-btn'>Add Item</button>
+<pre id='live-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const liveItems = document.getElementsByTagName('li');
+const staticItems = document.querySelectorAll('li');
+
+function updateCounts() {
+  const out = document.getElementById('live-output');
+  out.textContent =
+    'Live collection (getElementsByTagName): ' + liveItems.length + '\\n' +
+    'Static collection (querySelectorAll): ' + staticItems.length;
+}
+
+document.getElementById('add-btn').addEventListener('click', function() {
+  const ul = document.getElementById('live-demo');
+  const li = document.createElement('li');
+  li.textContent = 'Item ' + (ul.children.length + 1);
+  ul.appendChild(li);
+  // Static items didn't update — show it
+  const out = document.getElementById('live-output');
+  out.textContent =
+    'Live collection: ' + liveItems.length + ' (auto-updated!)' + '\\n' +
+    'Static collection: ' + staticItems.length + ' (stale — still ' + staticItems.length + ')';
+});
+
+updateCounts();
+"
+/>
+
+## Closest: Finding Ancestors
+
+`closest()` walks **up** the DOM tree to find the nearest matching ancestor:
+
+<CodePlayground
+  title="closest() demo"
+  html="
+<div class='container'>
+  <article class='post'>
+    <h3 class='post-title'>Hello World</h3>
+  </article>
+</div>
+<pre id='close-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const title = document.querySelector('.post-title');
+const out = document.getElementById('close-output');
+
+const post = title.closest('.post');
+const container = title.closest('.container');
+
+out.textContent =
+  'title.closest(.post): ' + post.tagName + '.post' + '\\n' +
+  'title.closest(.container): ' + container.className + '\\n' +
+  'title.closest(.nonexistent): ' + title.closest('.nonexistent');
+"
+/>
+
+## Matches: Checking an Element
+
+`matches()` checks if an element matches a CSS selector:
+
+```javascript
+element.matches('.card')     // true if element has class "card"
+element.matches('li:first-child') // true if it's the first li
+```
+
+## Method Comparison
+
+| Method | Returns | When to Use |
+|---|---|---|
+| `querySelector` | Single element | Any CSS selector |
+| `querySelectorAll` | NodeList (static) | Multiple elements, complex selectors |
+| `getElementById` | Single element | You know the exact ID |
+| `getElementsByTagName` | HTMLCollection (live) | All elements of a tag |
+| `getElementsByClassName` | HTMLCollection (live) | All elements with a class |
+| `closest` | Single element | Find ancestor |
+| `matches` | boolean | Check if element matches |
+
+## Key Takeaways
+
+- `querySelector` and `querySelectorAll` are the **most flexible** — use them by default
+- `getElementById` is the **fastest** for single elements with IDs
+- Be aware of **live vs static** collections to avoid bugs
+- Use `closest()` to find parent elements matching a selector
+- Use `matches()` to test an element against a selector

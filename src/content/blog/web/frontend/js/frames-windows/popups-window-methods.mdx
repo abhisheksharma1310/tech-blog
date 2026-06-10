@@ -1,0 +1,189 @@
+---
+title: "Popups and Window Methods"
+description: "Open, control, and communicate with browser popup windows"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Frames-Windows"]
+tags: ["JavaScript", "DOM", "Popups", "Window"]
+slug: "js-popups-window-methods"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Popups and Window Methods
+
+Popups are separate browser windows opened via JavaScript. While often abused for ads, they're legitimate for OAuth logins, file pickers, and multi-window apps.
+
+## Opening a Popup
+
+```javascript
+const popup = window.open(url, name, params);
+```
+
+| Parameter | Description |
+|---|---|
+| `url` | URL to open |
+| `name` | Window name (used for `target="_blank"` targeting) |
+| `params` | Comma-separated window features |
+
+```javascript
+// Open a small popup
+const win = window.open(
+  'https://example.com',
+  'myPopup',
+  'width=400,height=300,left=100,top=100'
+);
+```
+
+## Window Features
+
+| Feature | Example | Description |
+|---|---|---|
+| `width` / `height` | `width=400` | Inner size in pixels |
+| `left` / `top` | `left=100` | Screen position |
+| `menubar` | `menubar=no` | Show menu bar |
+| `toolbar` | `toolbar=no` | Show browser toolbar |
+| `location` | `location=yes` | Show address bar |
+| `status` | `status=no` | Show status bar |
+| `resizable` | `resizable=yes` | Allow resizing |
+| `scrollbars` | `scrollbars=yes` | Show scrollbars |
+
+## Controlling the Popup
+
+Once you have a reference to the popup window:
+
+```javascript
+// Move/resize
+win.moveTo(100, 100);
+win.moveBy(50, 50);
+win.resizeTo(500, 400);
+win.resizeBy(50, 50);
+
+// Scroll
+win.scrollTo(0, 200);
+
+// Focus/blur
+win.focus();
+win.blur();
+
+// Close
+win.close();
+```
+
+<CodePlayground
+  title="Popup Controls"
+  html="
+<div id='popup-demo' style='padding:16px;background:#f1f5f9;border-radius:8px;'>
+  <p style='margin-bottom:8px;'>Popup will open in a new window.</p>
+  <div style='display:flex;gap:8px;flex-wrap:wrap;'>
+    <button id='open-popup'>Open Popup</button>
+    <button id='resize-popup'>Resize (400x300)</button>
+    <button id='move-popup'>Move (200, 200)</button>
+    <button id='close-popup'>Close Popup</button>
+  </div>
+  <pre id='popup-log' style='background:white;padding:8px;border-radius:4px;margin-top:8px;'></pre>
+</div>"
+  js="
+const log = document.getElementById('popup-log');
+let popup = null;
+
+document.getElementById('open-popup').onclick = function() {
+  if (popup && !popup.closed) {
+    log.textContent = 'Popup already open';
+    return;
+  }
+  popup = window.open('', 'demoPopup', 'width=300,height=200,left=300,top=200');
+  popup.document.write('<h2>Hello from popup!</h2><p>This window is controlled by the parent.</p><button onclick='window.close()'>Close Me</button>');
+  popup.document.title = 'Demo Popup';
+  log.textContent = 'Popup opened at ' + new Date().toLocaleTimeString();
+};
+
+document.getElementById('resize-popup').onclick = function() {
+  if (popup && !popup.closed) {
+    popup.resizeTo(400, 300);
+    popup.focus();
+    log.textContent = 'Resized popup to 400x300';
+  } else {
+    log.textContent = 'No popup open';
+  }
+};
+
+document.getElementById('move-popup').onclick = function() {
+  if (popup && !popup.closed) {
+    popup.moveTo(200, 200);
+    popup.focus();
+    log.textContent = 'Moved popup to (200, 200)';
+  } else {
+    log.textContent = 'No popup open';
+  }
+};
+
+document.getElementById('close-popup').onclick = function() {
+  if (popup && !popup.closed) {
+    popup.close();
+    popup = null;
+    log.textContent = 'Popup closed';
+  } else {
+    log.textContent = 'No popup to close';
+  }
+};
+"
+/>
+
+## Popup Blocker
+
+Browsers block popups that aren't triggered by user action. Popups opened on page load are blocked. Only open popups in direct response to a user click:
+
+```javascript
+// OK — user gesture
+button.addEventListener('click', () => window.open(url));
+
+// Blocked — no user gesture
+window.open(url); // blocked by most browsers
+```
+
+## Checking if a Popup Was Blocked
+
+```javascript
+const win = window.open(url);
+if (!win || win.closed) {
+  alert('Popup was blocked! Please allow popups for this site.');
+}
+```
+
+## The `window.opener` Property
+
+A popup can access its parent via `window.opener`:
+
+```javascript
+// In the popup:
+window.opener.document.body.style.background = 'yellow';
+```
+
+Modern browsers restrict cross-origin `opener` access. Use `noopener` for security:
+
+```html
+<a href="page.html" target="_blank" rel="noopener">Safe link</a>
+```
+
+## Window Methods Overview
+
+| Method | What it does |
+|---|---|
+| `window.open()` | Open a new window/tab |
+| `window.close()` | Close the window |
+| `window.focus()` | Bring window to front |
+| `window.blur()` | Send window to back |
+| `window.moveTo(x,y)` | Move window to position |
+| `window.moveBy(dx,dy)` | Move window relative |
+| `window.resizeTo(w,h)` | Resize window |
+| `window.resizeBy(dw,dh)` | Resize relative |
+| `window.scrollTo(x,y)` | Scroll the window |
+
+## Key Takeaways
+
+- Open popups only in **direct response to user clicks** (bypass blocker)
+- Use `window.open()` with feature params for size and position
+- The popup window is a `Window` object — you can **control and inspect** it
+- Popups can access the opener via `window.opener` (same-origin only)
+- Always handle the **popup blocked** case gracefully
+- For modern apps, prefer modals or `<dialog>` over popups for better UX

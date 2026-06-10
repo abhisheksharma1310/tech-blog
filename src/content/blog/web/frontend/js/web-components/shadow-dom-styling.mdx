@@ -1,0 +1,244 @@
+---
+title: "Shadow DOM Styling"
+description: "Style shadow DOM components with CSS custom properties, parts, and themes"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Web Components"]
+tags: ["JavaScript", "Web Components", "Shadow DOM", "CSS"]
+slug: "js-shadow-dom-styling"
+author: "Abhishek Sharma"
+order: 6
+---
+
+## Shadow DOM Styling
+
+Shadow DOM encapsulates styles by default, but provides controlled ways to let users customize the appearance: **CSS custom properties** and **CSS parts**.
+
+## How Style Crosses the Boundary
+
+```
+Page CSS                   Shadow DOM
+┌─────────────────┐       ┌─────────────────┐
+│  color: red      │──────│  (inherited!)   │
+│  font-size: 16px │──────│  (inherited!)   │
+│  --primary: blue │──────│  var(--primary) │
+│  h2 { ... }     │──✗──→│  (blocked!)     │
+│  .class { ... } │──✗──→│  (blocked!)     │
+└─────────────────┘       └─────────────────┘
+```
+
+**Inherited** properties cross the boundary: `color`, `font-family`, `font-size`, `line-height`
+
+**Non-inherited** properties are blocked: `background`, `border`, `margin`, `padding`
+
+## CSS Custom Properties (Variables)
+
+The **primary theming mechanism** for Web Components. Variables **cross the shadow boundary**:
+
+```javascript
+class ThemedButton extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        button {
+          background: var(--btn-bg, #6366f1);
+          color: var(--btn-color, white);
+          border: var(--btn-border, none);
+          padding: var(--btn-padding, 8px 16px);
+          border-radius: var(--btn-radius, 6px);
+          cursor: pointer;
+        }
+      </style>
+      <button><slot></slot></button>
+    `;
+  }
+}
+```
+
+The user can customize it via CSS variables:
+
+```css
+themed-button {
+  --btn-bg: #22c55e;
+  --btn-color: #1e293b;
+  --btn-radius: 4px;
+}
+```
+
+<CodePlayground
+  title="CSS Variables for Theming"
+  html="
+<style>
+  themed-button { --btn-bg: #6366f1; --btn-color: white; }
+  themed-button.warning { --btn-bg: #eab308; --btn-color: #1e293b; }
+  themed-button.danger { --btn-bg: #ef4444; }
+</style>
+<themed-button>Primary</themed-button>
+<themed-button class='warning'>Warning</themed-button>
+<themed-button class='danger'>Danger</themed-button>
+<pre id='var-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class ThemedButton extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        button {
+          background: var(--btn-bg, #6366f1);
+          color: var(--btn-color, white);
+          border: none;
+          padding: 8px 16px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 1rem;
+        }
+      </style>
+      <button><slot></slot></button>
+    `;
+  }
+}
+customElements.define('themed-button', ThemedButton);
+
+document.getElementById('var-out').textContent =
+  'Each button reads CSS variables from its context:\\n' +
+  '  --btn-bg for background\\n' +
+  '  --btn-color for text color\\n' +
+  'Warning and danger variants override --btn-bg.';
+"
+/>
+
+## CSS Parts
+
+CSS `::part()` lets you expose specific elements inside shadow DOM for external styling:
+
+```javascript
+class MyCard extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <div class="card">
+        <h2 part="title"><slot name="title"></slot></h2>
+        <div part="body"><slot></slot></div>
+        <div part="footer"><slot name="footer"></slot></div>
+      </div>
+    `;
+  }
+}
+```
+
+Users can style the exposed parts:
+
+```css
+my-card::part(title) {
+  color: #6366f1;
+  font-size: 1.5rem;
+}
+
+my-card::part(footer) {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 8px;
+}
+```
+
+<CodePlayground
+  title="CSS Parts Demo"
+  html="
+<style>
+  custom-card::part(title) { color: #6366f1; font-size: 1.3rem; }
+  custom-card::part(body) { color: #334155; line-height: 1.5; }
+  custom-card::part(footer) { border-top: 2px solid #e2e8f0; padding-top: 8px; margin-top: 8px; font-size: 0.8rem; color: #94a3b8; }
+</style>
+<custom-card>
+  <span slot='title'>Card Title</span>
+  <p>This is the card body. The parts are styled from outside the shadow DOM.</p>
+  <span slot='footer'>Footer content</span>
+</custom-card>
+<pre id='part-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class CustomCard extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <div style='border:1px solid #e2e8f0;border-radius:8px;padding:16px;background:white;'>
+        <div part='title'><slot name='title'></slot></div>
+        <div part='body'><slot></slot></div>
+        <div part='footer'><slot name='footer'></slot></div>
+      </div>
+    `;
+  }
+}
+customElements.define('custom-card', CustomCard);
+
+document.getElementById('part-out').textContent =
+  'The external CSS styles ::part(title), ::part(body), ::part(footer).\\n' +
+  'CSS parts are the official API for styling shadow DOM internals.';
+"
+/>
+
+## Export Parts with `exportparts`
+
+The `exportparts` attribute re-exports parts from a nested shadow element:
+
+```html
+<my-nested-component exportparts="inner-title: title"></my-nested-component>
+```
+
+```css
+my-component::part(title) { /* styled via re-export */ }
+```
+
+## `:host` and `:host()`
+
+Style the custom element itself from within shadow:
+
+```css
+:host {
+  display: block;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+:host(.warning) {
+  border-color: #eab308;
+}
+
+:host-context(.dark-theme) {
+  background: #1e293b;
+  color: white;
+}
+```
+
+## `:host-context()`
+
+Style based on a parent's class:
+
+```css
+:host-context(.dark-mode) {
+  --text: white;
+  --bg: #1e293b;
+}
+```
+
+## Styling Decision Guide
+
+| Scenario | Solution |
+|---|---|
+| Theme the whole component | CSS custom properties (variables) |
+| Style specific internal elements | `part` attribute + `::part()` selector |
+| Style the host element | `:host` / `:host()` |
+| Inheritable properties | They cross the boundary automatically |
+| Component context | `:host-context()` |
+
+## Key Takeaways
+
+- **CSS custom properties** are the recommended theming mechanism for Web Components
+- **`::part()`** exposes specific elements for external styling
+- `:host` styles the component itself from inside shadow
+- Inheritable properties (`color`, `font`, etc.) cross the shadow boundary
+- `:host-context()` lets you respond to parent CSS classes
+- Avoid relying on global styles — make components **self-contained** with CSS variables
+- Always provide **sensible defaults** for CSS variables with `var(--name, default)`

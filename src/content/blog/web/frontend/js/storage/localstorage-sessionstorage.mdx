@@ -1,0 +1,266 @@
+---
+title: "LocalStorage and SessionStorage"
+description: "Store data in the browser with localStorage and sessionStorage"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Storage"]
+tags: ["JavaScript", "Storage", "localStorage", "sessionStorage"]
+slug: "js-localstorage-sessionstorage"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## LocalStorage and SessionStorage
+
+`localStorage` and `sessionStorage` are key-value stores that survive page refreshes. Unlike cookies, they're **not sent** with HTTP requests — making them ideal for client-side data.
+
+## Web Storage API
+
+Both share the same API:
+
+```javascript
+// Set
+localStorage.setItem('key', 'value');
+
+// Get
+const value = localStorage.getItem('key');
+
+// Remove
+localStorage.removeItem('key');
+
+// Clear all
+localStorage.clear();
+
+// Get count
+localStorage.length;
+
+// Get key by index
+localStorage.key(0);
+```
+
+## localStorage vs sessionStorage
+
+| Feature | localStorage | sessionStorage |
+|---|---|---|
+| Persists after browser close | ✅ Yes | ❌ No |
+| Survives page refresh | ✅ Yes | ✅ Yes |
+| Tab-isolated | ❌ Shared across tabs | ✅ Per-tab |
+| Survives tab close | ✅ Yes | ❌ No |
+| Capacity | ~5-10MB | ~5-10MB |
+| Sent to server | ❌ No | ❌ No |
+
+<CodePlayground
+  title="localStorage vs sessionStorage"
+  html="
+<div>
+  <div style='display:flex;gap:8px;margin-bottom:8px;'>
+    <input id='ls-key' type='text' value='username' placeholder='Key' style='flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;'>
+    <input id='ls-value' type='text' value='Alice' placeholder='Value' style='flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;'>
+  </div>
+  <div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;'>
+    <button id='ls-set'>Set (localStorage)</button>
+    <button id='ss-set'>Set (sessionStorage)</button>
+    <button id='ls-get'>Get (localStorage)</button>
+    <button id='ls-del'>Delete (localStorage)</button>
+    <button id='ls-clear'>Clear All</button>
+  </div>
+  <pre id='ls-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('ls-out');
+
+function display() {
+  let info = 'localStorage:\\n';
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    info += '  ' + key + ' = ' + localStorage.getItem(key) + '\\n';
+  }
+  info += '(total: ' + localStorage.length + ' items)\\n';
+  info += '---\\n';
+  info += 'sessionStorage:\\n';
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    info += '  ' + key + ' = ' + sessionStorage.getItem(key) + '\\n';
+  }
+  info += '(total: ' + sessionStorage.length + ' items)';
+  out.textContent = info;
+}
+
+document.getElementById('ls-set').onclick = function() {
+  const key = document.getElementById('ls-key').value;
+  const value = document.getElementById('ls-value').value;
+  localStorage.setItem(key, value);
+  display();
+};
+
+document.getElementById('ss-set').onclick = function() {
+  const key = document.getElementById('ls-key').value;
+  const value = document.getElementById('ls-value').value;
+  sessionStorage.setItem(key, value);
+  display();
+};
+
+document.getElementById('ls-get').onclick = function() {
+  const key = document.getElementById('ls-key').value;
+  const val = localStorage.getItem(key);
+  out.textContent = 'localStorage.getItem(' + key + '') = ' + (val !== null ? val : '(null)');
+};
+
+document.getElementById('ls-del').onclick = function() {
+  localStorage.removeItem(document.getElementById('ls-key').value);
+  display();
+};
+
+document.getElementById('ls-clear').onclick = function() {
+  localStorage.clear();
+  sessionStorage.clear();
+  display();
+};
+
+display();
+"
+/>
+
+## Storing Objects
+
+Storage only supports **strings**. Use `JSON.stringify`/`parse` for objects:
+
+```javascript
+// Save
+const user = { name: 'Alice', role: 'admin', scores: [95, 87, 92] };
+localStorage.setItem('user', JSON.stringify(user));
+
+// Load
+const saved = JSON.parse(localStorage.getItem('user'));
+console.log(saved.name); // "Alice"
+```
+
+<CodePlayground
+  title="Storing Objects"
+  html="
+<div>
+  <button id='save-object'>Save User Object</button>
+  <button id='load-object'>Load User Object</button>
+  <button id='update-scores'>Add Score</button>
+  <pre id='obj-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('obj-out');
+
+document.getElementById('save-object').onclick = function() {
+  const user = {
+    name: 'Alice',
+    role: 'admin',
+    scores: [95, 87, 92],
+    lastLogin: new Date().toISOString()
+  };
+  localStorage.setItem('user', JSON.stringify(user));
+  out.textContent = 'Saved: ' + JSON.stringify(user, null, 2);
+};
+
+document.getElementById('load-object').onclick = function() {
+  const data = localStorage.getItem('user');
+  if (!data) {
+    out.textContent = 'No user object found — save one first';
+    return;
+  }
+  const user = JSON.parse(data);
+  out.textContent =
+    'Name: ' + user.name + '\\n' +
+    'Role: ' + user.role + '\\n' +
+    'Scores: ' + user.scores.join(', ') + '\\n' +
+    'Last login: ' + user.lastLogin;
+};
+
+document.getElementById('update-scores').onclick = function() {
+  const data = localStorage.getItem('user');
+  if (!data) {
+    out.textContent = 'No user found — save one first';
+    return;
+  }
+  const user = JSON.parse(data);
+  const newScore = Math.floor(Math.random() * 100);
+  user.scores.push(newScore);
+  localStorage.setItem('user', JSON.stringify(user));
+  out.textContent = 'Added score: ' + newScore + '\\n' + 'Scores: ' + user.scores.join(', ');
+};
+"
+/>
+
+## The `storage` Event
+
+When `localStorage` changes in **another tab**, a `storage` event fires:
+
+```javascript
+window.addEventListener('storage', function(e) {
+  console.log(`${e.key} changed from ${e.oldValue} to ${e.newValue}`);
+  console.log('Origin:', e.url);
+  console.log('Storage area:', e.storageArea);
+});
+```
+
+This allows **cross-tab synchronization**.
+
+## Error Handling
+
+Storage can throw errors (quota exceeded, private browsing):
+
+```javascript
+try {
+  localStorage.setItem('key', 'value');
+} catch (e) {
+  if (e.name === 'QuotaExceededError') {
+    console.error('Storage is full!');
+  }
+  // Or: storage is disabled (private browsing)
+}
+```
+
+## Storage Capacity
+
+Test how much storage is available:
+
+```javascript
+function testStorageSize() {
+  let data = 'x'.repeat(1024); // 1KB
+  let total = 0;
+
+  try {
+    while (true) {
+      localStorage.setItem('test', data.repeat(total + 1));
+      total++;
+    }
+  } catch (e) {
+    localStorage.removeItem('test');
+    return total + 'MB';
+  }
+}
+```
+
+## Practical: Theme Preference
+
+```javascript
+function setTheme(theme) {
+  localStorage.setItem('theme', theme);
+  document.body.className = theme;
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved) {
+    document.body.className = saved;
+  }
+}
+
+// Load on page load
+loadTheme();
+```
+
+## Key Takeaways
+
+- `localStorage` persists **indefinitely**; `sessionStorage` lives per-tab
+- Both are **key-value** with **string-only** values — use JSON for objects
+- ~5-10MB capacity (much more than cookies' 4KB)
+- **Not sent** with HTTP requests (unlike cookies)
+- The `storage` event syncs changes across **tabs**
+- Always wrap in `try/catch` — quota exceeded errors are common
+- Use for preferences, draft saves, cached data, and client-side state

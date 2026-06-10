@@ -1,0 +1,203 @@
+---
+title: "Fetch: FormData"
+description: "Upload form data and files with fetch and FormData"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Network"]
+tags: ["JavaScript", "Network", "Fetch", "FormData"]
+slug: "js-fetch-formdata"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Fetch: FormData
+
+The `FormData` API lets you send form data — including file uploads — via `fetch`. It automatically sets the correct `Content-Type` (multipart/form-data).
+
+## Sending Form Data
+
+```javascript
+const formData = new FormData();
+formData.append('username', 'alice');
+formData.append('avatar', fileInput.files[0]);
+
+const response = await fetch('/upload', {
+  method: 'POST',
+  body: formData // no Content-Type header needed!
+});
+```
+
+**Important**: Don't set `Content-Type` header yourself — let the browser set it with the correct boundary.
+
+<CodePlayground
+  title="FormData with Fetch"
+  html="
+<div>
+  <form id='formdata-form'>
+    <div><input type='text' name='name' placeholder='Name' value='Alice' style='width:100%;padding:8px;margin:4px 0;border:1px solid #cbd5e1;border-radius:4px;'></div>
+    <div><input type='email' name='email' placeholder='Email' value='alice@example.com' style='width:100%;padding:8px;margin:4px 0;border:1px solid #cbd5e1;border-radius:4px;'></div>
+    <div>
+      <select name='role' style='width:100%;padding:8px;margin:4px 0;border:1px solid #cbd5e1;border-radius:4px;'>
+        <option value='admin'>Admin</option>
+        <option value='user' selected>User</option>
+      </select>
+    </div>
+  </form>
+  <button id='send-formdata'>Send as FormData</button>
+  <pre id='formdata-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('formdata-out');
+
+document.getElementById('send-formdata').onclick = async function() {
+  try {
+    const form = document.getElementById('formdata-form');
+    const formData = new FormData(form);
+
+    out.textContent = 'Sending FormData...';
+    this.disabled = true;
+
+    const response = await fetch('https://httpbin.org/post', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+    out.textContent =
+      'Status: ' + response.status + '\\n' +
+      'Form data sent:' + '\\n' +
+      '  name: ' + data.form.name + '\\n' +
+      '  email: ' + data.form.email + '\\n' +
+      '  role: ' + data.form.role;
+
+  } catch (err) {
+    out.textContent = 'Error: ' + err.message;
+  } finally {
+    this.disabled = false;
+  }
+};
+"
+/>
+
+## FormData Methods
+
+```javascript
+const fd = new FormData();
+
+fd.append('key', 'value')        // add field (supports duplicates)
+fd.append('file', blob, 'name')  // add file with filename
+fd.set('key', 'newvalue')        // set field (replaces existing)
+fd.get('key')                    // get first value
+fd.getAll('key')                 // get all values as array
+fd.has('key')                    // check existence
+fd.delete('key')                 // remove field
+fd.entries()                     // iterator
+```
+
+## From an HTML Form
+
+Create FormData directly from a `<form>` element:
+
+```javascript
+const form = document.getElementById('myForm');
+const formData = new FormData(form);
+```
+
+This automatically collects all named form fields.
+
+## File Upload with Progress
+
+Track upload progress with `XMLHttpRequest` (fetch doesn't natively support upload progress):
+
+```javascript
+// Fetch alternative — use XHR for progress
+const xhr = new XMLHttpRequest();
+xhr.upload.onprogress = function(e) {
+  const percent = (e.loaded / e.total) * 100;
+  console.log(percent + '%');
+};
+```
+
+Or use the `fetch` + `ReadableStream` approach for advanced cases.
+
+## Sending Files
+
+<CodePlayground
+  title="File Upload with FormData"
+  html="
+<div>
+  <input type='file' id='upload-file' style='margin-bottom:8px;display:block;'>
+  <button id='upload-btn'>Upload File</button>
+  <pre id='upload-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('upload-out');
+
+document.getElementById('upload-btn').onclick = async function() {
+  const fileInput = document.getElementById('upload-file');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    out.textContent = 'Please select a file first';
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('description', 'Uploaded via FormData');
+
+    out.textContent = 'Uploading ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)...';
+    this.disabled = true;
+
+    const response = await fetch('https://httpbin.org/post', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+    out.textContent =
+      'Upload complete!' + '\\n' +
+      'File: ' + data.files.file.substring(0, 50) + '...' + '\\n' +
+      'Description: ' + data.form.description;
+
+  } catch (err) {
+    out.textContent = 'Error: ' + err.message;
+  } finally {
+    this.disabled = false;
+  }
+};
+"
+/>
+
+## Multiple Files
+
+```html
+<input type="file" multiple>
+```
+
+```javascript
+const formData = new FormData();
+for (const file of fileInput.files) {
+  formData.append('photos[]', file);
+}
+```
+
+The server receives `photos[]` as an array of files.
+
+## JSON vs FormData
+
+| Approach | Best for |
+|---|---|
+| `JSON.stringify()` + `Content-Type: application/json` | Simple data, structured objects |
+| `FormData` | File uploads, mixed content (text + files) |
+| `URLSearchParams` | URL-encoded form data (`application/x-www-form-urlencoded`) |
+
+## Key Takeaways
+
+- `new FormData(formElement)` captures all form fields automatically
+- `formData.append('file', blob, filename)` uploads files
+- **Don't set** `Content-Type` header — the browser adds `multipart/form-data` with boundary
+- Use `FormData` for forms that include file uploads
+- For upload progress tracking, use `XMLHttpRequest` instead of fetch
+- FormData supports **multiple files** with the same field name
+- The server receives FormData as a **standard form submission**

@@ -1,0 +1,237 @@
+---
+title: "Event Loop"
+description: "Understand the JavaScript event loop — microtasks, macrotasks, and async execution"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Misc"]
+tags: ["JavaScript", "DOM", "Event Loop", "Async"]
+slug: "js-event-loop"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Event Loop: Microtasks and Macrotasks
+
+JavaScript is **single-threaded** — it runs one thing at a time. The **event loop** is how it handles asynchronous operations (timers, promises, DOM events) without blocking.
+
+## The Basic Idea
+
+```
+┌─────────────────────────────────────────┐
+│            Execution Context            │
+│                                         │
+│   while (queue.waitForMessage()) {      │
+│     queue.processNextMessage();         │
+│   }                                     │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+The event loop continuously:
+1. Checks if the **call stack** is empty
+2. If empty, takes the **next task** from the queue
+3. Executes it
+
+## Macrotasks vs Microtasks
+
+There are **two types** of task queues:
+
+| Queue | Examples | Priority |
+|---|---|---|
+| **Microtasks** | `Promise.then`, `queueMicrotask`, `MutationObserver` | **High** (run first) |
+| **Macrotasks** | `setTimeout`, `setInterval`, `setImmediate`, I/O, UI rendering | Low (run after microtasks) |
+
+```
+Execution order:
+1. Execute current synchronous code
+2. Process ALL microtasks (Promise callbacks, queueMicrotask)
+3. Process ONE macrotask (setTimeout, etc.)
+4. Process ALL microtasks again
+5. Render UI (if needed)
+6. Repeat from step 3
+```
+
+## The Event Loop in Action
+
+<CodePlayground
+  title="Event Loop Execution Order"
+  html="<pre id='event-log' style='background:#f1f5f9;padding:12px;border-radius:6px;font-size:14px;'></pre>"
+  js="
+const log = document.getElementById('event-log');
+function add(msg) { log.textContent += msg + '\\n'; }
+
+add('1. Synchronous code');
+
+setTimeout(() => add('6. Macrotask (setTimeout)'), 0);
+
+Promise.resolve().then(() => add('3. Microtask (Promise.then #1)'));
+Promise.resolve().then(() => add('4. Microtask (Promise.then #2)'));
+
+queueMicrotask(() => add('5. Another microtask (queueMicrotask)'));
+
+add('2. End of synchronous code');
+// Microtasks run before the next macrotask
+"
+/>
+
+## Why This Matters
+
+Understanding the event loop helps you predict **when your code runs**:
+
+```javascript
+setTimeout(() => console.log('timeout'), 0);
+Promise.resolve().then(() => console.log('promise'));
+console.log('sync');
+
+// Output:
+// sync
+// promise
+// timeout
+```
+
+The `Promise.then` (microtask) always runs before the `setTimeout` (macrotask), even with 0ms delay.
+
+## Blocking the Event Loop
+
+Long-running synchronous code **blocks** everything — no UI updates, no event handling, no rendering:
+
+```javascript
+// BAD: blocks the event loop
+function block() {
+  const start = Date.now();
+  while (Date.now() - start < 5000) {
+    // blocks for 5 seconds
+  }
+}
+
+// GOOD: break work into chunks
+function chunked() {
+  const start = Date.now();
+  while (Date.now() - start < 50) {
+    // do a small piece of work
+  }
+  if (moreWork) setTimeout(chunked, 0); // yield to event loop
+}
+```
+
+<CodePlayground
+  title="Blocking vs Non-blocking"
+  html="
+<div id='block-demo'>
+  <button id='block-btn' style='padding:8px 16px;background:#ef4444;color:white;border:none;border-radius:4px;'>Block for 2 seconds</button>
+  <button id='chunk-btn' style='padding:8px 16px;background:#22c55e;color:white;border:none;border-radius:4px;'>Chunked (non-blocking)</button>
+  <button id='click-test' style='padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:4px;'>Test Responsiveness</button>
+</div>
+<pre id='block-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('block-log');
+
+document.getElementById('block-btn').onclick = function() {
+  log.textContent = 'Blocking for 2 seconds... Try clicking the test button!';
+  const start = Date.now();
+  while (Date.now() - start < 2000) {
+    // blocks everything
+  }
+  log.textContent = 'Done blocking (2 seconds passed). The test button clicks were queued!';
+};
+
+document.getElementById('chunk-btn').onclick = function() {
+  log.textContent = 'Running chunked... button stays responsive';
+  let count = 0;
+  function doChunk() {
+    const start = Date.now();
+    while (Date.now() - start < 50 && count < 20) {
+      count++;
+    }
+    log.textContent = 'Processed chunk ' + count + '/20';
+    if (count < 20) {
+      setTimeout(doChunk, 0); // yield to event loop
+    } else {
+      log.textContent = 'Chunked processing complete!';
+    }
+  }
+  doChunk();
+};
+
+let clickCount = 0;
+document.getElementById('click-test').onclick = function() {
+  clickCount++;
+  log.textContent = 'Click test button responsive! Clicks: ' + clickCount;
+};
+"
+/>
+
+## `queueMicrotask()`
+
+The `queueMicrotask()` function lets you schedule a microtask directly:
+
+```javascript
+queueMicrotask(() => {
+  // runs before the next macrotask
+});
+```
+
+Useful for running code **after** the current operation but **before** rendering or events.
+
+## `requestAnimationFrame`
+
+`requestAnimationFrame` runs **before the next paint/repaint** — not in the task queue:
+
+```javascript
+requestAnimationFrame(() => {
+  // runs before browser repaints
+});
+```
+
+```
+Event loop with rendering:
+1. Macrotask → 2. Microtasks → 3. requestAnimationFrame → 4. Render → repeat
+```
+
+## Practical: DOM Batching
+
+The event loop explains why DOM changes can be batched:
+
+<CodePlayground
+  title="DOM Batching with Microtasks"
+  html="
+<div id='batch-demo'>
+  <div id='batch-output' style='padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;'>
+    <span id='batch-span'>Original text</span>
+  </div>
+  <button id='batch-btn'>Test DOM Batching</button>
+  <pre id='batch-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const span = document.getElementById('batch-span');
+const log = document.getElementById('batch-log');
+
+document.getElementById('batch-btn').onclick = function() {
+  log.textContent = 'Started...\\n';
+
+  // Change DOM
+  span.textContent = 'Changed!';
+  log.textContent += 'After DOM change: ' + span.textContent + '\\n';
+
+  // Microtask sees the updated DOM (same render cycle)
+  queueMicrotask(() => {
+    log.textContent += 'Microtask sees: ' + span.textContent + '\\n';
+  });
+
+  // setTimeout sees it too (different task, but after change)
+  setTimeout(() => {
+    log.textContent += 'setTimeout sees: ' + span.textContent + '\\n';
+    log.textContent += '--- The DOM is already updated ---';
+  }, 0);
+};
+"
+/>
+
+## Key Takeaways
+
+- JavaScript is **single-threaded** — one thing at a time
+- **Microtasks** (Promise.then, queueMicrotask) run **before** macrotasks
+- **Macrotasks** (setTimeout, setInterval, events) run after microtasks
+- Long synchronous code **blocks the event loop** — freeze UI, no events fire
+- Use **chunking** (break work with setTimeout) to keep the UI responsive
+- `requestAnimationFrame` runs before the browser repaints
+- The event loop order: sync code → microtasks → macrotask → microtasks → render → repeat

@@ -1,0 +1,223 @@
+---
+title: "Server-Sent Events"
+description: "Receive real-time server push events with the EventSource API"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Network"]
+tags: ["JavaScript", "Network", "SSE", "Server-Sent Events"]
+slug: "js-server-sent-events"
+author: "Abhishek Sharma"
+order: 12
+---
+
+## Server-Sent Events
+
+**Server-Sent Events (SSE)** let the server push data to the client over a single HTTP connection. Simpler than WebSocket — one-directional (server → client) over standard HTTP.
+
+## How SSE Works
+
+```
+Client                          Server
+  │                               │
+  ├── GET /events ──────────────▶ │  (standard HTTP)
+  │                               │
+  │◀── event: message ───────────│
+  │◀── data: {"msg":"Hello"} ────│
+  │◀──                           │
+  │◀── event: update ────────────│
+  │◀── data: ... ────────────────│
+  │                               │
+  │◀── (connection stays open) ──│  (auto-reconnect)
+```
+
+## Basic Usage
+
+```javascript
+const source = new EventSource('/api/events');
+
+source.onmessage = function(event) {
+  console.log('Received:', event.data);
+};
+
+source.onopen = function() {
+  console.log('Connection opened');
+};
+
+source.onerror = function() {
+  console.error('Connection error');
+};
+```
+
+<CodePlayground
+  title="Server-Sent Events Demo"
+  html="
+<div>
+  <p>Simulated server sends events at random intervals.</p>
+  <div style='display:flex;gap:8px;margin-bottom:8px;'>
+    <button id='sse-start'>Start SSE</button>
+    <button id='sse-stop' disabled>Stop</button>
+  </div>
+  <div style='max-height:180px;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;'>
+    <div id='sse-messages' style='font-family:monospace;font-size:0.85rem;'></div>
+  </div>
+  <pre id='sse-status' style='background:#f1f5f9;padding:8px;border-radius:4px;margin-top:8px;'></pre>
+</div>"
+  js="
+const messages = document.getElementById('sse-messages');
+const status = document.getElementById('sse-status');
+let eventCount = 0;
+let intervalId = null;
+
+document.getElementById('sse-start').onclick = function() {
+  this.disabled = true;
+  document.getElementById('sse-stop').disabled = false;
+  status.textContent = '🔄 SSE connected — waiting for events...';
+
+  // Simulate server-sent events
+  intervalId = setInterval(() => {
+    eventCount++;
+    const types = ['update', 'notification', 'alert', 'status'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const data = {
+      id: eventCount,
+      type: type,
+      message: type + ' event #' + eventCount,
+      timestamp: new Date().toLocaleTimeString()
+    };
+
+    const div = document.createElement('div');
+    div.textContent = '📩 ' + type + ': ' + data.message;
+    messages.insertBefore(div, messages.firstChild);
+    status.textContent = '✅ Received event #' + eventCount + ' (' + type + ')';
+
+    // Limit messages shown
+    while (messages.children.length > 20) {
+      messages.removeChild(messages.lastChild);
+    }
+  }, 1000 + Math.random() * 3000);
+};
+
+document.getElementById('sse-stop').onclick = function() {
+  clearInterval(intervalId);
+  intervalId = null;
+  this.disabled = true;
+  document.getElementById('sse-start').disabled = false;
+  status.textContent = '⏹️ SSE disconnected (' + eventCount + ' events received)';
+};
+"
+/>
+
+## Server Format
+
+The server sends a special text format:
+
+```http
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+```
+
+Data lines:
+
+```
+data: {"message": "Hello"}\n\n
+
+event: update\ndata: {"id": 1}\n\n
+
+event: custom\ndata: line1\ndata: line2\n\n
+
+id: 42\ndata: message\n\n
+
+retry: 5000\n\n
+```
+
+## Event Fields
+
+| Field | Description |
+|---|---|
+| `data:` | The message payload (can be multiple lines) |
+| `event:` | Custom event type (defaults to `message`) |
+| `id:` | Last event ID (for reconnection resume) |
+| `retry:` | Reconnection time in milliseconds |
+
+## Listening to Named Events
+
+```javascript
+const source = new EventSource('/events');
+
+source.addEventListener('userConnected', function(event) {
+  console.log('User connected:', event.data);
+});
+
+source.addEventListener('newMessage', function(event) {
+  console.log('New message:', JSON.parse(event.data));
+});
+
+// Default listener for unnamed events
+source.onmessage = function(event) {
+  console.log('Generic event:', event.data);
+};
+```
+
+The server sends:
+
+```
+event: userConnected
+data: {"userId": 42}
+
+event: newMessage
+data: {"text": "Hello"}
+```
+
+## SSE vs WebSocket
+
+| Feature | SSE | WebSocket |
+|---|---|---|
+| Direction | Server → Client only | Bidirectional |
+| Protocol | HTTP | WebSocket |
+| Auto-reconnect | ✅ Built-in | ❌ Manual |
+| Binary data | ❌ Text only | ✅ Both |
+| Browser support | Most modern | All modern |
+| Simplicity | Very simple | Moderate |
+| Max connections | 6 per browser | Unlimited |
+
+## Auto-Reconnection
+
+SSE automatically reconnects when the connection drops. If the server sends an `id` field, the browser sends `Last-Event-ID` header on reconnect:
+
+```javascript
+// Browser sends:
+// GET /events
+// Last-Event-ID: 42
+
+// Server can resume from event 43
+```
+
+## Connection Management
+
+```javascript
+// Close connection
+source.close();
+
+// Check state
+source.readyState // 0=CONNECTING, 1=OPEN, 2=CLOSED
+```
+
+## Practical: Live Notifications
+
+SSE is ideal for:
+
+- **Live notifications** (new messages, friend requests)
+- **Stock tickers** (price updates)
+- **News feeds** (new articles)
+- **Log streaming** (server logs in real-time)
+- **Progress updates** (build/deploy status)
+
+## Key Takeaways
+
+- SSE is **server → client** only — simpler than WebSocket for push notifications
+- Use `new EventSource(url)` to connect
+- Listen with `onmessage` for generic events, `addEventListener` for named events
+- **Auto-reconnects** built-in — includes `Last-Event-ID` for resume
+- Server format is `text/event-stream` with `data:`, `event:`, `id:`, `retry:` fields
+- SSE works over **standard HTTP** — no special server required
+- Use WebSocket when you need **bidirectional** communication; use SSE for server push

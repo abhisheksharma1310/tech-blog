@@ -1,0 +1,213 @@
+---
+title: "Cookies"
+description: "Read, write, and manage browser cookies with document.cookie"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Storage"]
+tags: ["JavaScript", "Storage", "Cookies"]
+slug: "js-cookies"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Cookies
+
+Cookies are small pieces of data stored by the browser and sent with every HTTP request to the same domain. They're primarily used for session management, personalization, and tracking.
+
+## Cookie Properties
+
+Each cookie has these attributes:
+
+| Attribute | Description | Example |
+|---|---|---|
+| `name=value` | The cookie data (URL-encoded) | `session=abc123` |
+| `domain` | Which domains can read the cookie | `.example.com` |
+| `path` | URL path scope | `/` |
+| `expires` / `max-age` | Expiration date | `Session` or specific date |
+| `secure` | Only send over HTTPS | — |
+| `samesite` | Cross-site request behavior | `Lax`, `Strict`, `None` |
+| `httponly` | Not accessible via JavaScript | — (server-set only) |
+
+## Reading Cookies
+
+```javascript
+console.log(document.cookie);
+// "theme=dark; session=abc123; lang=en"
+```
+
+<CodePlayground
+  title="Reading Cookies"
+  html="
+<div>
+  <button id='read-cookies'>Read All Cookies</button>
+  <pre id='cookie-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('cookie-out');
+
+document.getElementById('read-cookies').onclick = function() {
+  const cookies = document.cookie;
+  out.textContent =
+    'document.cookie:' + '\\n' +
+    (cookies ? cookies : '(no cookies set)') + '\\n' +
+    '---' + '\\n' +
+    'Note: HttpOnly cookies are not visible via JS';
+};
+"
+/>
+
+## Writing Cookies
+
+```javascript
+document.cookie = 'username=Alice; path=/; max-age=3600';
+```
+
+Setting `document.cookie` **appends** a new cookie (doesn't overwrite all cookies). To change a cookie, set it with the same name, path, and domain.
+
+<CodePlayground
+  title="Writing Cookies"
+  html="
+<div>
+  <div style='display:flex;gap:8px;margin-bottom:8px;'>
+    <input id='cookie-name' type='text' value='theme' placeholder='Name' style='flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;'>
+    <input id='cookie-value' type='text' value='dark' placeholder='Value' style='flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px;'>
+  </div>
+  <button id='set-cookie'>Set Cookie</button>
+  <button id='delete-cookie'>Delete 'theme' Cookie</button>
+  <pre id='cookie-set-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('cookie-set-out');
+
+function readCookies() {
+  return document.cookie || '(no cookies)';
+}
+
+document.getElementById('set-cookie').onclick = function() {
+  const name = document.getElementById('cookie-name').value;
+  const value = document.getElementById('cookie-value').value;
+  document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=3600';
+  out.textContent = 'Set cookie: ' + name + '=' + value + '\\n' + 'Cookies now: ' + readCookies();
+};
+
+document.getElementById('delete-cookie').onclick = function() {
+  document.cookie = 'theme=; path=/; max-age=0';
+  out.textContent = 'Deleted 'theme' cookie\\n' + 'Cookies now: ' + readCookies();
+};
+"
+/>
+
+## Cookie Utility Functions
+
+```javascript
+function getCookie(name) {
+  const matches = document.cookie.match(
+    new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\[\]\\\/+^])/g, '\\$1') + '=([^;]*)')
+  );
+  return matches ? decodeURIComponent(matches[1]) : undefined;
+}
+
+function setCookie(name, value, options = {}) {
+  let cookie = name + '=' + encodeURIComponent(value);
+
+  if (options.maxAge) cookie += '; max-age=' + options.maxAge;
+  if (options.path) cookie += '; path=' + options.path;
+  if (options.domain) cookie += '; domain=' + options.domain;
+  if (options.secure) cookie += '; secure';
+  if (options.sameSite) cookie += '; samesite=' + options.sameSite;
+
+  document.cookie = cookie;
+}
+
+function deleteCookie(name) {
+  setCookie(name, '', { maxAge: 0 });
+}
+```
+
+<CodePlayground
+  title="Cookie Utilities"
+  html="
+<div>
+  <button id='util-set'>Set Cookie: visited=true (1hr)</button>
+  <button id='util-get'>Get Cookie: visited</button>
+  <button id='util-del'>Delete Cookie: visited</button>
+  <pre id='util-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('util-out');
+
+function getCookie(name) {
+  const matches = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()\\[\\]\\\\\\/+^])/g, '\\\\$1') + '=([^;]*)'));
+  return matches ? decodeURIComponent(matches[1]) : undefined;
+}
+
+function setCookie(name, value, options = {}) {
+  let cookie = name + '=' + encodeURIComponent(value);
+  if (options.maxAge) cookie += '; max-age=' + options.maxAge;
+  if (options.path) cookie += '; path=' + (options.path || '/');
+  document.cookie = cookie;
+}
+
+function deleteCookie(name) {
+  setCookie(name, '', { maxAge: 0 });
+}
+
+document.getElementById('util-set').onclick = function() {
+  setCookie('visited', 'true', { maxAge: 3600 });
+  out.textContent = 'Set visited=true (expires in 1 hour)';
+};
+
+document.getElementById('util-get').onclick = function() {
+  const val = getCookie('visited');
+  out.textContent = 'Cookie visited:' + (val !== undefined ? val : '(not set)');
+};
+
+document.getElementById('util-del').onclick = function() {
+  deleteCookie('visited');
+  out.textContent = 'Cookie visited deleted';
+};
+"
+/>
+
+## Cookie Options
+
+| Option | Values | Description |
+|---|---|---|
+| `max-age` | Seconds | Cookie lifetime |
+| `path` | `/`, `/app` | URL path scope |
+| `domain` | `.example.com` | Allow subdomains |
+| `secure` | — | Only HTTPS |
+| `samesite` | `Strict`, `Lax`, `None` | CSRF protection |
+| `httponly` | — | Not accessible via JS |
+
+## SameSite Explained
+
+| Value | Behavior |
+|---|---|
+| `Strict` | Cookie sent only for same-site requests |
+| `Lax` | Cookie sent for top-level navigations (default) |
+| `None` | Cookie sent for all requests (requires `secure`) |
+
+## Cookie Size Limits
+
+- **Max 4KB** per cookie
+- **Max ~50 cookies** per domain (browser-dependent)
+- **Max ~4KB total** across all cookies for a domain
+
+## Cookies vs Other Storage
+
+| Feature | Cookies | localStorage | sessionStorage |
+|---|---|---|---|
+| Capacity | 4KB | 5-10MB | 5-10MB |
+| Sent to server | ✅ Yes (every request) | ❌ No | ❌ No |
+| Expiration | Manual or session | Manual | Tab close |
+| Access | Client + Server | Client only | Client only |
+
+## Key Takeaways
+
+- `document.cookie` reads all cookies (except HttpOnly) as a string
+- Set cookies by assigning to `document.cookie` (appends, doesn't replace)
+- Cookies are **sent with every HTTP request** — affects performance
+- Max 4KB per cookie — use `localStorage` for larger data
+- `SameSite=Lax` is the modern default for security
+- `HttpOnly` cookies (set by server) are **invisible to JavaScript**
+- Always `encodeURIComponent`/`decodeURIComponent` cookie values

@@ -1,0 +1,203 @@
+---
+title: "Bezier Curve"
+description: "Understanding cubic bezier curves for easing and animation control"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Animation"]
+tags: ["JavaScript", "Animation", "Bezier", "Easing"]
+slug: "js-bezier-curve"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Bezier Curve
+
+Bezier curves define smooth transitions between values. They're the foundation of CSS easing functions and custom animation paths.
+
+## What is a Bezier Curve?
+
+A cubic bezier curve is defined by **4 points**: P0 (start), P1, P2, P3 (end).
+
+```
+P0 ───────────────────────────── P3
+  \                            /
+   \   P1 ────────── P2      /
+    \                      /
+     \____________________/
+```
+
+- P0 and P3 are fixed (0,0) and (1,1) in CSS
+- P1 and P2 are control points you define
+- The curve maps **time** (x-axis) to **progress** (y-axis)
+
+## CSS Cubic-Bezier
+
+```css
+/* Built-in easings */
+transition-timing-function: ease;         /* cubic-bezier(0.25, 0.1, 0.25, 1) */
+transition-timing-function: ease-in;      /* cubic-bezier(0.42, 0, 1, 1) */
+transition-timing-function: ease-out;     /* cubic-bezier(0, 0, 0.58, 1) */
+transition-timing-function: ease-in-out;  /* cubic-bezier(0.42, 0, 0.58, 1) */
+
+/* Custom */
+transition-timing-function: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+```
+
+<CodePlayground
+  title="Bezier Curve Visualizer"
+  html="
+<style>
+  #bezier-canvas { border: 1px solid #e2e8f0; border-radius: 8px; display: block; margin: 0 auto; background: white; }
+  .bezier-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .bezier-controls label { font-size: 0.875rem; color: #64748b; }
+  .bezier-controls input { width: 80px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px; }
+</style>
+<canvas id='bezier-canvas' width='300' height='300'></canvas>
+<div class='bezier-controls'>
+  <label>P1: <input id='p1x' type='range' min='0' max='1' step='0.01' value='0.25'> <span id='p1x-val'>0.25</span>
+  <input id='p1y' type='range' min='0' max='2' step='0.01' value='0.1'> <span id='p1y-val'>0.10</span></label>
+  <label>P2: <input id='p2x' type='range' min='0' max='1' step='0.01' value='0.25'> <span id='p2x-val'>0.25</span>
+  <input id='p2y' type='range' min='-1' max='2' step='0.01' value='1'> <span id='p2y-val'>1.00</span></label>
+</div>
+<pre id='bezier-info' style='background:#f1f5f9;padding:12px;border-radius:6px;margin-top:8px;'></pre>"
+  js="
+const canvas = document.getElementById('bezier-canvas');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('bezier-info');
+
+const p1x = document.getElementById('p1x');
+const p1y = document.getElementById('p1y');
+const p2x = document.getElementById('p2x');
+const p2y = document.getElementById('p2y');
+
+function draw() {
+  const w = canvas.width;
+  const h = canvas.height;
+  const pad = 40;
+  const size = w - pad * 2;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const pos = pad + (size / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pos, pad); ctx.lineTo(pos, pad + size); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad, pos); ctx.lineTo(pad + size, pos); ctx.stroke();
+  }
+
+  // Helper labels
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '12px monospace';
+  ctx.fillText('0', pad - 10, pad + size + 15);
+  ctx.fillText('1', pad + size - 5, pad + size + 15);
+  ctx.fillText('0', pad - 20, pad + size + 4);
+  ctx.fillText('1', pad - 20, pad + 4);
+
+  // Scale
+  function toCanvas(x, y) {
+    return [pad + x * size, pad + size - y * size];
+  }
+
+  const [p0x, p0y] = toCanvas(0, 0);
+  const [p3x, p3y] = toCanvas(1, 1);
+  const [c1x, c1y] = toCanvas(parseFloat(p1x.value), parseFloat(p1y.value));
+  const [c2x, c2y] = toCanvas(parseFloat(p2x.value), parseFloat(p2y.value));
+
+  // Control lines
+  ctx.strokeStyle = '#94a3b8';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(p0x, p0y); ctx.lineTo(c1x, c1y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(p3x, p3y); ctx.lineTo(c2x, c2y); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Control points
+  ctx.fillStyle = '#6366f1';
+  ctx.beginPath(); ctx.arc(c1x, c1y, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(c2x, c2y, 5, 0, Math.PI * 2); ctx.fill();
+
+  // Bezier curve
+  ctx.strokeStyle = '#6366f1';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(p0x, p0y);
+
+  for (let t = 0; t <= 1; t += 0.01) {
+    const mt = 1 - t;
+    const x = mt * mt * mt * p0x + 3 * mt * mt * t * c1x + 3 * mt * t * t * c2x + t * t * t * p3x;
+    const y = mt * mt * mt * p0y + 3 * mt * mt * t * c1y + 3 * mt * t * t * c2y + t * t * t * p3y;
+    ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Endpoints
+  ctx.fillStyle = '#059669';
+  ctx.beginPath(); ctx.arc(p0x, p0y, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(p3x, p3y, 5, 0, Math.PI * 2); ctx.fill();
+
+  // Update info
+  const css = `cubic-bezier(${parseFloat(p1x.value).toFixed(3)}, ${parseFloat(p1y.value).toFixed(3)}, ${parseFloat(p2x.value).toFixed(3)}, ${parseFloat(p2y.value).toFixed(3)})`;
+  info.textContent = 'CSS: ' + css;
+}
+
+p1x.addEventListener('input', function() { document.getElementById('p1x-val').textContent = parseFloat(this.value).toFixed(2); draw(); });
+p1y.addEventListener('input', function() { document.getElementById('p1y-val').textContent = parseFloat(this.value).toFixed(2); draw(); });
+p2x.addEventListener('input', function() { document.getElementById('p2x-val').textContent = parseFloat(this.value).toFixed(2); draw(); });
+p2y.addEventListener('input', function() { document.getElementById('p2y-val').textContent = parseFloat(this.value).toFixed(2); draw(); });
+
+draw();
+"
+/>
+
+## The Math
+
+The cubic bezier formula:
+
+```
+B(t) = (1-t)³·P0 + 3(1-t)²·t·P1 + 3(1-t)·t²·P2 + t³·P3
+```
+
+Where `t` goes from 0 to 1, and P0-P3 are the control points.
+
+## Common CSS Easings
+
+| Easing | cubic-bezier | Feel |
+|---|---|---|
+| `ease` | `(0.25, 0.1, 0.25, 1)` | Subtle, natural |
+| `linear` | `(0, 0, 1, 1)` | Mechanical |
+| `ease-in` | `(0.42, 0, 1, 1)` | Slow start |
+| `ease-out` | `(0, 0, 0.58, 1)` | Slow end |
+| `ease-in-out` | `(0.42, 0, 0.58, 1)` | Slow start & end |
+
+## Overshoot Effects
+
+By setting control points **outside** the 0-1 range, you create overshoot effects:
+
+```css
+/* Bounce-like effect */
+cubic-bezier(0.68, -0.55, 0.27, 1.55)
+```
+
+This makes the animation go slightly past the end and settle back — a "bouncy" feel.
+
+## Bezier in JavaScript
+
+```javascript
+function bezier(t, p1, p2) {
+  const mt = 1 - t;
+  // P0 = (0,0), P3 = (1,1)
+  const x = mt * mt * mt * 0 + 3 * mt * mt * t * p1.x + 3 * mt * t * t * p2.x + t * t * t * 1;
+  const y = mt * mt * mt * 0 + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t * t * t * 1;
+  return { x, y };
+}
+```
+
+## Key Takeaways
+
+- Bezier curves map **time to progress** for animations
+- CSS `cubic-bezier(p1x, p1y, p2x, p2y)` defines custom easing
+- P0=(0,0) and P3=(1,1) are fixed
+- Control points **outside** 0-1 create overshoot/bounce
+- Built-in values: `ease`, `linear`, `ease-in`, `ease-out`, `ease-in-out`
+- Use the visualizer above to design your own easings
+- For complex multi-point curves, use SVG paths or JS animation libraries

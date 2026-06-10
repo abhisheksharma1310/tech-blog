@@ -1,0 +1,160 @@
+---
+title: "Window Sizes and Scrolling"
+description: "Get the browser window dimensions and control page scrolling"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "Window", "Scrolling"]
+slug: "js-window-sizes-scroll"
+author: "Abhishek Sharma"
+order: 10
+---
+
+## Window Sizes and Scrolling
+
+The browser window itself has dimensions and scroll position — useful for layouts, modals, and scroll-based effects.
+
+## Window Dimensions
+
+| Property | What it Returns |
+|---|---|
+| `window.innerWidth` | Viewport width (includes scrollbar) |
+| `window.innerHeight` | Viewport height (includes scrollbar) |
+| `document.documentElement.clientWidth` | Viewport width (no scrollbar) |
+| `document.documentElement.clientHeight` | Viewport height (no scrollbar) |
+
+<CodePlayground
+  title="Window Dimensions"
+  html="<pre id='win-size' style='background:#f1f5f9;padding:12px;border-radius:6px;font-size:14px;'></pre>"
+  js="
+function updateSize() {
+  const out = document.getElementById('win-size');
+  out.textContent =
+    'window.innerWidth: ' + window.innerWidth + ' (includes scrollbar)' + '\\n' +
+    'window.innerHeight: ' + window.innerHeight + '\\n' +
+    'docElem.clientWidth: ' + document.documentElement.clientWidth + ' (no scrollbar)' + '\\n' +
+    'docElem.clientHeight: ' + document.documentElement.clientHeight + '\\n' +
+    '---' + '\\n' +
+    'Scrollbar width: ' + (window.innerWidth - document.documentElement.clientWidth) + 'px';
+}
+
+window.addEventListener('resize', updateSize);
+updateSize();
+"
+/>
+
+## Page Scroll Position
+
+Get and set the page scroll position:
+
+```javascript
+window.scrollY  // or window.pageYOffset — vertical scroll
+window.scrollX  // or window.pageXOffset — horizontal scroll
+```
+
+<CodePlayground
+  title="Page Scroll Position"
+  html="
+<div style='height:200vh;background:linear-gradient(180deg,#eef2ff,#c7d2fe);padding:16px;border-radius:8px;position:relative;'>
+  <div style='position:sticky;top:16px;'>
+    <p style='font-size:1.2rem;font-weight:bold;'>Scroll down!</p>
+    <pre id='scroll-pos' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+    <div style='margin-top:8px;display:flex;gap:8px;'>
+      <button id='scroll-to-top'>Back to Top</button>
+      <button id='scroll-to-500'>Scroll to 500px</button>
+    </div>
+  </div>
+</div>"
+  js="
+const out = document.getElementById('scroll-pos');
+
+function updateScroll() {
+  out.textContent =
+    'window.scrollY: ' + window.scrollY + 'px' + '\\n' +
+    'window.scrollX: ' + window.scrollX + 'px';
+}
+
+window.addEventListener('scroll', updateScroll);
+updateScroll();
+
+document.getElementById('scroll-to-top').onclick = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+document.getElementById('scroll-to-500').onclick = () => {
+  window.scrollTo({ top: 500, behavior: 'smooth' });
+};
+"
+/>
+
+## Controlling Page Scroll
+
+```javascript
+window.scrollTo(x, y)                    // scroll to absolute position
+window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+window.scrollBy(0, 100)                  // scroll by relative amount
+element.scrollIntoView()                 // scroll element into view
+```
+
+## Disabling Body Scroll
+
+A common pattern for modals: disable background scrolling:
+
+```javascript
+// Disable scroll
+document.body.style.overflow = 'hidden';
+
+// Re-enable scroll
+document.body.style.overflow = '';
+```
+
+<CodePlayground
+  title="Toggle Body Scroll"
+  html="
+<button id='toggle-scroll'>Disable Scroll</button>
+<p>Try scrolling the page. When disabled, the page won't scroll.</p>
+<pre id='scroll-state' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const btn = document.getElementById('toggle-scroll');
+const out = document.getElementById('scroll-state');
+
+btn.onclick = function() {
+  const isDisabled = document.body.style.overflow === 'hidden';
+  document.body.style.overflow = isDisabled ? '' : 'hidden';
+  btn.textContent = isDisabled ? 'Disable Scroll' : 'Enable Scroll';
+  out.textContent = 'body.overflow: ' + (isDisabled ? 'auto' : 'hidden');
+};
+
+out.textContent = 'body.overflow: auto (scrolling enabled)';
+"
+/>
+
+## Window vs Document Element
+
+| Property | Scope | Use Case |
+|---|---|---|
+| `window.innerWidth` | Full viewport | Responsive layouts |
+| `document.documentElement.clientWidth` | Viewport minus scrollbar | Layout calculations |
+| `window.scrollY` | Page scroll position | Scroll-based effects |
+| `window.screen.width` | Physical screen | Device detection |
+
+## Getting the Full Page Size
+
+To measure the entire document (including content beyond the viewport):
+
+```javascript
+const fullWidth  = Math.max(
+  document.body.scrollWidth,
+  document.documentElement.scrollWidth,
+  document.body.offsetWidth,
+  document.documentElement.offsetWidth,
+  document.body.clientWidth,
+  document.documentElement.clientWidth
+);
+```
+
+## Key Takeaways
+
+- `window.innerWidth/Height` includes the **scrollbar**; `clientWidth/Height` does **not**
+- `window.scrollY` / `scrollX` give you the **page scroll position**
+- Use `body.style.overflow = 'hidden'` to **lock scrolling** for modals
+- `scrollTo` with `{ behavior: 'smooth' }` gives **animated scrolling**
+- The `resize` event fires when the window changes size

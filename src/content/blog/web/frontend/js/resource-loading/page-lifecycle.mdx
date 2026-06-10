@@ -1,0 +1,220 @@
+---
+title: "Page Lifecycle Events"
+description: "DOMContentLoaded, load, beforeunload, and unload events explained"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Resource-Loading"]
+tags: ["JavaScript", "DOM", "Lifecycle", "Events"]
+slug: "js-page-lifecycle"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Page Lifecycle Events
+
+The browser fires several events as a page loads, becomes interactive, and eventually unloads.
+
+## The Lifecycle Sequence
+
+```
+1. DOMContentLoaded  →  DOM ready (HTML parsed, scripts loaded)
+2. load              →  All resources loaded (images, CSS, fonts)
+3. beforeunload      →  User is about to leave
+4. unload            →  Page is unloading
+```
+
+```
+HTML parsing starts     HTML parsed      All resources loaded
+      │                     │                   │
+      ▼                     ▼                   ▼
+  ─────┼─────────────────────┼───────────────────┼───▶
+      │                     │                   │
+      │          DOMContentLoaded              load
+      │                     │                   │
+      │               scripts can run     images visible
+      │               DOM is ready        everything ready
+```
+
+## `DOMContentLoaded`
+
+Fires when the HTML is **fully parsed** and the DOM tree is ready. External resources (images, stylesheets) may still be loading:
+
+```javascript
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM is ready!');
+  // Safe to query and manipulate DOM
+});
+```
+
+<CodePlayground
+  title="DOMContentLoaded Demo"
+  html="
+<div id='lifecycle-demo'>
+  <p id='status'>Waiting for DOMContentLoaded...</p>
+</div>"
+  js="
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('status').textContent =
+    'DOMContentLoaded fired at ' + performance.now().toFixed(0) + 'ms — DOM is ready!';
+});
+"
+/>
+
+## `load`
+
+Fires when **everything** is fully loaded — HTML, CSS, images, fonts, iframes, etc.:
+
+```javascript
+window.addEventListener('load', function() {
+  console.log('Page fully loaded');
+  // Image dimensions are now available
+});
+```
+
+## `DOMContentLoaded` vs `load`
+
+| Event | Timing | Resources |
+|---|---|---|
+| `DOMContentLoaded` | After HTML parsed | Images/fonts may still load |
+| `load` | After everything loaded | All resources ready |
+
+```
+                 DOMContentLoaded
+                 │
+HTML: ───────────┤
+CSS:  ──────────────┤
+Images: ───────────────────┤
+                         load
+```
+
+## `beforeunload`
+
+Fires when the user is about to leave the page. Used to warn about unsaved changes:
+
+```javascript
+window.addEventListener('beforeunload', function(e) {
+  e.preventDefault();
+  e.returnValue = ''; // required for legacy browsers
+});
+```
+
+<CodePlayground
+  title="beforeunload Demo"
+  html="
+<div id='unload-demo' style='padding:16px;background:#fef9c3;border:2px solid #eab308;border-radius:8px;'>
+  <p>Try to close this page or navigate away.</p>
+  <label>
+    <input type='checkbox' id='unsaved-changes'>
+    I have unsaved changes
+  </label>
+  <pre id='beforeunload-log' style='background:#f1f5f9;padding:8px;border-radius:4px;margin-top:8px;'></pre>
+</div>"
+  js="
+const log = document.getElementById('beforeunload-log');
+const checkbox = document.getElementById('unsaved-changes');
+
+window.addEventListener('beforeunload', function(e) {
+  if (checkbox.checked) {
+    e.preventDefault();
+    e.returnValue = '';
+    log.textContent = 'beforeunload: prevented leaving (unsaved changes)';
+  } else {
+    log.textContent = 'beforeunload: allowing navigation (no unsaved changes)';
+  }
+});
+"
+/>
+
+## `unload`
+
+Fires when the page is being unloaded. Use it for cleanup (but limited what you can do):
+
+```javascript
+window.addEventListener('unload', function() {
+  // Send analytics, save state
+  // Note: async operations may not complete
+  navigator.sendBeacon('/log', 'page unloaded');
+});
+```
+
+Prefer `navigator.sendBeacon()` over `fetch` in `unload` — it's designed to work during page teardown.
+
+## `readystatechange`
+
+The `document.readyState` property goes through three states:
+
+```javascript
+document.readyState  // "loading" | "interactive" | "complete"
+```
+
+Listen for changes:
+
+```javascript
+document.addEventListener('readystatechange', function() {
+  if (document.readyState === 'interactive') {
+    // DOMContentLoaded just fired
+  }
+  if (document.readyState === 'complete') {
+    // load just fired
+  }
+});
+```
+
+## Practical: Show Loading State
+
+<CodePlayground
+  title="Loading States"
+  html="
+<div id='loading-demo' style='padding:16px;background:#f1f5f9;border-radius:8px;'>
+  <p>Page load simulation:</p>
+  <div style='height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;'>
+    <div id='load-bar' style='height:100%;width:0%;background:#6366f1;border-radius:4px;transition:width 0.3s;'></div>
+  </div>
+  <pre id='load-status' style='background:white;padding:8px;border-radius:4px;margin-top:8px;'></pre>
+</div>"
+  js="
+const bar = document.getElementById('load-bar');
+const status = document.getElementById('load-status');
+
+function log(msg, pct) {
+  status.textContent += msg + '\\n';
+  bar.style.width = pct + '%';
+}
+
+if (document.readyState === 'loading') {
+  log('State: loading (HTML still parsing)', 10);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  log('DOMContentLoaded — DOM ready, scripts can run', 60);
+});
+
+document.addEventListener('readystatechange', function() {
+  if (document.readyState === 'interactive') {
+    log('readyState: interactive (DOM ready)', 60);
+  }
+  if (document.readyState === 'complete') {
+    log('readyState: complete — page fully loaded', 100);
+  }
+});
+"
+/>
+
+## Script Execution Timing
+
+Where you put your `<script>` tag matters:
+
+| Script Position | When it Runs |
+|---|---|
+| In `<head>` | Before `DOMContentLoaded` |
+| At end of `<body>` | After DOM parsed |
+| `defer` | After HTML parsed, before `DOMContentLoaded` |
+| `async` | As soon as downloaded (no order guarantee) |
+
+## Key Takeaways
+
+- `DOMContentLoaded` = **DOM is ready** (HTML parsed)
+- `load` = **everything is ready** (images, fonts, etc.)
+- `beforeunload` asks **"Leave?"** — use for unsaved changes
+- `unload` is for **cleanup** (use `sendBeacon` for async ops)
+- Check `document.readyState` for granular loading status
+- Script position (head vs body, defer vs async) affects when these fire

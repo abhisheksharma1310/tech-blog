@@ -1,0 +1,217 @@
+---
+title: "Mouse Movement Events"
+description: "Track mouse movement with mouseover, mouseout, mouseenter, and mouseleave"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "UI Events"]
+tags: ["JavaScript", "DOM", "Mouse Events"]
+slug: "js-mouse-movement"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Mouse Movement Events
+
+Tracking mouse movement is essential for hover effects, tooltips, and interactive visuals.
+
+## The Four Movement Events
+
+| Event | Fires When | Bubbles? |
+|---|---|---|
+| `mouseover` | Mouse enters an element or its children | Yes |
+| `mouseout` | Mouse leaves an element or its children | Yes |
+| `mouseenter` | Mouse enters an element | **No** |
+| `mouseleave` | Mouse leaves an element | **No** |
+
+## `mouseover` vs `mouseenter`
+
+The key difference: **`mouseover` bubbles**, and fires when entering **any** descendant. `mouseenter` only fires once when entering the element itself.
+
+```
+mouseover:  parent → child → grandchild (fires for each!)
+mouseenter: parent (fires once)
+```
+
+<CodePlayground
+  title="mouseover vs mouseenter"
+  html="
+<style>
+  .mm-box { padding: 10px; margin: 4px; border-radius: 6px; border: 1px solid #6366f1; }
+  .mm-outer { background: #eef2ff; }
+  .mm-mid { background: #fef9c3; }
+  .mm-inner { background: #f0fdf4; }
+</style>
+<div class='mm-box mm-outer'>
+  OUTER
+  <div class='mm-box mm-mid'>
+    MIDDLE
+    <div class='mm-box mm-inner'>INNER</div>
+  </div>
+</div>
+<p>
+  <label><input type='checkbox' id='use-enter' checked> Use mouseenter/mouseleave (no bubble)</label>
+</p>
+<pre id='mm-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const outer = document.querySelector('.mm-outer');
+const log = document.getElementById('mm-log');
+const checkbox = document.getElementById('use-enter');
+let listeners = [];
+
+function setup() {
+  // Remove old listeners
+  listeners.forEach(fn => fn());
+  listeners = [];
+
+  const useEnter = checkbox.checked;
+  const eventIn = useEnter ? 'mouseenter' : 'mouseover';
+  const eventOut = useEnter ? 'mouseleave' : 'mouseout';
+  const label = useEnter ? 'ENTER/LEAVE' : 'OVER/OUT';
+
+  function handlerIn(e) {
+    log.textContent = '[' + label + '] entered: ' + e.target.className + ' (bubbles: ' + !useEnter + ')';
+  }
+  function handlerOut(e) {
+    log.textContent = '[' + label + '] left: ' + e.target.className + ' (bubbles: ' + !useEnter + ')';
+  }
+
+  outer.addEventListener(eventIn, handlerIn);
+  outer.addEventListener(eventOut, handlerOut);
+  listeners.push(() => {
+    outer.removeEventListener(eventIn, handlerIn);
+    outer.removeEventListener(eventOut, handlerOut);
+  });
+}
+
+checkbox.addEventListener('change', setup);
+setup();
+"
+/>
+
+## `relatedTarget`
+
+Both `mouseover`/`mouseout` and `mouseenter`/`mouseleave` provide `event.relatedTarget`:
+
+- For `mouseover`: the element the mouse came **from**
+- For `mouseout`: the element the mouse went **to**
+
+```javascript
+element.addEventListener('mouseout', function(e) {
+  console.log('Left', e.target, 'going to', e.relatedTarget);
+});
+```
+
+<CodePlayground
+  title="relatedTarget"
+  html="
+<style>
+  .rt-area { display: inline-block; padding: 16px 24px; margin: 8px; border-radius: 8px; cursor: default; }
+  .rt-area.a { background: #eef2ff; border: 2px solid #6366f1; }
+  .rt-area.b { background: #fef9c3; border: 2px solid #eab308; }
+</style>
+<div class='rt-area a' id='rt-a'>Block A</div>
+<div class='rt-area b' id='rt-b'>Block B</div>
+<pre id='rt-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('rt-log');
+
+function logMove(e) {
+  const from = e.relatedTarget ? e.relatedTarget.textContent || e.relatedTarget.id : 'outside';
+  const to = e.target.textContent || e.target.id;
+  if (e.type === 'mouseover') {
+    log.textContent = 'mouseover: entered ' + to + ' (from ' + from + ')';
+  } else {
+    log.textContent = 'mouseout: left ' + to + ' (to ' + from + ')';
+  }
+}
+
+document.getElementById('rt-a').addEventListener('mouseover', logMove);
+document.getElementById('rt-a').addEventListener('mouseout', logMove);
+document.getElementById('rt-b').addEventListener('mouseover', logMove);
+document.getElementById('rt-b').addEventListener('mouseout', logMove);
+"
+/>
+
+## Practical: Hover Card Effect
+
+<CodePlayground
+  title="Hover Card"
+  html="
+<style>
+  .hover-card { display: inline-block; padding: 20px; margin: 8px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; transition: all 0.3s; cursor: default; width: 120px; text-align: center; }
+  .hover-card:hover { border-color: #6366f1; box-shadow: 0 8px 24px rgba(99,102,241,0.15); }
+</style>
+<div class='hover-card' id='card1'>Card 1</div>
+<div class='hover-card' id='card2'>Card 2</div>
+<div class='hover-card' id='card3'>Card 3</div>
+<pre id='hover-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const out = document.getElementById('hover-output');
+
+document.querySelectorAll('.hover-card').forEach(card => {
+  card.addEventListener('mouseenter', function() {
+    out.textContent = 'Hovering: ' + this.textContent;
+  });
+  card.addEventListener('mouseleave', function() {
+    out.textContent = 'Left: ' + this.textContent;
+  });
+});
+"
+/>
+
+## Practical: Mouse Trail
+
+<CodePlayground
+  title="Mouse Trail"
+  html="
+<style>
+  #trail-container { height: 200px; background: #0f172a; border-radius: 8px; position: relative; overflow: hidden; cursor: crosshair; }
+  .trail-dot { position: absolute; width: 8px; height: 8px; background: #6366f1; border-radius: 50%; pointer-events: none; transition: opacity 0.5s; }
+</style>
+<div id='trail-container'>
+  <p style='color:#64748b;text-align:center;padding-top:80px;'>Move mouse here</p>
+</div>
+<pre id='trail-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const container = document.getElementById('trail-container');
+const out = document.getElementById('trail-output');
+
+container.addEventListener('mousemove', function(e) {
+  const dot = document.createElement('div');
+  dot.className = 'trail-dot';
+  dot.style.left = (e.clientX - container.getBoundingClientRect().left - 4) + 'px';
+  dot.style.top = (e.clientY - container.getBoundingClientRect().top - 4) + 'px';
+  container.appendChild(dot);
+  out.textContent = 'Mouse at: ' + e.clientX + ', ' + e.clientY;
+
+  // Fade and remove
+  setTimeout(() => { dot.style.opacity = '0'; }, 50);
+  setTimeout(() => { dot.remove(); }, 550);
+});
+"
+/>
+
+## `mousemove` Performance
+
+`mousemove` fires **a lot** (hundreds of times per second). For performance:
+
+- Use **throttling** or **debouncing**
+- Avoid expensive DOM operations in the handler
+- Consider using `{ passive: true }` for scroll/touch handlers
+
+```javascript
+let lastMove = 0;
+element.addEventListener('mousemove', function(e) {
+  const now = Date.now();
+  if (now - lastMove < 16) return; // limit to ~60fps
+  lastMove = now;
+  // your handler
+});
+```
+
+## Key Takeaways
+
+- `mouseover`/`mouseout` **bubble** — they fire for child elements too
+- `mouseenter`/`mouseleave` do **not bubble** — fire once per element
+- `event.relatedTarget` tells you where the cursor came from / went to
+- `mousemove` fires rapidly — **throttle** it for performance
+- Use `mouseenter`/`mouseleave` for most hover effects (simpler behavior)

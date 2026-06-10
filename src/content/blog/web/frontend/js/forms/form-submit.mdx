@@ -1,0 +1,229 @@
+---
+title: "Form Submission"
+description: "Handle form submission with JavaScript — validation, AJAX, and the submit event"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Forms"]
+tags: ["JavaScript", "DOM", "Forms", "Submit"]
+slug: "js-form-submit"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Form Submission
+
+The `submit` event is the final step — when the user clicks the submit button or presses Enter. Intercept it for client-side validation and AJAX submission.
+
+## The Submit Event
+
+```javascript
+form.addEventListener('submit', function(e) {
+  e.preventDefault(); // stop browser from reloading
+  // handle form data via JavaScript
+});
+```
+
+<CodePlayground
+  title="Basic Submit Handling"
+  html="
+<form id='basic-submit'>
+  <div><label>Name: <input type='text' name='name' required style='width:100%;padding:8px;margin:4px 0;border:1px solid #cbd5e1;border-radius:4px;'></label></div>
+  <div><label>Email: <input type='email' name='email' required style='width:100%;padding:8px;margin:4px 0;border:1px solid #cbd5e1;border-radius:4px;'></label></div>
+  <button type='submit' style='padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:4px;cursor:pointer;'>Submit</button>
+</form>
+<pre id='submit-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const form = document.getElementById('basic-submit');
+const log = document.getElementById('submit-log');
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const data = new FormData(this);
+  let result = 'Form submitted (AJAX)!\\n';
+  for (let [key, value] of data) {
+    result += '  ' + key + ': ' + value + '\\n';
+  }
+  log.textContent = result;
+});
+"
+/>
+
+## What Triggers Submit
+
+The `submit` event fires when:
+
+1. User clicks `<button type="submit">` or `<input type="submit">`
+2. User presses **Enter** in any form field
+
+**Note**: Pressing Enter in an `<input>` that has a submit button in the form triggers submit.
+
+## Preventing Double Submission
+
+Prevent the form from being submitted twice:
+
+```javascript
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  // ... submit data
+});
+```
+
+<CodePlayground
+  title="Prevent Double Submit"
+  html="
+<form id='double-submit-form'>
+  <input type='text' placeholder='Type anything' required style='width:100%;padding:8px;margin:4px 0;border:1px solid #cbd5e1;border-radius:4px;'>
+  <button type='submit' id='submit-btn' style='padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:4px;cursor:pointer;'>Submit</button>
+</form>
+<pre id='double-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const form = document.getElementById('double-submit-form');
+const btn = document.getElementById('submit-btn');
+const log = document.getElementById('double-log');
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  btn.style.background = '#94a3b8';
+  log.textContent = 'Submitted at ' + new Date().toLocaleTimeString() + ' (button disabled)';
+});
+"
+/>
+
+## Client-Side Validation
+
+Validate the form before submission:
+
+<CodePlayground
+  title="Form Validation"
+  html="
+<form id='validation-form'>
+  <div>
+    <label>Username (min 3 chars):<br>
+      <input type='text' name='username' id='val-username' style='width:100%;padding:8px;margin:4px 0;border:2px solid #cbd5e1;border-radius:4px;'>
+    </label>
+    <span id='username-error' style='color:#ef4444;font-size:0.875rem;'></span>
+  </div>
+  <div>
+    <label>Age (18-99):<br>
+      <input type='number' name='age' id='val-age' min='18' max='99' style='width:100%;padding:8px;margin:4px 0;border:2px solid #cbd5e1;border-radius:4px;'>
+    </label>
+    <span id='age-error' style='color:#ef4444;font-size:0.875rem;'></span>
+  </div>
+  <button type='submit' style='padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:4px;cursor:pointer;'>Submit</button>
+</form>
+<pre id='val-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const form = document.getElementById('validation-form');
+const log = document.getElementById('val-log');
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  let isValid = true;
+
+  const username = document.getElementById('val-username');
+  const age = document.getElementById('val-age');
+  const userErr = document.getElementById('username-error');
+  const ageErr = document.getElementById('age-error');
+
+  // Reset errors
+  userErr.textContent = '';
+  ageErr.textContent = '';
+  username.style.borderColor = '#cbd5e1';
+  age.style.borderColor = '#cbd5e1';
+
+  if (username.value.length < 3) {
+    userErr.textContent = 'Username must be at least 3 characters';
+    username.style.borderColor = '#ef4444';
+    isValid = false;
+  }
+
+  const ageVal = parseInt(age.value);
+  if (isNaN(ageVal) || ageVal < 18 || ageVal > 99) {
+    ageErr.textContent = 'Age must be between 18 and 99';
+    age.style.borderColor = '#ef4444';
+    isValid = false;
+  }
+
+  if (isValid) {
+    log.textContent = 'Form is valid! Submitting... (username: ' + username.value + ', age: ' + age.value + ')';
+  } else {
+    log.textContent = 'Form has errors — fix them and try again';
+  }
+});
+"
+/>
+
+## `novalidate` Attribute
+
+Add `novalidate` to your form to **disable** browser's built-in validation and handle validation yourself:
+
+```html
+<form novalidate>
+  <!-- your validation logic runs instead -->
+</form>
+```
+
+## HTML5 Constraint Validation API
+
+The browser has built-in validation methods:
+
+```javascript
+input.checkValidity()      // returns true/false
+input.reportValidity()     // shows validation message
+input.validationMessage    // the error message
+input.setCustomValidity('msg')  // custom error message
+```
+
+<CodePlayground
+  title="Constraint Validation API"
+  html="
+<form id='constraint-form'>
+  <input type='email' id='constraint-email' placeholder='Enter email' required style='width:100%;padding:8px;margin:4px 0;border:2px solid #cbd5e1;border-radius:4px;'>
+  <button type='submit' style='padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:4px;cursor:pointer;'>Submit</button>
+</form>
+<pre id='constraint-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const form = document.getElementById('constraint-form');
+const email = document.getElementById('constraint-email');
+const log = document.getElementById('constraint-log');
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  if (!email.checkValidity()) {
+    log.textContent = 'Invalid! ' + email.validationMessage;
+    email.style.borderColor = '#ef4444';
+  } else {
+    log.textContent = 'Valid email: ' + email.value;
+    email.style.borderColor = '#22c55e';
+  }
+});
+"
+/>
+
+## Forms Can Be Submitted Programmatically
+
+```javascript
+form.submit()  // submits WITHOUT firing submit event!
+```
+
+**Important**: `form.submit()` does **not** trigger the `submit` event. If you need validation, call `form.requestSubmit()` instead (modern browsers):
+
+```javascript
+form.requestSubmit()  // fires submit event (includes validation)
+```
+
+## Key Takeaways
+
+- Use `e.preventDefault()` in the submit handler to **intercept** form submission
+- The **Enter key** in any form field triggers submit
+- Disable the submit button after first click to prevent **double submission**
+- Validate all fields in the submit handler before sending data
+- `form.submit()` does **not** fire the submit event (use `requestSubmit()` instead)
+- `novalidate` lets you fully control validation without native interference
+- Collect form data with `new FormData(form)` for clean data access

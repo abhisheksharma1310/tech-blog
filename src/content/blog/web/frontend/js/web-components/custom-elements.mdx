@@ -1,0 +1,263 @@
+---
+title: "Custom Elements"
+description: "Create custom HTML elements with full lifecycle, attributes, and methods"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Web Components"]
+tags: ["JavaScript", "Web Components", "Custom Elements"]
+slug: "js-custom-elements"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Custom Elements
+
+**Custom Elements** let you define your own HTML tags with custom behavior, properties, methods, and events.
+
+## Defining a Custom Element
+
+```javascript
+class MyElement extends HTMLElement {
+  constructor() {
+    super(); // always call super() first
+    // Initial setup (but DOM may not be ready yet)
+  }
+
+  connectedCallback() {
+    // DOM is ready — render here
+  }
+}
+
+customElements.define('my-element', MyElement);
+```
+
+<CodePlayground
+  title="Custom Element with Template"
+  html="
+<profile-card name='Alice' role='Developer'></profile-card>
+<profile-card name='Bob' role='Designer'></profile-card>
+<pre id='ce-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class ProfileCard extends HTMLElement {
+  constructor() {
+    super();
+    this.innerHTML = '<div class='card'></div>';
+  }
+
+  connectedCallback() {
+    const name = this.getAttribute('name') || 'Unknown';
+    const role = this.getAttribute('role') || 'User';
+
+    const card = this.querySelector('.card');
+    card.style.cssText = 'padding:12px;background:#eef2ff;border-radius:8px;border:1px solid #c7d2fe;margin:4px 0;';
+    card.innerHTML = '<strong>' + name + '</strong> — <em>' + role + '</em>';
+  }
+}
+
+customElements.define('profile-card', ProfileCard);
+
+document.getElementById('ce-out').textContent =
+  'Two <profile-card> elements created.\\n' +
+  'Each reads its 'name' and 'role' attributes.';
+"
+/>
+
+## Observed Attributes
+
+To respond to attribute changes, declare which attributes to observe:
+
+```javascript
+class Counter extends HTMLElement {
+  static get observedAttributes() {
+    return ['value'];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name === 'value') {
+      this.render(newValue);
+    }
+  }
+
+  render(value) {
+    this.textContent = `Count: ${value}`;
+  }
+}
+```
+
+<CodePlayground
+  title="Observed Attributes"
+  html="
+<custom-counter value='5'></custom-counter>
+<div style='margin-top:8px;display:flex;gap:8px;'>
+  <button id='inc-value'>Increment</button>
+  <button id='dec-value'>Decrement</button>
+</div>
+<pre id='attr-ce-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class CustomCounter extends HTMLElement {
+  static get observedAttributes() { return ['value']; }
+
+  constructor() {
+    super();
+    this.style.cssText = 'display:block;padding:16px;background:#fef9c3;border-radius:8px;font-size:1.2rem;text-align:center;border:1px solid #eab308;';
+  }
+
+  attributeChangedCallback(name, old, val) {
+    if (name === 'value') this.render(val);
+  }
+
+  render(val) {
+    this.textContent = 'Counter: ' + val;
+  }
+}
+
+customElements.define('custom-counter', CustomCounter);
+
+let count = 5;
+
+document.getElementById('inc-value').onclick = function() {
+  const el = document.querySelector('custom-counter');
+  el.setAttribute('value', ++count);
+  document.getElementById('attr-ce-out').textContent = 'Value changed to: ' + count;
+};
+
+document.getElementById('dec-value').onclick = function() {
+  const el = document.querySelector('custom-counter');
+  el.setAttribute('value', --count);
+  document.getElementById('attr-ce-out').textContent = 'Value changed to: ' + count;
+};
+"
+/>
+
+## Element Properties and Methods
+
+Custom elements can expose properties and methods like any class:
+
+```javascript
+class RatingWidget extends HTMLElement {
+  set value(val) {
+    this.setAttribute('value', val);
+    this.updateStars();
+  }
+
+  get value() {
+    return parseInt(this.getAttribute('value')) || 0;
+  }
+
+  reset() {
+    this.value = 0;
+  }
+
+  updateStars() {
+    // render stars based on this.value
+  }
+}
+```
+
+<CodePlayground
+  title="Custom Element with Methods"
+  html="
+<rating-widget value='3'></rating-widget>
+<div style='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;'>
+  <button id='set-rating-1'>Set to 1 Star</button>
+  <button id='set-rating-5'>Set to 5 Stars</button>
+  <button id='reset-rating'>Reset</button>
+  <button id='get-rating'>Get Value</button>
+</div>
+<pre id='rating-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class RatingWidget extends HTMLElement {
+  static get observedAttributes() { return ['value']; }
+
+  constructor() {
+    super();
+    this.style.cssText = 'display:block;padding:12px;background:white;border-radius:8px;border:1px solid #e2e8f0;text-align:center;';
+  }
+
+  get value() { return parseInt(this.getAttribute('value')) || 0; }
+  set value(val) { this.setAttribute('value', val); }
+
+  attributeChangedCallback(name, old, val) {
+    if (name === 'value') this.render();
+  }
+
+  render() {
+    const val = this.value;
+    this.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement('span');
+      star.textContent = i <= val ? '★' : '☆';
+      star.style.cssText = 'font-size:1.5rem;cursor:pointer;color:' + (i <= val ? '#eab308' : '#cbd5e1') + ';margin:0 2px;';
+      star.dataset.rating = i;
+      star.onclick = () => { this.value = i; };
+      this.appendChild(star);
+    }
+  }
+}
+
+customElements.define('rating-widget', RatingWidget);
+
+const widget = document.querySelector('rating-widget');
+const out = document.getElementById('rating-out');
+
+document.getElementById('set-rating-1').onclick = () => { widget.value = 1; out.textContent = 'Rating set to 1'; };
+document.getElementById('set-rating-5').onclick = () => { widget.value = 5; out.textContent = 'Rating set to 5'; };
+document.getElementById('reset-rating').onclick = () => { widget.value = 0; out.textContent = 'Rating reset'; };
+document.getElementById('get-rating').onclick = () => { out.textContent = 'Current rating: ' + widget.value; };
+"
+/>
+
+## Dispatching Events
+
+Custom elements can fire custom events:
+
+```javascript
+class ToggleSwitch extends HTMLElement {
+  connectedCallback() {
+    this.addEventListener('click', () => {
+      const active = this.hasAttribute('active');
+      this.toggleAttribute('active');
+
+      this.dispatchEvent(new CustomEvent('toggle', {
+        detail: { active: !active },
+        bubbles: true
+      }));
+    });
+  }
+}
+```
+
+## Styling Custom Elements
+
+Apply default styles in the constructor or `connectedCallback`:
+
+```javascript
+class StyledButton extends HTMLElement {
+  connectedCallback() {
+    this.style.cssText = `
+      display: inline-block;
+      padding: 8px 16px;
+      background: #6366f1;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    `;
+  }
+}
+```
+
+## Element Name Requirements
+
+- **Must contain a hyphen** (`my-button`, `app-header`, `x-count`)
+- One hyphen minimum, at least two characters before the hyphen
+- Cannot be a single word like `button` or `dialog`
+- Case-sensitive (by convention, lowercase with hyphens)
+
+## Key Takeaways
+
+- Extend `HTMLElement` and call `super()` in the constructor
+- Define observed attributes with `static get observedAttributes()`
+- Use `connectedCallback` for DOM setup (not the constructor)
+- Expose **properties** (getter/setter) and **methods** on the class
+- Dispatch **custom events** for user interactions
+- Element names **must include a hyphen**
+- Use `this.innerHTML` or DOM methods to render content (or Shadow DOM for encapsulation)

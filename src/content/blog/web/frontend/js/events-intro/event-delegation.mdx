@@ -1,0 +1,183 @@
+---
+title: "Event Delegation"
+description: "Use event bubbling to handle events efficiently with delegation"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Events"]
+tags: ["JavaScript", "DOM", "Events", "Delegation"]
+slug: "js-event-delegation"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Event Delegation
+
+**Event delegation** is a pattern that leverages **bubbling** to handle events efficiently. Instead of attaching a listener to every child element, you attach **one** listener to a parent and use `event.target` to figure out which child was clicked.
+
+## The Problem
+
+```html
+<ul id="menu">
+  <li>Home</li>
+  <li>About</li>
+  <li>Contact</li>
+  <!-- 50 more items... -->
+</ul>
+```
+
+Without delegation: attach 50+ listeners. With delegation: **one** listener on `<ul>`.
+
+## How Delegation Works
+
+```javascript
+parent.addEventListener('click', function(event) {
+  if (event.target.tagName === 'LI') {
+    // handle the li click
+  }
+});
+```
+
+<CodePlayground
+  title="Event Delegation"
+  html="
+<ul id='delegation-menu' style='list-style:none;padding:0;'>
+  <li style='padding:8px 12px;margin:4px 0;background:#eef2ff;border-radius:4px;cursor:pointer;border:1px solid #c7d2fe;'>Home</li>
+  <li style='padding:8px 12px;margin:4px 0;background:#eef2ff;border-radius:4px;cursor:pointer;border:1px solid #c7d2fe;'>About</li>
+  <li style='padding:8px 12px;margin:4px 0;background:#eef2ff;border-radius:4px;cursor:pointer;border:1px solid #c7d2fe;'>Contact</li>
+  <li style='padding:8px 12px;margin:4px 0;background:#eef2ff;border-radius:4px;cursor:pointer;border:1px solid #c7d2fe;'>Blog</li>
+</ul>
+<p><button id='add-item'>Add New Item</button></p>
+<pre id='delegation-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const menu = document.getElementById('delegation-menu');
+const out = document.getElementById('delegation-output');
+
+// One listener for ALL items (existing and future!)
+menu.addEventListener('click', function(e) {
+  // Make sure we clicked an LI
+  const li = e.target.closest('li');
+  if (!li) return;
+  out.textContent = 'Clicked: ' + li.textContent + ' (handled by delegation)';
+});
+
+document.getElementById('add-item').onclick = function() {
+  const li = document.createElement('li');
+  li.style.cssText = 'padding:8px 12px;margin:4px 0;background:#eef2ff;border-radius:4px;cursor:pointer;border:1px solid #c7d2fe;';
+  const num = menu.children.length + 1;
+  li.textContent = 'Dynamic Item ' + num;
+  menu.appendChild(li);
+  out.textContent = 'Added: ' + li.textContent + ' — click it, it works!';
+};
+"
+/>
+
+## Using `closest()` for Delegation
+
+When you have nested elements inside a target, use `closest()` to find the right container:
+
+```javascript
+table.addEventListener('click', function(e) {
+  const row = e.target.closest('tr');
+  if (!row) return;
+  // handle row click
+});
+```
+
+<CodePlayground
+  title="Delegation with closest()"
+  html="
+<table id='delegate-table' border='1' style='border-collapse:collapse;width:100%;'>
+  <tr><th>Name</th><th>Action</th></tr>
+  <tr>
+    <td>Alice</td>
+    <td><button class='delete-btn' style='padding:4px 8px;cursor:pointer;'>Delete</button></td>
+  </tr>
+  <tr>
+    <td>Bob</td>
+    <td><button class='delete-btn' style='padding:4px 8px;cursor:pointer;'>Delete</button></td>
+  </tr>
+  <tr>
+    <td>Charlie</td>
+    <td><button class='delete-btn' style='padding:4px 8px;cursor:pointer;'>Delete</button></td>
+  </tr>
+</table>
+<pre id='delegate-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const out = document.getElementById('delegate-output');
+
+document.getElementById('delegate-table').addEventListener('click', function(e) {
+  const btn = e.target.closest('.delete-btn');
+  if (!btn) return;
+  const row = btn.closest('tr');
+  const name = row.cells[0].textContent;
+  row.remove();
+  out.textContent = 'Deleted: ' + name;
+});
+"
+/>
+
+## Delegation with Data Attributes
+
+Combine delegation with `data-*` attributes for clean, declarative handling:
+
+<CodePlayground
+  title="Data Attributes + Delegation"
+  html="
+<div id='action-panel'>
+  <button data-action='save' data-id='123' style='margin:4px;padding:8px 16px;cursor:pointer;'>Save</button>
+  <button data-action='edit' data-id='123' style='margin:4px;padding:8px 16px;cursor:pointer;'>Edit</button>
+  <button data-action='delete' data-id='123' style='margin:4px;padding:8px 16px;cursor:pointer;'>Delete</button>
+  <button data-action='archive' data-id='456' style='margin:4px;padding:8px 16px;cursor:pointer;'>Archive</button>
+</div>
+<pre id='action-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const out = document.getElementById('action-output');
+
+document.getElementById('action-panel').addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  out.textContent = 'Action: ' + action + ' on item #' + id;
+});
+"
+/>
+
+## Benefits of Delegation
+
+| Benefit | Why |
+|---|---|
+| **Performance** | One listener instead of hundreds |
+| **Memory** | Fewer closures, less memory usage |
+| **Dynamic content** | Works for elements added after page load |
+| **Cleaner code** | Centralized event logic |
+
+## When NOT to Use Delegation
+
+Delegation isn't always the right choice:
+
+- Events that **don't bubble** (`focus`, `blur`, `load`, `scroll`, `mouseenter`)
+- When you need to **stop propagation** per-element
+- When different child types need **completely different** event logic
+- When you need `event.preventDefault()` on specific elements only
+
+## The `matches()` Alternative
+
+Instead of `closest()`, you can use `matches()` for simpler cases:
+
+```javascript
+parent.addEventListener('click', function(e) {
+  if (e.target.matches('li')) {
+    // handle
+  }
+});
+```
+
+But `closest()` is better when elements have nested content (e.g., an `<a>` or `<span>` inside `<li>`).
+
+## Key Takeaways
+
+- Event delegation uses **bubbling** to handle events at a parent level
+- Use `event.target.closest(selector)` to find the right child
+- Delegation works for **dynamic elements** added later
+- Great for performance with **many similar elements**
+- Avoid for events that **don't bubble** or where per-element control is needed

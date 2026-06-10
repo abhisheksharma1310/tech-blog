@@ -1,0 +1,239 @@
+---
+title: "Drag'n'Drop with Mouse Events"
+description: "Build custom drag-and-drop interactions using mouse events"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "UI Events"]
+tags: ["JavaScript", "DOM", "Drag and Drop"]
+slug: "js-drag-and-drop"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Drag'n'Drop with Mouse Events
+
+Native drag-and-drop (`dragstart`, `dragover`, `drop`) can be awkward. Building custom drag-and-drop with **mouse events** gives you full control.
+
+## The Algorithm
+
+Custom drag-and-drop follows 3 mouse events:
+
+1. **`mousedown`** — start dragging
+2. **`mousemove`** — move the element (update position)
+3. **`mouseup`** — stop dragging
+
+```
+mousedown:  remember start position, move element to absolute/fixed
+mousemove:  update element position = initial + (mouseDelta)
+mouseup:    drop — remove listeners, finalize position
+```
+
+<CodePlayground
+  title="Simple Drag and Drop"
+  html="
+<style>
+  #draggable { width: 100px; height: 100px; background: #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: grab; position: absolute; left: 100px; top: 80px; user-select: none; font-size: 0.875rem; text-align: center; }
+  #drop-area { width: 300px; height: 250px; background: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 8px; position: relative; margin: 8px 0; }
+  #drop-zone { position: absolute; bottom: 12px; right: 12px; padding: 16px; background: #eef2ff; border: 2px dashed #6366f1; border-radius: 6px; color: #6366f1; font-weight: bold; }
+</style>
+<div id='drop-area'>
+  <div id='draggable'>Drag me</div>
+  <div id='drop-zone'>Drop here!</div>
+</div>
+<pre id='dd-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const el = document.getElementById('draggable');
+const dropZone = document.getElementById('drop-zone');
+const out = document.getElementById('dd-output');
+let isDragging = false;
+let shiftX, shiftY;
+
+el.addEventListener('mousedown', function(e) {
+  isDragging = true;
+  const rect = el.getBoundingClientRect();
+  shiftX = e.clientX - rect.left;
+  shiftY = e.clientY - rect.top;
+  el.style.cursor = 'grabbing';
+  el.style.zIndex = 1000;
+  out.textContent = 'Started dragging';
+});
+
+document.addEventListener('mousemove', function(e) {
+  if (!isDragging) return;
+  el.style.left = e.clientX - shiftX - dropArea.getBoundingClientRect().left + 'px';
+  el.style.top = e.clientY - shiftY - dropArea.getBoundingClientRect().top + 'px';
+  out.textContent = 'Dragging... position: (' + el.style.left + ', ' + el.style.top + ')';
+});
+
+document.addEventListener('mouseup', function(e) {
+  if (!isDragging) return;
+  isDragging = false;
+  el.style.cursor = 'grab';
+
+  // Check if dropped on drop zone
+  const elRect = el.getBoundingClientRect();
+  const dzRect = dropZone.getBoundingClientRect();
+  const overlap = !(elRect.right < dzRect.left || elRect.left > dzRect.right ||
+                    elRect.bottom < dzRect.top || elRect.top > dzRect.bottom);
+
+  if (overlap) {
+    out.textContent = 'Dropped on target! ';
+    dropZone.style.background = '#c7d2fe';
+  } else {
+    out.textContent = 'Dropped (missed target)';
+  }
+});
+"
+/>
+
+## Drag with Constraints
+
+Limit dragging to stay within a container:
+
+```javascript
+document.addEventListener('mousemove', function(e) {
+  if (!isDragging) return;
+
+  let newX = e.clientX - shiftX - containerRect.left;
+  let newY = e.clientY - shiftY - containerRect.top;
+
+  // Constrain to container
+  newX = Math.max(0, Math.min(newX, containerWidth - elWidth));
+  newY = Math.max(0, Math.min(newY, containerHeight - elHeight));
+
+  el.style.left = newX + 'px';
+  el.style.top = newY + 'px';
+});
+```
+
+<CodePlayground
+  title="Constrained Drag"
+  html="
+<style>
+  #constrain-area { width: 300px; height: 200px; background: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 8px; position: relative; overflow: hidden; }
+  #constrained-dot { width: 40px; height: 40px; background: #eab308; border-radius: 50%; position: absolute; cursor: grab; left: 20px; top: 20px; }
+</style>
+<div id='constrain-area'>
+  <div id='constrained-dot'></div>
+</div>
+<pre id='constrain-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const dot = document.getElementById('constrained-dot');
+const area = document.getElementById('constrain-area');
+const out = document.getElementById('constrain-output');
+let dragging = false, sx, sy, startX, startY;
+
+dot.addEventListener('mousedown', function(e) {
+  dragging = true;
+  const rect = dot.getBoundingClientRect();
+  sx = e.clientX - rect.left;
+  sy = e.clientY - rect.top;
+  startX = dot.offsetLeft;
+  startY = dot.offsetTop;
+  dot.style.cursor = 'grabbing';
+});
+
+document.addEventListener('mousemove', function(e) {
+  if (!dragging) return;
+  const areaRect = area.getBoundingClientRect();
+  let x = e.clientX - areaRect.left - sx;
+  let y = e.clientY - areaRect.top - sy;
+  x = Math.max(0, Math.min(x, area.clientWidth - dot.offsetWidth));
+  y = Math.max(0, Math.min(y, area.clientHeight - dot.offsetHeight));
+  dot.style.left = x + 'px';
+  dot.style.top = y + 'px';
+  out.textContent = 'Position: (' + x + ', ' + y + ')';
+});
+
+document.addEventListener('mouseup', function() {
+  if (dragging) {
+    dragging = false;
+    dot.style.cursor = 'grab';
+    out.textContent += ' — dropped';
+  }
+});
+"
+/>
+
+## Drag to Reorder List
+
+<CodePlayground
+  title="Drag to Reorder"
+  html="
+<style>
+  #sort-list { list-style: none; padding: 0; }
+  #sort-list li { padding: 10px 16px; margin: 4px 0; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 6px; cursor: grab; transition: all 0.2s; user-select: none; }
+  #sort-list li.dragging { opacity: 0.5; background: #fef9c3; }
+  #sort-list li.drag-over { border-top: 3px solid #6366f1; }
+</style>
+<ul id='sort-list'>
+  <li>Item A</li>
+  <li>Item B</li>
+  <li>Item C</li>
+  <li>Item D</li>
+  <li>Item E</li>
+</ul>
+<pre id='sort-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const list = document.getElementById('sort-list');
+const out = document.getElementById('sort-output');
+let dragItem = null;
+
+list.querySelectorAll('li').forEach(item => {
+  item.addEventListener('mousedown', function() {
+    dragItem = this;
+    this.classList.add('dragging');
+    out.textContent = 'Dragging: ' + this.textContent;
+  });
+
+  item.addEventListener('mouseenter', function() {
+    if (dragItem && dragItem !== this) {
+      this.classList.add('drag-over');
+    }
+  });
+
+  item.addEventListener('mouseleave', function() {
+    this.classList.remove('drag-over');
+  });
+});
+
+document.addEventListener('mouseup', function() {
+  if (dragItem) {
+    dragItem.classList.remove('dragging');
+    const target = list.querySelector('.drag-over');
+    if (target) {
+      target.classList.remove('drag-over');
+      list.insertBefore(dragItem, target);
+      out.textContent = 'Moved: ' + dragItem.textContent + ' before ' + target.textContent;
+    } else {
+      out.textContent = 'Dropped: ' + dragItem.textContent + ' (no reorder)';
+    }
+    dragItem = null;
+  }
+});
+"
+/>
+
+## Preventing Text Selection
+
+While dragging, the browser might select text. Prevent it:
+
+```javascript
+element.addEventListener('mousedown', function(e) {
+  e.preventDefault(); // prevents text selection on drag
+});
+```
+
+Or via CSS:
+
+```css
+.draggable { user-select: none; }
+```
+
+## Key Takeaways
+
+- Custom drag-and-drop uses `mousedown` → `mousemove` → `mouseup`
+- Attach `mousemove`/`mouseup` to `document`, not the element
+- Calculate position as: `mousePos - initialShift - containerOffset`
+- Use `Math.max`/`Math.min` to **constrain** within boundaries
+- Always prevent text selection during drag (`user-select: none`)
+- Clean up by removing listeners on `mouseup`

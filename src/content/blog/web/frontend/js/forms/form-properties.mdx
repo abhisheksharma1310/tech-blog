@@ -1,0 +1,238 @@
+---
+title: "Form Properties and Methods"
+description: "Access form elements, their values, and built-in methods"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Forms"]
+tags: ["JavaScript", "DOM", "Forms"]
+slug: "js-form-properties"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Form Properties and Methods
+
+Forms have convenient properties and methods that make accessing and managing form data easy.
+
+## Accessing a Form
+
+```html
+<form name="signup" id="signup-form">
+  <input name="email" type="email">
+  <input name="password" type="password">
+</form>
+```
+
+```javascript
+// By ID
+const form = document.getElementById('signup-form');
+
+// By name (on document.forms)
+const form = document.forms.signup;
+const form = document.forms[0];
+```
+
+## The `elements` Collection
+
+The `form.elements` property contains **all form controls** (inputs, selects, textareas, buttons):
+
+```javascript
+const form = document.forms.signup;
+form.elements.email     // input by name
+form.elements[0]        // first element
+form.elements.length    // number of controls
+```
+
+<CodePlayground
+  title="Form Elements Collection"
+  html="
+<form id='demo-form'>
+  <input type='text' name='username' placeholder='Username'>
+  <input type='email' name='email' placeholder='Email'>
+  <input type='password' name='password' placeholder='Password'>
+  <select name='country'>
+    <option value=''>Select country</option>
+    <option value='in'>India</option>
+    <option value='us'>USA</option>
+    <option value='uk'>UK</option>
+  </select>
+</form>
+<pre id='form-elem-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const form = document.getElementById('demo-form');
+const out = document.getElementById('form-elem-out');
+
+out.textContent =
+  'form.elements.length: ' + form.elements.length + '\\n' +
+  'form.elements.username: ' + form.elements.username.tagName + ' (type: ' + form.elements.username.type + ')' + '\\n' +
+  'form.elements.email: ' + form.elements.email.tagName + ' (type: ' + form.elements.email.type + ')' + '\\n' +
+  'form.elements.country: ' + form.elements.country.tagName + ' (options: ' + form.elements.country.options.length + ')';
+"
+/>
+
+## Getting Form Values
+
+```javascript
+input.value           // text, password, hidden, textarea
+checkbox.checked      // boolean
+radio.checked         // boolean
+select.value          // selected option value
+select.selectedIndex  // index of selected option
+```
+
+<CodePlayground
+  title="Reading Form Values"
+  html="
+<form id='read-form'>
+  <div><label>Name: <input type='text' name='name' value='Alice'></label></div>
+  <div><label>Email: <input type='email' name='email' value='alice@example.com'></label></div>
+  <div>
+    <label><input type='radio' name='gender' value='male' checked> Male</label>
+    <label><input type='radio' name='gender' value='female'> Female</label>
+  </div>
+  <div>
+    <label><input type='checkbox' name='newsletter' checked> Subscribe to newsletter</label>
+  </div>
+  <div>
+    <label>Country:
+      <select name='country'>
+        <option value='in'>India</option>
+        <option value='us' selected>USA</option>
+        <option value='uk'>UK</option>
+      </select>
+    </label>
+  </div>
+</form>
+<button id='read-btn'>Read All Values</button>
+<pre id='read-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const form = document.getElementById('read-form');
+const out = document.getElementById('read-output');
+
+document.getElementById('read-btn').onclick = function() {
+  out.textContent =
+    'name: ' + form.elements.name.value + '\\n' +
+    'email: ' + form.elements.email.value + '\\n' +
+    'gender: ' + form.elements.gender.value + '\\n' +
+    'newsletter: ' + form.elements.newsletter.checked + '\\n' +
+    'country: ' + form.elements.country.value;
+};
+"
+/>
+
+## `FormData` API
+
+The modern way to collect form data — works great with fetch:
+
+```javascript
+const formData = new FormData(form);
+formData.get('email')         // single value
+formData.getAll('hobbies')    // multiple values (checkboxes)
+formData.has('email')         // check if field exists
+formData.set('name', 'Bob')   // set value
+formData.append('hobby', 'coding')  // add to multiple
+```
+
+<CodePlayground
+  title="FormData API"
+  html="
+<form id='formdata-form'>
+  <div><input type='text' name='fullname' placeholder='Full Name' value='Bob Smith'></div>
+  <div>
+    <label><input type='checkbox' name='hobby' value='coding' checked> Coding</label>
+    <label><input type='checkbox' name='hobby' value='reading'> Reading</label>
+    <label><input type='checkbox' name='hobby' value='gaming' checked> Gaming</label>
+  </div>
+</form>
+<button id='formdata-btn'>Show FormData</button>
+<pre id='formdata-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const form = document.getElementById('formdata-form');
+const out = document.getElementById('formdata-out');
+
+document.getElementById('formdata-btn').onclick = function() {
+  const data = new FormData(form);
+  let result = 'fullname: ' + data.get('fullname') + '\\n';
+  result += 'hobbies: ' + data.getAll('hobby').join(', ') + '\\n';
+  result += 'hobby count: ' + data.getAll('hobby').length;
+  out.textContent = result;
+};
+"
+/>
+
+## Select Options
+
+Working with `<select>` elements:
+
+```javascript
+select.options           // HTMLOptionsCollection
+select.options.length    // number of options
+select.options[0]        // first option
+select.selectedIndex     // index of selected option
+select.value             // value of selected option
+
+// Add option
+const opt = new Option('Text', 'value');
+select.add(opt);
+
+// Remove option
+select.remove(index);
+```
+
+<CodePlayground
+  title="Select Manipulation"
+  html="
+<select id='language-select'>
+  <option value='js'>JavaScript</option>
+  <option value='py'>Python</option>
+  <option value='rs'>Rust</option>
+</select>
+<button id='add-opt'>Add Option</button>
+<button id='remove-opt'>Remove Selected</button>
+<button id='show-info'>Show Info</button>
+<pre id='select-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const select = document.getElementById('language-select');
+const out = document.getElementById('select-out');
+let optCounter = 1;
+
+document.getElementById('add-opt').onclick = function() {
+  optCounter++;
+  select.add(new Option('Language ' + optCounter, 'lang' + optCounter));
+  out.textContent = 'Added option ' + optCounter;
+};
+
+document.getElementById('remove-opt').onclick = function() {
+  if (select.options.length > 1) {
+    select.remove(select.selectedIndex);
+    out.textContent = 'Removed selected option';
+  } else {
+    out.textContent = 'Need at least 1 option';
+  }
+};
+
+document.getElementById('show-info').onclick = function() {
+  out.textContent =
+    'selectedIndex: ' + select.selectedIndex + '\\n' +
+    'value: ' + select.value + '\\n' +
+    'text: ' + select.options[select.selectedIndex].text + '\\n' +
+    'total options: ' + select.options.length;
+};
+"
+/>
+
+## Form Methods
+
+```javascript
+form.reset()   // reset form to initial values
+form.checkValidity()  // check validity (returns boolean)
+form.reportValidity() // check and show validation messages
+```
+
+## Key Takeaways
+
+- Use `form.elements[name]` to access form controls by name
+- `input.value`, `checkbox.checked`, `select.value` read current values
+- `new FormData(form)` gives a clean API for collecting form data
+- `select.options` and `new Option()` make select manipulation easy
+- `form.reset()` restores initial values; `checkValidity()` validates
+- The `elements` collection includes all form controls (even outside `<form>` if they have a `form` attribute)

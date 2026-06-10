@@ -1,0 +1,240 @@
+---
+title: "Resource Loading Events"
+description: "Track loading of external resources with onload and onerror"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Resource-Loading"]
+tags: ["JavaScript", "DOM", "Resources", "Loading"]
+slug: "js-resource-loading"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Resource Loading Events
+
+When your page loads images, scripts, stylesheets, or any external resource, you can track when they succeed or fail.
+
+## The Pattern
+
+Every resource-loading element supports two events:
+
+```javascript
+element.onload = function() {
+  // resource loaded successfully
+};
+
+element.onerror = function() {
+  // resource failed to load
+};
+```
+
+## Loading Images
+
+<CodePlayground
+  title="Image Load Events"
+  html="
+<div id='image-demo'>
+  <p><button id='load-img'>Load Image</button></p>
+  <div id='img-container'></div>
+  <pre id='img-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const container = document.getElementById('img-container');
+const log = document.getElementById('img-log');
+
+document.getElementById('load-img').onclick = function() {
+  const img = new Image();
+  container.innerHTML = '';
+  container.appendChild(img);
+
+  img.onload = function() {
+    log.textContent = 'Image loaded! Width: ' + this.naturalWidth + 'px, Height: ' + this.naturalHeight + 'px';
+    this.disabled = true;
+    this.textContent = 'Loaded';
+  };
+
+  img.onerror = function() {
+    log.textContent = 'Image failed to load (placeholder URL used)';
+  };
+
+  // Using a real image URL
+  img.src = 'https://picsum.photos/200/150?random=' + Math.random();
+  log.textContent = 'Loading image...';
+};
+"
+/>
+
+## Checking Image Natural Dimensions
+
+Once an image loads, `naturalWidth` and `naturalHeight` give you its intrinsic dimensions:
+
+```javascript
+img.onload = function() {
+  console.log(this.naturalWidth + 'x' + this.naturalHeight);
+};
+```
+
+## Loading Scripts with onload/onerror
+
+<CodePlayground
+  title="Script Load Events"
+  html="
+<div id='script-demo'>
+  <p><button id='load-ext-script'>Load External Script</button></p>
+  <p><button id='load-fail-script'>Load Failing Script</button></p>
+  <pre id='resource-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const log = document.getElementById('resource-log');
+
+function loadScript(src, label) {
+  const script = document.createElement('script');
+  script.src = src;
+
+  script.onload = function() {
+    log.textContent = label + ' — loaded successfully at ' + new Date().toLocaleTimeString();
+  };
+
+  script.onerror = function() {
+    log.textContent = label + ' — FAILED to load! (script not found or network error)';
+  };
+
+  document.head.appendChild(script);
+  log.textContent = label + ' — downloading...';
+}
+
+document.getElementById('load-ext-script').onclick = function() {
+  loadScript('https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js', 'Seedrandom (valid)');
+  this.disabled = true;
+  this.textContent = 'Loaded';
+};
+
+document.getElementById('load-fail-script').onclick = function() {
+  loadScript('https://example.com/nonexistent.js', 'Nonexistent script');
+  this.disabled = true;
+  this.textContent = 'Tried';
+};
+"
+/>
+
+## Loading Stylesheets
+
+```javascript
+const link = document.createElement('link');
+link.rel = 'stylesheet';
+link.href = 'styles.css';
+
+link.onload = function() {
+  console.log('Stylesheet loaded');
+};
+
+link.onerror = function() {
+  console.error('Stylesheet failed to load');
+};
+
+document.head.appendChild(link);
+```
+
+## Handling Multiple Resources with Promises
+
+Wrap resource loading in a Promise for cleaner async handling:
+
+```javascript
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load: ' + src));
+    img.src = src;
+  });
+}
+
+// Usage
+loadImage('photo.jpg')
+  .then(img => document.body.appendChild(img))
+  .catch(err => console.error(err));
+```
+
+<CodePlayground
+  title="Promise-based Resource Loading"
+  html="
+<div id='promise-demo'>
+  <p><button id='promise-load'>Load Image with Promise</button></p>
+  <div id='promise-container'></div>
+  <pre id='promise-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const log = document.getElementById('promise-log');
+const container = document.getElementById('promise-container');
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = src;
+    log.textContent = 'Starting load: ' + src;
+  });
+}
+
+document.getElementById('promise-load').onclick = function() {
+  container.innerHTML = '';
+  loadImage('https://picsum.photos/300/200?random=' + Math.random())
+    .then(img => {
+      container.appendChild(img);
+      log.textContent = 'Image loaded! ' + img.naturalWidth + 'x' + img.naturalHeight;
+    })
+    .catch(err => {
+      log.textContent = 'Error: ' + err.message;
+    });
+};
+"
+/>
+
+## Lazy Loading Images
+
+Modern browsers support native lazy loading:
+
+```html
+<img src="photo.jpg" loading="lazy" alt="Photo">
+```
+
+Values: `lazy` (load when near viewport), `eager` (load immediately).
+
+## Preloading Critical Resources
+
+Use `<link rel="preload">` in HTML to hint to the browser:
+
+```html
+<link rel="preload" href="font.woff2" as="font" crossorigin>
+<link rel="preload" href="hero.jpg" as="image">
+```
+
+```javascript
+// Dynamic preload
+const link = document.createElement('link');
+link.rel = 'preload';
+link.href = 'critical.js';
+link.as = 'script';
+document.head.appendChild(link);
+```
+
+## The `load` Event on Window
+
+The global `window.onload` fires when all resources on the page are loaded:
+
+```javascript
+window.addEventListener('load', function() {
+  // Everything is loaded — images, styles, scripts, fonts
+  console.log('Page fully loaded');
+});
+```
+
+## Key Takeaways
+
+- Every resource supports `onload` (success) and `onerror` (failure)
+- Use `new Image()` + `onload` to preload images and get dimensions
+- Wrap `onload`/`onerror` in a **Promise** for clean async handling
+- Native `loading="lazy"` defers off-screen image loading
+- `link rel="preload"` hints the browser to fetch critical resources early
+- `window.addEventListener('load')` fires when **all** page resources are loaded
+- Always handle `onerror` — resources fail (network issues, wrong URLs)

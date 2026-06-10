@@ -1,0 +1,182 @@
+---
+title: "Browser Default Actions"
+description: "Prevent browser default behaviors with preventDefault and handle context menus"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Events"]
+tags: ["JavaScript", "DOM", "Events", "Default Actions"]
+slug: "js-browser-default-actions"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Browser Default Actions
+
+Many events have **default behaviors** built into the browser:
+
+| Event | Default Action |
+|---|---|
+| Clicking a link (`<a>`) | Navigate to `href` |
+| Submitting a form | Reload the page |
+| Right-clicking | Show context menu |
+| Clicking a checkbox | Toggle checked state |
+| Pressing arrow keys | Scroll the page |
+| Dragging an image | Open image in new tab |
+
+## `preventDefault()`
+
+Call `event.preventDefault()` to cancel the default action:
+
+```javascript
+link.addEventListener('click', function(e) {
+  e.preventDefault();
+  // navigate via JavaScript instead
+});
+```
+
+<CodePlayground
+  title="preventDefault on Links"
+  html="
+<a id='normal-link' href='https://example.com' target='_blank'>Normal Link (opens)</a>
+<br>
+<a id='prevented-link' href='https://example.com'>Prevented Link (won't open)</a>
+<pre id='link-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+document.getElementById('prevented-link').addEventListener('click', function(e) {
+  e.preventDefault();
+  document.getElementById('link-output').textContent = 'Default prevented! Link didn\'t navigate.';
+});
+
+document.getElementById('normal-link').addEventListener('click', function() {
+  document.getElementById('link-output').textContent = 'Normal link — navigated away (in real browser)';
+});
+"
+/>
+
+## Form Submission
+
+One of the most common uses — intercept form submission for AJAX:
+
+<CodePlayground
+  title="Form Submission"
+  html="
+<form id='demo-form'>
+  <label>Name: <input type='text' name='name' placeholder='Enter your name'></label>
+  <button type='submit'>Submit</button>
+</form>
+<pre id='form-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+document.getElementById('demo-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const name = this.querySelector('input').value;
+  document.getElementById('form-output').textContent =
+    'Form prevented! You entered: ' + (name || '(empty)') + ' — (page would have reloaded)';
+});
+"
+/>
+
+## Right-Click Context Menu
+
+Prevent the browser's context menu and show a custom one:
+
+<CodePlayground
+  title="Custom Context Menu"
+  html="
+<style>
+  #context-area { height: 150px; background: #f1f5f9; border: 2px dashed #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  #custom-menu { display: none; position: fixed; background: white; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; z-index: 1000; }
+  #custom-menu div { padding: 8px 16px; cursor: pointer; transition: background 0.15s; }
+  #custom-menu div:hover { background: #eef2ff; }
+</style>
+<div id='context-area'>Right-click here for a custom menu</div>
+<div id='custom-menu'>
+  <div data-action='edit'>Edit</div>
+  <div data-action='copy'>Copy</div>
+  <div data-action='delete'>Delete</div>
+</div>
+<pre id='context-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const area = document.getElementById('context-area');
+const menu = document.getElementById('custom-menu');
+const out = document.getElementById('context-output');
+
+// Prevent default context menu
+area.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+  menu.style.display = 'block';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+});
+
+// Handle custom menu clicks
+menu.addEventListener('click', function(e) {
+  const action = e.target.dataset.action;
+  if (action) {
+    out.textContent = 'Custom action: ' + action;
+  }
+  menu.style.display = 'none';
+});
+
+// Hide menu on click elsewhere
+document.addEventListener('click', function() {
+  menu.style.display = 'none';
+});
+"
+/>
+
+## Key Press Defaults
+
+Prevent specific keys from doing their default action:
+
+<CodePlayground
+  title="Prevent Key Defaults"
+  html="
+<textarea id='key-area' rows='3' style='width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;' placeholder='Try typing numbers or pressing Enter...'></textarea>
+<pre id='key-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const out = document.getElementById('key-output');
+
+document.getElementById('key-area').addEventListener('keydown', function(e) {
+  // Block number keys
+  if (e.key >= '0' && e.key <= '9') {
+    e.preventDefault();
+    out.textContent = 'Blocked: numbers are not allowed';
+    return;
+  }
+  // Block Enter (newline)
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    out.textContent = 'Blocked: Enter key prevented at ' + new Date().toLocaleTimeString();
+    return;
+  }
+  out.textContent = 'Allowed: ' + e.key;
+});
+"
+/>
+
+## `passive` Event Listeners
+
+For scroll/touch events, marking a listener as `passive` tells the browser you **won't** call `preventDefault()`. This enables scroll optimizations:
+
+```javascript
+document.addEventListener('touchstart', handler, { passive: true });
+document.addEventListener('wheel', handler, { passive: true });
+```
+
+If you call `preventDefault()` inside a passive listener, it's **ignored** and a warning is logged.
+
+## Checking if Default Was Prevented
+
+```javascript
+element.addEventListener('click', function(e) {
+  console.log(e.defaultPrevented); // true if preventDefault was called
+});
+```
+
+## Key Takeaways
+
+- `event.preventDefault()` cancels the browser's default behavior
+- Use it for **form validation**, **custom navigation**, **custom context menus**
+- Right-click is `contextmenu` event
+- `passive: true` tells the browser you won't call `preventDefault` (performance)
+- Check `event.defaultPrevented` to see if default was already prevented
+- Default actions are **not events** — cancelling the event cancels the action

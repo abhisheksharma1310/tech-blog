@@ -1,0 +1,230 @@
+---
+title: "ArrayBuffer and Binary Arrays"
+description: "Work with binary data using ArrayBuffer, TypedArrays, and DataView"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Binary-Data"]
+tags: ["JavaScript", "Binary", "ArrayBuffer", "TypedArrays"]
+slug: "js-arraybuffer-binary-arrays"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## ArrayBuffer and Binary Arrays
+
+JavaScript handles binary data through `ArrayBuffer` and typed arrays — essential for file processing, networking, WebGL, and crypto.
+
+## What is an ArrayBuffer?
+
+An `ArrayBuffer` is a fixed-length, raw binary data buffer. You can't read or write it directly — you need a **view** (typed array or DataView).
+
+```
+ArrayBuffer (raw bytes)
+┌──┬──┬──┬──┬──┬──┬──┬──┐
+│ 0│ 1│ 2│ 3│ 4│ 5│ 6│ 7│
+└──┴──┴──┴──┴──┴──┴──┴──┘
+
+TypedArray view (Uint8Array)
+┌──┬──┬──┬──┬──┬──┬──┬──┐
+│ 0│ 1│ 2│ 3│ 4│ 5│ 6│ 7│ Each = 1 byte (0-255)
+└──┴──┴──┴──┴──┴──┴──┴──┘
+
+Int32Array view
+┌─────────┬─────────┬─────────┬─────────┐
+│  0-3    │  4-7    │  8-11   │  12-15  │ Each = 4 bytes
+└─────────┴─────────┴─────────┴─────────┘
+```
+
+```javascript
+// Create a buffer of 16 bytes
+const buffer = new ArrayBuffer(16);
+
+// Create different views of the same buffer
+const uint8 = new Uint8Array(buffer);
+const int32 = new Int32Array(buffer);
+const float64 = new Float64Array(buffer);
+```
+
+## Typed Array Types
+
+| Constructor | Bytes per element | Range | C Type |
+|---|---|---|---|
+| `Int8Array` | 1 | -128 to 127 | `signed char` |
+| `Uint8Array` | 1 | 0 to 255 | `unsigned char` |
+| `Uint8ClampedArray` | 1 | 0 to 255 (clamped) | — |
+| `Int16Array` | 2 | -32768 to 32767 | `short` |
+| `Uint16Array` | 2 | 0 to 65535 | `unsigned short` |
+| `Int32Array` | 4 | -2³¹ to 2³¹-1 | `int` |
+| `Uint32Array` | 4 | 0 to 2³²-1 | `unsigned int` |
+| `Float32Array` | 4 | ~3.4E-38 to 3.4E+38 | `float` |
+| `Float64Array` | 8 | ~5E-324 to 1.8E+308 | `double` |
+
+<CodePlayground
+  title="Typed Arrays"
+  html="<pre id='typed-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+const buffer = new ArrayBuffer(16);
+const uint8 = new Uint8Array(buffer);
+const int32 = new Int32Array(buffer);
+const float64 = new Float64Array(buffer);
+
+const out = document.getElementById('typed-out');
+
+// Write to Uint8 view
+for (let i = 0; i < 16; i++) {
+  uint8[i] = i * 16; // 0, 16, 32, ... 240
+}
+
+out.textContent =
+  'Buffer byteLength: ' + buffer.byteLength + '\\n' +
+  'Uint8Array length: ' + uint8.length + '\\n' +
+  'Uint8 values: [' + Array.from(uint8).join(', ') + ']' + '\\n' +
+  '---' + '\\n' +
+  'Int32Array length: ' + int32.length + ' (4 bytes each)' + '\\n' +
+  'Int32 values: [' + Array.from(int32).join(', ') + ']' + '\\n' +
+  '---' + '\\n' +
+  'Float64Array length: ' + float64.length + ' (8 bytes each)' + '\\n' +
+  'Float64 values: [' + Array.from(float64).join(', ') + ']';
+"
+/>
+
+## Creating Typed Arrays Directly
+
+You don't always need an `ArrayBuffer` — typed arrays can be created directly:
+
+```javascript
+// From an array
+const arr = Uint8Array.from([65, 66, 67]);
+
+// With a length (zero-filled)
+const arr = new Uint8Array(4); // [0, 0, 0, 0]
+
+// From another typed array
+const copy = new Uint8Array(source);
+```
+
+<CodePlayground
+  title="Creating Typed Arrays"
+  html="<pre id='create-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+const out = document.getElementById('create-out');
+
+// From array
+const fromArray = Uint8Array.from([72, 101, 108, 108, 111]);
+
+// From string (TextEncoder)
+const encoded = new TextEncoder().encode('Hello');
+
+// Direct buffer
+const buffer = new ArrayBuffer(8);
+const view = new DataView(buffer);
+view.setInt32(0, 2026, false); // big-endian
+view.setFloat32(4, 3.14, true); // little-endian
+
+out.textContent =
+  'Uint8Array.from([72, 101, ...]): ' + Array.from(fromArray).join(', ') + '\\n' +
+  '  as text: ' + new TextDecoder().decode(fromArray) + '\\n' +
+  '---' + '\\n' +
+  'TextEncoder('Hello'): ' + Array.from(encoded).join(', ') + '\\n' +
+  '---' + '\\n' +
+  'DataView big-endian Int32 at 0: ' + view.getInt32(0) + '\\n' +
+  'DataView little-endian Float32 at 4: ' + view.getFloat32(4, true);
+"
+/>
+
+## DataView
+
+`DataView` gives you fine-grained control over reading/writing with explicit endianness:
+
+```javascript
+const view = new DataView(buffer);
+
+view.getUint8(offset)
+view.setUint8(offset, value)
+view.getInt16(offset, littleEndian)
+view.setInt16(offset, value, littleEndian)
+view.getFloat32(offset, littleEndian)
+view.setFloat32(offset, value, littleEndian)
+// ... and more
+```
+
+| Method | Purpose |
+|---|---|
+| `getInt8(offset)` | Read signed 8-bit |
+| `getUint16(offset, le)` | Read unsigned 16-bit (le = little-endian) |
+| `setFloat64(offset, val, le)` | Write 64-bit float |
+| `byteLength` | Size of the buffer |
+
+## `Uint8ClampedArray`
+
+Unlike `Uint8Array`, values are **clamped** instead of wrapped:
+
+```javascript
+const clamped = new Uint8ClampedArray(4);
+clamped[0] = 300; // becomes 255
+clamped[1] = -50; // becomes 0
+
+const normal = new Uint8Array(4);
+normal[0] = 300; // becomes 44 (300 % 256)
+normal[1] = -50; // becomes 206 (256 - 50)
+```
+
+Used in **canvas pixel manipulation** — color values are clamped to 0-255.
+
+## Typed Array Methods
+
+Typed arrays support many regular array methods:
+
+```javascript
+const arr = new Uint8Array([10, 20, 30, 40, 50]);
+
+arr.length          // 5
+arr.byteLength      // 5 (1 byte each)
+arr.byteOffset      // 0 (offset in the underlying buffer)
+arr.slice(1, 3)     // new Uint8Array([20, 30])
+arr.subarray(1, 3)  // view into same buffer
+arr.fill(0)         // zero out
+arr.set([1, 2], 2)  // copy values starting at index 2
+```
+
+## Practical: Hex Dump
+
+<CodePlayground
+  title="Hex Dump Utility"
+  html="
+<div>
+  <input id='hex-input' type='text' value='Hello World!' style='width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;'>
+  <button id='hex-btn'>Hex Dump</button>
+  <pre id='hex-out' style='background:#0f172a;color:#e2e8f0;padding:12px;border-radius:6px;font-family:monospace;'></pre>
+</div>"
+  js="
+document.getElementById('hex-btn').onclick = function() {
+  const text = document.getElementById('hex-input').value;
+  const bytes = new TextEncoder().encode(text);
+  const out = document.getElementById('hex-out');
+
+  let hex = 'Offset  Bytes                                             Text\\n';
+  hex += '------  ------------------------------------------------  --------------\\n';
+
+  for (let i = 0; i < bytes.length; i += 8) {
+    const offset = i.toString(16).padStart(6, '0');
+    const chunk = bytes.slice(i, i + 8);
+    const hexBytes = Array.from(chunk).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    const ascii = Array.from(chunk).map(b => b >= 32 && b <= 126 ? String.fromCharCode(b) : '.').join('');
+    hex += offset + '  ' + hexBytes.padEnd(48) + '  ' + ascii + '\\n';
+  }
+
+  out.textContent = hex;
+  out.textContent += '\\nTotal: ' + bytes.length + ' bytes';
+};
+"
+/>
+
+## Key Takeaways
+
+- `ArrayBuffer` is a **raw byte** container — you need a **view** to read/write
+- **Typed arrays** (`Uint8Array`, `Int32Array`, etc.) give typed views
+- **`DataView`** gives explicit endianness control for mixed data
+- Typed arrays behave like regular arrays but are **fixed-length** and **typed**
+- `Uint8ClampedArray` clamps values to 0-255 (canvas-friendly)
+- `TextEncoder`/`TextDecoder` convert between strings and `Uint8Array`
+- Always consider **endianness** when reading/writing multi-byte values

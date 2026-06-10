@@ -1,0 +1,220 @@
+---
+title: "Shadow DOM"
+description: "Encapsulate DOM and styles with the Shadow DOM API"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Web Components"]
+tags: ["JavaScript", "Web Components", "Shadow DOM"]
+slug: "js-shadow-dom"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Shadow DOM
+
+**Shadow DOM** provides DOM and style encapsulation. Styles from the main page don't leak into the shadow tree, and shadow styles don't leak out.
+
+## What is Shadow DOM?
+
+```
+Light DOM (main page)
+┌────────────────────────────────┐
+│  <my-component>                │
+│  ┌── Shadow Root ──────────┐   │
+│  │  <style> h1 { color:    │   │
+│  │    red; } </style>      │   │
+│  │  <h1>Shadow DOM</h1>    │   │
+│  │  <slot></slot>          │   │
+│  └─────────────────────────┘   │
+│  </my-component>               │
+└────────────────────────────────┘
+```
+
+## Creating Shadow DOM
+
+```javascript
+class MyComponent extends HTMLElement {
+  constructor() {
+    super();
+    // Attach shadow root
+    const shadow = this.attachShadow({ mode: 'open' });
+
+    // Add content to shadow
+    shadow.innerHTML = `
+      <style>
+        h2 { color: #6366f1; }
+        p { font-size: 0.9rem; }
+      </style>
+      <h2>Shadow Component</h2>
+      <p>This is inside the shadow DOM</p>
+    `;
+  }
+}
+customElements.define('my-component', MyComponent);
+```
+
+<CodePlayground
+  title="Shadow DOM Encapsulation"
+  html="
+<style>
+  /* This style tries to style h3 in the component */
+  h3 { color: #ef4444 !important; font-style: italic; }
+</style>
+<shadow-demo></shadow-demo>
+<pre id='shadow-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class ShadowDemo extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        h3 { color: #6366f1; font-size: 1.3rem; border-bottom: 2px solid #6366f1; padding-bottom: 4px; }
+        p { color: #334155; background: #f1f5f9; padding: 8px; border-radius: 4px; }
+      </style>
+      <h3>Shadow DOM</h3>
+      <p>Styled inside shadow — the page's CSS can't reach me!</p>
+      <p>The red italic style in the global CSS has no effect here.</p>
+    `;
+  }
+}
+customElements.define('shadow-demo', ShadowDemo);
+
+document.getElementById('shadow-out').textContent =
+  'The <h3> above is styled by Shadow DOM CSS (purple).\\n' +
+  'The global CSS (red, italic) is blocked by Shadow DOM boundary.\\n' +
+  'This is style encapsulation in action!';
+"
+/>
+
+## Shadow Root Modes
+
+| Mode | Accessible from outside? |
+|---|---|
+| `open` | ✅ Yes — `element.shadowRoot` returns the shadow root |
+| `closed` | ❌ No — `element.shadowRoot` returns `null` |
+
+Use `open` unless you have a specific reason to close it (closed mode also breaks some DevTools features).
+
+## Shadow DOM vs Light DOM
+
+| Feature | Light DOM | Shadow DOM |
+|---|---|---|
+| Style scope | Global | Encapsulated |
+| CSS selectors | Can target anywhere | Limited to shadow tree |
+| `element.querySelector` | Finds anywhere | Finds in light DOM only |
+| `shadowRoot.querySelector` | — | Finds in shadow DOM only |
+| IDs | Global scope | Scoped to shadow |
+
+## Querying Inside Shadow DOM
+
+```javascript
+const component = document.querySelector('my-component');
+const shadow = component.shadowRoot;
+
+// Find elements inside shadow
+const h2 = shadow.querySelector('h2');
+
+// Find all paragraphs in shadow
+const paragraphs = shadow.querySelectorAll('p');
+
+// Access shadow host from inside
+// this.getRootNode().host returns the custom element
+```
+
+## Multiple Shadow Roots
+
+An element can only have **one** shadow root. Attaching a second throws an error.
+
+## Slots in Shadow DOM
+
+Slots let you project light DOM content into shadow DOM:
+
+```javascript
+class FancyBox extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        .box { border: 2px solid #6366f1; border-radius: 8px; padding: 16px; }
+        ::slotted(h2) { color: #6366f1; margin: 0; }
+      </style>
+      <div class="box">
+        <slot name="title">Default Title</slot>
+        <slot>Default content</slot>
+      </div>
+    `;
+  }
+}
+```
+
+Usage:
+
+```html
+<fancy-box>
+  <h2 slot="title">My Title</h2>
+  <p>This goes into the default slot</p>
+</fancy-box>
+```
+
+## Shadow DOM Style Encapsulation
+
+- **CSS from the page** does NOT affect shadow DOM content
+- **CSS from shadow DOM** does NOT affect the page
+- **Inheritable styles** (like `font-family` and `color`) **do** cascade into shadow DOM
+- **CSS custom properties** (variables) **do** cross the shadow boundary
+
+## Practical: Themed Shadow Component
+
+<CodePlayground
+  title="Shadow with CSS Variables"
+  html="
+<style>
+  :root { --primary: #6366f1; --bg: #f8fafc; }
+  .dark-theme { --primary: #22c55e; --bg: #0f172a; }
+</style>
+<themed-card>
+  <span slot='title'>Shadow Card</span>
+  <p>Content with themed colors via CSS variables</p>
+</themed-card>
+<button id='toggle-theme' style='margin-top:8px;'>Toggle Dark Theme</button>
+<pre id='themed-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+class ThemedCard extends HTMLElement {
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' });
+    shadow.innerHTML = `
+      <style>
+        .card { border: 2px solid var(--primary, #6366f1); border-radius: 8px; padding: 16px; background: var(--bg, white); }
+        h3 { color: var(--primary, #6366f1); margin: 0 0 8px; }
+        ::slotted(p) { color: #334155; }
+      </style>
+      <div class='card'>
+        <h3><slot name='title'>Card</slot></h3>
+        <slot></slot>
+      </div>
+    `;
+  }
+}
+customElements.define('themed-card', ThemedCard);
+
+let dark = false;
+document.getElementById('toggle-theme').onclick = function() {
+  dark = !dark;
+  document.body.classList.toggle('dark-theme', dark);
+  document.getElementById('themed-out').textContent = dark ? 'Dark theme applied' : 'Light theme applied';
+};
+"
+/>
+
+## Key Takeaways
+
+- Shadow DOM provides **style and DOM encapsulation**
+- Attach with `element.attachShadow({ mode: 'open' })`
+- Global CSS doesn't affect shadow DOM (except CSS variables and inherited properties)
+- Shadow DOM styles don't leak out
+- Use `shadowRoot.querySelector()` to find elements inside shadow
+- Slots project **light DOM content** into the shadow tree
+- CSS custom properties **cross the shadow boundary** — use them for theming
+- An element can have **only one** shadow root

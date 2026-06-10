@@ -1,0 +1,256 @@
+---
+title: "Mutation Observer"
+description: "Watch for DOM changes with MutationObserver — additions, removals, and attribute changes"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Misc"]
+tags: ["JavaScript", "DOM", "Mutation Observer"]
+slug: "js-mutation-observer"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Mutation Observer
+
+`MutationObserver` lets you watch for **changes** in the DOM — elements added or removed, attributes modified, text content changed.
+
+## Why Use MutationObserver?
+
+Before `MutationObserver`, you had to poll the DOM or use hacky `DOMSubtreeModified` events (deprecated, slow). `MutationObserver` is:
+
+- **Efficient** — async, batched, no polling
+- **Precise** — tells you exactly what changed
+- **Well-supported** — all modern browsers
+
+## Basic Usage
+
+```javascript
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    console.log(mutation.type, mutation);
+  });
+});
+
+observer.observe(targetElement, {
+  childList: true,    // watch for child additions/removals
+  attributes: true,   // watch for attribute changes
+  subtree: true,      // watch entire subtree
+  characterData: true // watch text changes
+});
+
+// When done:
+observer.disconnect();
+```
+
+## Watching Child Elements
+
+<CodePlayground
+  title="Watching Child Additions/Removals"
+  html="
+<div id='mut-demo' style='padding:12px;border:2px solid #6366f1;border-radius:8px;'>
+  <p id='mut-target'>Watch list:</p>
+  <ul id='mut-list'>
+    <li>Existing item</li>
+  </ul>
+</div>
+<button id='add-mut-item'>Add Item</button>
+<button id='remove-mut-item'>Remove Last</button>
+<pre id='mut-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const list = document.getElementById('mut-list');
+const log = document.getElementById('mut-log');
+let itemCount = 1;
+
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    if (m.type === 'childList') {
+      m.addedNodes.forEach(node => {
+        if (node.nodeType === 1) log.textContent += 'Added: ' + node.textContent + '\\n';
+      });
+      m.removedNodes.forEach(node => {
+        if (node.nodeType === 1) log.textContent += 'Removed: ' + node.textContent + '\\n';
+      });
+    }
+  });
+});
+
+observer.observe(list, { childList: true });
+
+document.getElementById('add-mut-item').onclick = function() {
+  itemCount++;
+  const li = document.createElement('li');
+  li.textContent = 'Item ' + itemCount;
+  list.appendChild(li);
+};
+
+document.getElementById('remove-mut-item').onclick = function() {
+  if (list.lastElementChild) {
+    list.lastElementChild.remove();
+  }
+};
+"
+/>
+
+## Watching Attribute Changes
+
+<CodePlayground
+  title="Watching Attributes"
+  html="
+<div id='attr-demo'>
+  <div id='attr-target' class='box' data-count='0' style='padding:16px;background:#eef2ff;border:2px solid #6366f1;border-radius:8px;text-align:center;'>
+    Watch my attributes change
+  </div>
+  <div style='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;'>
+    <button id='toggle-class'>Toggle Class</button>
+    <button id='change-style'>Change Style</button>
+    <button id='inc-data'>Increment data-count</button>
+  </div>
+  <pre id='attr-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const target = document.getElementById('attr-target');
+const log = document.getElementById('attr-log');
+
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    if (m.type === 'attributes') {
+      log.textContent =
+        'Attribute changed: ' + m.attributeName + '\\n' +
+        '  oldValue: ' + m.oldValue + '\\n' +
+        '  newValue: ' + target.getAttribute(m.attributeName);
+    }
+  });
+});
+
+observer.observe(target, {
+  attributes: true,
+  attributeOldValue: true,
+  attributeFilter: ['class', 'style', 'data-count'] // only watch these
+});
+
+document.getElementById('toggle-class').onclick = function() {
+  target.classList.toggle('active');
+};
+document.getElementById('change-style').onclick = function() {
+  target.style.background = target.style.background === '#fef9c3' ? '#eef2ff' : '#fef9c3';
+};
+document.getElementById('inc-data').onclick = function() {
+  const count = parseInt(target.dataset.count) + 1;
+  target.dataset.count = count;
+};
+"
+/>
+
+## Watching Text Changes
+
+<CodePlayground
+  title="Watching Text Content"
+  html="
+<div id='text-demo'>
+  <p id='text-target'>Edit this text</p>
+  <button id='change-text'>Change Text</button>
+  <pre id='text-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const target = document.getElementById('text-target');
+const log = document.getElementById('text-log');
+
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    if (m.type === 'characterData') {
+      log.textContent = 'Text changed to:' + m.target.textContent;
+    }
+  });
+});
+
+observer.observe(target, {
+  characterData: true,
+  subtree: true
+});
+
+document.getElementById('change-text').onclick = function() {
+  const texts = ['Hello World', 'DOM updated!', 'MutationObserver rocks', 'Edit this text'];
+  target.textContent = texts[Math.floor(Math.random() * texts.length)];
+};
+"
+/>
+
+## Configuration Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `childList` | boolean | `false` | Watch direct child additions/removals |
+| `attributes` | boolean | `false` | Watch attribute changes |
+| `characterData` | boolean | `false` | Watch text content changes |
+| `subtree` | boolean | `false` | Watch entire subtree (not just direct children) |
+| `attributeOldValue` | boolean | `false` | Record previous attribute value |
+| `characterDataOldValue` | boolean | `false` | Record previous text value |
+| `attributeFilter` | string[] | all | Only watch these attributes |
+
+## MutationRecord Properties
+
+Each mutation in the callback has:
+
+| Property | What it contains |
+|---|---|
+| `type` | `"childList"`, `"attributes"`, or `"characterData"` |
+| `target` | The node that changed |
+| `addedNodes` | Nodes added (for childList) |
+| `removedNodes` | Nodes removed (for childList) |
+| `previousSibling` / `nextSibling` | Sibling info (for childList) |
+| `attributeName` | Name of changed attribute |
+| `oldValue` | Previous value (if `oldValue` option set) |
+
+## Disconnecting
+
+Always disconnect when you're done:
+
+```javascript
+observer.disconnect(); // stop observing
+```
+
+## Practical: Detect Element Added
+
+<CodePlayground
+  title="Detect New Elements"
+  html="
+<div id='detect-demo'>
+  <div id='detect-container' style='padding:12px;background:#f1f5f9;border-radius:8px;min-height:60px;'>
+    <span class='detect-item' style='padding:4px 8px;background:#eef2ff;border-radius:4px;margin:2px;display:inline-block;'>Existing</span>
+  </div>
+  <button id='add-detect'>Add Span</button>
+  <pre id='detect-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>
+</div>"
+  js="
+const container = document.getElementById('detect-container');
+const log = document.getElementById('detect-log');
+
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    m.addedNodes.forEach(function(node) {
+      if (node.nodeType === 1 && node.matches('.detect-item')) {
+        log.textContent = 'New .detect-item added:' + node.textContent;
+      }
+    });
+  });
+});
+
+observer.observe(container, { childList: true });
+
+document.getElementById('add-detect').onclick = function() {
+  const span = document.createElement('span');
+  span.className = 'detect-item';
+  span.style.cssText = 'padding:4px 8px;background:#c7d2fe;border-radius:4px;margin:2px;display:inline-block;';
+  span.textContent = 'Item ' + (container.children.length + 1);
+  container.appendChild(span);
+};
+"
+/>
+
+## Key Takeaways
+
+- `MutationObserver` watches for **DOM changes** — additions, removals, attributes, text
+- Always pass `subtree: true` if you want to watch **descendants** too
+- Use `attributeFilter` to watch **specific attributes** only
+- The observer callback receives an **array of MutationRecords** (batched)
+- Always call `.disconnect()` when the observer is no longer needed (e.g., on component unmount)
+- Much better performance than deprecated `DOMSubtreeModified` or polling

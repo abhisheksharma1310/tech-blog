@@ -1,0 +1,244 @@
+---
+title: "Focus and Blur"
+description: "Handle element focus and blur events for better form UX"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Forms"]
+tags: ["JavaScript", "DOM", "Forms", "Focus"]
+slug: "js-focus-blur"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Focusing: focus/blur
+
+The `focus` and `blur` events fire when an element gains or loses focus — essential for form validation, autocomplete, and dropdown menus.
+
+## The Basics
+
+```javascript
+input.addEventListener('focus', function() {
+  // element received focus
+});
+
+input.addEventListener('blur', function() {
+  // element lost focus
+});
+```
+
+<CodePlayground
+  title="Focus and Blur"
+  html="
+<input id='focus-demo' type='text' placeholder='Click here to focus' style='width:100%;padding:8px;border:2px solid #cbd5e1;border-radius:4px;transition:border-color 0.3s;'>
+<pre id='focus-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const input = document.getElementById('focus-demo');
+const log = document.getElementById('focus-log');
+
+input.addEventListener('focus', function() {
+  this.style.borderColor = '#6366f1';
+  log.textContent = 'focused at ' + new Date().toLocaleTimeString();
+});
+
+input.addEventListener('blur', function() {
+  this.style.borderColor = '#cbd5e1';
+  log.textContent += ' — blurred at ' + new Date().toLocaleTimeString();
+});
+"
+/>
+
+## Focus Events Don't Bubble
+
+`focus` and `blur` do **not** bubble. Use `focusin` and `focusout` if you need delegation:
+
+| Event | Bubbles? |
+|---|---|
+| `focus` | No |
+| `blur` | No |
+| `focusin` | **Yes** |
+| `focusout` | **Yes** |
+
+<CodePlayground
+  title="focusin / focusout (Bubbling)"
+  html="
+<div id='focus-group' style='padding:16px;background:#f1f5f9;border:2px solid #cbd5e1;border-radius:8px;'>
+  <p>Click inside any input:</p>
+  <input type='text' placeholder='First name' style='display:block;width:100%;padding:8px;margin:4px 0;border:1px solid #cbd5e1;border-radius:4px;'>
+  <input type='text' placeholder='Last name' style='display:block;width:100%;padding:8px;margin:4px 0;border:1px solid #cbd5e1;border-radius:4px;'>
+</div>
+<pre id='focusin-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const group = document.getElementById('focus-group');
+const log = document.getElementById('focusin-log');
+
+// focusin bubbles — one listener for both inputs
+group.addEventListener('focusin', function(e) {
+  log.textContent = 'focused: ' + e.target.placeholder + ' at ' + new Date().toLocaleTimeString();
+});
+
+group.addEventListener('focusout', function(e) {
+  log.textContent += ' | left: ' + e.target.placeholder;
+});
+"
+/>
+
+## `document.activeElement`
+
+The `document.activeElement` property tells you which element currently has focus:
+
+```javascript
+console.log(document.activeElement); // body, input, button, etc.
+```
+
+<CodePlayground
+  title="activeElement"
+  html="
+<input id='active-input' type='text' placeholder='Focus me' style='width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;'>
+<button id='active-btn'>Check activeElement</button>
+<pre id='active-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const out = document.getElementById('active-out');
+
+document.getElementById('active-btn').onclick = function() {
+  const el = document.activeElement;
+  out.textContent =
+    'activeElement: ' + el.tagName + (el.id ? '#' + el.id : '') + '\\n' +
+    'text:' + (el.value || el.textContent || '');
+};
+
+document.addEventListener('focusin', function() {
+  out.textContent = 'Now focused: ' + document.activeElement.tagName;
+});
+"
+/>
+
+## `tabIndex`
+
+The `tabindex` attribute controls the **tab order** of elements:
+
+| Value | Behavior |
+|---|---|
+| `tabindex="0"` | Follows natural DOM order |
+| `tabindex="-1"` | Not reachable via Tab, but can be focused programmatically |
+| `tabindex="1"` (or any positive) | Custom order (use with caution) |
+
+```javascript
+element.focus()           // programmatically focus
+element.blur()            // programmatically remove focus
+element.tabIndex = 0      // make element focusable
+```
+
+<CodePlayground
+  title="tabIndex and focus()"
+  html="
+<p tabindex='0' id='focusable-p' style='padding:12px;background:#eef2ff;border:2px solid #6366f1;border-radius:6px;cursor:pointer;'>
+  I'm a paragraph, but I can be focused! (tabindex=0)
+</p>
+<button id='focus-p-btn'>Focus the paragraph</button>
+<pre id='tabindex-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const p = document.getElementById('focusable-p');
+const out = document.getElementById('tabindex-out');
+
+p.addEventListener('focus', function() {
+  this.style.borderColor = '#22c55e';
+  this.style.background = '#f0fdf4';
+  out.textContent = 'Paragraph is focused!';
+});
+
+p.addEventListener('blur', function() {
+  this.style.borderColor = '#6366f1';
+  this.style.background = '#eef2ff';
+  out.textContent = 'Paragraph lost focus';
+});
+
+document.getElementById('focus-p-btn').onclick = function() {
+  p.focus();
+};
+"
+/>
+
+## Autofocus
+
+Set the `autofocus` attribute on an element, or call `.focus()`:
+
+```javascript
+// In HTML
+<input type="text" autofocus>
+
+// In JavaScript
+input.focus();
+```
+
+## Practical: Form Validation on Blur
+
+Validate a field when the user leaves it:
+
+<CodePlayground
+  title="Blur Validation"
+  html="
+<form id='validate-form'>
+  <div>
+    <label>Email:
+      <input type='email' id='email-field' placeholder='Enter email' style='width:100%;padding:8px;margin:4px 0;border:2px solid #cbd5e1;border-radius:4px;'>
+    </label>
+    <span id='email-error' style='color:#ef4444;font-size:0.875rem;'></span>
+  </div>
+  <div>
+    <label>Password:
+      <input type='password' id='pass-field' placeholder='Min 6 characters' style='width:100%;padding:8px;margin:4px 0;border:2px solid #cbd5e1;border-radius:4px;'>
+    </label>
+    <span id='pass-error' style='color:#ef4444;font-size:0.875rem;'></span>
+  </div>
+</form>
+<pre id='validation-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const email = document.getElementById('email-field');
+const pass = document.getElementById('pass-field');
+const emailErr = document.getElementById('email-error');
+const passErr = document.getElementById('pass-error');
+const log = document.getElementById('validation-log');
+
+email.addEventListener('blur', function() {
+  if (this.value && !this.value.includes('@')) {
+    emailErr.textContent = 'Please enter a valid email';
+    this.style.borderColor = '#ef4444';
+    log.textContent = 'Validation error: invalid email';
+  } else {
+    emailErr.textContent = '';
+    this.style.borderColor = '#22c55e';
+    log.textContent = 'Email looks good';
+  }
+});
+
+pass.addEventListener('blur', function() {
+  if (this.value && this.value.length < 6) {
+    passErr.textContent = 'Password must be at least 6 characters';
+    this.style.borderColor = '#ef4444';
+    log.textContent += ' | Password too short';
+  } else {
+    passErr.textContent = '';
+    this.style.borderColor = '#22c55e';
+    log.textContent += ' | Password OK';
+  }
+});
+
+email.addEventListener('focus', function() {
+  this.style.borderColor = '#6366f1';
+  emailErr.textContent = '';
+});
+
+pass.addEventListener('focus', function() {
+  this.style.borderColor = '#6366f1';
+  passErr.textContent = '';
+});
+"
+/>
+
+## Key Takeaways
+
+- `focus` and `blur` don't bubble — use `focusin`/`focusout` for delegation
+- `document.activeElement` tells you what's currently focused
+- `tabindex="0"` makes non-form elements focusable via Tab
+- `element.focus()` programmatically sets focus
+- Validate on `blur` for immediate user feedback
+- Elements with `tabindex="-1"` can be focused with `.focus()` but not via Tab

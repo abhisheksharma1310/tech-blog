@@ -1,0 +1,90 @@
+---
+title: "Browser Environment & Specs"
+description: "Understand the JavaScript browser environment — window, DOM, BOM, and ECMAScript"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "Browser"]
+slug: "js-browser-environment"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## The JavaScript Browser Environment
+
+When JavaScript runs in a browser, it gets access to a special environment with three main parts:
+
+- **ECMAScript** — the core language (variables, functions, loops, etc.)
+- **DOM (Document Object Model)** — APIs to interact with HTML/XML pages
+- **BOM (Browser Object Model)** — APIs to interact with the browser itself
+
+```
+┌─────────────────────────────────────┐
+│           JavaScript                │
+│  ┌──────────┐ ┌──────┐ ┌────────┐   │
+│  │    JS    │ │ DOM  │ │  BOM   │   │
+│  │ Language │ │ APIs │ │ APIs   │   │
+│  └──────────┘ └──────┘ └────────┘   │
+└─────────────────────────────────────┘
+```
+
+## The Global Object: `window`
+
+In a browser, `window` is the global object. Every global variable, DOM API, and BOM method lives on it:
+
+<CodePlayground
+  title="The window object"
+  html="<p id='output'></p>"
+  js="
+const out = document.getElementById('output');
+out.innerHTML = 'Window inner width: ' + window.innerWidth + 'px<br>';
+out.innerHTML += 'Page location: ' + window.location.href;
+"
+/>
+
+## DOM vs BOM
+
+| DOM | BOM |
+|---|---|
+| Document Object Model | Browser Object Model |
+| `document.getElementById()` | `navigator.userAgent` |
+| `document.querySelector()` | `location.href` |
+| Access/manipulate page content | Access/manipulate browser |
+| Standardized by W3C | Partly standardized (HTML spec) |
+
+## DOM Specs
+
+The DOM is maintained by the **W3C** and **WHATWG**. Modern browsers implement the **DOM Living Standard** which includes:
+
+- **Core DOM** — the tree structure model
+- **HTML DOM** — HTML-specific elements and attributes
+- **CSSOM** — CSS object model for styling
+
+## BOM APIs
+
+The BOM provides browser-level objects:
+
+- `navigator` — browser info (user agent, geolocation, media devices)
+- `location` — URL information and navigation
+- `history` — session history (back, forward, pushState)
+- `screen` — screen dimensions
+- `fetch` / `XMLHttpRequest` — network requests
+- `localStorage` / `sessionStorage` — client-side storage
+
+<CodePlayground
+  title="BOM APIs in action"
+  html="<p id='bom-output'></p>"
+  js="
+const el = document.getElementById('bom-output');
+el.innerHTML = 'Browser: ' + navigator.userAgent + '<br>';
+el.innerHTML += 'Platform: ' + navigator.platform + '<br>';
+el.innerHTML += 'Screen size: ' + screen.width + 'x' + screen.height;
+"
+/>
+
+## Key Takeaways
+
+- JavaScript in the browser has **three layers**: language, DOM, BOM
+- `window` is the **global object** — all browser APIs hang off it
+- DOM lets you **read and modify** the page
+- BOM lets you **interact with the browser** itself
+- Both DOM and BOM are evolving standards — always check compatibility

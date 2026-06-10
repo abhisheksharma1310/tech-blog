@@ -1,0 +1,258 @@
+---
+title: "CSS Animations"
+description: "Create animations with CSS transitions and @keyframes"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Animation"]
+tags: ["JavaScript", "Animation", "CSS", "Transitions"]
+slug: "js-css-animations"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## CSS Animations
+
+CSS animations come in two flavors: **transitions** (state A → state B) and **keyframe animations** (multi-step sequences). JavaScript can trigger, control, and monitor both.
+
+## CSS Transitions
+
+Transitions smoothly interpolate between property values:
+
+```css
+.element {
+  background: #6366f1;
+  transition: background 0.3s ease;
+}
+
+.element:hover {
+  background: #22c55e;
+}
+```
+
+<CodePlayground
+  title="CSS Transitions"
+  html="
+<style>
+  #trans-box { width: 150px; height: 80px; background: #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; transition: all 0.4s ease; }
+  #trans-box:hover { background: #22c55e; transform: scale(1.1); border-radius: 16px; }
+</style>
+<div style='margin-bottom:12px;'>
+  <button id='toggle-trans'>Toggle Class</button>
+</div>
+<div id='trans-box'>Hover or Click</div>
+<pre id='trans-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+const box = document.getElementById('trans-box');
+const out = document.getElementById('trans-out');
+
+// Listen for transition events
+box.addEventListener('transitionstart', () => {
+  out.textContent = 'Transition started at ' + new Date().toLocaleTimeString();
+});
+
+box.addEventListener('transitionend', () => {
+  out.textContent += '\\nTransition ended!';
+});
+
+document.getElementById('toggle-trans').onclick = function() {
+  box.classList.toggle('active');
+};
+"
+/>
+
+## Transition Events
+
+```javascript
+element.addEventListener('transitionstart', handler);
+element.addEventListener('transitionrun', handler);    // after delay
+element.addEventListener('transitionend', handler);
+element.addEventListener('transitioncancel', handler);
+
+// event properties:
+e.propertyName  // which CSS property transitioned
+e.elapsedTime   // seconds into the transition
+e.pseudoElement // if triggered on a ::pseudo
+```
+
+## CSS @keyframes
+
+Multi-step animations:
+
+```css
+@keyframes slideIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+.animated {
+  animation: slideIn 0.5s ease-out;
+}
+```
+
+<CodePlayground
+  title="CSS @keyframes"
+  html="
+<style>
+  @keyframes bounceIn {
+    0%   { transform: scale(0); opacity: 0; }
+    50%  { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+  #anim-box { width: 120px; height: 80px; background: #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; }
+</style>
+<div style='display:flex;gap:8px;margin-bottom:8px;'>
+  <button id='anim-bounce'>Bounce In</button>
+  <button id='anim-shake'>Shake</button>
+  <button id='anim-stop'>Stop</button>
+</div>
+<div id='anim-box'>Animate me</div>
+<pre id='anim-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+const box = document.getElementById('anim-box');
+const out = document.getElementById('anim-out');
+
+box.addEventListener('animationend', function(e) {
+  out.textContent = 'Animation ended: ' + e.animationName;
+  this.style.animation = '';
+});
+
+document.getElementById('anim-bounce').onclick = function() {
+  box.style.animation = 'bounceIn 0.6s ease-out';
+  out.textContent = 'Playing: bounceIn';
+};
+
+document.getElementById('anim-shake').onclick = function() {
+  box.style.animation = 'shake 0.4s ease-in-out';
+  out.textContent = 'Playing: shake';
+};
+
+document.getElementById('anim-stop').onclick = function() {
+  box.style.animation = 'none';
+  out.textContent = 'Animation stopped';
+};
+"
+/>
+
+## Animation Events
+
+```javascript
+element.addEventListener('animationstart', handler);
+element.addEventListener('animationend', handler);
+element.addEventListener('animationiteration', handler); // for repeated
+element.addEventListener('animationcancel', handler);
+
+// event properties:
+e.animationName     // name of the @keyframes
+e.elapsedTime       // seconds into the animation
+e.pseudoElement     // if on a pseudo
+```
+
+## Animation Properties
+
+```css
+.animated {
+  animation-name: slideIn;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-out;
+  animation-delay: 0.1s;
+  animation-iteration-count: infinite;  /* or 2, 3, etc. */
+  animation-direction: alternate;       /* normal, reverse, alternate */
+  animation-fill-mode: forwards;        /* keep final state */
+  animation-play-state: running;        /* or paused */
+}
+```
+
+## Controlling with JavaScript
+
+```javascript
+// Pause / Resume
+element.style.animationPlayState = 'paused';
+element.style.animationPlayState = 'running';
+
+// Change speed
+element.style.animationDuration = '2s';
+
+// Change delay
+element.style.animationDelay = '0.5s';
+```
+
+<CodePlayground
+  title="Animation Control"
+  html="
+<style>
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); background: #6366f1; }
+    50% { transform: scale(1.1); background: #22c55e; }
+  }
+  #ctrl-box { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; animation: pulse 1.5s ease-in-out infinite; }
+</style>
+<div style='display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;'>
+  <button id='pause-anim'>Pause</button>
+  <button id='resume-anim'>Resume</button>
+  <button id='speed-up'>Speed Up</button>
+  <button id='slow-down'>Slow Down</button>
+</div>
+<div id='ctrl-box'>Pulse</div>
+<pre id='ctrl-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+const box = document.getElementById('ctrl-box');
+const out = document.getElementById('ctrl-out');
+
+document.getElementById('pause-anim').onclick = function() {
+  box.style.animationPlayState = 'paused';
+  out.textContent = 'Paused';
+};
+
+document.getElementById('resume-anim').onclick = function() {
+  box.style.animationPlayState = 'running';
+  out.textContent = 'Resumed';
+};
+
+document.getElementById('speed-up').onclick = function() {
+  const dur = parseFloat(getComputedStyle(box).animationDuration);
+  box.style.animationDuration = (dur / 1.5) + 's';
+  out.textContent = 'Speed: ' + (dur / 1.5).toFixed(2) + 's';
+};
+
+document.getElementById('slow-down').onclick = function() {
+  const dur = parseFloat(getComputedStyle(box).animationDuration);
+  box.style.animationDuration = (dur * 1.5) + 's';
+  out.textContent = 'Speed: ' + (dur * 1.5).toFixed(2) + 's';
+};
+"
+/>
+
+## animation-fill-mode
+
+| Value | Behavior |
+|---|---|
+| `none` (default) | Element snaps back before/after |
+| `forwards` | Keeps final keyframe style |
+| `backwards` | Takes first keyframe style during delay |
+| `both` | Both forwards and backwards |
+
+## Performance Tips
+
+- Animate only `transform` and `opacity` for **GPU-accelerated** performance
+- Avoid animating `width`, `height`, `top`, `left` (triggers layout)
+- Use `will-change` to hint the browser:
+  ```css
+  .animated {
+    will-change: transform, opacity;
+  }
+  ```
+- Keep animations to 60fps by avoiding expensive properties
+
+## Key Takeaways
+
+- **Transitions** animate between two states (on class change, hover, etc.)
+- **@keyframes** define multi-step animation sequences
+- Listen to `transitionend` / `animationend` events in JavaScript
+- Control animations with `animationPlayState`, `animationDuration`, etc.
+- For smooth 60fps, prefer `transform` and `opacity` over layout properties
+- Use `animation-fill-mode: forwards` to keep the final state
+- CSS animations are GPU-accelerated — faster than JS-driven animations in most cases

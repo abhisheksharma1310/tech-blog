@@ -1,0 +1,145 @@
+---
+title: "Walking the DOM"
+description: "Navigate the DOM tree using parent, child, and sibling properties"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "Navigation"]
+slug: "js-walking-dom"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Walking the DOM
+
+Once you understand the DOM tree, you need to **navigate** it. JavaScript provides properties to move between nodes.
+
+## DOM Navigation Properties
+
+```
+    ┌─────────────────────────────────┐
+    │        parentNode               │
+    │             │                   │
+    │    ┌────────┴────────┐          │
+    │    │   previousSibling │        │
+    │    │    ElementNode   ├─────    │
+    │    └─────────────────┘          │
+    │    ┌─────────────────┐          │
+    │    │    nextSibling   │         │
+    │    └─────────────────┘          │
+    │             │                   │
+    │        childNodes               │
+    │     ┌──────┼──────┐             │
+    │  firstChild │ lastChild         │
+    └─────────────────────────────────┘
+```
+
+## Walking All Nodes
+
+These properties include **all node types** (elements, text, comments):
+
+| Property | Returns |
+|---|---|
+| `parentNode` | Parent node |
+| `childNodes` | Collection of all child nodes |
+| `firstChild` | First child node |
+| `lastChild` | Last child node |
+| `previousSibling` | Previous sibling node |
+| `nextSibling` | Next sibling node |
+
+<CodePlayground
+  title="Walking All Nodes"
+  html="
+<div id='demo'>
+  <h2>Title</h2>
+  <p>Paragraph text</p>
+  <!-- comment -->
+  <span>Span text</span>
+</div>
+<pre id='nav-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const demo = document.getElementById('demo');
+const out = document.getElementById('nav-output');
+
+out.textContent =
+  'parentNode: ' + demo.parentNode.tagName + '\\n' +
+  'firstChild: ' + (demo.firstChild.textContent.trim() || '(whitespace)') + '\\n' +
+  'lastChild: ' + (demo.lastChild.textContent.trim() || '(whitespace)') + '\\n' +
+  'childNodes count: ' + demo.childNodes.length + '\\n' +
+  'nextSibling: ' + (demo.nextSibling ? (demo.nextSibling.textContent.trim() || '(whitespace)') : 'none');
+"
+/>
+
+## Walking Elements Only
+
+These properties skip text and comment nodes — only return elements:
+
+| Property | Returns |
+|---|---|
+| `parentElement` | Parent element |
+| `children` | HTML collection of child elements |
+| `firstElementChild` | First child element |
+| `lastElementChild` | Last child element |
+| `previousElementSibling` | Previous sibling element |
+| `nextElementSibling` | Next sibling element |
+
+<CodePlayground
+  title="Walking Elements Only"
+  html="
+<ul id='menu'>
+  <li>Home</li>
+  <li>About</li>
+  <li>Contact</li>
+</ul>
+<pre id='elem-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const menu = document.getElementById('menu');
+const out = document.getElementById('elem-output');
+
+out.textContent =
+  'parentElement: ' + menu.parentElement.tagName + '\\n' +
+  'children count: ' + menu.children.length + '\\n' +
+  'firstElementChild: ' + menu.firstElementChild.textContent + '\\n' +
+  'lastElementChild: ' + menu.lastElementChild.textContent + '\\n' +
+  'nextElementSibling: ' + (menu.nextElementSibling ? menu.nextElementSibling.textContent : 'none');
+"
+/>
+
+## Tables and Forms Have Extra Navigation
+
+HTML tables, forms, and lists have **special shortcut properties**:
+
+| Element | Properties |
+|---|---|
+| `<table>` | `rows`, `tBodies`, `tHead`, `tFoot`, `caption` |
+| `<tr>` | `cells`, `sectionRowIndex`, `rowIndex` |
+| `<td>`/`<th>` | `cellIndex` |
+| `<form>` | `elements` |
+| `<select>` | `options`, `selectedIndex` |
+
+<CodePlayground
+  title="Table Navigation"
+  html="
+<table id='scoreboard' border='1' style='border-collapse:collapse;width:100%'>
+  <tr><th>Player</th><th>Score</th></tr>
+  <tr><td>Alice</td><td>95</td></tr>
+  <tr><td>Bob</td><td>87</td></tr>
+</table>
+<pre id='table-output' style='background:#f1f5f9;padding:8px;border-radius:4px;margin-top:8px;'></pre>"
+  js="
+const table = document.getElementById('scoreboard');
+const out = document.getElementById('table-output');
+
+out.textContent =
+  'Rows: ' + table.rows.length + '\\n' +
+  'First row cells: ' + table.rows[0].cells.length + '\\n' +
+  'Row 1, Cell 1: ' + table.rows[0].cells[0].textContent + '\\n' +
+  'Row 2, Cell 2: ' + table.rows[1].cells[1].textContent;
+"
+/>
+
+## Key Takeaways
+
+- Use `childNodes`/`children` depending on whether you want **all nodes or just elements**
+- Element-only properties (`firstElementChild`, `nextElementSibling`) are usually more practical
+- Tables and forms have **convenience properties** for direct access
+- Navigation can throw errors if the node doesn't exist — always check with `if (node)`

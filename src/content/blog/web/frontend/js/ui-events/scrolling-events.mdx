@@ -1,0 +1,245 @@
+---
+title: "Scrolling Events"
+description: "Handle scroll events, detect scroll direction, and implement infinite scroll"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "UI Events"]
+tags: ["JavaScript", "DOM", "Scrolling"]
+slug: "js-scrolling-events"
+author: "Abhishek Sharma"
+order: 6
+---
+
+## Scrolling Events
+
+Scroll events let you respond when the user scrolls — useful for lazy loading, infinite scroll, parallax effects, and scroll-based animations.
+
+## The Scroll Event
+
+```javascript
+window.addEventListener('scroll', function() {
+  console.log(window.scrollY);
+});
+```
+
+The `scroll` event fires on:
+
+- `window` — page scrolling
+- Any element with `overflow: auto/scroll`
+
+## Scroll Position
+
+```javascript
+window.scrollY     // how far the page is scrolled vertically
+window.scrollX     // how far horizontally
+element.scrollTop  // for a scrollable element
+```
+
+<CodePlayground
+  title="Scroll Event"
+  html="
+<style>
+  #scroll-demo { height: 100px; overflow: auto; border: 2px solid #6366f1; border-radius: 6px; padding: 8px; background: #f8fafc; }
+</style>
+<div id='scroll-demo'>
+  <div style='height:300px;background:linear-gradient(180deg,#eef2ff,#c7d2fe);padding:8px;border-radius:4px;'>Scroll inside this box</div>
+</div>
+<pre id='scroll-info' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const demo = document.getElementById('scroll-demo');
+const out = document.getElementById('scroll-info');
+
+demo.addEventListener('scroll', function() {
+  const maxScroll = this.scrollHeight - this.clientHeight;
+  const percent = maxScroll > 0 ? (this.scrollTop / maxScroll * 100).toFixed(0) : 0;
+  out.textContent =
+    'scrollTop: ' + this.scrollTop + 'px' + '\\n' +
+    'scrolled: ' + percent + '% of total';
+});
+"
+/>
+
+## Scroll Direction
+
+Detect whether the user is scrolling up or down:
+
+<CodePlayground
+  title="Scroll Direction"
+  html="
+<style>
+  #scroll-direction { height: 150px; overflow: auto; border: 2px solid #6366f1; border-radius: 6px; padding: 8px; background: #f8fafc; }
+</style>
+<div id='scroll-direction'>
+  <div style='height:400px;background:linear-gradient(180deg,#fef9c3,#fde68a);padding:8px;border-radius:4px;'>Scroll up and down</div>
+</div>
+<pre id='direction-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const el = document.getElementById('scroll-direction');
+const out = document.getElementById('direction-log');
+let lastScroll = 0;
+
+el.addEventListener('scroll', function() {
+  const current = this.scrollTop;
+  if (current > lastScroll) {
+    out.textContent = 'Direction: DOWN (scrolling down)';
+  } else if (current < lastScroll) {
+    out.textContent = 'Direction: UP (scrolling up)';
+  }
+  lastScroll = current;
+});
+"
+/>
+
+## Throttling Scroll
+
+Scroll events fire **very frequently** (60+ times per second). Always throttle:
+
+```javascript
+let ticking = false;
+window.addEventListener('scroll', function() {
+  if (!ticking) {
+    requestAnimationFrame(function() {
+      // do the work
+      ticking = false;
+    });
+    ticking = true;
+  }
+});
+```
+
+Or use a time-based throttle:
+
+```javascript
+let lastScrollTime = 0;
+window.addEventListener('scroll', function() {
+  const now = Date.now();
+  if (now - lastScrollTime < 100) return; // max 10 times per second
+  lastScrollTime = now;
+  // handler
+});
+```
+
+## Scrolled Past Threshold
+
+Check if the user has scrolled past a given point:
+
+<CodePlayground
+  title="Back to Top Button"
+  html="
+<style>
+  #scroll-thresh { height: 150px; overflow: auto; border: 2px solid #6366f1; border-radius: 6px; padding: 8px; background: #f8fafc; }
+  #back-to-top { display: none; position: fixed; bottom: 20px; right: 20px; padding: 10px 16px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; }
+</style>
+<div id='scroll-thresh'>
+  <div style='height:400px;background:linear-gradient(180deg,#eef2ff,#c7d2fe);padding:8px;border-radius:4px;'>Scroll down to see the Back to Top button appear</div>
+</div>
+<button id='back-to-top'>Back to Top</button>
+<pre id='threshold-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const container = document.getElementById('scroll-thresh');
+const btn = document.getElementById('back-to-top');
+const out = document.getElementById('threshold-log');
+
+container.addEventListener('scroll', function() {
+  if (this.scrollTop > 100) {
+    btn.style.display = 'block';
+    out.textContent = 'Scrolled past 100px — showing button';
+  } else {
+    btn.style.display = 'none';
+    out.textContent = 'At top — button hidden';
+  }
+});
+
+btn.addEventListener('click', function() {
+  container.scrollTo({ top: 0, behavior: 'smooth' });
+});
+"
+/>
+
+## Infinite Scroll
+
+Load more content when the user reaches the bottom:
+
+```javascript
+scrollable.addEventListener('scroll', function() {
+  if (this.scrollHeight - this.scrollTop - this.clientHeight < 50) {
+    // Load more content
+  }
+});
+```
+
+<CodePlayground
+  title="Infinite Scroll"
+  html="
+<style>
+  #infinite-list { height: 200px; overflow: auto; border: 2px solid #6366f1; border-radius: 6px; padding: 8px; background: #f8fafc; }
+  #infinite-list .item { padding: 8px 12px; margin: 4px 0; background: #eef2ff; border-radius: 4px; }
+  #infinite-list .loading { text-align: center; color: #64748b; padding: 8px; }
+</style>
+<div id='infinite-list'>
+  <div class='item'>Item 1</div>
+  <div class='item'>Item 2</div>
+  <div class='item'>Item 3</div>
+</div>
+<pre id='infinite-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const list = document.getElementById('infinite-list');
+const log = document.getElementById('infinite-log');
+let itemCount = 3;
+
+list.addEventListener('scroll', function() {
+  const nearBottom = this.scrollHeight - this.scrollTop - this.clientHeight < 30;
+  if (nearBottom) {
+    loadMore();
+  }
+});
+
+function loadMore() {
+  log.textContent = 'Loading more items...';
+  for (let i = 0; i < 5; i++) {
+    itemCount++;
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.textContent = 'Item ' + itemCount;
+    list.appendChild(div);
+  }
+  log.textContent = 'Loaded ' + itemCount + ' items total';
+}
+"
+/>
+
+## `IntersectionObserver`
+
+For performance, prefer `IntersectionObserver` over scroll events when possible:
+
+```javascript
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      // element is visible
+    }
+  });
+});
+observer.observe(element);
+```
+
+## Scroll Snapping
+
+Modern browsers support CSS `scroll-snap`:
+
+```css
+.container {
+  scroll-snap-type: y mandatory;
+}
+.container > div {
+  scroll-snap-align: start;
+}
+```
+
+## Key Takeaways
+
+- Scroll events fire **rapidly** — always throttle with `requestAnimationFrame` or time gates
+- Track `scrollY`/`scrollTop` for position, compare values for direction
+- Use `scrollHeight - scrollTop - clientHeight < threshold` for **infinite scroll** detection
+- Consider `IntersectionObserver` instead — no throttling needed, better performance
+- `{ passive: true }` on scroll listeners enables browser optimizations
+- Smooth scrolling: `element.scrollTo({ top: 0, behavior: 'smooth' })`

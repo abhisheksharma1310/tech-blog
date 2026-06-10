@@ -1,0 +1,225 @@
+---
+title: "Long Polling"
+description: "Implement real-time updates with the long polling technique"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Network"]
+tags: ["JavaScript", "Network", "Polling", "Real-time"]
+slug: "js-long-polling"
+author: "Abhishek Sharma"
+order: 10
+---
+
+## Long Polling
+
+**Long polling** is a technique for receiving real-time updates when WebSockets aren't available. The client makes a request, and the server holds the response until new data is available.
+
+## How It Works
+
+```
+Client              Server
+  │                    │
+  ├── GET /updates ──▶│  (request sent)
+  │                    ├── waits for new data...
+  │                    │   (connection stays open)
+  │                    │
+  │◀── response ──────┤  (data available — response sent)
+  │                    │
+  ├── GET /updates ──▶│  (immediately re-connect)
+  │                    ├── waits...
+  │                    │
+  │◀── response ──────┤
+  │                    │
+  └── (repeats) ──────┘
+```
+
+## Basic Long Polling Client
+
+```javascript
+async function longPoll(url) {
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    // Process the update
+    onData(data);
+  } catch (err) {
+    // Connection error — wait and retry
+    await wait(1000);
+  } finally {
+    // Immediately reconnect
+    longPoll(url);
+  }
+}
+
+// Start polling
+longPoll('/api/updates');
+```
+
+<CodePlayground
+  title="Long Polling Demo"
+  html="
+<div>
+  <p>Simulated server sends updates at random intervals.</p>
+  <button id='start-poll'>Start Long Polling</button>
+  <button id='stop-poll' disabled>Stop</button>
+  <div style='margin-top:8px;max-height:200px;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px;'>
+    <div id='poll-messages' style='font-family:monospace;font-size:0.875rem;'></div>
+  </div>
+  <pre id='poll-status' style='background:#f1f5f9;padding:8px;border-radius:4px;margin-top:8px;'></pre>
+</div>"
+  js="
+const messages = document.getElementById('poll-messages');
+const status = document.getElementById('poll-status');
+let active = false;
+let pollId = 0;
+let messageCount = 0;
+
+// Simulated server that holds responses until data is ready
+function simulatedFetch(url, signal) {
+  return new Promise((resolve, reject) => {
+    const delay = 500 + Math.random() * 3000;
+
+    const timer = setTimeout(() => {
+      if (signal?.aborted) {
+        reject(new DOMException('Aborted', 'AbortError'));
+        return;
+      }
+      messageCount++;
+      resolve({
+        ok: true,
+        json: async () => ({
+          id: messageCount,
+          message: 'Update #' + messageCount + ' at ' + new Date().toLocaleTimeString(),
+          timestamp: Date.now()
+        })
+      });
+    }, delay);
+
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        reject(new DOMException('Aborted', 'AbortError'));
+      });
+    }
+  });
+}
+
+async function longPoll() {
+  if (!active) return;
+  const currentPollId = pollId;
+  status.textContent = '🔄 Long polling... waiting for updates';
+
+  try {
+    const controller = new AbortController();
+    // Store controller so we can abort on stop
+    window.__pollController = controller;
+
+    const response = await simulatedFetch('/updates', controller.signal);
+    const data = await response.json();
+
+    if (!active || currentPollId !== pollId) return;
+
+    const div = document.createElement('div');
+    div.textContent = '📩 ' + data.message;
+    messages.insertBefore(div, messages.firstChild);
+    status.textContent = '✅ Received update #' + data.id + ' — reconnecting...';
+
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    status.textContent = '❌ Error, retrying in 1s...';
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  if (active) longPoll();
+}
+
+document.getElementById('start-poll').onclick = function() {
+  active = true;
+  pollId++;
+  messageCount = 0;
+  messages.innerHTML = '';
+  this.disabled = true;
+  document.getElementById('stop-poll').disabled = false;
+  status.textContent = 'Long polling started';
+  longPoll();
+};
+
+document.getElementById('stop-poll').onclick = function() {
+  active = false;
+  pollId++;
+  if (window.__pollController) {
+    window.__pollController.abort();
+  }
+  this.disabled = true;
+  document.getElementById('start-poll').disabled = false;
+  status.textContent = '⏹️ Long polling stopped';
+};
+"
+/>
+
+## Advantages and Disadvantages
+
+| Pros | Cons |
+|---|---|
+| Works everywhere (no special server) | Higher latency than WebSocket |
+| Firewall-friendly (standard HTTP) | Server overhead (many open connections) |
+| Simple to implement | Messages may be delayed (TTFB) |
+| Automatic reconnection | Not suitable for high-frequency updates |
+
+## Server-Side (Node.js Example)
+
+```javascript
+// Server-side long polling endpoint
+app.get('/updates', async (req, res) => {
+  // Wait until there's new data or timeout
+  const data = await waitForNewData(30000); // 30s timeout
+
+  if (data) {
+    res.json(data);
+  } else {
+    res.status(204).end(); // no content — client will reconnect
+  }
+});
+
+// Event emitter pattern
+const EventEmitter = require('events');
+const updates = new EventEmitter();
+
+function waitForNewData(timeout) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), timeout);
+
+    updates.once('newData', (data) => {
+      clearTimeout(timer);
+      resolve(data);
+    });
+  });
+}
+```
+
+## Long Polling vs WebSocket
+
+| Long Polling | WebSocket |
+|---|---|
+| HTTP requests (stateless) | Persistent TCP connection |
+| Higher latency | Lower latency |
+| Reconnects automatically | Needs reconnection logic |
+| Works through all proxies | Some proxies may block |
+| Simpler to debug | Harder to debug |
+| Good for low-frequency updates | Good for high-frequency |
+
+## Connection Management
+
+- Always set a **timeout** (30-60s) on the server side
+- Handle **network errors** gracefully — reconnect with backoff
+- Use a **unique request ID** to prevent duplicate processing
+- Consider **multiple parallel polls** for reliability
+
+## Key Takeaways
+
+- Long polling keeps a connection open until **data is available**
+- The client immediately **reconnects** after receiving a response
+- Good for **low-frequency** real-time updates (notifications, chat)
+- Works with any HTTP server — no special protocol needed
+- Handle errors with **retry and backoff**
+- For high-frequency updates, prefer **WebSockets** or **Server-Sent Events**
+- Always implement a **timeout** to prevent hanging connections

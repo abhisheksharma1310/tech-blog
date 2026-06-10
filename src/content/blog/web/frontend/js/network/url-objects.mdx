@@ -1,0 +1,232 @@
+---
+title: "URL Objects"
+description: "Parse, construct, and manipulate URLs with the URL API"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Network"]
+tags: ["JavaScript", "Network", "URL", "API"]
+slug: "js-url-objects"
+author: "Abhishek Sharma"
+order: 7
+---
+
+## URL Objects
+
+The `URL` API provides a clean way to parse, construct, and manipulate URLs. Far better than string concatenation.
+
+## Parsing a URL
+
+```javascript
+const url = new URL('https://example.com:8080/path/to/page?q=hello&lang=en#section2');
+
+url.protocol     // "https:"
+url.hostname     // "example.com"
+url.port         // "8080"
+url.host         // "example.com:8080"
+url.pathname     // "/path/to/page"
+url.search       // "?q=hello&lang=en"
+url.hash         // "#section2"
+url.origin       // "https://example.com:8080"
+url.href         // full URL
+```
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                            URL                                     │
+├──────┬──────┬──────┬──────────────────┬──────┬─────────────────────┤
+│protocol│auth │ host │    pathname      │search│       hash         │
+│ https://user@example.com:8080/path?q=hello#section2                │
+└──────┴──────┴──────┴──────────────────┴──────┴─────────────────────┘
+```
+
+<CodePlayground
+  title="Parsing a URL"
+  html="
+<div>
+  <input id='url-input' type='text' value='https://example.com:8080/search?q=javascript&page=1#results' style='width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;margin-bottom:8px;'>
+  <button id='parse-btn'>Parse URL</button>
+  <pre id='parse-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('parse-out');
+
+document.getElementById('parse-btn').onclick = function() {
+  try {
+    const url = new URL(document.getElementById('url-input').value);
+    out.textContent =
+      'href: ' + url.href + '\\n' +
+      'protocol: ' + url.protocol + '\\n' +
+      'hostname: ' + url.hostname + '\\n' +
+      'port: ' + url.port + '\\n' +
+      'host: ' + url.host + '\\n' +
+      'origin: ' + url.origin + '\\n' +
+      'pathname: ' + url.pathname + '\\n' +
+      'search: ' + url.search + '\\n' +
+      'hash: ' + url.hash;
+  } catch (e) {
+    out.textContent = 'Invalid URL: ' + e.message;
+  }
+};
+"
+/>
+
+## URLSearchParams
+
+The `URLSearchParams` API makes working with query strings easy:
+
+```javascript
+const params = new URLSearchParams('q=hello&lang=en&page=1');
+
+params.get('q')          // "hello"
+params.has('lang')       // true
+params.getAll('tag')     // [] (no 'tag' param)
+params.append('tag', 'js');
+params.set('page', '2');
+params.delete('lang');
+params.toString()        // "q=hello&page=2&tag=js"
+```
+
+<CodePlayground
+  title="URLSearchParams"
+  html="
+<div>
+  <button id='params-btn'>Build Query String</button>
+  <pre id='params-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('params-out');
+
+document.getElementById('params-btn').onclick = function() {
+  const params = new URLSearchParams();
+
+  params.set('q', 'javascript fetch');
+  params.set('category', 'tutorials');
+  params.append('tags', 'js');
+  params.append('tags', 'dom');
+  params.set('page', '1');
+  params.set('sort', 'newest');
+
+  const url = new URL('https://api.example.com/search');
+  url.search = params.toString();
+
+  out.textContent =
+    'Query string: ' + params.toString() + '\\n' +
+    '---\\n' +
+    'params.get('q'): ' + params.get('q') + '\\n' +
+    'params.getAll('tags'): ' + params.getAll('tags').join(', ') + '\\n' +
+    'params.has('page'): ' + params.has('page') + '\\n' +
+    'params.size: ' + params.size + '\\n' +
+    '---\\n' +
+    'Full URL: ' + url.href;
+};
+"
+/>
+
+## Iterating Search Params
+
+```javascript
+const params = new URLSearchParams('a=1&b=2&c=3');
+
+for (const [key, value] of params) {
+  console.log(key, value);
+}
+
+// Convert to object
+const obj = Object.fromEntries(params);
+// { a: '1', b: '2', c: '3' }
+```
+
+## Modifying URL Components
+
+URL properties are **settable** — modify any part:
+
+```javascript
+const url = new URL('https://example.com/page');
+
+url.pathname = '/new-path';
+url.searchParams.set('key', 'value');
+url.hash = 'section';
+
+url.href // "https://example.com/new-path?key=value#section"
+```
+
+<CodePlayground
+  title="Modifying URLs"
+  html="
+<div>
+  <input id='base-url' type='text' value='https://example.com/products' style='width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;margin-bottom:8px;'>
+  <div style='display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;'>
+    <button id='add-search'>Add ?q=shoes</button>
+    <button id='add-page'>Add &page=2</button>
+    <button id='set-hash'>Set #top</button>
+    <button id='change-path'>Change to /about</button>
+  </div>
+  <pre id='modify-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>
+</div>"
+  js="
+const out = document.getElementById('modify-out');
+let url = new URL(document.getElementById('base-url').value);
+
+function display() {
+  document.getElementById('base-url').value = url.href;
+  out.textContent = url.href;
+}
+
+document.getElementById('add-search').onclick = function() {
+  url.searchParams.set('q', 'shoes');
+  display();
+};
+document.getElementById('add-page').onclick = function() {
+  url.searchParams.set('page', '2');
+  display();
+};
+document.getElementById('set-hash').onclick = function() {
+  url.hash = 'top';
+  display();
+};
+document.getElementById('change-path').onclick = function() {
+  url.pathname = '/about';
+  display();
+};
+
+display();
+"
+/>
+
+## Relative URLs
+
+Create URLs relative to a base:
+
+```javascript
+const url = new URL('/path?q=hello', 'https://example.com');
+url.href // "https://example.com/path?q=hello"
+```
+
+## Encoding
+
+URLs handle encoding automatically:
+
+```javascript
+const url = new URL('https://example.com/search');
+url.searchParams.set('q', 'hello world & more');
+
+url.href // "https://example.com/search?q=hello+world+%26+more"
+// Note: + for spaces, %26 for &
+```
+
+## URL vs URLSearchParams
+
+| URL | URLSearchParams |
+|---|---|
+| Parses full URL | Parses query string only |
+| `.searchParams` gives you the params | `.toString()` gives query string |
+| `.pathname`, `.host`, `.hash` | `.get()`, `.set()`, `.append()` |
+
+## Key Takeaways
+
+- `new URL(href)` parses a URL into **editable components**
+- `URLSearchParams` handles query strings with **encoding built-in**
+- URL properties are **settable** — `url.pathname = '/new'`, `url.hash = '#top'`
+- Iterate params with `for (const [k, v] of params)`
+- Use the **base URL** form to resolve relative URLs
+- Never concatenate strings for query params — always use `URLSearchParams`
+- `Object.fromEntries(searchParams)` converts to a plain object

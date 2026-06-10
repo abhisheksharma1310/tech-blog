@@ -1,0 +1,229 @@
+---
+title: "File and FileReader"
+description: "Read files from the user's system using File and FileReader APIs"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Binary-Data"]
+tags: ["JavaScript", "Binary", "File", "FileReader"]
+slug: "js-file-filereader"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## File and FileReader
+
+The `File` API lets users select files from their device. `FileReader` reads the contents — as text, data URL, or ArrayBuffer.
+
+## The `File` Object
+
+A `File` is a `Blob` with additional metadata:
+
+```javascript
+file.name          // "photo.jpg"
+file.size          // 102400 (bytes)
+file.type          // "image/jpeg"
+file.lastModified  // timestamp
+```
+
+## Getting Files from Input
+
+```html
+<input type="file" id="file-input" multiple>
+```
+
+```javascript
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const files = e.target.files; // FileList
+  for (const file of files) {
+    console.log(file.name, file.size, file.type);
+  }
+});
+```
+
+<CodePlayground
+  title="File Input Info"
+  html="
+<div>
+  <input type='file' id='file-input' multiple style='margin-bottom:8px;'>
+  <pre id='file-info' style='background:#f1f5f9;padding:12px;border-radius:6px;min-height:60px;'></pre>
+</div>"
+  js="
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const out = document.getElementById('file-info');
+  const files = e.target.files;
+
+  if (files.length === 0) {
+    out.textContent = 'No files selected';
+    return;
+  }
+
+  let info = 'Selected ' + files.length + ' file(s):\\n';
+  for (const file of files) {
+    const sizeKB = (file.size / 1024).toFixed(1);
+    const date = new Date(file.lastModified).toLocaleDateString();
+    info += '\\n  ' + file.name + '\\n' +
+            '  Size: ' + sizeKB + ' KB\\n' +
+            '  Type: ' + (file.type || 'unknown') + '\\n' +
+            '  Modified: ' + date + '\\n';
+  }
+  out.textContent = info;
+});
+"
+/>
+
+## Reading Files with FileReader
+
+`FileReader` reads the content asynchronously:
+
+```javascript
+const reader = new FileReader();
+
+reader.onload = function(e) {
+  console.log(e.target.result); // the file contents
+};
+
+reader.onerror = function(e) {
+  console.error('Error reading file');
+};
+
+reader.readAsText(file);   // as string
+reader.readAsDataURL(file); // as base64 data URL
+reader.readAsArrayBuffer(file); // as ArrayBuffer
+```
+
+<CodePlayground
+  title="FileReader Methods"
+  html="
+<div>
+  <input type='file' id='reader-file' style='margin-bottom:8px;'>
+  <div style='display:flex;gap:8px;margin-bottom:8px;'>
+    <button id='read-text'>Read as Text</button>
+    <button id='read-dataurl'>Read as Data URL</button>
+  </div>
+  <pre id='reader-out' style='background:#f1f5f9;padding:12px;border-radius:6px;min-height:60px;word-break:break-all;'></pre>
+</div>"
+  js="
+const fileInput = document.getElementById('reader-file');
+const out = document.getElementById('reader-out');
+
+function readFile(method) {
+  const file = fileInput.files[0];
+  if (!file) {
+    out.textContent = 'Please select a file first';
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const result = e.target.result;
+    if (method === 'text') {
+      out.textContent = 'Text content (' + result.length + ' chars):\\n' + result;
+    } else {
+      out.textContent = 'Data URL (' + result.length + ' chars):\\n' + result.substring(0, 200) + '...';
+    }
+  };
+
+  reader.onerror = function() {
+    out.textContent = 'Error reading file';
+  };
+
+  if (method === 'text') reader.readAsText(file);
+  else reader.readAsDataURL(file);
+
+  out.textContent = 'Reading file...';
+}
+
+document.getElementById('read-text').onclick = () => readFile('text');
+document.getElementById('read-dataurl').onclick = () => readFile('dataurl');
+"
+/>
+
+## Drag and Drop Files
+
+Files can also be obtained via drag and drop:
+
+```javascript
+dropZone.addEventListener('dragover', function(e) {
+  e.preventDefault();
+});
+
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault();
+  const files = e.dataTransfer.files;
+  // process files
+});
+```
+
+<CodePlayground
+  title="Drag & Drop Files"
+  html="
+<style>
+  #drop-zone { width: 100%; height: 150px; border: 2px dashed #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; transition: all 0.3s; }
+  #drop-zone.dragover { background: #eef2ff; border-color: #4f46e5; transform: scale(1.02); }
+</style>
+<div id='drop-zone'>Drop files here</div>
+<pre id='drop-info' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+const zone = document.getElementById('drop-zone');
+const out = document.getElementById('drop-info');
+
+zone.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  this.classList.add('dragover');
+});
+
+zone.addEventListener('dragleave', function() {
+  this.classList.remove('dragover');
+});
+
+zone.addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+
+  if (files.length === 0) {
+    out.textContent = 'No files dropped';
+    return;
+  }
+
+  let info = 'Dropped ' + files.length + ' file(s):\\n';
+  for (const file of files) {
+    info += '\\n  ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+  }
+  out.textContent = info;
+});
+"
+/>
+
+## FileReader Events
+
+| Event | When |
+|---|---|
+| `loadstart` | Read starts |
+| `progress` | During read (for large files) |
+| `load` | Read complete |
+| `error` | Read failed |
+| `abort` | Read cancelled |
+| `loadend` | Read finished (success or fail) |
+
+## Reading Images as DataURL
+
+Display a user-selected image:
+
+```javascript
+const reader = new FileReader();
+reader.onload = function(e) {
+  img.src = e.target.result; // data URL
+};
+reader.readAsDataURL(file);
+```
+
+## Key Takeaways
+
+- `File` extends `Blob` — has `name`, `size`, `type`, `lastModified`
+- Get files from `<input type="file">` or drag-and-drop
+- `FileReader` reads files as **text**, **data URL**, or **ArrayBuffer**
+- FileReader is **async** — use `onload` / `onerror` callbacks
+- For images, use `readAsDataURL()` and set as `img.src`
+- Modern alternative: `file.text()`, `file.arrayBuffer()`, `file.stream()`
+- Always handle `onerror` — files can fail to read (corrupted, permissions)

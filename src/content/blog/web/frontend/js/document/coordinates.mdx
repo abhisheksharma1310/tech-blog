@@ -1,0 +1,215 @@
+---
+title: "Coordinates"
+description: "Get and use element coordinates — getBoundingClientRect, page vs client coordinates"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "Coordinates"]
+slug: "js-coordinates"
+author: "Abhishek Sharma"
+order: 11
+---
+
+## Coordinates
+
+Coordinates let you know exactly **where** an element is on the page — essential for tooltips, dropdowns, drag-and-drop, and animations.
+
+## Two Coordinate Systems
+
+| System | Origin | Property |
+|---|---|---|
+| **Client coordinates** | Viewport top-left | `clientX`, `clientY` |
+| **Page coordinates** | Document top-left | `pageX`, `pageY` |
+
+When you scroll, **client** coordinates change (element moves relative to viewport). **Page** coordinates stay the same (element stays where it is in the document).
+
+```
+Client coords (viewport)     Page coords (document)
+┌────────────────────┐       ┌────────────────────┐
+│ (0,0)              │       │ (0,0)              │
+│                    │       │                    │
+│   ┌──────┐         │       │   ┌──────┐         │
+│   │ 100, │         │       │   │ 300, │         │
+│   │ 200  │         │       │   │ 500  │         │
+│   └──────┘         │       │   └──────┘         │
+│         ↓          │       │         ↓          │
+│     scrolled       │       │     scrolled       │
+└────────────────────┘       └────────────────────┘
+```
+
+## `getBoundingClientRect()`
+
+The most useful method — returns the element's **client** coordinates:
+
+```javascript
+const rect = element.getBoundingClientRect();
+```
+
+Returns a `DOMRect` with:
+
+| Property | What it is |
+|---|---|
+| `rect.top` | Distance from viewport top to element top |
+| `rect.bottom` | Distance from viewport top to element bottom |
+| `rect.left` | Distance from viewport left to element left |
+| `rect.right` | Distance from viewport left to element right |
+| `rect.width` | Element width |
+| `rect.height` | Element height |
+| `rect.x` | Same as `left` |
+| `rect.y` | Same as `top` |
+
+<CodePlayground
+  title="getBoundingClientRect"
+  html="
+<style>
+  #target-box { width: 200px; height: 100px; background: #eef2ff; border: 3px solid #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 20px; }
+</style>
+<div id='target-box'>Target Element</div>
+<pre id='rect-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const box = document.getElementById('target-box');
+const out = document.getElementById('rect-output');
+
+function updateRect() {
+  const r = box.getBoundingClientRect();
+  out.textContent =
+    'top: ' + r.top.toFixed(1) + '\\n' +
+    'bottom: ' + r.bottom.toFixed(1) + '\\n' +
+    'left: ' + r.left.toFixed(1) + '\\n' +
+    'right: ' + r.right.toFixed(1) + '\\n' +
+    'width: ' + r.width.toFixed(1) + '\\n' +
+    'height: ' + r.height.toFixed(1) + '\\n' +
+    '---' + '\\n' +
+    'Scroll Y: ' + window.scrollY + 'px';
+}
+
+window.addEventListener('scroll', updateRect);
+window.addEventListener('resize', updateRect);
+updateRect();
+"
+/>
+
+## Converting Client to Page Coordinates
+
+To get page coordinates (accounting for scroll):
+
+```javascript
+const pageTop  = rect.top + window.scrollY;
+const pageLeft = rect.left + window.scrollX;
+```
+
+<CodePlayground
+  title="Client vs Page Coordinates"
+  html="
+<div id='coord-demo' style='padding:16px;background:#fef9c3;border:2px solid #eab308;border-radius:8px;margin:16px 0;'>
+  Scroll and check my coordinates
+</div>
+<pre id='coord-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const demo = document.getElementById('coord-demo');
+const out = document.getElementById('coord-output');
+
+function update() {
+  const r = demo.getBoundingClientRect();
+  out.textContent =
+    'Client coords:' + '\\n' +
+    '  top: ' + r.top.toFixed(0) + ', left: ' + r.left.toFixed(0) + '\\n' +
+    '---' + '\\n' +
+    'Page coords (client + scroll):' + '\\n' +
+    '  top: ' + (r.top + window.scrollY).toFixed(0) + '\\n' +
+    '  left: ' + (r.left + window.scrollX).toFixed(0);
+}
+
+window.addEventListener('scroll', update);
+window.addEventListener('resize', update);
+update();
+"
+/>
+
+## Cursor / Event Coordinates
+
+When handling mouse events, you get these coordinate properties:
+
+```javascript
+element.addEventListener('click', (e) => {
+  e.clientX   // cursor X relative to viewport
+  e.clientY   // cursor Y relative to viewport
+  e.pageX     // cursor X relative to document
+  e.pageY     // cursor Y relative to document
+  e.screenX   // cursor X relative to screen
+  e.screenY   // cursor Y relative to screen
+});
+```
+
+<CodePlayground
+  title="Mouse Coordinates"
+  html="<div id='mouse-area' style='height:200px;background:#f1f5f9;border:2px dashed #6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:crosshair;'>Move mouse here</div>
+<pre id='mouse-coord' style='background:#f1f5f9;padding:8px;border-radius:4px;margin-top:8px;'></pre>"
+  js="
+const area = document.getElementById('mouse-area');
+const out = document.getElementById('mouse-coord');
+
+area.addEventListener('mousemove', (e) => {
+  out.textContent =
+    'clientX: ' + e.clientX + ', clientY: ' + e.clientY + ' (relative to viewport)' + '\\n' +
+    'pageX: ' + e.pageX + ', pageY: ' + e.pageY + ' (relative to document)' + '\\n' +
+    'screenX: ' + e.screenX + ', screenY: ' + e.screenY + ' (relative to screen)';
+});
+"
+/>
+
+## Positioning a Tooltip
+
+A practical use case — position an element relative to another:
+
+```javascript
+const rect = target.getBoundingClientRect();
+tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+```
+
+<CodePlayground
+  title="Tooltip Positioning"
+  html="
+<style>
+  #tooltip-target { display:inline-block; padding:12px 24px; background:#6366f1; color:white; border-radius:6px; cursor:pointer; margin:16px; }
+  #tooltip { display:none; position:fixed; background:#1e293b; color:white; padding:8px 12px; border-radius:4px; font-size:0.875rem; pointer-events:none; white-space:nowrap; }
+</style>
+<div id='tooltip'>Tooltip content</div>
+<button id='tooltip-target'>Hover me</button>"
+  js="
+const target = document.getElementById('tooltip-target');
+const tooltip = document.getElementById('tooltip');
+
+target.addEventListener('mouseenter', () => {
+  tooltip.style.display = 'block';
+  positionTooltip();
+});
+
+target.addEventListener('mousemove', positionTooltip);
+target.addEventListener('mouseleave', () => {
+  tooltip.style.display = 'none';
+});
+
+function positionTooltip() {
+  const rect = target.getBoundingClientRect();
+  tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+  tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+}
+"
+/>
+
+## `elementFromPoint()`
+
+Get the element at a specific coordinate:
+
+```javascript
+const element = document.elementFromPoint(clientX, clientY);
+```
+
+## Key Takeaways
+
+- `getBoundingClientRect()` returns **viewport-relative** coordinates
+- Add `window.scrollY`/`scrollX` to get **document-relative** coordinates
+- Mouse events give `clientX/clientY` (viewport) and `pageX/pageY` (document)
+- Use coordinates for **tooltips, dropdowns, context menus, and drag indicators**
+- `elementFromPoint()` finds what's at a given coordinate

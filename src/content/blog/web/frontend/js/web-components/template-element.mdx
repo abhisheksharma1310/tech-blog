@@ -1,0 +1,198 @@
+---
+title: "Template Element"
+description: "Create reusable markup with the HTML template element"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Web Components"]
+tags: ["JavaScript", "Web Components", "Template"]
+slug: "js-template-element"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Template Element
+
+The `<template>` element holds HTML that is **not rendered** until you clone and activate it with JavaScript. It's the foundation for reusable markup in Web Components.
+
+## How It Works
+
+```html
+<template id="card-template">
+  <style>
+    .card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; }
+    .title { font-size: 1.2rem; font-weight: bold; }
+  </style>
+  <div class="card">
+    <h3 class="title"></h3>
+    <p class="body"></p>
+  </div>
+</template>
+```
+
+```javascript
+const template = document.getElementById('card-template');
+const clone = template.content.cloneNode(true);
+// clone is now a DocumentFragment — use it!
+```
+
+<CodePlayground
+  title="Template Element"
+  html="
+<template id='demo-template'>
+  <div class='item' style='padding:8px 12px;margin:4px 0;background:#eef2ff;border-radius:6px;border:1px solid #c7d2fe;display:flex;align-items:center;gap:8px;'>
+    <span class='icon' style='font-size:1.2rem;'>📌</span>
+    <span class='text'></span>
+  </div>
+</template>
+
+<button id='add-from-template'>Add Item from Template</button>
+<div id='template-container'></div>
+<pre id='template-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+const template = document.getElementById('demo-template');
+const container = document.getElementById('template-container');
+const out = document.getElementById('template-out');
+let count = 0;
+
+document.getElementById('add-from-template').onclick = function() {
+  count++;
+  const clone = template.content.cloneNode(true);
+  clone.querySelector('.text').textContent = 'Item #' + count + ' — cloned from template';
+
+  // Customize the clone
+  if (count % 2 === 0) {
+    clone.querySelector('.item').style.background = '#fef9c3';
+    clone.querySelector('.item').style.borderColor = '#eab308';
+  }
+
+  container.appendChild(clone);
+  out.textContent = 'Added item #' + count + ' (using template.cloneNode(true))';
+};
+"
+/>
+
+## Template Properties
+
+```javascript
+const template = document.getElementById('my-template');
+
+template.content       // DocumentFragment (the inner content)
+template.innerHTML     // HTML string of the content
+```
+
+## DocumentFragment
+
+`template.content` is a `DocumentFragment` — a lightweight document that exists in memory:
+
+```javascript
+const fragment = template.content.cloneNode(true);
+// fragment is NOT in the DOM yet
+
+container.appendChild(fragment);
+// Now it's in the DOM — no reflow until append!
+```
+
+Key benefit: **Better performance** for batch insertions (single reflow instead of per-element).
+
+## Template with Slots
+
+Templates can include `<slot>` elements for composition:
+
+```html
+<template id="dialog-template">
+  <div class="dialog">
+    <header><slot name="title">Default Title</slot></header>
+    <main><slot></slot></main>
+    <footer><slot name="actions"><button>OK</button></slot></footer>
+  </div>
+</template>
+```
+
+## Templates in Custom Elements
+
+The most common pattern — use a template inside a custom element:
+
+```javascript
+class ListItem extends HTMLElement {
+  constructor() {
+    super();
+    const template = document.getElementById('list-item-template');
+    this.attachShadow({ mode: 'open' });
+    this.shadowRoot.appendChild(template.content.cloneNode(true));
+  }
+}
+```
+
+## Template vs innerHTML
+
+| Template | innerHTML |
+|---|---|
+| Content is **inert** (scripts don't run, images don't load) | Content is **live** |
+| Returns a **DocumentFragment** | HTML string |
+| Can be cloned **multiple times** | Parsed each time |
+| Better **performance** for repeated use | Re-parses each assignment |
+
+## Template Styling
+
+Styles in a template apply only to the cloned fragment (not the global page):
+
+```html
+<template id="styled-template">
+  <style>
+    p { color: #6366f1; font-weight: bold; }
+  </style>
+  <p>Styled text from template</p>
+</template>
+```
+
+When combined with Shadow DOM, template styles are **fully encapsulated**.
+
+## Practical: Reusable Card Component
+
+<CodePlayground
+  title="Template-Based Cards"
+  html="
+<template id='card-tmpl'>
+  <style>
+    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 8px 0; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    h3 { margin: 0 0 8px; color: #1e293b; }
+    p { margin: 0; color: #64748b; font-size: 0.9rem; }
+  </style>
+  <div class='card'>
+    <h3 class='title'></h3>
+    <p class='desc'></p>
+  </div>
+</template>
+
+<button id='add-card'>Add Card</button>
+<div id='card-container'></div>
+<pre id='card-tmpl-out' style='background:#f1f5f9;padding:12px;border-radius:6px;'></pre>"
+  js="
+const tmpl = document.getElementById('card-tmpl');
+const container = document.getElementById('card-container');
+const out = document.getElementById('card-tmpl-out');
+let count = 0;
+
+const titles = ['Getting Started', 'Core Concepts', 'Advanced Topics', 'Best Practices'];
+const descs = ['Learn the basics of this technology', 'Deep dive into how it works', 'Explore advanced patterns and techniques', 'Tips and tricks for production use'];
+
+document.getElementById('add-card').onclick = function() {
+  const idx = count % titles.length;
+  const clone = tmpl.content.cloneNode(true);
+  clone.querySelector('.title').textContent = titles[idx];
+  clone.querySelector('.desc').textContent = descs[idx];
+  container.appendChild(clone);
+  count++;
+  out.textContent = 'Added card:' + titles[idx] + '';
+};
+"
+/>
+
+## Key Takeaways
+
+- `<template>` holds **inert HTML** — not rendered until cloned
+- `template.content.cloneNode(true)` creates a reusable DocumentFragment
+- Templates are **efficient** — parse once, clone many times
+- Combine with **Shadow DOM** for fully encapsulated components
+- Template styles affect only the cloned content (not the main page)
+- Use `<slot>` elements inside templates for composable content
+- Essential building block for **Web Components**

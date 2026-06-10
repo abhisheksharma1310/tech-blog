@@ -1,0 +1,203 @@
+---
+title: "Modifying the Document"
+description: "Create, insert, remove, and replace DOM elements dynamically"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "Manipulation"]
+slug: "js-modifying-document"
+author: "Abhishek Sharma"
+order: 7
+---
+
+## Modifying the Document
+
+JavaScript lets you **create**, **insert**, **remove**, and **replace** elements on the fly. This is the heart of dynamic web pages.
+
+## Creating Elements
+
+```javascript
+const div = document.createElement('div');      // create element
+const text = document.createTextNode('Hello');  // create text node
+const comment = document.createComment('note'); // create comment
+```
+
+<CodePlayground
+  title="Creating Elements"
+  html="<div id='create-area'></div>"
+  js="
+const area = document.getElementById('create-area');
+
+// Create a heading
+const h3 = document.createElement('h3');
+h3.textContent = 'Dynamically created!';
+
+// Create a paragraph
+const p = document.createElement('p');
+p.textContent = 'This element was created with JavaScript.';
+
+// Create a styled box
+const box = document.createElement('div');
+box.style.cssText = 'background:#eef2ff;padding:12px;border-radius:6px;border-left:4px solid #6366f1;';
+box.textContent = 'Styled box created on the fly';
+
+// Append all to the area
+area.appendChild(h3);
+area.appendChild(p);
+area.appendChild(box);
+"
+/>
+
+## Insertion Methods
+
+| Method | What it does |
+|---|---|
+| `parent.appendChild(child)` | Appends child to end of parent |
+| `parent.prepend(child)` | Inserts child at beginning |
+| `parent.before(child)` | Inserts before the parent |
+| `parent.after(child)` | Inserts after the parent |
+| `childA.replaceWith(childB)` | Replaces childA with childB |
+
+<CodePlayground
+  title="Insertion Methods"
+  html="
+<ul id='insert-demo'>
+  <li>Item 1</li>
+  <li>Item 2</li>
+</ul>
+<div style='margin-top:8px;'>
+  <button id='btn-append'>Append</button>
+  <button id='btn-prepend'>Prepend</button>
+  <button id='btn-before'>Before First</button>
+  <button id='btn-after'>After Last</button>
+  <button id='btn-replace'>Replace First</button>
+  <button id='btn-remove'>Remove Last</button>
+</div>"
+  js="
+const ul = document.getElementById('insert-demo');
+
+function createLi(text) {
+  const li = document.createElement('li');
+  li.textContent = text;
+  return li;
+}
+
+document.getElementById('btn-append').onclick = () =>
+  ul.appendChild(createLi('Appended'));
+document.getElementById('btn-prepend').onclick = () =>
+  ul.prepend(createLi('Prepended'));
+document.getElementById('btn-before').onclick = () =>
+  ul.firstElementChild.before(createLi('Before'));
+document.getElementById('btn-after').onclick = () =>
+  ul.lastElementChild.after(createLi('After'));
+document.getElementById('btn-replace').onclick = () => {
+  if (ul.firstElementChild)
+    ul.firstElementChild.replaceWith(createLi('Replaced!'));
+};
+document.getElementById('btn-remove').onclick = () => {
+  if (ul.lastElementChild)
+    ul.lastElementChild.remove();
+};
+"
+/>
+
+## `insertAdjacentHTML` / `insertAdjacentText`
+
+These methods insert HTML or text at specific positions **without** creating elements first:
+
+```javascript
+element.insertAdjacentHTML(position, htmlString);
+element.insertAdjacentText(position, textString);
+```
+
+Positions: `beforebegin`, `afterbegin`, `beforeend`, `afterend`
+
+```
+<!-- beforebegin -->
+<div>
+<!-- afterbegin -->
+  existing content
+<!-- beforeend -->
+</div>
+<!-- afterend -->
+```
+
+<CodePlayground
+  title="insertAdjacentHTML"
+  html="
+<div id='adj-demo' style='border:2px dashed #6366f1;padding:8px;border-radius:6px;'>
+  Existing content
+</div>
+<pre id='adj-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const demo = document.getElementById('adj-demo');
+
+demo.insertAdjacentHTML('beforebegin', '<p><strong>beforebegin</strong></p>');
+demo.insertAdjacentHTML('afterbegin', '<p><em>afterbegin</em> — before existing</p>');
+demo.insertAdjacentHTML('beforeend', '<p><em>beforeend</em> — after existing</p>');
+demo.insertAdjacentHTML('afterend', '<p><strong>afterend</strong></p>');
+"
+/>
+
+## Cloning Nodes
+
+Use `cloneNode()` to duplicate elements:
+
+```javascript
+const clone = element.cloneNode(true);  // deep clone (includes children)
+const clone = element.cloneNode(false); // shallow clone (no children)
+```
+
+<CodePlayground
+  title="Cloning Nodes"
+  html="
+<div id='clone-demo'>
+  <div class='card' style='background:#eef2ff;padding:12px;border-radius:6px;'>
+    Original card with <strong>bold text</strong>
+  </div>
+</div>
+<button id='clone-btn'>Clone Card</button>"
+  js="
+document.getElementById('clone-btn').onclick = function() {
+  const original = document.querySelector('.card');
+  const clone = original.cloneNode(true);
+  clone.style.background = '#fef9c3';
+  clone.insertAdjacentText('afterbegin', '[CLONE] ');
+  original.after(clone);
+};
+"
+/>
+
+## `DocumentFragment`
+
+For **batched insertions**, use a DocumentFragment. It's a lightweight container that doesn't trigger re-renders until inserted:
+
+<CodePlayground
+  title="DocumentFragment"
+  html="
+<ul id='frag-demo'></ul>
+<button id='frag-btn'>Add 100 Items (efficient)</button>"
+  js="
+document.getElementById('frag-btn').onclick = function() {
+  const ul = document.getElementById('frag-demo');
+  const fragment = document.createDocumentFragment();
+  
+  for (let i = 1; i <= 100; i++) {
+    const li = document.createElement('li');
+    li.textContent = 'Item ' + i;
+    fragment.appendChild(li);
+  }
+  
+  ul.appendChild(fragment);
+  this.disabled = true;
+  this.textContent = 'Done! 100 items added';
+};
+"
+/>
+
+## Key Takeaways
+
+- Use `createElement` + `textContent` for safe element creation
+- `appendChild` / `prepend` / `before` / `after` / `replaceWith` / `remove` cover all insertion patterns
+- `insertAdjacentHTML` is great when you have raw HTML strings
+- Use `cloneNode(true)` for deep copies
+- **DocumentFragment** batches DOM changes for performance

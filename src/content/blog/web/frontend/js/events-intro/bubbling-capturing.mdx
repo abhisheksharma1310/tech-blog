@@ -1,0 +1,219 @@
+---
+title: "Bubbling and Capturing"
+description: "Understand event propagation — bubbling, capturing, and stopPropagation"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Events"]
+tags: ["JavaScript", "DOM", "Events", "Propagation"]
+slug: "js-bubbling-capturing"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Bubbling and Capturing
+
+When an event fires on an element, it doesn't just stay there. It travels through the DOM tree in three phases:
+
+1. **Capturing** — travels from `document` down to the target
+2. **Target** — reaches the target element
+3. **Bubbling** — travels back up from target to `document`
+
+```
+Capturing (trickle down)         Bubbling (bubble up)
+         │                              │
+   document ──────┐               ┌───── document
+     html         │               │        html
+      body        │               │         body
+       div        ▼               ▲          div
+        ──────→ target       target ←──────
+           capture!              bubble!
+```
+
+## Bubbling
+
+By default, events **bubble** up from the target to the root:
+
+```html
+<div onclick="alert('div')">
+  <p onclick="alert('p')">
+    <button onclick="alert('button')">Click</button>
+  </p>
+</div>
+```
+
+Clicking the button fires: `button` → `p` → `div`
+
+<CodePlayground
+  title="Event Bubbling"
+  html="
+<style>
+  .bubble-box { padding: 12px; margin: 4px; border-radius: 6px; border: 2px solid #6366f1; cursor: pointer; }
+  .bubble-box.level-1 { background: #eef2ff; }
+  .bubble-box.level-2 { background: #fef9c3; }
+  .bubble-box.level-3 { background: #f0fdf4; }
+</style>
+<div class='bubble-box level-1' id='level1'>
+  DIV (outer)
+  <div class='bubble-box level-2' id='level2'>
+    DIV (middle)
+    <div class='bubble-box level-3' id='level3'>
+      DIV (inner) — click me!
+    </div>
+  </div>
+</div>
+<pre id='bubble-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('bubble-log');
+
+document.getElementById('level1').addEventListener('click', function() {
+  log.textContent += 'bubbled to: DIV (outer)' + '\\n';
+});
+document.getElementById('level2').addEventListener('click', function() {
+  log.textContent += 'bubbled to: DIV (middle)' + '\\n';
+});
+document.getElementById('level3').addEventListener('click', function(e) {
+  log.textContent = 'clicked: DIV (inner) — event.target is the innermost element' + '\\n';
+  // Don't stop propagation — let it bubble!
+});
+"
+/>
+
+## Capturing
+
+To listen during the **capturing** phase, pass `{ capture: true }`:
+
+```javascript
+element.addEventListener('click', handler, { capture: true });
+// or
+element.addEventListener('click', handler, true);
+```
+
+<CodePlayground
+  title="Capturing vs Bubbling"
+  html="
+<style>
+  .cap-box { padding: 12px; margin: 4px; border-radius: 6px; border: 2px solid #059669; cursor: pointer; }
+  .cap-box.l1 { background: #f0fdf4; }
+  .cap-box.l2 { background: #fef9c3; }
+  .cap-box.l3 { background: #fef2f2; }
+</style>
+<div class='cap-box l1' id='cap1'>
+  OUTER
+  <div class='cap-box l2' id='cap2'>
+    MIDDLE
+    <div class='cap-box l3' id='cap3'>
+      INNER — click me
+    </div>
+  </div>
+</div>
+<pre id='cap-log' style='background:#f1f5f9;padding:8px;border-radius:4px;height:80px;overflow:auto;'></pre>"
+  js="
+const log = document.getElementById('cap-log');
+
+function logEvent(phase, name) {
+  log.textContent += '[' + phase + '] ' + name + '\\n';
+}
+
+// Capture phase listeners (third arg = true)
+document.getElementById('cap1').addEventListener('click', () => logEvent('CAPTURE', 'OUTER'), true);
+document.getElementById('cap2').addEventListener('click', () => logEvent('CAPTURE', 'MIDDLE'), true);
+document.getElementById('cap3').addEventListener('click', () => logEvent('CAPTURE', 'INNER'), true);
+
+// Bubble phase listeners (default)
+document.getElementById('cap1').addEventListener('click', () => logEvent('BUBBLE', 'OUTER'));
+document.getElementById('cap2').addEventListener('click', () => logEvent('BUBBLE', 'MIDDLE'));
+document.getElementById('cap3').addEventListener('click', () => logEvent('BUBBLE', 'INNER'));
+"
+/>
+
+## `event.target` vs `event.currentTarget`
+
+A common point of confusion:
+
+| Property | What it is |
+|---|---|
+| `event.target` | The element that **originated** the event (the one clicked) |
+| `event.currentTarget` | The element the **listener is attached to** |
+
+<CodePlayground
+  title="target vs currentTarget"
+  html="
+<ul id='target-demo' style='border:2px solid #6366f1;border-radius:6px;padding:12px;cursor:pointer;'>
+  <li>Item 1</li>
+  <li>Item 2</li>
+  <li>Item 3</li>
+</ul>
+<pre id='target-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+document.getElementById('target-demo').addEventListener('click', function(e) {
+  const log = document.getElementById('target-log');
+  log.textContent =
+    'event.target: ' + e.target.tagName + ' (' + (e.target.textContent || '') + ')' + '\\n' +
+    'event.currentTarget: ' + e.currentTarget.tagName;
+});
+"
+/>
+
+## `stopPropagation()`
+
+Call `e.stopPropagation()` to **stop** the event from bubbling further:
+
+<CodePlayground
+  title="stopPropagation"
+  html="
+<style>
+  .stop-box { padding: 12px; margin: 4px; border-radius: 6px; border: 2px solid #dc2626; cursor: pointer; }
+  .stop-box.l1 { background: #fef2f2; }
+  .stop-box.l2 { background: #fef9c3; }
+  .stop-box.l3 { background: #f0fdf4; }
+</style>
+<div class='stop-box l1' id='stop1'>
+  OUTER (will NOT fire)
+  <div class='stop-box l2' id='stop2'>
+    MIDDLE (stops propagation)
+    <div class='stop-box l3' id='stop3'>
+      INNER — click me
+    </div>
+  </div>
+</div>
+<pre id='stop-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const log = document.getElementById('stop-log');
+
+document.getElementById('stop1').addEventListener('click', function() {
+  log.textContent += 'OUTER handler (never reached)' + '\\n';
+});
+document.getElementById('stop2').addEventListener('click', function(e) {
+  log.textContent += 'MIDDLE handler — stopping propagation!' + '\\n';
+  e.stopPropagation();
+});
+document.getElementById('stop3').addEventListener('click', function() {
+  log.textContent = 'INNER clicked' + '\\n';
+});
+"
+/>
+
+## `stopImmediatePropagation()`
+
+Same as `stopPropagation` but also prevents **other listeners on the same element** from firing:
+
+```javascript
+element.addEventListener('click', handler1);
+element.addEventListener('click', handler2); // won't run if handler1 calls stopImmediatePropagation
+```
+
+## Events That Don't Bubble
+
+Some events don't bubble:
+
+- `focus` / `blur` (use `focusin` / `focusout` instead)
+- `mouseenter` / `mouseleave` (use `mouseover` / `mouseout` instead)
+- `load`, `unload`, `abort`, `error`, `resize`, `scroll`
+
+## Key Takeaways
+
+- Events propagate in **three phases**: capture → target → bubble
+- Default listeners attach to the **bubble** phase
+- `event.target` is the **originating element**; `event.currentTarget` is the **listener element**
+- `e.stopPropagation()` stops the event from bubbling further
+- Use `{ capture: true }` to intercept events during the capture phase
+- Not all events bubble — check before relying on delegation

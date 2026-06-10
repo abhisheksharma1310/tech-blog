@@ -1,0 +1,153 @@
+---
+title: "Node Properties"
+description: "Learn about DOM node types, tag names, and content properties"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
+tags: ["JavaScript", "DOM", "Nodes"]
+slug: "js-node-properties"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## Node Properties
+
+Every DOM node has properties that reveal its **type**, **tag**, and **content**.
+
+## The Most Important Properties
+
+| Property | Returns | Works On |
+|---|---|---|
+| `nodeType` | Number (1=element, 3=text, 8=comment, 9=document) | All nodes |
+| `nodeName` | Tag name (uppercase) or `#text`, `#comment` | All nodes |
+| `tagName` | Tag name (uppercase) | Element nodes only |
+| `innerHTML` | HTML content as string | Element nodes |
+| `outerHTML` | Element including its HTML tag | Element nodes |
+| `textContent` | All text, no HTML tags | Element + text nodes |
+| `data` | The node's text value | Text + comment nodes |
+
+<CodePlayground
+  title="Exploring Node Properties"
+  html="
+<div id='props-demo'>
+  <h2>Hello <em>World</em></h2>
+  <!-- comment here -->
+  Just some text
+</div>
+<pre id='props-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const demo = document.getElementById('props-demo');
+const out = document.getElementById('props-output');
+
+out.textContent =
+  'div.nodeType: ' + demo.nodeType + ' (1 = element)' + '\\n' +
+  'div.nodeName: ' + demo.nodeName + '\\n' +
+  'div.tagName: ' + demo.tagName + '\\n' +
+  'div.innerHTML: ' + demo.innerHTML + '\\n' +
+  'div.outerHTML: ' + demo.outerHTML.slice(0, 80) + '...' + '\\n' +
+  '---' + '\\n' +
+  'First child (text):' + '\\n' +
+  '  nodeType: ' + demo.childNodes[0].nodeType + ' (3 = text)' + '\\n' +
+  '  nodeName: ' + demo.childNodes[0].nodeName + '\\n' +
+  '  data: ' + JSON.stringify(demo.childNodes[0].data.trim()) + '\\n' +
+  '---' + '\\n' +
+  'Comment child (nodeType 8):' + '\\n' +
+  '  nodeName: ' + demo.childNodes[2].nodeName + '\\n' +
+  '  data: ' + demo.childNodes[2].data;
+"
+/>
+
+## `innerHTML` vs `textContent`
+
+This difference is crucial for **security**:
+
+```javascript
+element.innerHTML = '<strong>bold</strong>'  // renders bold text
+element.textContent = '<strong>bold</strong>' // shows literal text
+```
+
+<CodePlayground
+  title="innerHTML vs textContent"
+  html="
+<div id='danger'></div>
+<div id='safe'></div>"
+  js="
+document.getElementById('danger').innerHTML = '<span style= 'color:#dc2626;'>Rendered as HTML</span>';
+document.getElementById('safe').textContent = '<span>Shown as text only</span>';
+"
+/>
+
+**Security rule**: Use `textContent` when inserting user input to prevent XSS attacks. Only use `innerHTML` with trusted content.
+
+## `hidden` Property
+
+Every element has a `hidden` boolean property. Set it to `true` to hide the element:
+
+<CodePlayground
+  title="The hidden property"
+  html="
+<p id='toggle-demo'>This text can be hidden</p>
+<button id='hide-btn'>Toggle Hidden</button>"
+  js="
+const p = document.getElementById('toggle-demo');
+const btn = document.getElementById('hide-btn');
+
+btn.addEventListener('click', function() {
+  p.hidden = !p.hidden;
+  btn.textContent = p.hidden ? 'Show' : 'Hide';
+});
+"
+/>
+
+## `value` and `checked`
+
+Form elements have specific value properties:
+
+| Element | Property |
+|---|---|
+| `<input>`, `<textarea>` | `value` |
+| `<select>` | `value` |
+| `<input type="checkbox">` | `checked` |
+| `<input type="radio">` | `checked` |
+
+<CodePlayground
+  title="Form element properties"
+  html="
+<input id='name-input' type='text' placeholder='Type something' value='Hello'>
+<input id='agree-input' type='checkbox' checked>
+<label for='agree-input'>Agreed</label>
+<br>
+<pre id='form-props' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const inp = document.getElementById('name-input');
+const chk = document.getElementById('agree-input');
+const out = document.getElementById('form-props');
+
+function update() {
+  out.textContent =
+    'input.value: ' + inp.value + '\\n' +
+    'checkbox.checked: ' + chk.checked;
+}
+inp.addEventListener('input', update);
+chk.addEventListener('change', update);
+update();
+"
+/>
+
+## NodeType Constants
+
+For readability, use the constants:
+
+```javascript
+element.nodeType === Node.ELEMENT_NODE     // 1
+element.nodeType === Node.TEXT_NODE        // 3
+element.nodeType === Node.COMMENT_NODE     // 8
+element.nodeType === Node.DOCUMENT_NODE    // 9
+```
+
+## Key Takeaways
+
+- `nodeType` tells you **what kind** of node you're dealing with
+- Use `textContent` for **safe text insertion**
+- Use `innerHTML` only with **trusted content**
+- `hidden` is a simple built-in way to show/hide elements
+- Form elements have special value properties (`value`, `checked`)

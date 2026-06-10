@@ -1,0 +1,227 @@
+---
+title: "Introduction to Browser Events"
+description: "Learn how browser events work — event handlers, addEventListener, and event objects"
+date: "2026-06-10"
+category: ["Web Development", "Frontend", "JavaScript DOM", "Events"]
+tags: ["JavaScript", "DOM", "Events"]
+slug: "js-browser-events"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Introduction to Browser Events
+
+An **event** is a signal that something happened. The user clicked, pressed a key, submitted a form, resized the window — all of these fire events you can listen to.
+
+## Three Ways to Handle Events
+
+### 1. HTML Attribute (avoid)
+
+```html
+<button onclick="alert('Clicked!')">Click me</button>
+```
+
+Works, but mixes HTML with JS — **avoid this**.
+
+### 2. DOM Property
+
+```javascript
+button.onclick = function() { alert('Clicked!'); };
+```
+
+Better, but you can only attach **one handler** per event type.
+
+### 3. `addEventListener` (preferred)
+
+```javascript
+button.addEventListener('click', function() {
+  alert('Clicked!');
+});
+```
+
+Attach **multiple handlers**, supports **capture phase**, and you can remove them.
+
+<CodePlayground
+  title="Event Handling Methods"
+  html="
+<button id='btn1'>HTML Attribute</button>
+<button id='btn2'>DOM Property</button>
+<button id='btn3'>addEventListener</button>
+<pre id='event-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const out = document.getElementById('event-out');
+
+// Method 1: HTML attribute — shown in the button tag
+// Method 2: DOM property
+document.getElementById('btn2').onclick = function() {
+  out.textContent = 'DOM property handler fired! (only one allowed)';
+};
+
+// Method 3: addEventListener
+const btn3 = document.getElementById('btn3');
+btn3.addEventListener('click', function() {
+  out.textContent = 'First addEventListener handler';
+});
+btn3.addEventListener('click', function() {
+  out.textContent += ' + Second handler also runs!';
+});
+"
+/>
+
+## The Event Object
+
+Every handler receives an **event object** with information about what happened:
+
+```javascript
+element.addEventListener('click', function(event) {
+  event.type       // "click"
+  event.target     // the element that triggered the event
+  event.currentTarget  // the element the listener is on
+  event.preventDefault()  // cancel default behavior
+  event.stopPropagation() // stop bubbling
+});
+```
+
+<CodePlayground
+  title="Using the Event Object"
+  html="
+<button id='event-info' style='padding:8px 16px;'>Click Me</button>
+<pre id='event-output' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+document.getElementById('event-info').addEventListener('click', function(e) {
+  const out = document.getElementById('event-output');
+  out.textContent =
+    'event.type: ' + e.type + '\\n' +
+    'event.target: ' + e.target.tagName + ' ' + e.target.textContent + '\\n' +
+    'event.currentTarget: ' + e.currentTarget.tagName + '\\n' +
+    'clientX: ' + e.clientX + ', clientY: ' + e.clientY + '\\n' +
+    'timestamp: ' + e.timeStamp + 'ms';
+});
+"
+/>
+
+## Common Event Types
+
+| Event | Fires When |
+|---|---|
+| `click` | Element is clicked |
+| `dblclick` | Element is double-clicked |
+| `mouseover` / `mouseout` | Mouse enters/leaves element |
+| `mousedown` / `mouseup` | Mouse button pressed/released |
+| `mousemove` | Mouse moves |
+| `keydown` / `keyup` | Key pressed/released |
+| `submit` | Form submitted |
+| `focus` / `blur` | Element gains/loses focus |
+| `change` / `input` | Form value changes |
+| `load` | Page or resource loaded |
+| `scroll` | Element or page scrolled |
+| `resize` | Window resized |
+
+<CodePlayground
+  title="Common Events"
+  html="
+<style>
+  #event-area { height: 120px; background: #f1f5f9; border: 2px dashed #6366f1; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: background 0.3s; cursor: pointer; }
+  #event-area.active { background: #eef2ff; }
+</style>
+<div id='event-area'>Interact with me (hover, click)</div>
+<input id='key-input' type='text' placeholder='Type something' style='margin-top:8px;width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:4px;'>
+<pre id='event-log' style='background:#f1f5f9;padding:8px;border-radius:4px;height:60px;overflow:auto;'></pre>"
+  js="
+const area = document.getElementById('event-area');
+const input = document.getElementById('key-input');
+const log = document.getElementById('event-log');
+
+function logEvent(msg) {
+  const time = new Date().toLocaleTimeString();
+  log.textContent = msg + ' at ' + time;
+}
+
+area.addEventListener('mouseenter', () => {
+  area.classList.add('active');
+  logEvent('mouseenter');
+});
+area.addEventListener('mouseleave', () => {
+  area.classList.remove('active');
+  logEvent('mouseleave');
+});
+area.addEventListener('click', () => logEvent('click'));
+area.addEventListener('dblclick', () => logEvent('dblclick'));
+
+input.addEventListener('focus', () => logEvent('focus'));
+input.addEventListener('blur', () => logEvent('blur'));
+input.addEventListener('input', () => logEvent('input: ' + input.value));
+"
+/>
+
+## Removing Event Listeners
+
+To remove an event listener, you need a **reference** to the function:
+
+```javascript
+function handler() { console.log('clicked'); }
+element.addEventListener('click', handler);
+element.removeEventListener('click', handler);  // must be the same function
+```
+
+**Note**: Anonymous functions cannot be removed — always name them if you might need to detach them later.
+
+<CodePlayground
+  title="Attach / Detach Listeners"
+  html="
+<button id='toggle-listen'>Click me (listener active)</button>
+<button id='detach-btn'>Detach Listener</button>
+<pre id='toggle-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+const btn = document.getElementById('toggle-listen');
+const out = document.getElementById('toggle-out');
+
+function handleClick() {
+  out.textContent = 'Listener fired at ' + new Date().toLocaleTimeString();
+}
+
+btn.addEventListener('click', handleClick);
+
+document.getElementById('detach-btn').onclick = function() {
+  btn.removeEventListener('click', handleClick);
+  out.textContent = 'Listener detached!';
+  this.disabled = true;
+  this.textContent = 'Detached';
+};
+"
+/>
+
+## Event Handler Options
+
+`addEventListener` accepts a third parameter — options object:
+
+```javascript
+element.addEventListener('click', handler, {
+  once: true,      // auto-remove after first fire
+  capture: true,   // use capture phase
+  passive: true    // hint: won't call preventDefault (performance)
+});
+```
+
+<CodePlayground
+  title="once option"
+  html="
+<button id='once-btn'>You can only click me once!</button>
+<pre id='once-out' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
+  js="
+document.getElementById('once-btn').addEventListener('click', function() {
+  const out = document.getElementById('once-out');
+  out.textContent = 'Clicked at ' + new Date().toLocaleTimeString();
+  this.textContent = 'Already clicked — won\'t fire again';
+  this.disabled = true;
+}, { once: true });
+"
+/>
+
+## Key Takeaways
+
+- Use `addEventListener` — it's the **most flexible** and **only correct** way
+- The **event object** contains all the details about what happened
+- `event.target` is the originating element; `event.currentTarget` is the listener element
+- Use named functions if you need to `removeEventListener` later
+- `{ once: true }` auto-removes after the first event

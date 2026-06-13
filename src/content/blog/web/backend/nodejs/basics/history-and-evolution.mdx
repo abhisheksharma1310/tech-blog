@@ -1,0 +1,121 @@
+---
+title: "History & Evolution of Node.js"
+description: "A condensed timeline of Node.js — from Ryan Dahl's 2009 prototype to today's vibrant ecosystem"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "History"]
+slug: "nodejs-history-evolution"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## The Birth of Node.js
+
+In **2009**, Ryan Dahl presented Node.js at the JSConf EU conference. His core insight: **I/O should not block**. Existing web servers (Apache, IIS) created a thread per connection, wasting memory. Dahl wanted an event-driven, non-blocking server — and JavaScript, with its callback nature, was the perfect fit.
+
+```
+2009 ──► Ryan Dahl unveils Node.js at JSConf EU
+         First version used Libev (Linux) + libeio
+```
+
+## The Timeline
+
+### 2009 — First Release
+
+- Ryan Dahl releases Node.js v0.0.1
+- Uses Google's **V8 engine** (released Sept 2008)
+- Event loop powered by **libuv** (later)
+- npm is not yet born — you install modules manually
+
+### 2010 — npm Arrives
+
+- **npm** (Node Package Manager) ships with Node.js
+- Designed by Isaac Z. Schlueter
+- Changes everything: one command (`npm install`) pulls in dependencies
+
+```js
+// Example of what code looked like in 2010:
+var http = require('http');
+http.createServer(function (req, res) {
+  res.writeHead(200, {'Content-Type': 'text/plain'});
+  res.end('Hello World\n');
+}).listen(3000);
+```
+
+### 2011 — Windows Support & Maturity
+
+- Node.js v0.6 adds native **Windows** support via libuv
+- **Express** framework emerges as the de-facto web framework
+- **Socket.IO** enables real-time bidirectional communication
+- Large companies (LinkedIn, Uber) start adopting Node.js
+
+### 2012 — The Fork: io.js
+
+- Internal governance disagreements lead to a fork called **io.js**
+- io.js moves faster, adopts newer V8 versions
+- Community splits — package authors must support both
+
+### 2015 — The Merge & Node.js Foundation
+
+- io.js and Node.js **reunite** under the Node.js Foundation
+- **Node.js v4.0.0** is the first unified release
+- Long-term support (LTS) release cycle established
+- ES6 (ES2015) features land via updated V8
+
+| Year | Version | Key Change |
+|------|---------|------------|
+| 2009 | 0.0.1 | First public release |
+| 2010 | 0.2.0 | npm bundled |
+| 2011 | 0.6.0 | Windows support |
+| 2015 | 4.0.0 | io.js merge, LTS cycle |
+| 2017 | 8.0.0 | N-API, async/await |
+| 2019 | 12.0.0 | Flat module (experimental) |
+| 2021 | 16.0.0 | Web Streams API |
+| 2023 | 20.0.0 | Built-in test runner (stable) |
+| 2025 | 24.0.0 | ES modules as default |
+
+## Major Milestones in Code
+
+### 2017 — async/await
+
+```js
+// Before async/await — callback hell
+fs.readFile('a.txt', (err, data) => {
+  fs.readFile('b.txt', (err, data2) => {
+    // ...
+  });
+});
+
+// After — clean async code
+async function readFiles() {
+  const a = await fs.promises.readFile('a.txt', 'utf8');
+  const b = await fs.promises.readFile('b.txt', 'utf8');
+  return { a, b };
+}
+```
+
+### 2019 — ES Modules
+
+```js
+// Traditional CommonJS
+const fs = require('fs');
+
+// Modern ES Modules (set "type": "module" in package.json)
+import fs from 'fs';
+```
+
+## Node.js Today
+
+- **Active LTS releases** every 2 years
+- **OpenJS Foundation** oversees governance
+- Over **2 million packages** on npm
+- Used by 98% of Fortune 500 companies
+- Powers everything from CLI tools to enterprise microservices
+
+## Key Takeaways
+
+- Node.js was created in **2009** to solve the blocking I/O problem
+- **npm** (2010) was the catalyst for mass adoption
+- The **io.js fork (2012–2015)** led to better governance via the Node.js Foundation
+- **ES modules, async/await, and Promises** modernised the API
+- Today Node.js is a **mature, LTS-driven platform** trusted by enterprises

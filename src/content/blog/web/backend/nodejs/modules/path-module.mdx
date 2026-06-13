@@ -1,0 +1,343 @@
+---
+title: "Path Module"
+description: "Master the Node.js path module — join, resolve, parse, format, and manipulate file paths across platforms"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Modules"]
+tags: ["Node.js", "Modules", "Path"]
+slug: "nodejs-path-module"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## The `path` Module
+
+The `path` module provides utilities for working with file and directory paths. It handles the differences between operating systems automatically — Windows uses backslashes (`\`), while Linux and macOS use forward slashes (`/`).
+
+```js
+const path = require('path');
+```
+
+> **Why use path?** Manually concatenating paths with `+ '/' +` is fragile. On Windows, it produces invalid paths. The `path` module handles all platforms correctly.
+
+## `path.join()` — Joining Paths
+
+The most commonly used path method. It joins path segments using the correct platform separator and normalises the result:
+
+```js
+const path = require('path');
+
+// Platform-independent path construction
+const fullPath = path.join('/users', 'abhishek', 'projects', 'app.js');
+// Linux/macOS: /users/abhishek/projects/app.js
+// Windows:     \users\abhishek\projects\app.js
+
+// Relative paths work too
+console.log(path.join('/base', '..', 'other', 'file.txt'));
+// /base/../other/file.txt  → normalised to /other/file.txt
+// Wait — path.join doesn't resolve '..' on its own.
+// For normalised resolution, use path.resolve().
+```
+
+> **`path.join` vs string concatenation:** `path.join('a', 'b', 'c')` returns `a/b/c`. `'a' + '/' + 'b'` works until someone passes an absolute path or a Windows path.
+
+## `path.resolve()` — Resolving to Absolute Paths
+
+`path.resolve` resolves a sequence of paths to an **absolute path**. It processes segments from right to left, prepending the current working directory until an absolute path is found:
+
+```js
+const path = require('path');
+
+// If current working directory is /home/user/project:
+
+path.resolve('dist', 'app.js');
+// → /home/user/project/dist/app.js
+
+path.resolve('/etc', 'config.json');
+// → /etc/config.json  (absolute path stops resolution)
+
+path.resolve('src', '..', 'dist', 'app.js');
+// → /home/user/project/dist/app.js  (normalised)
+
+// Common pattern: resolve relative to __dirname
+const configPath = path.resolve(__dirname, '..', 'config', 'app.json');
+// → /home/user/project/config/app.json (regardless of CWD)
+```
+
+### `join` vs `resolve`
+
+| Method | Behaviour | Use Case |
+|--------|-----------|----------|
+| `path.join()` | Concatenates segments with separator | Building relative paths |
+| `path.resolve()` | Resolves to absolute path | Getting full paths |
+
+```js
+const path = require('path');
+
+// join — just concatenates
+path.join('a', 'b', 'c');         // 'a/b/c'
+path.join('/a', 'b', '/c');       // '/a/b/c' (extra /c is ignored)
+
+// resolve — makes absolute
+path.resolve('a', 'b', 'c');      // '/cwd/a/b/c'
+path.resolve('/a', 'b', '/c');    // '/c' (last absolute wins)
+```
+
+## `path.basename()` — Get the File Name
+
+```js
+const path = require('path');
+
+path.basename('/users/abhishek/app.js');
+// 'app.js'
+
+path.basename('/users/abhishek/app.js', '.js');
+// 'app' — strips the extension
+
+path.basename('/users/abhishek/');
+// 'abhishek' — last directory
+```
+
+## `path.dirname()` — Get the Directory
+
+```js
+const path = require('path');
+
+path.dirname('/users/abhishek/app.js');
+// '/users/abhishek'
+
+path.dirname('/users/abhishek/');
+// '/users/abhishek'
+
+// Equivalent to __dirname when used on __filename
+console.log(path.dirname(__filename));
+// Same as __dirname
+```
+
+## `path.extname()` — Get the Extension
+
+```js
+const path = require('path');
+
+path.extname('index.html');
+// '.html'
+
+path.extname('archive.tar.gz');
+// '.gz' — only the last extension
+
+path.extname('.gitignore');
+// '' — no extension (starts with dot)
+
+path.extname('Makefile');
+// '' — no extension
+
+// Common use: switch behaviour based on file type
+if (path.extname(filename) === '.json') {
+  return JSON.parse(content);
+}
+```
+
+## `path.parse()` — Parse a Full Path
+
+Parses a path into its components — the most detailed method:
+
+```js
+const path = require('path');
+
+const parsed = path.parse('/users/abhishek/projects/app.js');
+console.log(parsed);
+```
+
+Output on Linux:
+
+```js
+{
+  root: '/',
+  dir: '/users/abhishek/projects',
+  base: 'app.js',
+  ext: '.js',
+  name: 'app'
+}
+```
+
+Output on Windows:
+
+```js
+{
+  root: 'C:\\',
+  dir: 'C:\\users\\abhishek\\projects',
+  base: 'app.js',
+  ext: '.js',
+  name: 'app'
+}
+```
+
+### `path.format()` — The Reverse of `parse`
+
+```js
+const path = require('path');
+
+const obj = {
+  dir: '/users/abhishek',
+  name: 'app',
+  ext: '.js',
+};
+
+console.log(path.format(obj));
+// /users/abhishek/app.js
+```
+
+## `path.normalize()` — Clean Up Paths
+
+Normalises a path by resolving `..` and `.` segments and cleaning duplicate separators:
+
+```js
+const path = require('path');
+
+path.normalize('/users//abhishek/./projects/../app.js');
+// '/users/abhishek/app.js'
+
+path.normalize('C:\\Users\\\\Abhishek\\.\\projects\\..\\app.js');
+// 'C:\\Users\\Abhishek\\app.js'
+```
+
+## `path.relative()` — Relative Path Between Two Paths
+
+```js
+const path = require('path');
+
+const from = '/users/abhishek/projects/app/src/index.js';
+const to = '/users/abhishek/projects/app/dist/bundle.js';
+
+console.log(path.relative(from, to));
+// '../../dist/bundle.js'
+
+// Useful for computing relative import paths
+function relativeImport(fromFile, toFile) {
+  const rel = path.relative(path.dirname(fromFile), toFile);
+  return rel.startsWith('.') ? rel : './' + rel;
+}
+
+console.log(relativeImport(
+  '/src/app/models/user.ts',
+  '/src/app/services/user.ts'
+));
+// '../services/user'
+```
+
+## `path.isAbsolute()` — Check if Path is Absolute
+
+```js
+const path = require('path');
+
+path.isAbsolute('/users/abhishek');   // true (Linux)
+path.isAbsolute('C:\\Users');         // true (Windows)
+path.isAbsolute('./relative');        // false
+path.isAbsolute('relative');          // false
+```
+
+## `path.sep` — Platform Separator
+
+```js
+const path = require('path');
+
+console.log(path.sep);
+// Linux/macOS: '/'
+// Windows:     '\\'
+
+// Useful for splitting paths
+const parts = process.cwd().split(path.sep);
+```
+
+## `path.delimiter` — PATH Delimiter
+
+```js
+const path = require('path');
+
+console.log(path.delimiter);
+// Linux/macOS: ':'
+// Windows:     ';'
+
+// Parsing PATH environment variable
+const paths = process.env.PATH.split(path.delimiter);
+console.log('Directories in PATH:', paths.length);
+```
+
+## Common Patterns
+
+### Pattern 1: Safe File Extension Check
+
+```js
+const path = require('path');
+const ALLOWED_EXTENSIONS = ['.jpg', '.png', '.gif', '.webp'];
+
+function isAllowedImage(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  return ALLOWED_EXTENSIONS.includes(ext);
+}
+
+// Guards against: "image.jpg.exe" — extname only gets the LAST extension
+// If you need to check the real file type, use file signatures (magic bytes)
+```
+
+### Pattern 2: Getting All Ancestor Directories
+
+```js
+const path = require('path');
+
+function getAncestors(filePath) {
+  const ancestors = [];
+  let current = path.dirname(filePath);
+
+  while (current !== path.dirname(current)) {
+    ancestors.push(current);
+    current = path.dirname(current);
+  }
+  ancestors.push(current); // root
+
+  return ancestors;
+}
+
+console.log(getAncestors('/a/b/c/d/file.js'));
+// [ '/a/b/c/d', '/a/b/c', '/a/b', '/a', '/' ]
+```
+
+### Pattern 3: Finding Config Files Up the Tree
+
+```js
+const path = require('path');
+const fs = require('fs');
+
+function findConfig(startDir = process.cwd()) {
+  let current = startDir;
+
+  while (true) {
+    const configPath = path.join(current, 'app.config.json');
+
+    if (fs.existsSync(configPath)) {
+      return configPath;
+    }
+
+    const parent = path.dirname(current);
+    if (parent === current) break; // Reached root
+    current = parent;
+  }
+
+  return null;
+}
+
+const configPath = findConfig();
+console.log('Found config at:', configPath);
+```
+
+## Key Takeaways
+
+- **`path.join()`** concatenates path segments — use it instead of string concatenation
+- **`path.resolve()`** returns an absolute path — use it with `__dirname` for reliable paths
+- **`path.parse()`** breaks a path into `root`, `dir`, `base`, `name`, `ext`
+- **`path.basename()`** gets the file name; optionally strip the extension
+- **`path.extname()`** returns only the **last** extension (`tar.gz` → `.gz`)
+- Always use `path` methods instead of manual string manipulation — they handle cross-platform differences
+- **`path.relative()`** computes the relative path between two absolute paths
+- **`path.normalize()`** cleans up redundant separators and `.`/`..` segments
+- **`path.sep`** is `/` on Linux/macOS and `\` on Windows
+- Use `path.resolve(__dirname, 'relative/path')` to build absolute paths regardless of the current working directory

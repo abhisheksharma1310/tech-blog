@@ -1,0 +1,513 @@
+---
+title: "Performance Optimization"
+description: "Profile, cache, and scale Node.js applications — flamegraphs, memoisation, load balancing, and monitoring"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Advanced"]
+tags: ["Node.js", "Advanced", "Performance", "Profiling", "Caching"]
+slug: "nodejs-performance-optimization"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## The Performance Pyramid
+
+Before you touch a single line of code, understand this: **premature optimisation is the root of all evil**. Always measure first, optimise second. Optimise in this order — most impact first:
+
+```
+1. Identify bottlenecks (profile)
+       │
+       ▼
+2. Reduce work (cache, lazy load, skip unnecessary work)
+       │
+       ▼
+3. Distribute work (cluster, queue, offload to workers)
+       │
+       ▼
+4. Optimise code (algorithms, V8 tricks, micro-optimisations)
+```
+
+**Rule of thumb:** A cache hit saves 100x more time than any micro-optimisation. Always start at the top of the pyramid.
+
+## 1. Profiling — Finding the Bottleneck
+
+Before you can optimise, you need to know what's slow. Guessing is almost always wrong.
+
+### Built-in `--prof` Flag
+
+Node.js includes a built-in V8 profiler:
+
+```bash
+# Profile a script
+node --prof app.js
+# Run some requests (generate load)
+# Then:
+node --prof-process isolate-*.log > profile.txt
+```
+
+The output shows you which C++ and JavaScript functions consume the most CPU time. Look for functions with high **self** time (time spent inside the function itself, not in its callees).
+
+### Chrome DevTools Integration
+
+The most visual approach — connect Node.js to Chrome's DevTools:
+
+```bash
+node --inspect-brk app.js
+```
+
+Then open `chrome://inspect` in Chrome → click "Open dedicated DevTools for Node". You get:
+
+- **CPU Profiler** — record a profile, see a flamechart
+- **Memory Heap** — take snapshots, compare for leaks
+- **Performance** — record activity timeline
+- **Sources** — set breakpoints, step through code
+
+### Programmatic Profiling
+
+For precise timing of specific code paths:
+
+```js
+// perf-hooks.js
+const { performance, PerformanceObserver } = require('perf_hooks');
+
+// Mark the start
+performance.mark('query-start');
+const results = await db.complexQuery();
+performance.mark('query-end');
+
+// Measure the duration
+performance.measure('database-query', 'query-start', 'query-end');
+
+// Observe measurements
+const obs = new PerformanceObserver((items) => {
+  for (const entry of items.getEntries()) {
+    console.log(`${entry.name}: ${entry.duration.toFixed(2)}ms`);
+  }
+});
+obs.observe({ entryTypes: ['measure'] });
+```
+
+### Flamegraphs with `0x`
+
+Flamegraphs visualise **where CPU time is spent**: wider bars mean more time:
+
+```bash
+npx 0x app.js
+# Opens a flamegraph in the browser
+# Each bar is a function call; wider = more CPU time
+# Look for "plateaus" — wide functions that indicate bottlenecks
+```
+
+## 2. Caching Strategies
+
+Caching is the single highest-impact optimisation. Every millisecond spent generating data is a millisecond you can eliminate by caching.
+
+### In-Memory Cache (TTL-Based)
+
+```js
+// simple-cache.js
+class MemoryCache {
+  constructor(ttlSeconds = 60) {
+    this.cache = new Map();
+    this.ttl = ttlSeconds * 1000;
+  }
+
+  get(key) {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    // Expired — remove and return null
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.value;
+  }
+
+  set(key, value, ttlOverride) {
+    const ttl = ttlOverride || this.ttl;
+    this.cache.set(key, {
+      value,
+      expiry: Date.now() + ttl,
+    });
+  }
+
+  delete(key) { this.cache.delete(key); }
+  clear() { this.cache.clear(); }
+  get size() { return this.cache.size; }
+}
+
+// Usage: cache database results for 30 seconds
+const userCache = new MemoryCache(30);
+
+async function getUser(id) {
+  const cached = userCache.get(`user:${id}`);
+  if (cached) {
+    console.log('Cache HIT for user', id);
+    return cached;
+  }
+
+  console.log('Cache MISS for user', id);
+  const user = await db.findUser(id); // Expensive query
+  userCache.set(`user:${id}`, user);
+  return user;
+}
+```
+
+### LRU Cache (Least Recently Used)
+
+TTL caches grow unbounded. An LRU cache evicts the **least recently used** entries when it reaches its limit:
+
+```bash
+npm install lru-cache
+```
+
+```js
+const { LRUCache } = require('lru-cache');
+
+const cache = new LRUCache({
+  max: 500,           // Max 500 entries
+  ttl: 1000 * 60,     // 1 minute TTL
+  // Also available: maxSize (for byte-based limits)
+});
+
+cache.set('key', 'value');
+console.log(cache.get('key')); // 'value'
+
+// If cache has 500 entries and we add one more,
+// the least recently accessed entry is evicted
+```
+
+### HTTP Response Caching
+
+For API responses that are expensive to compute:
+
+```js
+const express = require('express');
+const app = express();
+
+// Cache expensive API responses
+const responseCache = new Map();
+
+app.get('/api/reports/:id', async (req, res) => {
+  const cacheKey = `report:${req.params.id}`;
+  const cached = responseCache.get(cacheKey);
+
+  if (cached && Date.now() < cached.expiry) {
+    res.set('X-Cache', 'HIT');
+    return res.json(cached.data);
+  }
+
+  const start = Date.now();
+  const data = await generateComplexReport(req.params.id);
+  console.log(`Report generated in ${Date.now() - start}ms`);
+
+  // Cache for 30 seconds
+  responseCache.set(cacheKey, {
+    data,
+    expiry: Date.now() + 30_000,
+  });
+
+  res.set('X-Cache', 'MISS');
+  res.json(data);
+});
+```
+
+### Multi-Layer Caching
+
+In production, cache at multiple levels:
+
+```
+Client (Browser)
+    │
+    ├── CDN Cache (CloudFlare, CloudFront) — 10ms
+    │
+    ├── Reverse Proxy (Nginx, Varnish) — 1ms
+    │
+    ├── Application Cache (Redis, in-memory) — 0.1ms
+    │
+    └── Database — 10-100ms
+```
+
+## 3. Database Query Optimisation
+
+### Connection Pooling
+
+Creating a new database connection per request is **the single worst performance mistake**. Always pool:
+
+```js
+// pool.js — never create connections per request
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  max: 20,                // Max concurrent connections
+  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  connectionTimeoutMillis: 2000, // Fail fast if no connection
+});
+
+// Reuse the pool for all queries
+async function query(text, params) {
+  const start = Date.now();
+  const res = await pool.query(text, params);
+  const duration = Date.now() - start;
+
+  if (duration > 100) {
+    console.warn(`Slow query (${duration}ms): ${text.slice(0, 100)}`);
+  }
+  return res;
+}
+```
+
+### The N+1 Problem
+
+```js
+// ❌ BAD — N+1 queries
+const posts = await db.getRecentPosts();        // 1 query
+for (const post of posts) {                     // N queries
+  const author = await db.findUser(post.authorId);
+  post.author = author;
+}
+
+// ✅ GOOD — single batch query
+const posts = await db.getRecentPosts();
+const authorIds = [...new Set(posts.map(p => p.authorId))];
+const authors = await db.findUsersByIds(authorIds); // 1 query
+const authorMap = new Map(authors.map(a => [a.id, a]));
+
+for (const post of posts) {
+  post.author = authorMap.get(post.authorId);
+}
+```
+
+### Pagination (Never Return Everything)
+
+```js
+// ❌ BAD — returns everything
+app.get('/api/users', async (req, res) => {
+  const users = await db.findUsers(); // Could be millions
+  res.json(users);
+});
+
+// ✅ GOOD — cursor-based pagination
+app.get('/api/users', async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+  const cursor = req.query.cursor; // Last ID from previous page
+
+  const users = await db.findUsers({
+    limit: limit + 1,
+    cursor,
+  });
+
+  const hasMore = users.length > limit;
+  if (hasMore) users.pop();
+
+  res.json({
+    data: users,
+    nextCursor: hasMore ? users[users.length - 1].id : null,
+  });
+});
+```
+
+## 4. Load Testing
+
+Never guess how many requests your server can handle. Measure it:
+
+```bash
+# Install autocannon
+npm install -g autocannon
+
+# Load test: 100 concurrent connections for 30 seconds
+autocannon -c 100 -d 30 http://localhost:3000/api/users
+
+# Sample output:
+# ┌─────────┬────────┬────────┬──────────┬──────────┐
+# │ Stat    │ 2.5%   │ 50%    │ 97.5%    │ 99%      │
+# ├─────────┼────────┼────────┼──────────┼──────────┤
+# │ Latency │ 5ms    │ 12ms   │ 45ms     │ 68ms     │
+# └─────────┴────────┴────────┴──────────┴──────────┘
+# ┌─────────┬──────────────┐
+# │ Req/Sec │ 8500         │
+# └─────────┴──────────────┘
+```
+
+Compare before and after each optimisation to see what actually helped.
+
+## 5. Code-Level Optimisations
+
+These are at the bottom of the pyramid for a reason — they typically yield 5-10% improvement, while caching can yield 1000%+. But when all else is equal, these matter.
+
+### Avoid Blocking the Event Loop
+
+Heavy synchronous work blocks everything — no requests, no timers, no I/O:
+
+```js
+// ❌ BAD — blocks event loop for the entire array
+function processLargeArray(arr) {
+  for (const item of arr) {
+    heavyComputation(item);
+  }
+}
+
+// ✅ BETTER — chunk the work, yield between chunks
+function processInChunks(arr, chunkSize = 1000) {
+  let index = 0;
+
+  function nextChunk() {
+    const chunk = arr.slice(index, index + chunkSize);
+    for (const item of chunk) {
+      heavyComputation(item);
+    }
+    index += chunkSize;
+
+    if (index < arr.length) {
+      setImmediate(nextChunk); // Yield to event loop
+    } else {
+      console.log('All chunks processed');
+    }
+  }
+
+  nextChunk();
+}
+
+// ✅ BEST — offload to worker thread
+const { Worker } = require('worker_threads');
+// Worker threads run CPU work on a separate core
+```
+
+### Use Native Methods
+
+V8 heavily optimises built-in methods. Hand-written loops are often slower:
+
+```js
+// ❌ Manual loop (slower — V8 can't inline as well)
+let sum = 0;
+for (const val of numbers) sum += val;
+
+// ✅ Use reduce (V8 optimises built-in array methods)
+const sum = numbers.reduce((a, b) => a + b, 0);
+
+// ❌ Spread for large arrays (creates GC pressure)
+const merged = [...arr1, ...arr2];
+
+// ✅ concat for large arrays (less object allocation)
+const merged = arr1.concat(arr2);
+```
+
+### String Concatenation
+
+Strings are immutable in JavaScript. Every `+=` creates a new string:
+
+```js
+// ❌ Bad — quadratic time, reallocates on every iteration
+let html = '';
+for (const item of items) {
+  html += `<li>${item}</li>`;
+}
+
+// ✅ Good — array join (single allocation)
+const html = `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+
+// ✅ Best for huge strings — use a StringBuilder pattern
+const chunks = [];
+for (const item of items) {
+  chunks.push(`<li>${item}</li>`);
+}
+const html = `<ul>${chunks.join('')}</ul>`;
+```
+
+## 6. Compression
+
+Compressing HTTP responses reduces bandwidth by 70-90% with almost no CPU cost:
+
+```js
+const express = require('express');
+const compression = require('compression');
+
+const app = express();
+app.use(compression({
+  level: 6,              // Default — good balance
+  threshold: 1024,       // Only compress responses > 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  },
+}));
+
+// Without compression: 2.3 MB response → 340 KB
+// Without compression: 8500 req/s → 12000 req/s (less data to send)
+```
+
+## 7. Monitoring in Production
+
+You can't optimise what you can't see. Monitor these metrics:
+
+```js
+// metrics.js
+const os = require('os');
+const v8 = require('v8');
+
+function getMetrics() {
+  return {
+    memory: {
+      rss: process.memoryUsage().rss,          // Resident Set Size
+      heapUsed: process.memoryUsage().heapUsed, // V8 heap used
+      heapTotal: process.memoryUsage().heapTotal,
+    },
+    cpu: {
+      loadAvg: os.loadavg(),  // 1, 5, 15 minute CPU load
+      cores: os.cpus().length,
+    },
+    uptime: process.uptime(),
+    eventLoopLag: null, // Calculated below
+  };
+}
+
+async function getEventLoopLag() {
+  const start = Date.now();
+  return new Promise((resolve) => {
+    setImmediate(() => resolve(Date.now() - start));
+  });
+}
+
+// Expose as health endpoint
+app.get('/health', async (req, res) => {
+  const metrics = getMetrics();
+  metrics.eventLoopLag = await getEventLoopLag();
+
+  // Alert if lag exceeds 50ms
+  const healthy = metrics.eventLoopLag < 50
+    && metrics.memory.heapUsed < 500 * 1024 * 1024; // 500MB
+
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'ok' : 'degraded',
+    metrics,
+  });
+});
+```
+
+## Performance Checklist
+
+| Area | Check | Tool |
+|------|-------|------|
+| CPU | Which functions consume the most CPU? | `--prof`, Chrome DevTools, `0x` |
+| Memory | Is heap growing continuously? | Heap snapshots via `--inspect` |
+| Database | Are queries slow? N+1? | Query logging, `EXPLAIN ANALYZE` |
+| Cache | Is expensive data being recomputed? | Cache hit ratio monitoring |
+| Event Loop | Is the loop lagging? | `setImmediate` lag measurement |
+| Network | Are responses compressible? | Check response sizes |
+| Concurrency | Are you using all CPU cores? | `cluster` module |
+| Dependencies | Are there unnecessary packages? | `npm ls`, bundle analysis |
+
+## Key Takeaways
+
+- **Profile before optimising** — measure, don't guess
+- **Caching is the highest-impact optimisation** — every miss saved is pure win
+- Use **LRU caches** (with size limits) for memory-safe caching
+- **Pool database connections** — never create them per request
+- **Batch database queries** — avoid the N+1 problem at all costs
+- **Chunk heavy work** using `setImmediate` to yield to the event loop
+- **Compress HTTP responses** (gzip/brotli) — easy 70-90% size reduction
+- **Load test** every change — `autocannon` or `wrk` for reproducible benchmarks
+- **Monitor event loop lag** — it's the first indicator that your app is struggling
+- **Use native methods** over hand-written loops when possible
+- Always start at the **top of the pyramid** (bottlenecks → caching → clustering → micro-optimisations)

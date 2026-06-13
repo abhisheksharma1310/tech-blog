@@ -1,0 +1,386 @@
+---
+title: "Scaling Node.js Applications"
+description: "Scale Node.js apps — vertical vs horizontal scaling, clustering, load balancing, reverse proxies, and microservices architecture"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Production"]
+tags: ["Node.js", "Production", "Scaling", "Clustering", "Microservices"]
+slug: "nodejs-scaling"
+author: "Abhishek Sharma"
+order: 6
+---
+
+## Why Scale?
+
+A single Node.js process on one server has hard limits:
+
+- **CPU** — one core (event loop is single-threaded)
+- **Memory** — limited by server RAM (e.g., 512MB on a small VPS)
+- **Connections** — limited by file descriptors (default ~1024 on Linux)
+- **Throughput** — limited by event loop capacity (~10K req/s on one core)
+
+When your app exceeds any of these, you need to scale.
+
+```
+Single Node Process              Scaled App
+┌────────────────────┐           ┌────────────────────┐
+│    1 CPU Core       │           │   Load Balancer     │
+│    512MB RAM        │           │         │           │
+│    ~1024 sockets    │           │    ┌────┼────┐      │
+│    ~5000 req/s      │           │    │    │    │      │
+└────────────────────┘           │  ┌─┴┐ ┌─┴┐ ┌─┴┐    │
+                                  │  │W1│ │W2│ │W3│    │
+                                  │  └──┘ └──┘ └──┘    │
+                                  │  3 CPU Cores        │
+                                  │  1.5GB RAM total    │
+                                  │  ~15,000 req/s      │
+                                  └────────────────────┘
+```
+
+## Vertical vs Horizontal Scaling
+
+| Strategy | What It Means | Node.js Approach |
+|----------|---------------|------------------|
+| **Vertical** | Bigger server (more CPU, RAM) | Upgrade VPS from 2GB to 16GB |
+| **Horizontal** | More servers (add instances) | Load balancer + multiple app servers |
+
+```
+Vertical Scaling:               Horizontal Scaling:
+┌────────────────┐              ┌────────────────┐
+│ 1 Big Server   │              │ Load Balancer  │
+│ 16 cores       │              └───┬───┬───┬────┘
+│ 64GB RAM       │              ┌──┴┐ ┌┴┐ ┌┴──┐
+└────────────────┘              │S1 │ │S2│ │S3 │
+                                └───┘ └──┘ └───┘
+```
+
+## 1. Vertical Scaling — The Node.js Cluster Module
+
+Before adding more machines, use all the cores on one machine:
+
+```js
+const cluster = require('cluster');
+const os = require('os');
+
+if (cluster.isMaster) {
+  const cpuCount = os.cpus().length;
+  console.log(`Master ${process.pid} forking ${cpuCount} workers`);
+
+  for (let i = 0; i < cpuCount; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker) => {
+    console.log(`Worker ${worker.process.pid} died, restarting`);
+    cluster.fork();
+  });
+} else {
+  require('./app.js');  // Your app — each worker runs independently
+}
+```
+
+### PM2 Cluster Mode (Simpler)
+
+```bash
+# PM2 handles clustering with zero code changes
+pm2 start app.js -i max        # One worker per CPU core
+pm2 start app.js -i 4          # Exactly 4 workers
+pm2 start app.js -i 0          # Auto-detect (max - 1)
+```
+
+```js
+// ecosystem.config.js
+module.exports = {
+  apps: [{
+    name: 'my-api',
+    script: 'app.js',
+    instances: 'max',
+    exec_mode: 'cluster',
+  }],
+};
+```
+
+### Cluster Limitations
+
+- **In-memory state is NOT shared** — each worker has its own heap. Session data, caches, and counters are duplicated. Use Redis or a database for shared state.
+- **Sticky sessions** — if using WebSockets or long-lived sessions, configure the load balancer for sticky sessions (same client → same worker).
+
+## 2. Horizontal Scaling — Load Balancing
+
+When one machine isn't enough, distribute traffic across multiple machines:
+
+```
+                          ┌────────────────┐
+                          │  Load Balancer  │
+                          │  (Nginx / HAProxy / AWS ALB) │
+                          └──┬──────┬──────┬──┘
+                             │      │      │
+                       ┌─────┴┐ ┌───┴──┐ ┌┴─────┐
+                       │ App1 │ │ App2 │ │ App3 │
+                       │ node │ │ node │ │ node │
+                       └──────┘ └──────┘ └──────┘
+```
+
+### Nginx as a Load Balancer
+
+```nginx
+# /etc/nginx/nginx.conf
+http {
+    upstream my_api {
+        # Round-robin (default)
+        server app1.internal:3000;
+        server app2.internal:3000;
+        server app3.internal:3000;
+
+        # Optional: sticky sessions via IP hash
+        # ip_hash;
+    }
+
+    server {
+        listen 80;
+        server_name api.example.com;
+
+        location / {
+            proxy_pass http://my_api;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}
+```
+
+### Load Balancing Strategies
+
+| Strategy | Behaviour | Use Case |
+|----------|-----------|----------|
+| Round-robin | Requests distributed in order | Most common, works for stateless APIs |
+| Least connections | Send to server with fewest active connections | Uneven request durations |
+| IP hash | Same client IP always goes to same server | Session persistence (sticky sessions) |
+| Random | Distribute randomly | Simple, avoids edge cases |
+
+## 3. Statelessness — The Key to Scaling
+
+For horizontal scaling to work, your app must be **stateless**:
+
+```js
+// ❌ BAD — state stored in process memory
+const sessions = new Map();
+
+app.post('/login', (req, res) => {
+  const token = generateToken();
+  sessions.set(token, { user: req.body.username });
+  // If this request goes to server 2 on next call, session is lost!
+  res.json({ token });
+});
+
+// ✅ GOOD — state stored externally
+app.post('/login', async (req, res) => {
+  const token = generateToken();
+  await redis.set(`session:${token}`, JSON.stringify({ user: req.body.username }), 'EX', 3600);
+  // Any server can look up the session
+  res.json({ token });
+});
+
+app.get('/profile', async (req, res) => {
+  const session = await redis.get(`session:${req.headers.authorization}`);
+  // Works regardless of which server handles the request
+});
+```
+
+### Stateless Checklist
+
+| Resource | Local (Bad for Scale) | External (Good for Scale) |
+|----------|----------------------|---------------------------|
+| Sessions | In-memory Map | Redis, Memcached |
+| File uploads | Local disk | S3, Cloud Storage |
+| Cache | In-memory object | Redis, CDN |
+| Queues | In-process array | RabbitMQ, Redis, SQS |
+| Logs | Local file | stdout → log aggregator |
+
+## 4. Reverse Proxy
+
+A reverse proxy sits in front of your Node.js app and handles concerns that Node.js shouldn't:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name api.example.com;
+
+    # SSL termination
+    ssl_certificate /etc/letsencrypt/live/api.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+
+    # Static files — serve directly, don't hit Node.js
+    location /static/ {
+        root /var/www/public;
+        expires 365d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # API requests — proxy to Node.js
+    location /api/ {
+        proxy_pass http://localhost:3000;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Rate limiting at proxy level
+        limit_req zone=api burst=20 nodelay;
+    }
+
+    # Compression at proxy level
+    gzip on;
+    gzip_types text/plain application/json application/javascript text/css;
+}
+```
+
+**What the reverse proxy handles:**
+
+- **SSL/TLS termination** — Node.js doesn't handle SSL directly
+- **Static file serving** — Nginx serves static assets 10x faster than Node.js
+- **Compression** — gzip at proxy level, offloads CPU work from Node.js
+- **Rate limiting** — block malicious traffic before it reaches your app
+- **Request buffering** — handles slow clients so Node.js doesn't wait
+
+## 5. Microservices Architecture
+
+Instead of one big app, split into small, independent services:
+
+```
+Monolith:                        Microservices:
+┌──────────────────────┐         ┌────────┐ ┌────────┐
+│ User Management      │         │ Auth   │ │ Users  │
+│ Product Catalog      │         │ Service│ │ Service│
+│ Order Processing     │         └────────┘ └────────┘
+│ Payment              │         ┌────────┐ ┌────────┐
+│ Notifications        │         │ Orders │ │Payment │
+│ Analytics            │         │ Service│ │Service │
+└──────────────────────┘         └────────┘ └────────┘
+                                         │
+                                    ┌────┴────┐
+                                    │  Message │
+                                    │  Queue   │
+                                    └─────────┘
+```
+
+### Communication Between Services
+
+```js
+// Synchronous — HTTP API call
+const response = await fetch('http://user-service:3001/api/users/42');
+const user = await response.json();
+
+// Asynchronous — message queue
+const amqp = require('amqplib');
+const connection = await amqp.connect('amqp://rabbitmq');
+const channel = await connection.createChannel();
+
+// Publish event
+channel.publish('orders', 'order.created', Buffer.from(JSON.stringify(order)));
+
+// Consume event (in notification service)
+channel.consume('order.created', (msg) => {
+  const order = JSON.parse(msg.content.toString());
+  await sendEmail(order.userEmail, 'Order confirmed!');
+  channel.ack(msg);
+});
+```
+
+### Microservices Pros & Cons
+
+| Pros | Cons |
+|------|------|
+| Independent scaling (scale only busy services) | Distributed systems complexity |
+| Independent deployment | Network latency between services |
+| Language-agnostic (polyglot) | Data consistency challenges |
+| Smaller codebases per team | Testing requires integration tests |
+| Fault isolation (one service crash ≠ all crash) | Operational overhead (monitoring, tracing) |
+
+## 6. Auto-Scaling
+
+Automatically add or remove servers based on load:
+
+```yaml
+# AWS Auto Scaling config (conceptual)
+AutoScalingGroup:
+  MinSize: 2
+  MaxSize: 10
+  ScalingPolicies:
+    - PolicyName: ScaleOut
+      MetricType: CPUUtilization
+      TargetValue: 70
+      ScaleInCooldown: 60
+    - PolicyName: ScaleIn
+      MetricType: CPUUtilization
+      TargetValue: 30
+      ScaleInCooldown: 120
+```
+
+For simpler setups, use a platform that auto-scales:
+
+- **Railway** — auto-scales based on CPU/memory
+- **Fly.io** — auto-scales to zero, wakes on request
+- **Heroku** — auto-scaling dynos (paid addon)
+- **AWS Elastic Beanstalk** — auto-scaling with CloudWatch
+
+## 7. Database Scaling
+
+When your database becomes the bottleneck:
+
+```
+Read Replicas:                    Sharding:
+┌────────┐                       ┌────────┐
+│ Master │──► Replica 1          │ Shard 1 │ Users A–M
+│ (write)│──► Replica 2          ├────────┤
+└────────┘──► Replica 3          │ Shard 2 │ Users N–Z
+        (reads distributed)       └────────┘
+```
+
+```js
+// Read/write splitting
+const { Pool } = require('pg');
+
+const writerPool = new Pool({ connectionString: process.env.DB_WRITER_URL });
+const readerPool = new Pool({ connectionString: process.env.DB_READER_URL });
+
+async function getUser(id) {
+  const { rows } = await readerPool.query('SELECT * FROM users WHERE id = $1', [id]);
+  return rows[0];
+}
+
+async function updateUser(id, data) {
+  const { rows } = await writerPool.query('UPDATE users SET name = $1 WHERE id = $2 RETURNING *', [data.name, id]);
+  return rows[0];
+}
+```
+
+## Scaling Decision Tree
+
+```
+Is your app slow?
+    │
+    ├── Profile the bottleneck
+    │
+    ├── Is it CPU? → Cluster mode (PM2 -i max)
+    │
+    ├── Is it memory? → Bigger server or Redis cache
+    │
+    ├── Is it database? → Indexes → Read replicas → Sharding
+    │
+    ├── Is it network? → CDN, compression, keep-alive
+    │
+    └── Is it one server's limit? → Horizontal scaling with load balancer
+```
+
+## Key Takeaways
+
+- **Vertical scaling first** — use PM2 cluster mode to utilise all CPU cores on one machine
+- **Cluster mode does NOT share memory** — use Redis for sessions, caches, and shared state
+- **Horizontal scaling** requires a **load balancer** (Nginx, HAProxy, AWS ALB)
+- **Statelessness is essential** for horizontal scaling — sessions go in Redis, files go in S3
+- **Reverse proxy** (Nginx) handles SSL, static files, compression, rate limiting — offloads Node.js
+- **Microservices** enable independent scaling but add operational complexity
+- **Auto-scaling** adjusts capacity based on metrics (CPU, request rate) — use it for variable traffic
+- **Database scaling** (read replicas, sharding) is often the next bottleneck after app servers
+- **Always measure before scaling** — profile to find the real bottleneck; scaling the wrong layer wastes resources

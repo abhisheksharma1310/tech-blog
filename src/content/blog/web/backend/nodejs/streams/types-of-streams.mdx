@@ -1,0 +1,375 @@
+---
+title: "Types of Streams — Readable, Writable, Duplex, Transform"
+description: "Deep dive into Node.js stream types — Readable, Writable, Duplex, and Transform with practical examples"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Streams"]
+tags: ["Node.js", "Streams", "Readable", "Writable"]
+slug: "nodejs-stream-types"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## The Four Stream Types
+
+Node.js has exactly four base stream classes. Every stream in Node.js — from files to HTTP to compression — extends one of these:
+
+```
+Stream (base)
+ ├── Readable
+ ├── Writable
+ └── Duplex
+      └── Transform
+```
+
+| Type | Read? | Write? | Use Case |
+|------|-------|--------|----------|
+| `Readable` | Yes | No | Reading files, receiving HTTP requests |
+| `Writable` | No | Yes | Writing files, sending HTTP responses |
+| `Duplex` | Yes | Yes (independent) | TCP sockets, SSH, WebSockets |
+| `Transform` | Yes | Yes (chained) | Compression, encryption, parsing |
+
+## 1. Readable Streams
+
+A Readable stream is a **source of data**. It produces data that you consume.
+
+### Creating a Readable Stream
+
+```js
+const { Readable } = require('stream');
+
+// Method 1: Using fs module (most common)
+const fs = require('fs');
+const readStream = fs.createReadStream('file.txt', {
+  highWaterMark: 16384,  // 16KB chunks
+  encoding: 'utf8',       // Get strings instead of buffers
+});
+
+// Method 2: In-memory readable (array of strings/buffers)
+const { Readable } = require('stream');
+const stringStream = Readable.from(['hello ', 'world ', 'from ', 'streams']);
+```
+
+### Consuming a Readable Stream
+
+```js
+const fs = require('fs');
+const readStream = fs.createReadStream('data.txt', { encoding: 'utf8' });
+
+// === Flowing Mode (auto-read) ===
+readStream.on('data', (chunk) => {
+  console.log('Received chunk:', chunk.length, 'chars');
+});
+
+readStream.on('end', () => {
+  console.log('No more data');
+});
+
+readStream.on('close', () => {
+  console.log('Stream closed');
+});
+
+// Control flowing mode:
+readStream.pause();   // Stop emitting 'data' events
+readStream.resume();  // Resume emitting 'data' events
+```
+
+### Reading Manually (Paused Mode)
+
+```js
+const readStream = fs.createReadStream('data.txt', { encoding: 'utf8' });
+
+// readable event: there's data to read (or stream has ended)
+readStream.on('readable', () => {
+  let chunk;
+  // Read until read() returns null
+  while ((chunk = readStream.read()) !== null) {
+    console.log('Read chunk:', chunk);
+  }
+});
+```
+
+### Important Readable Events
+
+| Event | When It Fires | What to Do |
+|-------|---------------|------------|
+| `'data'` | New chunk available | Process the chunk |
+| `'end'` | No more data (success) | Finalise, clean up |
+| `'close'` | Stream and resources closed | Release external resources |
+| `'error'` | Error occurred | Handle or propagate |
+| `'readable'` | Data ready to read (paused mode) | Call `read()` |
+
+### The `highWaterMark` Option
+
+This controls the **internal buffer size** — how much data the stream buffers before triggering backpressure:
+
+```js
+// For a file stream, default is 64KB
+const lowMem = fs.createReadStream('log.txt', { highWaterMark: 4096 });      // 4KB chunks
+const default = fs.createReadStream('log.txt', { highWaterMark: 65536 });     // 64KB
+const highPerf = fs.createReadStream('log.txt', { highWaterMark: 1048576 });  // 1MB chunks
+
+// Smaller chunks = lower memory, more events
+// Larger chunks = higher memory, fewer events
+```
+
+## 2. Writable Streams
+
+A Writable stream is a **destination for data**. You write data to it.
+
+### Creating a Writable Stream
+
+```js
+const fs = require('fs');
+const writeStream = fs.createWriteStream('output.txt', {
+  flags: 'w',        // 'w' = overwrite, 'a' = append
+  encoding: 'utf8',
+  highWaterMark: 16384,  // 16KB internal buffer
+});
+```
+
+### Writing to a Writable Stream
+
+```js
+const writeStream = fs.createWriteStream('output.txt', { encoding: 'utf8' });
+
+// Write data (returns true if data was written, false if buffered)
+const canContinue = writeStream.write('Hello, ');
+console.log('Buffer not full, continue:', canContinue);
+
+writeStream.write('World!\n');
+
+// Signal that no more data will be written
+writeStream.end('The end.\n');
+
+// Listen for completion
+writeStream.on('finish', () => {
+  console.log('All data has been flushed to disk');
+});
+
+// Listen for errors
+writeStream.on('error', (err) => {
+  console.error('Write failed:', err.message);
+});
+```
+
+### Backpressure and `drain`
+
+When you write faster than the stream can consume, the `write()` method returns `false`. Listen for `'drain'` to know when it's safe to continue:
+
+```js
+const writeStream = fs.createWriteStream('output.txt');
+
+function writeData(data, callback) {
+  let index = 0;
+
+  function writeNext() {
+    let canContinue = true;
+
+    while (canContinue && index < data.length) {
+      canContinue = writeStream.write(data[index] + '\n');
+      index++;
+    }
+
+    if (index < data.length) {
+      // Buffer is full — wait for drain
+      writeStream.once('drain', writeNext);
+    } else {
+      writeStream.end(callback);
+    }
+  }
+
+  writeNext();
+}
+
+const array = Array.from({ length: 100000 }, (_, i) => `Line ${i + 1}`);
+writeData(array, () => console.log('Done writing 100K lines'));
+```
+
+### Important Writable Events
+
+| Event | When It Fires | What to Do |
+|-------|---------------|------------|
+| `'drain'` | Internal buffer is empty | Safe to write more |
+| `'finish'` | `end()` called, data flushed | Finalise |
+| `'close'` | Stream closed | Release resources |
+| `'error'` | Error occurred | Handle or propagate |
+| `'pipe'` | Readable stream piped into this | Optional setup |
+
+## 3. Duplex Streams
+
+A Duplex stream is **both** Readable and Writable, but the two sides are **independent**. Data written to the writable side does NOT flow to the readable side — they're separate channels.
+
+```
+Duplex Stream:
+Writable side ──────►  (output to somewhere)
+Readable side  ◄────── (input from somewhere)
+```
+
+```js
+const { Duplex } = require('stream');
+
+// Example: a simple echo duplex
+const duplex = new Duplex({
+  read(size) {
+    // Push data into the readable side
+    this.push(Buffer.from('Readable data\n'));
+    this.push(null); // Signal end of readable
+  },
+  write(chunk, encoding, callback) {
+    // Handle data written to the writable side
+    console.log('Written to duplex:', chunk.toString());
+    callback(); // Signal we're done processing this chunk
+  },
+});
+
+// Writable side — data goes in
+duplex.write('Hello from writable side');
+duplex.end();
+
+// Readable side — data comes out
+duplex.on('data', (chunk) => console.log('Read:', chunk.toString()));
+```
+
+### Real-World Duplex: TCP Socket
+
+```js
+const net = require('net');
+
+const server = net.createServer((socket) => {
+  // socket is a Duplex stream!
+  // socket.write() — send data to client
+  // socket.on('data') — receive data from client
+
+  socket.write('Welcome to the echo server!\n');
+
+  socket.on('data', (data) => {
+    socket.write('You said: ' + data);
+  });
+
+  socket.on('end', () => {
+    console.log('Client disconnected');
+  });
+});
+
+server.listen(3000);
+```
+
+**Key insight:** A TCP socket is a perfect example of Duplex. The server writes data to send to the client (writable side), and the server reads data received from the client (readable side). These are completely independent streams over the same connection.
+
+## 4. Transform Streams
+
+A Transform is a **special kind of Duplex** where the writable and readable sides are **connected**. Data written to the writable side is transformed and then available on the readable side.
+
+```
+Transform Stream:
+Input ──► [write] ──► [transform] ──► [read] ──► Output
+```
+
+### Built-in Transform: zlib.createGzip
+
+```js
+const zlib = require('zlib');
+const fs = require('fs');
+
+// Gzip transform — compresses data as it flows through
+const gzip = zlib.createGzip();
+const source = fs.createReadStream('input.txt');
+const dest = fs.createWriteStream('input.txt.gz');
+
+// Pipe through the transform
+source.pipe(gzip).pipe(dest);
+
+// The transform sits in the middle:
+// file data → gzip compression → compressed output
+```
+
+### Built-in Transform: crypto.createCipheriv
+
+```js
+const crypto = require('crypto');
+const fs = require('fs');
+
+const algorithm = 'aes-256-cbc';
+const key = crypto.randomBytes(32);
+const iv = crypto.randomBytes(16);
+
+const cipher = crypto.createCipheriv(algorithm, key, iv);
+const decipher = crypto.createDecipheriv(algorithm, key, iv);
+
+// Encrypt a file
+const source = fs.createReadStream('secret.txt');
+const encrypted = fs.createWriteStream('secret.enc');
+source.pipe(cipher).pipe(encrypted);
+
+// Decrypt it
+const encryptedSource = fs.createReadStream('secret.enc');
+const decrypted = fs.createWriteStream('secret-decrypted.txt');
+encryptedSource.pipe(decipher).pipe(decrypted);
+```
+
+## Practical: Comparing All Four Types
+
+```js
+const { Readable, Writable, Duplex, Transform, PassThrough } = require('stream');
+const fs = require('fs');
+const zlib = require('zlib');
+
+// 1. READABLE — reads from a file
+const readSource = fs.createReadStream('large-file.txt', { encoding: 'utf8' });
+
+// 2. TRANSFORM — compresses data
+const gzip = zlib.createGzip();
+
+// 3. TRANSFORM — tracks progress (custom, but uses Transform pattern)
+const progress = new Transform({
+  transform(chunk, encoding, callback) {
+    console.log(`Processing ${chunk.length} bytes`);
+    this.push(chunk);  // Pass through unchanged
+    callback();
+  },
+});
+
+// 4. WRITABLE — writes to a file
+const writeDest = fs.createWriteStream('large-file.txt.gz');
+
+// Chain them together
+readSource
+  .pipe(gzip)       // Transform: compress
+  .pipe(progress)   // Transform: monitor
+  .pipe(writeDest); // Writable: save
+
+writeDest.on('finish', () => console.log('Compression complete'));
+```
+
+## Duplex vs Transform — The Critical Difference
+
+```
+Duplex:                        Transform:
+┌──────────────────┐           ┌──────────────────┐
+│  Writable side    │           │  Writable side    │
+│  (independent)    │           │  (input)          │
+│                   │           │       │           │
+│  Readable side    │           │       ▼           │
+│  (independent)    │           │  transform()      │
+└──────────────────┘           │       │           │
+                               │       ▼           │
+                               │  Readable side    │
+                               │  (output)         │
+                               └──────────────────┘
+
+// Duplex: write "A", read "B" — no relationship
+// Transform: write "A", read "A" or "modified(A)"
+```
+
+## Key Takeaways
+
+- **Readable** — data source (`fs.createReadStream`, `http.IncomingMessage`)
+- **Writable** — data destination (`fs.createWriteStream`, `http.ServerResponse`)
+- **Duplex** — both, but independent (TCP socket, SSH)
+- **Transform** — both, but linked (compression, encryption, parsing)
+- **`highWaterMark`** controls internal buffer size (default 16KB for file streams, 64KB for others)
+- **`'drain'`** event signals backpressure has cleared — safe to write again
+- **`'data'`** event on Readable means flowing mode — data arrives automatically
+- **`'readable'`** event means paused mode — you must call `read()` explicitly
+- Always prefer `pipe()` for connecting streams — it handles backpressure and errors
+- Transform extends Duplex — the difference is that Transform links input to output

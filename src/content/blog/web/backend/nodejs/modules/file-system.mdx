@@ -1,0 +1,404 @@
+---
+title: "File System Module (fs)"
+description: "Master Node.js file system operations — read/write files, work with directories, file stats, streams, and permissions"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Modules"]
+tags: ["Node.js", "Modules", "File System", "fs"]
+slug: "nodejs-file-system"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## The `fs` Module
+
+The `fs` (file system) module is one of the most essential modules in Node.js. It provides both **synchronous** and **asynchronous** APIs for interacting with the file system. The module has three API styles:
+
+| Style | Description | Example |
+|-------|-------------|---------|
+| Callback-based | Traditional error-first callbacks | `fs.readFile(path, cb)` |
+| Promise-based | Returns promises (Node.js 10+) | `fs.promises.readFile(path)` |
+| Synchronous | Blocking variants (append `Sync`) | `fs.readFileSync(path)` |
+
+```js
+// Always prefer the promise-based API in modern code:
+const fs = require('fs/promises');
+// or
+const fs = require('fs').promises;
+```
+
+> **Rule of thumb:** Use the promise-based API (`fs.promises`) in application code. Use synchronous APIs only at startup or in CLI scripts. Callback APIs are still widely used in legacy codebases.
+
+## Reading Files
+
+### Asynchronous (Promise-based)
+
+```js
+const fs = require('fs/promises');
+
+async function readExample() {
+  try {
+    // Read entire file as string
+    const data = await fs.readFile('./hello.txt', 'utf8');
+    console.log('Content:', data);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.error('File not found');
+    } else if (err.code === 'EACCES') {
+      console.error('Permission denied');
+    } else {
+      console.error('Read error:', err.message);
+    }
+  }
+}
+```
+
+### Asynchronous (Callback-based)
+
+```js
+const fs = require('fs');
+
+fs.readFile('./hello.txt', 'utf8', (err, data) => {
+  if (err) {
+    console.error('Read failed:', err.message);
+    return;
+  }
+  console.log('Content:', data);
+});
+```
+
+### Synchronous
+
+```js
+const fs = require('fs');
+
+try {
+  const data = fs.readFileSync('./hello.txt', 'utf8');
+  console.log('Content:', data);
+} catch (err) {
+  console.error('Read failed:', err.message);
+}
+```
+
+### Reading Binary Files
+
+```js
+const buffer = await fs.readFile('./image.png');
+console.log('Buffer length:', buffer.length);  // Bytes
+console.log('First 4 bytes (magic number):', buffer.slice(0, 4));
+// PNG files start with: <Buffer 89 50 4e 47>
+```
+
+## Writing Files
+
+### Overwrite vs Append
+
+```js
+const fs = require('fs/promises');
+
+// Overwrite entire file (creates if not exists)
+await fs.writeFile('./log.txt', 'Hello World\n');
+
+// Append to existing file (creates if not exists)
+await fs.appendFile('./log.txt', 'Another line\n');
+
+// Write with explicit encoding
+await fs.writeFile('./data.json', JSON.stringify({ name: 'Alice' }), 'utf8');
+```
+
+### Write with Options
+
+```js
+// Control file creation behavior
+await fs.writeFile('./config.json', data, {
+  encoding: 'utf8',
+  mode: 0o644,        // rw-r--r-- permissions
+  flag: 'wx',          // 'w' = write, 'x' = fail if exists
+});
+```
+
+**File flags explained:**
+
+| Flag | Description |
+|------|-------------|
+| `'r'` | Read (file must exist) |
+| `'r+'` | Read + write (file must exist) |
+| `'w'` | Write (creates or truncates) |
+| `'wx'` | Write (fails if file exists) |
+| `'a'` | Append (creates if not exists) |
+| `'ax'` | Append (fails if file exists) |
+
+## Working with Directories
+
+### Creating Directories
+
+```js
+const fs = require('fs/promises');
+
+// Create single directory
+await fs.mkdir('./uploads');
+
+// Create nested directories (recursive: true)
+await fs.mkdir('./uploads/images/profile', { recursive: true });
+```
+
+### Reading Directories
+
+```js
+const fs = require('fs/promises');
+
+async function listDirectory(dirPath) {
+  const entries = await fs.readdir(dirPath, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (entry.isFile()) {
+      console.log(`📄 ${entry.name}`);
+    } else if (entry.isDirectory()) {
+      console.log(`📁 ${entry.name}/`);
+    } else if (entry.isSymbolicLink()) {
+      console.log(`🔗 ${entry.name} -> ${await fs.readlink(`${dirPath}/${entry.name}`)}`);
+    }
+  }
+}
+```
+
+### Removing Directories
+
+```js
+// Remove empty directory
+await fs.rmdir('./old-uploads');
+
+// Remove recursively (use with extreme caution)
+await fs.rm('./node_modules', { recursive: true, force: true });
+// ⚠️ force: true — doesn't throw if path doesn't exist
+```
+
+## File Stats
+
+File stats give you metadata about files and directories:
+
+```js
+const fs = require('fs/promises');
+
+async function getFileInfo(filePath) {
+  try {
+    const stats = await fs.stat(filePath);
+
+    console.log('Size:', stats.size, 'bytes');
+    console.log('Is file:', stats.isFile());
+    console.log('Is directory:', stats.isDirectory());
+    console.log('Is symlink:', stats.isSymbolicLink());
+    console.log('Created:', stats.birthtime);
+    console.log('Modified:', stats.mtime);
+    console.log('Accessed:', stats.atime);
+    console.log('Permissions:', stats.mode.toString(8).slice(-3));
+    // mode: 0o644 → "644" means rw-r--r--
+
+    // Check if file is older than 1 hour
+    const oneHourAgo = Date.now() - 3600000;
+    if (stats.mtimeMs < oneHourAgo) {
+      console.log('File is older than 1 hour');
+    }
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log('File does not exist');
+    }
+  }
+}
+```
+
+### Common `stats` Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `size` | number | File size in bytes |
+| `mode` | number | File type and permissions |
+| `birthtime` | Date | File creation time |
+| `mtime` | Date | Last modification time |
+| `atime` | Date | Last access time |
+| `isFile()` | function | True if regular file |
+| `isDirectory()` | function | True if directory |
+
+## File Permissions
+
+```js
+const fs = require('fs/promises');
+
+// Check access
+try {
+  await fs.access('./file.txt', fs.constants.R_OK | fs.constants.W_OK);
+  console.log('File is readable and writable');
+} catch (err) {
+  console.log('No access');
+}
+
+// Change permissions (chmod)
+await fs.chmod('./script.sh', 0o755);  // rwxr-xr-x — executable
+
+// Change ownership (chown) — requires root
+await fs.chown('./file.txt', 1000, 1000);  // uid, gid
+```
+
+**Permission constants:**
+
+| Constant | Octal | Meaning |
+|----------|-------|---------|
+| `fs.constants.R_OK` | 4 | Read permission |
+| `fs.constants.W_OK` | 2 | Write permission |
+| `fs.constants.X_OK` | 1 | Execute permission |
+| `fs.constants.F_OK` | — | File exists |
+
+## Copying, Moving, Renaming
+
+```js
+const fs = require('fs/promises');
+
+// Copy file
+await fs.cp('./source.txt', './dest.txt');
+await fs.cp('./source-dir', './dest-dir', { recursive: true });
+
+// Rename / Move
+await fs.rename('./old-name.txt', './new-name.txt');
+
+// Link
+await fs.link('./original.txt', './hardlink.txt');   // Hard link
+await fs.symlink('./original.txt', './symlink.txt');  // Symbolic link
+```
+
+## Watching Files
+
+Watch for changes in real-time:
+
+```js
+const fs = require('fs');
+
+// Watch a single file
+fs.watchFile('./config.json', (curr, prev) => {
+  console.log(`File modified: ${new Date(curr.mtime)}`);
+  console.log(`Previous: ${new Date(prev.mtime)}`);
+  reloadConfig();
+});
+
+// Watch a directory (more efficient)
+const watcher = fs.watch('./uploads', { recursive: true });
+watcher.on('change', (eventType, filename) => {
+  // eventType: 'rename' | 'change'
+  console.log(`Event: ${eventType} on ${filename}`);
+});
+
+// Stop watching
+watcher.close();
+```
+
+## Practical: File-Based Logger
+
+```js
+const fs = require('fs/promises');
+const path = require('path');
+
+class FileLogger {
+  constructor(logDir = './logs') {
+    this.logDir = logDir;
+    this.currentDate = null;
+    this.stream = null;
+  }
+
+  async init() {
+    await fs.mkdir(this.logDir, { recursive: true });
+    await this.rotateLog();
+  }
+
+  async rotateLog() {
+    if (this.stream) await this.stream.close();
+
+    const date = new Date().toISOString().split('T')[0];
+    const filePath = path.join(this.logDir, `app-${date}.log`);
+
+    this.stream = await fs.open(filePath, 'a');
+    this.currentDate = date;
+  }
+
+  async log(level, message, meta = {}) {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Rotate if day changed
+    if (today !== this.currentDate) {
+      await this.rotateLog();
+    }
+
+    const entry = JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      ...meta,
+    }) + '\n';
+
+    await this.stream.write(entry);
+  }
+
+  async close() {
+    if (this.stream) await this.stream.close();
+  }
+}
+
+// Usage
+const logger = new FileLogger('./logs');
+await logger.init();
+await logger.log('info', 'Server started', { port: 3000 });
+await logger.log('error', 'DB connection failed', { db: 'primary' });
+await logger.close();
+```
+
+## Practical: Directory Tree Builder
+
+```js
+const fs = require('fs/promises');
+const path = require('path');
+
+async function buildTree(dirPath, prefix = '') {
+  const entries = await fs.readdir(dirPath, { withFileTypes: true });
+  const lines = [];
+
+  for (let i = 0; i < entries.length; i++) {
+    const isLast = i === entries.length - 1;
+    const connector = isLast ? '└── ' : '├── ';
+    const entry = entries[i];
+
+    lines.push(`${prefix}${connector}${entry.name}`);
+
+    if (entry.isDirectory()) {
+      const nextPrefix = prefix + (isLast ? '    ' : '│   ');
+      const subTree = await buildTree(`${dirPath}/${entry.name}`, nextPrefix);
+      lines.push(...subTree);
+    }
+  }
+
+  return lines;
+}
+
+async function main() {
+  const tree = await buildTree('./src');
+  console.log('src/');
+  console.log(tree.join('\n'));
+}
+
+// Output:
+// src/
+// ├── index.js
+// ├── utils/
+// │   ├── helpers.js
+// │   └── logger.js
+// └── config.json
+```
+
+## Key Takeaways
+
+- Use **`fs.promises`** API for modern async code — prefer it over callbacks and sync variants
+- **`readFile`** loads entire file into memory — use streams for large files
+- **`writeFile`** creates or overwrites; **`appendFile`** adds to existing
+- Always handle **`ENOENT`** (not found) and **`EACCES`** (permission) errors
+- **`fs.stat`** provides metadata: size, timestamps, file type, permissions
+- Use **`mkdir({ recursive: true })`** to create nested directories
+- Use **`readdir({ withFileTypes: true })`** to distinguish files from directories
+- **`fs.watch`** enables real-time file change monitoring
+- File flags: `'r'` (read), `'w'` (write/truncate), `'a'` (append), add `'x'` to fail if exists
+- Operations like `cp`, `mv`, `rm` — always use `{ recursive: true }` for directories

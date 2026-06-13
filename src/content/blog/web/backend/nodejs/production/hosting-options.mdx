@@ -1,0 +1,285 @@
+---
+title: "Hosting Options — VPS, Cloud, Serverless, PaaS"
+description: "Compare Node.js hosting options — VPS, cloud platforms, serverless, and PaaS — with cost, scaling, and use-case guidance"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Production"]
+tags: ["Node.js", "Production", "Hosting", "DevOps"]
+slug: "nodejs-hosting-options"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## The Hosting Landscape
+
+Every Node.js application needs somewhere to run. The right choice depends on your traffic, budget, team expertise, and operational needs.
+
+```
+                               Hosting Options
+                                     │
+            ┌────────────────────────┼────────────────────────┐
+            │                        │                        │
+           VPS                   PaaS                   Serverless
+            │                        │                        │
+  ┌─────────┼─────────┐    ┌─────────┼─────────┐    ┌─────────┼─────────┐
+  │         │         │    │         │         │    │         │         │
+DigitalOcean AWS EC2    Heroku    Railway    Netlify  AWS Lambda CloudFlare
+Linode     GCP Compute  Render    Fly.io     Vercel   GCP Functions Workers
+```
+
+## 1. VPS (Virtual Private Server)
+
+You get a virtual machine with root access. You manage everything — OS, Node.js, reverse proxy, SSL.
+
+| Provider | Starting Price | Specs |
+|----------|---------------|-------|
+| DigitalOcean | $6/mo | 1 CPU, 1GB RAM, 25GB SSD |
+| Linode | $5/mo | 1 CPU, 1GB RAM, 25GB SSD |
+| Vultr | $6/mo | 1 CPU, 1GB RAM, 25GB SSD |
+| AWS EC2 (t2.micro) | Free tier (1yr) | 1 CPU, 1GB RAM |
+| Hetzner | $4/mo | 2 CPU, 2GB RAM, 40GB SSD |
+
+### Setting Up a Node.js App on VPS
+
+```bash
+# 1. SSH into your server
+ssh root@your-server-ip
+
+# 2. Install Node.js
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs nginx
+
+# 3. Clone your app
+git clone https://github.com/your/repo.git /var/www/app
+cd /var/www/app
+npm ci --production
+
+# 4. Set up environment variables
+cat > /etc/environment << EOF
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgres://...
+EOF
+
+# 5. Start with PM2
+npm install -g pm2
+pm2 start app.js --name my-api
+pm2 save
+pm2 startup  # Auto-start on reboot
+
+# 6. Configure Nginx as reverse proxy
+cat > /etc/nginx/sites-available/my-api << EOF
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+EOF
+
+# 7. Enable HTTPS with Certbot
+apt-get install -y certbot python3-certbot-nginx
+certbot --nginx -d your-domain.com
+```
+
+### When to Use VPS
+
+- You need **full control** over the environment
+- Traffic is **predictable** and consistently moderate-to-high
+- You have **DevOps experience** or want to learn
+- Budget is tight — VPS offers the best performance per dollar
+- You need specific **OS-level packages** or configurations
+
+### VPS Pros & Cons
+
+| Pros | Cons |
+|------|------|
+| Complete control | You manage everything (OS updates, security) |
+| Best performance per dollar | Manual scaling (add more VPS, load balancer) |
+| No vendor lock-in | SSH and command-line required |
+| Predictable pricing | No built-in monitoring or logging |
+
+## 2. PaaS (Platform as a Service)
+
+PaaS providers manage the infrastructure. You just push code.
+
+| Provider | Starting Price | Features |
+|----------|---------------|----------|
+| Railway | $5/mo | Quick deploy, built-in Postgres, auto HTTPS |
+| Render | $7/mo | Auto deploy from Git, managed Postgres/Redis |
+| Fly.io | Free tier | Edge compute, global regions, WireGuard VPN |
+| Heroku | $7/mo (eco) | Mature ecosystem, add-ons marketplace |
+| DigitalOcean App Platform | $5/mo | Integrated with DO VPS ecosystem |
+
+### Deploying to Railway (Example)
+
+```bash
+# 1. Install Railway CLI
+npm install -g @railway/cli
+
+# 2. Login and init
+railway login
+railway init
+
+# 3. Set environment variables
+railway variables set NODE_ENV=production
+railway variables set DATABASE_URL=...
+
+# 4. Deploy
+railway up
+
+# 5. Open the deployed app
+railway open
+```
+
+### Railway `railway.json`
+
+```json
+{
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "npm ci --production"
+  },
+  "deploy": {
+    "startCommand": "node app.js",
+    "healthcheckPath": "/health",
+    "restartPolicyType": "always"
+  }
+}
+```
+
+### When to Use PaaS
+
+- You want to **focus on code**, not infrastructure
+- Traffic is **low-to-moderate** and you don't want to over-provision
+- You want **zero-downtime deploys** out of the box
+- You need **managed databases** (Postgres, Redis) without admin work
+
+### PaaS Pros & Cons
+
+| Pros | Cons |
+|------|------|
+| Minimal DevOps knowledge needed | More expensive than VPS at scale |
+| Auto-scaling (limited) | Vendor lock-in |
+| Built-in logging and monitoring | Limited control over environment |
+| HTTPS, CDN, domains managed for you | Cold starts (sleep after inactivity) |
+
+## 3. Serverless
+
+Your code runs in stateless containers that scale to zero. You pay per invocation.
+
+| Provider | Free Tier | Limits |
+|----------|-----------|--------|
+| AWS Lambda | 1M requests/mo | 15min timeout, 10GB RAM |
+| Google Cloud Functions | 2M invocations/mo | 60min timeout, 16GB RAM |
+| Netlify Functions | 125K requests/mo | 10s timeout, 1GB RAM |
+| Vercel Functions | 100GB-hours/mo | 60s timeout (Hobby) |
+| Cloudflare Workers | 100K requests/day | 50ms CPU time (paid up to 30s) |
+
+### Serverless Node.js Handler
+
+```js
+// AWS Lambda handler
+exports.handler = async (event) => {
+  try {
+    const users = await db.query('SELECT * FROM users LIMIT 10');
+
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(users),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message }),
+    };
+  }
+};
+```
+
+### When to Use Serverless
+
+- **Sporadic traffic** — a few requests per hour, or bursty
+- **Background jobs** — image processing, email sending, webhooks
+- **Prototyping** — no cost when idle
+- **Microservices** — each function is a small, independent unit
+
+### Serverless Pros & Cons
+
+| Pros | Cons |
+|------|------|
+| Pay per request (cheap at low volume) | Cold starts (100ms–1s delay) |
+| Auto-scales infinitely | 15-minute timeout (AWS Lambda) |
+| No server management | Stateless — no local filesystem |
+| Built-in fault tolerance | Debugging is harder (no SSH) |
+
+## 4. Comparison Matrix
+
+| Feature | VPS | PaaS | Serverless |
+|---------|-----|------|------------|
+| Setup time | Hours | Minutes | Minutes |
+| DevOps skill needed | High | Low | Medium |
+| Monthly cost (low traffic) | $5–10 | $5–7 | $0 (free tier) |
+| Monthly cost (10K req/s) | $50–200 | $200–1000+ | $500+ |
+| Cold start | None | 1-5s (if sleep) | 100ms–1s |
+| Max request duration | Unlimited | Unlimited (with config) | 15min (Lambda) |
+| Database options | Any | Managed (limited) | External only |
+| Custom domain + SSL | Manual | Auto | Auto |
+| Monitoring | DIY | Built-in | Built-in |
+
+## 5. Docker-Based Deployment
+
+A Docker container can run on any of these platforms:
+
+```dockerfile
+FROM node:22-alpine
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --production
+COPY . .
+
+EXPOSE 3000
+CMD ["node", "app.js"]
+```
+
+```bash
+# Run on VPS
+docker build -t my-api .
+docker run -d -p 3000:3000 --name my-api my-api
+
+# Deploy to Railway (auto-detect Dockerfile)
+railway up
+
+# Deploy to AWS ECS / Google Cloud Run
+gcloud run deploy my-api --source .
+```
+
+## Making the Choice
+
+Ask these questions to decide:
+
+1. **How much traffic?** Low → PaaS/Serverless. High → VPS.
+2. **Do you want to manage servers?** No → PaaS or Serverless. Yes → VPS.
+3. **Budget?** Lowest → VPS. Predictable → PaaS. Usage-based → Serverless.
+4. **Need databases?** PaaS offers managed ones. VPS needs manual setup.
+5. **Team size?** Small team → PaaS (less ops overhead). Large team → VPS (more control).
+6. **Scaling pattern?** Steady → VPS. Bursty → Serverless. Growing → PaaS.
+
+## Key Takeaways
+
+- **VPS** (DigitalOcean, Linode) — best performance per dollar, full control, highest ops overhead
+- **PaaS** (Railway, Render, Heroku) — easiest deployment, managed infrastructure, moderate cost
+- **Serverless** (AWS Lambda, Vercel) — pay per request, scales to zero, cold starts are the trade-off
+- **No perfect choice** — it depends on traffic patterns, team skills, budget, and operational needs
+- **Start simple** — deploy to PaaS first (minutes), migrate to VPS if cost becomes an issue
+- **Use Docker** to avoid vendor lock-in — a Docker image runs on any platform
+- **Vendor lock-in is real** — PaaS-specific features (queues, databases) are hard to migrate away from

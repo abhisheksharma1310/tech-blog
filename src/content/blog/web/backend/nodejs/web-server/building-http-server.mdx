@@ -1,0 +1,461 @@
+---
+title: "Building an HTTP Server with Core http Module"
+description: "Build production-ready HTTP servers with Node.js core http module — from hello world to routing, middleware, and static files"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Web Server"]
+tags: ["Node.js", "Web Server", "HTTP", "Server"]
+slug: "nodejs-http-server"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## The Foundation
+
+Every Node.js HTTP server begins with `http.createServer()`:
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  // Called for every incoming HTTP request
+});
+
+server.listen(3000, () => {
+  console.log('Server listening on port 3000');
+});
+```
+
+`http.createServer()` returns an `http.Server` instance (which extends `net.Server` and `EventEmitter`). The callback is shorthand for `server.on('request', handler)`.
+
+## Anatomy of the Request-Response Cycle
+
+Every HTTP request follows the same lifecycle:
+
+```
+Client ──► TCP Connection ──► Server
+  │                              │
+  ├── req.method = 'GET'         │
+  ├── req.url = '/api/users'     │
+  ├── req.headers = { ... }      │
+  └── req body (if any)          │
+                                 │
+  ┌── res.statusCode = 200       │
+  ├── res.setHeader(...)         │
+  ├── res.write(...)             │
+  └── res.end()                  │
+  │                              │
+  ◄────── HTTP Response ─────────┘
+```
+
+## The `req` Object (IncomingMessage)
+
+The `req` object extends `stream.Readable` and contains everything about the incoming request:
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  // ── Request Line ──
+  console.log('Method:', req.method);         // GET, POST, PUT, DELETE
+  console.log('URL:', req.url);               // /path?query=string
+  console.log('HTTP Version:', req.httpVersion); // 1.1
+
+  // ── Headers ──
+  console.log('Headers:', req.headers);
+  // Headers are ALL lowercase keys:
+  // { 'content-type': 'application/json', 'user-agent': 'curl/8.0', ... }
+
+  // ── Parsing URL (always do this!) ──
+  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+  console.log('Pathname:', parsedUrl.pathname);     // /api/users
+  console.log('Search params:', parsedUrl.searchParams.get('page')); // '2'
+
+  // ── Connection Info ──
+  console.log('Remote address:', req.socket.remoteAddress);
+  console.log('Remote port:', req.socket.remotePort);
+
+  // ── Socket metadata ──
+  console.log('Is secure:', req.socket.encrypted); // true for HTTPS
+});
+```
+
+### All Request Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `req.method` | string | HTTP method (GET, POST, PUT, DELETE, PATCH, etc.) |
+| `req.url` | string | Raw URL path + query string |
+| `req.headers` | object | HTTP headers (all lowercase keys) |
+| `req.httpVersion` | string | HTTP version (`1.0`, `1.1`) |
+| `req.statusCode` | number | Response status code (client-side requests only) |
+| `req.statusMessage` | string | Response status message (client-side only) |
+| `req.socket` | net.Socket | Underlying TCP socket |
+| `req.destroyed` | boolean | Whether the stream has been destroyed |
+| `req.complete` | boolean | Whether the message has been fully received |
+
+## The `res` Object (ServerResponse)
+
+The `res` object extends `stream.Writable` and represents the response sent back to the client:
+
+```js
+const server = http.createServer((req, res) => {
+  // ── Status Code ──
+  res.statusCode = 200;
+  res.statusMessage = 'OK'; // Optional, defaults to standard message
+
+  // ── Headers (set before first write) ──
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('X-Powered-By', 'Node.js');
+  res.setHeader('X-Request-Id', crypto.randomUUID());
+
+  // ── Header shortcuts ──
+  res.getHeader('Content-Type');          // Read a header
+  res.hasHeader('X-Powered-By');          // Check existence
+  res.removeHeader('X-Powered-By');       // Remove a header
+  res.headersSent;                         // Boolean: headers flushed yet?
+
+  // ── Write response body ──
+  res.write('{"message": "hello"}');       // Write a chunk
+  res.end();                               // Signal completion
+
+  // ── OR: write and end in one call ──
+  res.end(JSON.stringify({ message: 'hello' }));
+
+  // ── OR: set everything at once ──
+  res.writeHead(200, {
+    'Content-Type': 'text/plain',
+    'X-Custom': 'value',
+  });
+  res.end('OK');
+});
+```
+
+> **Critical:** Always call `res.end()`. If you don't, the client will hang until the connection timeout. Every `write()` must eventually be followed by `end()`.
+
+## Building a Router
+
+A router maps HTTP methods + URL paths to handler functions:
+
+```js
+// router.js
+class Router {
+  constructor() {
+    this.routes = [];
+  }
+
+  // Register a route: router.get('/users', handler)
+  get(path, handler)   { this.routes.push({ method: 'GET', path, handler }); }
+  post(path, handler)  { this.routes.push({ method: 'POST', path, handler }); }
+  put(path, handler)   { this.routes.push({ method: 'PUT', path, handler }); }
+  delete(path, handler){ this.routes.push({ method: 'DELETE', path, handler }); }
+
+  match(method, pathname) {
+    for (const route of this.routes) {
+      if (route.method !== method) continue;
+
+      // Simple exact match
+      if (route.path === pathname) {
+        return { handler: route.handler, params: {} };
+      }
+
+      // Parametrized match: /users/:id
+      const routeParts = route.path.split('/');
+      const pathParts = pathname.split('/');
+
+      if (routeParts.length !== pathParts.length) continue;
+
+      const params = {};
+      let match = true;
+
+      for (let i = 0; i < routeParts.length; i++) {
+        if (routeParts[i].startsWith(':')) {
+          params[routeParts[i].slice(1)] = pathParts[i];
+        } else if (routeParts[i] !== pathParts[i]) {
+          match = false;
+          break;
+        }
+      }
+
+      if (match) return { handler: route.handler, params };
+    }
+
+    return null;
+  }
+}
+
+module.exports = Router;
+```
+
+## Full Server with Router + Helpers
+
+```js
+const http = require('http');
+const Router = require('./router');
+
+const router = new Router();
+
+// ── Route Definitions ──
+
+router.get('/', (req, res) => {
+  sendJSON(res, { message: 'Welcome to the API', version: '1.0' });
+});
+
+router.get('/users', (req, res) => {
+  sendJSON(res, { users: ['Alice', 'Bob', 'Charlie'] });
+});
+
+router.get('/users/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  if (id !== 1) {
+    sendJSON(res, { error: 'User not found' }, 404);
+    return;
+  }
+  sendJSON(res, { id: 1, name: 'Alice', email: 'alice@example.com' });
+});
+
+router.post('/users', async (req, res) => {
+  const body = await readBodyJSON(req);
+  console.log('Created user:', body);
+  sendJSON(res, { ...body, id: Date.now() }, 201);
+});
+
+router.put('/users/:id', async (req, res) => {
+  const body = await readBodyJSON(req);
+  sendJSON(res, { id: parseInt(req.params.id), ...body });
+});
+
+router.delete('/users/:id', (req, res) => {
+  sendJSON(res, { success: true, deleted: parseInt(req.params.id) });
+});
+
+// ── Helper Functions ──
+
+function sendJSON(res, data, status = 200) {
+  const json = JSON.stringify(data, null, 2);
+  res.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(json),
+  });
+  res.end(json);
+}
+
+function readBodyJSON(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString());
+        resolve(body);
+      } catch (err) {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+// ── CORS Middleware ──
+
+function cors(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return true; // Handled
+  }
+  return false;
+}
+
+// ── Server Creation ──
+
+const server = http.createServer(async (req, res) => {
+  // Handle CORS preflight
+  if (cors(req, res)) return;
+
+  // Parse URL
+  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+  const match = router.match(req.method, parsedUrl.pathname);
+
+  if (!match) {
+    sendJSON(res, { error: 'Not found' }, 404);
+    return;
+  }
+
+  // Attach params and query to request
+  req.params = match.params;
+  req.query = parsedUrl.searchParams;
+
+  try {
+    await match.handler(req, res);
+  } catch (err) {
+    console.error('Handler error:', err);
+    sendJSON(res, { error: 'Internal server error' }, 500);
+  }
+});
+
+// ── Startup ──
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log('Available routes:');
+  console.log('  GET    /');
+  console.log('  GET    /users');
+  console.log('  GET    /users/:id');
+  console.log('  POST   /users');
+  console.log('  PUT    /users/:id');
+  console.log('  DELETE /users/:id');
+});
+```
+
+## Static File Server
+
+A common task — serve files from a directory:
+
+```js
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { pipeline } = require('stream');
+
+const MIME_TYPES = {
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.txt': 'text/plain',
+};
+
+const server = http.createServer((req, res) => {
+  // Security: resolve path safely
+  const safePath = path.normalize(req.url).replace(/^(\.\.[\/\\])+/, '');
+  const filePath = path.join(__dirname, 'public', safePath);
+
+  // Check file exists
+  fs.stat(filePath, (err, stats) => {
+    if (err) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not found');
+      return;
+    }
+
+    if (stats.isDirectory()) {
+      // Serve index.html for directories
+      const indexPath = path.join(filePath, 'index.html');
+      return serveFile(res, indexPath);
+    }
+
+    serveFile(res, filePath);
+  });
+});
+
+function serveFile(res, filePath) {
+  const ext = path.extname(filePath);
+  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+  res.writeHead(200, { 'Content-Type': contentType });
+
+  pipeline(
+    fs.createReadStream(filePath),
+    res,
+    (pipelineErr) => {
+      if (pipelineErr) {
+        console.error('Stream error:', pipelineErr.message);
+        if (!res.headersSent) {
+          res.writeHead(500);
+        }
+        res.end();
+      }
+    },
+  );
+}
+
+server.listen(3000);
+```
+
+## Server Events
+
+The server emits several useful events:
+
+```js
+const server = http.createServer(handler);
+
+server.on('connection', (socket) => {
+  console.log('New TCP connection from', socket.remoteAddress);
+  // socket is a net.Socket — set timeouts, etc.
+  socket.setTimeout(30000); // 30 second timeout
+});
+
+server.on('request', (req, res) => {
+  // Same as the createServer callback
+  console.log(`${req.method} ${req.url}`);
+});
+
+server.on('close', () => {
+  console.log('Server shut down');
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error('Port 3000 is already in use');
+    process.exit(1);
+  }
+  console.error('Server error:', err);
+});
+
+// Upgrade event for WebSocket support
+server.on('upgrade', (req, socket, head) => {
+  console.log('WebSocket upgrade request');
+  // Handle WebSocket upgrade here
+});
+```
+
+## Graceful Shutdown
+
+Production servers must shut down gracefully — finish in-flight requests, then exit:
+
+```js
+const server = http.createServer(handler);
+
+function gracefulShutdown(signal) {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+
+  // Stop accepting new connections
+  server.close(() => {
+    console.log('All connections closed. Goodbye.');
+    process.exit(0);
+  });
+
+  // Force exit after 10 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+server.listen(3000);
+```
+
+## Key Takeaways
+
+- **`http.createServer(handler)`** creates a server; the handler receives `req` (IncomingMessage) and `res` (ServerResponse)
+- **Always parse `req.url`** with the `URL` class (`new URL(req.url, base)`); never parse it manually
+- **`res.end()` must always be called** — otherwise the connection hangs
+- **Headlers must be set before `res.write()` or `res.end()`** — once headers are sent (`res.headersSent`), you can't change them
+- Build a **router** to map method+path to handler functions — this is what Express does internally
+- **CORS preflight** (`OPTIONS` requests) must be handled for browser-based API clients
+- Use **`fs.createReadStream` + `pipeline`** to serve files without buffering in RAM
+- **Listen to server events** — `connection` for rate limiting, `error` for port conflicts
+- **Graceful shutdown** via `SIGTERM`/`SIGINT` handlers prevents dropped connections
+- The raw `http` module is educational and gives full control, but for production APIs consider Express or Fastify for middleware, routing, and error handling

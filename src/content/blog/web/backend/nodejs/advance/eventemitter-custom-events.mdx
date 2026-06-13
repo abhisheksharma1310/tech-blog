@@ -1,0 +1,415 @@
+---
+title: "EventEmitter & Custom Events"
+description: "Master Node.js EventEmitter — create, emit, and manage custom events for decoupled architectures"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Advanced"]
+tags: ["Node.js", "Advanced", "EventEmitter", "Events"]
+slug: "nodejs-eventemitter"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## The Observer (Pub/Sub) Pattern
+
+The EventEmitter implements the **Publish/Subscribe** pattern. This is one of the most fundamental patterns in software architecture:
+
+- **Publisher** (emitter) broadcasts events without knowing who is listening
+- **Subscribers** (listeners) react to events without knowing who published them
+
+This decoupling is what makes EventEmitter so powerful. Your payment module doesn't need to know about your email service, your logging service, or your analytics service. It just emits `payment.success`, and any number of listeners can react independently.
+
+```
+                     ┌──────────────┐
+         ┌──────────►│ Email Service │
+         │           └──────────────┘
+         │           ┌──────────────┐
+┌────────────┐       │ Audit Log    │
+│ Payment    ├──────►├──────────────┤
+│ Gateway    │       ┌──────────────┐
+│ .emit()    ├──────►│ Analytics    │
+└────────────┘       └──────────────┘
+         │           ┌──────────────┐
+         └──────────►│ WebSocket    │
+                     │ Notify       │
+                     └──────────────┘
+```
+
+## Basic Usage
+
+```js
+const EventEmitter = require('events');
+
+const emitter = new EventEmitter();
+
+// Register a listener (subscribe)
+emitter.on('greet', (name) => {
+  console.log(`Hello, ${name}!`);
+});
+
+// Emit the event (publish)
+emitter.emit('greet', 'Alice');
+// Hello, Alice!
+```
+
+When you call `emitter.emit('greet', 'Alice')`, Node.js synchronously iterates through all registered listeners for the `'greet'` event and calls them in the order they were registered. This means listeners are called in the **same tick** as `emit()` — they are not deferred to the next event loop phase.
+
+## Core Methods
+
+| Method | Description |
+|--------|-------------|
+| `emitter.on(event, listener)` | Register a listener (alias: `addListener`) |
+| `emitter.once(event, listener)` | Fire once then auto-remove |
+| `emitter.emit(event, ...args)` | Emit an event with arguments |
+| `emitter.removeListener(event, listener)` | Remove a specific listener (alias: `off`) |
+| `emitter.removeAllListeners([event])` | Remove all listeners for an event |
+| `emitter.listeners(event)` | Get array of listeners |
+| `emitter.listenerCount(event)` | Count listeners |
+| `emitter.eventNames()` | List registered event names |
+| `emitter.prependListener(event, listener)` | Add to front of listeners array |
+| `emitter.rawListeners(event)` | Get listeners including wrappers |
+
+## Synchronous vs Asymmetric Nature of Events
+
+A common misunderstanding: **EventEmitter calls listeners synchronously** by default. If you register three listeners and emit an event, all three run in order before `emit()` returns.
+
+```js
+const emitter = new EventEmitter();
+
+emitter.on('data', () => console.log('Listener 1'));
+emitter.on('data', () => console.log('Listener 2'));
+emitter.on('data', () => console.log('Listener 3'));
+
+console.log('Before emit');
+emitter.emit('data');
+console.log('After emit');
+
+// Output:
+// Before emit
+// Listener 1
+// Listener 2
+// Listener 3
+// After emit
+```
+
+If you need async behavior, make the listener itself async:
+
+```js
+emitter.on('data', async (data) => {
+  await someAsyncWork(data);
+});
+```
+
+But be careful — the emitter won't `await` the Promise. The listener fires and forgets.
+
+## Real-World Example: Payment Gateway
+
+This example shows how EventEmitter decouples payment processing from downstream actions:
+
+```js
+// payment-gateway.js
+const EventEmitter = require('events');
+
+class PaymentGateway extends EventEmitter {
+  processPayment(amount, userId) {
+    console.log(`Processing $${amount} for user ${userId}...`);
+
+    // Simulate payment processing
+    setTimeout(() => {
+      const success = Math.random() > 0.3;
+
+      if (success) {
+        this.emit('payment.success', { amount, userId, timestamp: Date.now() });
+      } else {
+        this.emit('payment.failed', { amount, userId, reason: 'Insufficient funds' });
+      }
+    }, 500);
+  }
+}
+
+// Each service subscribes independently — no coupling between them
+const gateway = new PaymentGateway();
+
+gateway.on('payment.success', (data) => {
+  console.log(`✅ Payment succeeded: $${data.amount}`);
+  // Email receipt
+  // Update database
+  // Send to analytics
+});
+
+gateway.on('payment.failed', (data) => {
+  console.error(`❌ Payment failed: ${data.reason}`);
+  // Notify support
+  // Log to monitoring system
+  // Trigger retry workflow
+});
+
+gateway.processPayment(59.99, 'user_123');
+```
+
+## Extending EventEmitter
+
+When you extend EventEmitter, your class inherits all the event methods. This is how Node.js core modules like `http.Server`, `fs.ReadStream`, and `net.Socket` work.
+
+```js
+// order-system.js
+const EventEmitter = require('events');
+
+class OrderSystem extends EventEmitter {
+  constructor() {
+    super();
+    this.orders = new Map();
+  }
+
+  createOrder(items, user) {
+    const id = Date.now().toString(36);
+    const order = { id, items, user, status: 'created', createdAt: new Date() };
+    this.orders.set(id, order);
+    this.emit('order.created', order);
+    return order;
+  }
+
+  processOrder(id) {
+    const order = this.orders.get(id);
+    if (!order) return this.emit('error', new Error('Order not found'));
+
+    order.status = 'processing';
+    this.emit('order.processing', order);
+
+    // Simulate async processing
+    setTimeout(() => {
+      order.status = 'shipped';
+      this.emit('order.shipped', order);
+    }, 2000);
+  }
+
+  deliverOrder(id) {
+    const order = this.orders.get(id);
+    order.status = 'delivered';
+    this.emit('order.delivered', order);
+  }
+}
+
+// Usage
+const system = new OrderSystem();
+
+system.on('order.created', (o) => console.log(`Order #${o.id} created`));
+system.on('order.processing', (o) => console.log(`Order #${o.id} processing`));
+system.on('order.shipped', (o) => console.log(`Order #${o.id} shipped`));
+system.on('order.delivered', (o) => console.log(`Order #${o.id} delivered`));
+system.on('error', (err) => console.error(err.message));
+
+const order = system.createOrder(['Laptop', 'Mouse'], 'Alice');
+system.processOrder(order.id);
+```
+
+> **Why extend EventEmitter?** By extending, callers get a familiar API. Anyone who's used `server.on('request', ...)` or `stream.on('data', ...)` can immediately use your class.
+
+## `once` — One-Time Listeners
+
+`once` is perfect for events that should trigger exactly once, like initialization events:
+
+```js
+const emitter = new EventEmitter();
+
+let counter = 0;
+
+emitter.once('increment', () => {
+  counter++;
+  console.log('Counter:', counter);
+});
+
+emitter.emit('increment'); // Counter: 1
+emitter.emit('increment'); // (nothing — listener was removed)
+```
+
+**How `once` works internally:** Node.js wraps your listener in a function that first removes itself (using `removeListener`), then calls your original listener. That's why if you call `emitter.rawListeners('increment')` you won't see your original function directly.
+
+## Passing Arguments & Understanding `this`
+
+```js
+emitter.on('data', function(data) {
+  // `this` refers to the emitter (when using regular function)
+  console.log('Emitter has', this.listenerCount('data'), 'listeners');
+  console.log('Data:', data);
+});
+
+// Using arrow functions — `this` is lexical, NOT the emitter
+emitter.on('data', (data) => {
+  // `this` is whatever `this` was in the surrounding scope
+  // NOT the emitter
+});
+```
+
+> **Gotcha:** If you need access to `this` as the emitter (to call methods like `this.listenerCount()`), use a regular function, not an arrow function.
+
+## Error Handling
+
+If an `error` event is emitted but no listener exists, Node.js **throws the error and crashes the process**. This is unique to the `'error'` event — it's the only event with this behavior.
+
+```js
+const emitter = new EventEmitter();
+
+// ❌ This crashes the process — no 'error' listener
+emitter.emit('error', new Error('Something went wrong'));
+
+// ✅ Always handle 'error' events
+emitter.on('error', (err) => {
+  console.error('Caught:', err.message);
+  // Clean up resources
+  // Log to monitoring system
+});
+
+emitter.emit('error', new Error('Something went wrong'));
+// Caught: Something went wrong
+```
+
+> **Rule:** Always register an `error` listener when using EventEmitter, or use `emitter.on('error', ...)` as a global safety net. An unhandled `error` event is equivalent to a synchronous throw — the process exits.
+
+## Removing Listeners
+
+Listeners accumulate. If you keep adding `'data'` listeners without removing them, you'll have a memory leak:
+
+```js
+function onData(data) {
+  console.log('Received:', data);
+}
+
+emitter.on('data', onData);
+
+// Later — stop listening
+emitter.off('data', onData);
+// or
+emitter.removeListener('data', onData);
+
+// Remove all listeners for all events
+emitter.removeAllListeners();
+```
+
+> **Memory leak:** If your emitter is long-lived (like a server) and you keep attaching listeners from short-lived objects (like request handlers), you must remove the listeners when the short-lived object is destroyed. Otherwise, the listener holds a reference to the object and prevents garbage collection.
+
+## Maximum Listeners — Preventing Memory Leaks
+
+Node.js warns if you attach more than **10** listeners to a single event. This is a heuristic for detecting accidental memory leaks:
+
+```js
+// Suppress the warning (only if intentional)
+emitter.setMaxListeners(20);
+
+// Or disable entirely (not recommended for production)
+emitter.setMaxListeners(0);
+
+console.log('Current max:', emitter.getMaxListeners());
+```
+
+If you intentionally need many listeners (e.g., a central event bus), increase the limit. But first ask yourself: "Should I use a different pattern instead?"
+
+## Event Namespacing Conventions
+
+Use **namespaced event names** to avoid collisions and convey meaning:
+
+```js
+// Good — namespaced
+emitter.emit('user.created', user);
+emitter.emit('user.deleted', userId);
+emitter.emit('payment.success', payment);
+emitter.emit('payment.failed', error);
+
+// Bad — too generic
+emitter.emit('create', user);
+emitter.emit('delete', userId);
+emitter.emit('success', payment);
+```
+
+Common patterns: `resource.action`, `module:event`, `domain/event`.
+
+## Practical: Event-Driven Retry Handler
+
+This pattern is common in real-world applications — an event-driven retry mechanism that decouples the retry logic from the business logic:
+
+```js
+class RetryHandler extends EventEmitter {
+  async fetchWithRetry(url, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      this.emit('attempt', { url, attempt });
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        this.emit('success', { url, attempt });
+        return response;
+      } catch (err) {
+        this.emit('retry', { url, attempt, error: err.message });
+
+        if (attempt === maxRetries) {
+          this.emit('failed', { url, error: err.message });
+          throw err;
+        }
+
+        // Wait before next attempt (exponential backoff)
+        await new Promise(r => setTimeout(r, attempt * 1000));
+      }
+    }
+  }
+}
+
+// Listeners can be added/removed independently
+const retrier = new RetryHandler();
+
+retrier.on('attempt', ({ url, attempt }) =>
+  console.log(`Attempt ${attempt} for ${url}`));
+
+retrier.on('retry', ({ attempt, error }) =>
+  console.log(`Retry ${attempt} due to: ${error}`));
+
+retrier.on('success', ({ url, attempt }) =>
+  console.log(`Success on attempt ${attempt} for ${url}`));
+
+retrier.on('failed', ({ url }) =>
+  console.log(`All retries failed for ${url}`));
+
+retrier.fetchWithRetry('https://api.example.com/data', 3).catch(() => {});
+```
+
+## When to NOT Use EventEmitter
+
+EventEmitter is powerful but not always the right tool:
+
+| Use EventEmitter | Use Direct Calls |
+|-----------------|------------------|
+| 1 emitter → many listeners | 1 → 1 relationship |
+| Unknown consumers at design time | Known, fixed consumers |
+| Plugin/extension systems | Core business logic |
+| Cross-cutting concerns (logging, metrics) | Tightly coupled operations |
+
+## EventEmitter in Node.js Core
+
+Understanding EventEmitter helps you understand Node.js itself:
+
+```js
+const http = require('http');
+const fs = require('fs');
+const net = require('net');
+
+// All of these extend EventEmitter:
+const server = http.createServer();
+server.on('request', (req, res) => { /* ... */ });
+
+const stream = fs.createReadStream('file.txt');
+stream.on('data', (chunk) => { /* ... */ });
+stream.on('end', () => { /* ... */ });
+
+const socket = new net.Socket();
+socket.on('connect', () => { /* ... */ });
+```
+
+## Key Takeaways
+
+- **EventEmitter** implements the Pub/Sub pattern — publishers and subscribers are fully decoupled
+- Use `on()` to subscribe, `emit()` to publish events
+- **Listeners run synchronously** in registration order — `emit()` returns only after all listeners execute
+- **`once()`** auto-removes after the first fire — perfect for initialization events
+- **Always handle `error` events** — an unhandled `error` event crashes the process
+- Increase `setMaxListeners()` if you intentionally have many listeners per event
+- **Namespaced event names** (e.g., `user.created`, `payment.failed`) prevent collisions
+- Remove listeners with `off()` to prevent memory leaks in long-lived emitters
+- Many Node.js core modules (`http.Server`, `fs.ReadStream`, `net.Socket`) extend EventEmitter

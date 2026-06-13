@@ -1,0 +1,461 @@
+---
+title: "Security Best Practices"
+description: "Secure your Node.js production app — Helmet, rate limiting, input validation, CORS, CSRF, and dependency auditing"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Production"]
+tags: ["Node.js", "Production", "Security", "Best Practices"]
+slug: "nodejs-security-best-practices"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## The Security Mindset
+
+Security is not a feature — it's a practice. Every request that reaches your server is a potential attack vector.
+
+```
+Attacker                      Your Server
+    │                              │
+    ├── SQL Injection ────────────►│  Validate input
+    ├── XSS ──────────────────────►│  Escape output
+    ├── Rate Limit Bypass ────────►│  Rate limiting
+    ├── DoS / Memory Exhaust ─────►│  Body size limits
+    ├── Path Traversal ───────────►│  Restrict file access
+    ├── CORS Abuse ───────────────►│  Restrict origins
+    └── Dependency Exploit ───────►│  Regular audits
+```
+
+## 1. HTTP Security Headers with Helmet
+
+`helmet` sets security-related HTTP headers that protect against common attacks:
+
+```bash
+npm install helmet
+```
+
+```js
+const express = require('express');
+const helmet = require('helmet');
+
+const app = express();
+
+// Apply all default helmet middleware
+app.use(helmet());
+
+// Or customise:
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://trusted-cdn.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https://images.example.com"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+```
+
+### What Helmet Headers Do
+
+| Header | Purpose |
+|--------|---------|
+| `Content-Security-Policy` | Prevents XSS — controls allowed sources for scripts, styles, images |
+| `X-Content-Type-Options: nosniff` | Prevents MIME type sniffing |
+| `X-Frame-Options: DENY` | Prevents clickjacking (page in iframe) |
+| `X-XSS-Protection: 0` | Disables legacy XSS filter (modern CSP replaces it) |
+| `Strict-Transport-Security` | Enforces HTTPS for a year |
+| `Referrer-Policy: strict-origin-when-cross-origin` | Controls referrer header |
+
+## 2. Rate Limiting
+
+Prevents brute-force attacks and DoS by limiting requests per IP:
+
+```bash
+npm install express-rate-limit
+```
+
+```js
+const rateLimit = require('express-rate-limit');
+
+// Global rate limiter — 100 requests per minute per IP
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,       // 1 minute window
+  max: 100,                   // 100 requests per window
+  standardHeaders: true,      // Return rate limit info in headers
+  legacyHeaders: false,
+  message: {
+    error: 'Too many requests, please try again later.',
+  },
+});
+
+app.use(globalLimiter);
+
+// Strict rate limiter for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 5,                     // 5 attempts per window
+  skipSuccessfulRequests: true, // Only count failed attempts
+  message: {
+    error: 'Too many login attempts. Try again in 15 minutes.',
+  },
+});
+
+app.use('/api/auth/login', authLimiter);
+
+// Rate limiter for API endpoints
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { error: 'API rate limit exceeded' },
+});
+
+app.use('/api/', apiLimiter);
+```
+
+### Rate Limiting with Redis (for multi-server deployments)
+
+```js
+const RedisStore = require('rate-limit-redis');
+const Redis = require('ioredis');
+
+const redis = new Redis(process.env.REDIS_URL);
+
+const limiter = rateLimit({
+  store: new RedisStore({
+    sendCommand: (...args) => redis.call(...args),
+  }),
+  windowMs: 60 * 1000,
+  max: 100,
+});
+```
+
+## 3. Input Validation
+
+Never trust user input. Validate everything at the boundary:
+
+```js
+// Manual validation
+function validateUserInput(body) {
+  const errors = {};
+
+  // Email
+  if (!body.email || typeof body.email !== 'string') {
+    errors.email = 'Email is required';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
+    errors.email = 'Invalid email format';
+  }
+
+  // Age — must be integer between 0 and 150
+  if (body.age !== undefined) {
+    const age = parseInt(body.age, 10);
+    if (isNaN(age) || age < 0 || age > 150) {
+      errors.age = 'Age must be between 0 and 150';
+    }
+  }
+
+  // URL — must be valid and use HTTPS
+  if (body.website) {
+    try {
+      const url = new URL(body.website);
+      if (url.protocol !== 'https:') {
+        errors.website = 'Website must use HTTPS';
+      }
+    } catch {
+      errors.website = 'Invalid URL format';
+    }
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+    sanitized: {
+      email: body.email?.trim().toLowerCase(),
+      age: parseInt(body.age, 10),
+      website: body.website?.trim(),
+    },
+  };
+}
+```
+
+### Using `zod` for Validation (Recommended)
+
+```bash
+npm install zod
+```
+
+```js
+const { z } = require('zod');
+
+// Define a schema
+const UserSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  age: z.number().int().min(0).max(150).optional(),
+  website: z.string().url('Invalid URL').optional(),
+  role: z.enum(['user', 'admin', 'moderator']).default('user'),
+  tags: z.array(z.string().max(50)).max(10).optional(),
+});
+
+// Validate
+app.post('/api/users', (req, res) => {
+  const result = UserSchema.safeParse(req.body);
+
+  if (!result.success) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: result.error.flatten().fieldErrors,
+    });
+  }
+
+  // result.data is fully typed and sanitised
+  console.log(result.data.email);  // string
+  console.log(result.data.role);   // 'user' | 'admin' | 'moderator'
+  // ...
+});
+```
+
+### SQL Injection Protection
+
+```js
+// ❌ BAD — string interpolation
+const query = `SELECT * FROM users WHERE id = ${req.params.id}`;
+
+// ✅ GOOD — parameterised query
+const query = 'SELECT * FROM users WHERE id = $1';
+db.query(query, [req.params.id]);
+
+// ✅ GOOD — ORM abstraction
+const user = await User.findByPk(req.params.id);
+```
+
+## 4. CORS (Cross-Origin Resource Sharing)
+
+Restrict which domains can access your API:
+
+```bash
+npm install cors
+```
+
+```js
+const cors = require('cors');
+
+// Development — allow all origins
+if (process.env.NODE_ENV === 'development') {
+  app.use(cors());
+}
+
+// Production — restrict to specific origins
+if (process.env.NODE_ENV === 'production') {
+  const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [];
+
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, curl, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,              // Allow cookies/auth headers
+    maxAge: 86400,                  // Cache preflight for 24 hours
+  }));
+}
+```
+
+## 5. Body Size Limits
+
+Prevent memory exhaustion attacks:
+
+```js
+const express = require('express');
+const app = express();
+
+// Limit JSON body to 100KB
+app.use(express.json({ limit: '100kb' }));
+
+// Limit URL-encoded bodies (forms)
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+
+// Raw body limit (for webhooks)
+app.use(express.raw({ type: 'application/octet-stream', limit: '10mb' }));
+```
+
+For the raw `http` module:
+
+```js
+const MAX_BODY_SIZE = 100 * 1024; // 100KB
+
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let totalSize = 0;
+
+    req.on('data', (chunk) => {
+      totalSize += chunk.length;
+      if (totalSize > MAX_BODY_SIZE) {
+        reject(new Error('Request body too large'));
+        req.destroy();  // Close connection immediately
+        return;
+      }
+      chunks.push(chunk);
+    });
+
+    req.on('end', () => resolve(Buffer.concat(chunks).toString()));
+    req.on('error', reject);
+  });
+}
+```
+
+## 6. Path Traversal Protection
+
+When serving files, never trust user-supplied paths:
+
+```js
+const path = require('path');
+const fs = require('fs');
+
+// ❌ BAD — path traversal
+app.get('/files/:name', (req, res) => {
+  const filePath = path.join('/var/www/files', req.params.name);
+  // Attacker: GET /files/../../../etc/passwd → /var/www/files/../../../etc/passwd
+});
+
+// ✅ GOOD — restrict to allowed directory
+const ALLOWED_DIR = path.resolve('/var/www/files');
+
+app.get('/files/:name', (req, res) => {
+  // Sanitise: remove path separators and '..'
+  const safeName = path.basename(req.params.name);  // Only the filename
+  const filePath = path.join(ALLOWED_DIR, safeName);
+
+  // Double-check: ensure resolved path is within allowed directory
+  if (!filePath.startsWith(ALLOWED_DIR)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  res.sendFile(filePath);
+});
+```
+
+## 7. CSRF Protection (for Cookie-Based Auth)
+
+```bash
+npm install csurf
+```
+
+```js
+const csrf = require('csurf');
+const cookieParser = require('cookie-parser');
+
+app.use(cookieParser());
+app.use(csrf({ cookie: true }));
+
+// Send CSRF token with forms
+app.get('/form', (req, res) => {
+  res.render('form', { csrfToken: req.csrfToken() });
+});
+```
+
+## 8. Dependency Auditing
+
+Regularly check for known vulnerabilities in your dependencies:
+
+```bash
+# npm audit
+npm audit                    # Check for vulnerabilities
+npm audit fix                # Auto-fix patchable vulnerabilities
+npm audit fix --force       # Force major version upgrades
+
+# Snyk (more comprehensive)
+npm install -g snyk
+snyk test                    # Full dependency scan
+snyk monitor                 # Continuous monitoring
+
+# Socket.dev (blocks malicious packages)
+npm install -g @socketsecurity/cli
+socket scan
+```
+
+### Automate in CI/CD
+
+```yaml
+# .github/workflows/security.yml
+name: Security audit
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm audit
+```
+
+## 9. Secrets and Config Security
+
+```js
+// ❌ BAD — hardcoded secrets
+const jwtSecret = 'my-super-secret';
+const dbPassword = 'password123';
+
+// ✅ GOOD — environment variables
+const jwtSecret = process.env.JWT_SECRET;  // Required
+const dbPassword = process.env.DB_PASSWORD; // Required
+
+// ❌ BAD — committing .env
+// .env should be in .gitignore!
+
+// ✅ GOOD — .env.example documents the structure
+```
+
+## 10. HTTPS Redirect
+
+```js
+// Force HTTPS in production
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
+```
+
+## Security Checklist
+
+| Check | Tool/Practice | Done? |
+|-------|---------------|-------|
+| HTTP security headers | `helmet` middleware | ☐ |
+| Rate limiting | `express-rate-limit` | ☐ |
+| Input validation | `zod` or manual validation | ☐ |
+| Parameterised queries | No string interpolation in SQL | ☐ |
+| CORS restricted | Specific origins, not `*` | ☐ |
+| Body size limits | `express.json({ limit: '100kb' })` | ☐ |
+| Path traversal protection | `path.basename()` + prefix check | ☐ |
+| CSRF tokens | For cookie-based auth | ☐ |
+| No secrets in code | All secrets in env vars | ☐ |
+| HTTPS enforced | Redirect HTTP → HTTPS | ☐ |
+| npm audit | Run regularly, fix critical | ☐ |
+| Error info hidden in prod | No stack traces in responses | ☐ |
+| Session security | httpOnly, secure, sameSite cookies | ☐ |
+
+## Key Takeaways
+
+- **Helmet** adds critical HTTP security headers (CSP, HSTS, X-Frame-Options)
+- **Rate limiting** prevents brute-force and DoS — use different limits for auth vs general API
+- **Validate all input** at the boundary with `zod` or manual validation — never trust user data
+- **Use parameterised queries** — never interpolate values into SQL strings
+- **Restrict CORS** to specific origins in production — never use `*` for credentialed requests
+- **Limit body sizes** — a 100KB JSON limit prevents memory exhaustion attacks
+- **Prevent path traversal** — use `path.basename()` and check that the resolved path is within the allowed directory
+- **Audit dependencies regularly** — `npm audit` weekly, consider Snyk for continuous monitoring
+- **Never hardcode secrets** — all configuration and secrets come from environment variables
+- **Hide error details in production** — log stack traces internally, return safe messages to clients

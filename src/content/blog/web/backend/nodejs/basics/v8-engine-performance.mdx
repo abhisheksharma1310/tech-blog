@@ -1,0 +1,190 @@
+---
+title: "The V8 Engine & Performance"
+description: "How Google's V8 engine compiles and optimises JavaScript — and what it means for Node.js performance"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "V8", "Performance"]
+slug: "nodejs-v8-engine"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## What is V8?
+
+**V8** is Google's open-source, high-performance JavaScript engine, written in C++. It's the engine that powers:
+
+- **Google Chrome** (since 2008)
+- **Node.js** (since 2009)
+- **Deno**
+- **Electron** (VS Code, Slack, Discord)
+- **Edge** (Chromium-based)
+
+```
+JavaScript Source Code
+        │
+        ▼
+    ┌──────────┐
+    │  Parser  │
+    └────┬─────┘
+         │
+         ▼
+    ┌──────────┐
+    │ Interpreter │ ◄── Ignition (fast startup)
+    └────┬─────┘
+         │
+         ▼
+    ┌──────────────┐
+    │ Compiler     │ ◄── TurboFan (optimised code)
+    │ (TurboFan)   │
+    └──────────────┘
+         │
+         ▼
+    Machine Code
+```
+
+## How V8 Works: JIT Compilation
+
+Unlike traditional interpreted languages (Python, Ruby), V8 **compiles JavaScript to machine code** at runtime. This is called **Just-In-Time (JIT) compilation**.
+
+| Step | Phase | What Happens |
+|------|-------|-------------|
+| 1 | Parsing | Source code → Abstract Syntax Tree (AST) |
+| 2 | Ignition | AST → Bytecode (interpreter) |
+| 3 | Profiling | Hot code paths are identified |
+| 4 | TurboFan | Hot bytecode → Optimised machine code |
+| 5 | Deoptimisation | If assumptions fail, fall back to bytecode |
+
+## Hidden Classes & Inline Caching
+
+V8 optimises property access using **hidden classes** (maps) and **inline caching** (IC).
+
+```js
+// V8 creates a hidden class for this shape
+function Point(x, y) {
+  this.x = x;  // Hidden class created here
+  this.y = y;  // Transition to new class
+}
+
+const p1 = new Point(1, 2);
+const p2 = new Point(3, 4);  // Reuses the same hidden classes
+```
+
+> **Performance tip:** Always initialise object properties in the same order. V8 reuses hidden classes when object shapes are identical.
+
+### Bad vs Good
+
+```js
+// ❌ Bad — different property order every time
+function createUser(role) {
+  const user = {};
+  if (role === 'admin') {
+    user.role = 'admin';
+    user.permissions = ['all'];
+  } else {
+    user.permissions = ['read'];
+    user.role = 'user';
+  }
+  return user;
+}
+
+// ✅ Good — consistent property order
+function createUser(role) {
+  const user = { role: 'user', permissions: [] };
+  if (role === 'admin') {
+    user.role = 'admin';
+    user.permissions = ['all'];
+  }
+  return user;
+}
+```
+
+## Garbage Collection
+
+V8 uses a **generational garbage collector**:
+
+```
+New Space (Young Gen)        Old Space (Old Gen)
+┌──────────────────┐         ┌──────────────────┐
+│ New objects      │──►──────│ Surviving objects│
+│ Small, short-lived│  GC    │ Long-lived       │
+│ Collected often  │         │ Collected rarely │
+└──────────────────┘         └──────────────────┘
+```
+
+- **Scavenge** — fast collection on young generation
+- **Mark-Sweep-Compact** — slower full collection on old generation
+
+## Measuring Performance in Node.js
+
+### 1. Built-in `performance` API
+
+```js
+const { performance, PerformanceObserver } = require('perf_hooks');
+
+performance.mark('start');
+// ... your code ...
+performance.mark('end');
+performance.measure('My Task', 'start', 'end');
+
+const obs = new PerformanceObserver((items) => {
+  console.log(items.getEntries()[0].duration, 'ms');
+});
+obs.observe({ entryTypes: ['measure'] });
+```
+
+### 2. Timing with `console.time`
+
+```js
+console.time('array-loop');
+const arr = new Array(1000000);
+for (let i = 0; i < arr.length; i++) {
+  arr[i] = i * 2;
+}
+console.timeEnd('array-loop');
+// array-loop: 12.345ms
+```
+
+### 3. V8 Flags
+
+```bash
+# See all V8 options
+node --v8-options
+
+# Trace optimisations
+node --trace-opt my-script.js
+
+# Trace deoptimisations
+node --trace-deopt my-script.js
+```
+
+## Node.js Performance Best Practices
+
+```js
+// ✅ Do: Cache property lookups
+const len = arr.length;
+for (let i = 0; i < len; i++) { /* ... */ }
+
+// ❌ Don't: Delete properties (breaks hidden classes)
+const obj = { a: 1, b: 2 };
+delete obj.a;  // Forces class transition
+
+// ✅ Do: Use monomorphic functions
+function add(a, b) { return a + b; }  // Always called with numbers
+
+// ❌ Don't: Polymorphic calls
+function add(a, b) { return a + b; }
+add(1, 2);      // number + number
+add('a', 'b');  // string + string — triggers deopt
+
+// ✅ Do: Use typed arrays for numeric data
+const buffer = new Float64Array(1000000);
+```
+
+## Key Takeaways
+
+- **V8** is the JavaScript engine behind Node.js — written in C++, JIT-compiles JS to machine code
+- Uses **Ignition** (interpreter) + **TurboFan** (optimising compiler)
+- **Hidden classes** and **inline caching** make property access fast
+- **Generational GC** keeps memory pressure low
+- Consistent object shapes, monomorphic functions, and avoiding `delete` keep V8 happy
+- Use `console.time` and `perf_hooks` to measure real-world performance

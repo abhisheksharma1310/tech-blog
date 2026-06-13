@@ -1,0 +1,357 @@
+---
+title: "Process Management — PM2 & Forever"
+description: "Manage Node.js processes in production with PM2 — clustering, monitoring, zero-downtime restarts, and log management"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Production"]
+tags: ["Node.js", "Production", "PM2", "Process Management"]
+slug: "nodejs-process-management-pm2"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why a Process Manager?
+
+Running `node app.js` directly in production is dangerous:
+
+- If your app crashes, **it stays down** — no auto-restart
+- Your app uses **only one CPU core** — other cores sit idle
+- **Logs go to stdout** — they're lost when the terminal closes
+- **No graceful shutdown** — in-flight requests get dropped
+
+A process manager solves all of these:
+
+```
+Without PM2:                    With PM2:
+node app.js                     pm2 start app.js -i max
+    │                               │
+    ├── Crash → Down forever        ├── Crash → Auto-restart
+    ├── 1 CPU core                  ├── All CPU cores (cluster mode)
+    ├── Logs → Terminal             ├── Logs → Files + rotate
+    └── Ctrl+C → Hard stop          └── pm2 reload → Zero-downtime
+```
+
+## PM2 Overview
+
+**PM2** is the most popular Node.js process manager. It handles:
+
+- Process daemonisation (runs in background)
+- Auto-restart on crash
+- Clustering across CPU cores
+- Zero-downtime reloads
+- Log management and rotation
+- Startup scripts (auto-start on server reboot)
+- Built-in monitoring (CPU, memory, requests)
+
+## Installation
+
+```bash
+# Install globally
+npm install -g pm2
+
+# Verify
+pm2 --version
+```
+
+## Basic Commands
+
+```bash
+# Start an app
+pm2 start app.js --name my-api
+
+# Start with cluster mode (all CPU cores)
+pm2 start app.js -i max --name my-api
+
+# Start with specific instance count
+pm2 start app.js -i 4 --name my-api
+
+# List all processes
+pm2 list
+
+# Show detailed info about a process
+pm2 show my-api
+
+# View logs
+pm2 logs my-api              # Follow logs live
+pm2 logs my-api --lines 100   # Last 100 lines
+
+# Stop / Restart / Delete
+pm2 stop my-api
+pm2 restart my-api
+pm2 delete my-api
+
+# Zero-downtime reload (for cluster mode)
+pm2 reload my-api
+```
+
+### The Difference Between `restart` and `reload`
+
+```bash
+# restart: stops all instances, then starts new ones
+#         → brief downtime during the swap
+pm2 restart my-api
+
+# reload: restarts workers one by one
+#         → zero downtime, in-flight requests finish on old workers
+pm2 reload my-api
+```
+
+## PM2 Ecosystem File
+
+Instead of CLI flags, use an `ecosystem.config.js` file to configure PM2:
+
+```js
+// ecosystem.config.js
+module.exports = {
+  apps: [{
+    name: 'my-api',
+    script: 'app.js',
+
+    // Clustering
+    instances: process.env.NODE_ENV === 'production' ? 'max' : 1,
+    exec_mode: 'cluster',  // 'fork' (default) or 'cluster'
+
+    // Environment variables
+    env: {
+      NODE_ENV: 'development',
+      PORT: 3000,
+    },
+    env_production: {
+      NODE_ENV: 'production',
+      PORT: 8080,
+    },
+
+    // Restart behavior
+    max_restarts: 10,        // Max restarts within min_uptime
+    min_uptime: 10000,       // 10 seconds — if process stays up, consider it stable
+    max_memory_restart: '500M', // Restart if memory exceeds 500MB
+
+    // Logging
+    log_file: './logs/app.log',
+    error_file: './logs/err.log',
+    out_file: './logs/out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    merge_logs: true,
+
+    // Graceful shutdown
+    kill_timeout: 5000,      // Wait 5s after SIGTERM before SIGKILL
+    listen_timeout: 3000,    // Wait 3s for app to start listening
+
+    // Watch mode (development only)
+    watch: process.env.NODE_ENV === 'development' ? ['./src'] : false,
+    ignore_watch: ['node_modules', 'logs'],
+
+    // Delays between restarts (prevent restart storms)
+    restart_delay: 3000,
+  }],
+};
+```
+
+Start with:
+
+```bash
+pm2 start ecosystem.config.js
+pm2 start ecosystem.config.js --env production
+```
+
+## Graceful Shutdown with PM2
+
+PM2 sends `SIGTERM` to your process on reload/restart. Handle it to avoid dropping requests:
+
+```js
+// app.js
+const express = require('express');
+const app = express();
+
+const server = app.listen(process.env.PORT || 3000, () => {
+  console.log(`Server listening on port ${process.env.PORT}`);
+
+  // Tell PM2 the app is ready
+  if (process.send) process.send('ready');
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+
+  server.close(() => {
+    console.log('HTTP server closed');
+    db.close(() => {
+      console.log('Database connections closed');
+      process.exit(0);
+    });
+  });
+
+  // Force exit after 5 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown');
+    process.exit(1);
+  }, 5000);
+});
+```
+
+## Zero-Downtime Deployment with PM2
+
+```bash
+# Deploy new code
+git pull origin main
+npm ci --production
+
+# Zero-downtime reload
+pm2 reload my-api
+
+# Verify
+pm2 status
+```
+
+In a deployment script:
+
+```bash
+#!/bin/bash
+# deploy.sh
+
+set -e
+
+echo "Pulling latest code..."
+git pull origin main
+
+echo "Installing dependencies..."
+npm ci --production
+
+echo "Running database migrations..."
+npm run migrate
+
+echo "Reloading application..."
+pm2 reload ecosystem.config.js --env production
+
+echo "Deployment complete!"
+```
+
+## Integration with `npm scripts`
+
+```json
+{
+  "scripts": {
+    "start": "pm2-runtime start ecosystem.config.js --env production",
+    "dev": "node --watch app.js",
+    "stop": "pm2 stop my-api",
+    "restart": "pm2 reload my-api",
+    "logs": "pm2 logs my-api",
+    "monit": "pm2 monit",
+    "deploy": "./deploy.sh"
+  }
+}
+```
+
+## Monitoring with PM2
+
+```bash
+# Real-time terminal dashboard
+pm2 monit
+
+# Process list with metrics
+pm2 list
+
+# Show detailed metrics
+pm2 show my-api
+
+# CPU and memory usage per process
+pm2 prettylist
+
+# Save process list for resurrection
+pm2 save
+
+# Generate startup script (auto-start on server reboot)
+pm2 startup
+```
+
+### PM2 Plus (Web Dashboard)
+
+```bash
+# Connect to PM2 Plus for web-based monitoring
+pm2 link <secret> <public>
+# Opens a web dashboard with real-time metrics, history, and alerts
+```
+
+## PM2 Log Rotation
+
+```bash
+# Install log rotation module
+pm2 install pm2-logrotate
+
+# Configure
+pm2 set pm2-logrotate:max_size 100M    # Rotate at 100MB
+pm2 set pm2-logrotate:retain 10        # Keep 10 rotated files
+pm2 set pm2-logrotate:compress true    # Gzip rotated logs
+pm2 set pm2-logrotate:rotateInterval '0 0 * * *'  # Rotate daily at midnight
+```
+
+## Forever — The Lighter Alternative
+
+**Forever** is a simpler, older process manager. It only does one thing: keep your script running.
+
+```bash
+# Install
+npm install -g forever
+
+# Start
+forever start app.js
+
+# List
+forever list
+
+# Stop
+forever stop app.js
+
+# Restart
+forever restart app.js
+
+# Logs
+forever logs
+```
+
+### PM2 vs Forever
+
+| Feature | PM2 | Forever |
+|---------|-----|---------|
+| Clustering | Built-in (cluster mode) | No |
+| Zero-downtime reload | Yes (`pm2 reload`) | No |
+| Startup script | `pm2 startup` | Manual |
+| Log rotation | Module (`pm2-logrotate`) | Manual |
+| Monitoring | Built-in (`pm2 monit`) | Basic |
+| Ecosystem file | Yes (JS config) | No |
+| Web dashboard | PM2 Plus | No |
+| Active development | Yes | Maintenance mode |
+
+> **Recommendation:** Use PM2 for all production deployments. Forever is suitable only for the simplest single-process scenarios.
+
+## Running PM2 in Docker
+
+```dockerfile
+FROM node:22-alpine
+
+WORKDIR /app
+COPY . .
+RUN npm ci --production
+
+# Use pm2-runtime (optimised for Docker)
+CMD ["pm2-runtime", "start", "ecosystem.config.js", "--env", "production"]
+```
+
+`pm2-runtime` is designed for containers — it runs in the foreground (no daemon mode) and forwards signals correctly:
+
+```bash
+docker build -t my-api .
+docker run -d -p 3000:3000 --name my-api my-api
+```
+
+## Key Takeaways
+
+- **PM2** is the standard Node.js process manager — use it for all production deployments
+- **Cluster mode** (`-i max`) uses all CPU cores — scales automatically
+- **`pm2 reload`** provides zero-downtime restarts by cycling workers one at a time
+- **Handle `SIGTERM`** in your app for graceful shutdown — PM2 sends this on reload/stop
+- **Ecosystem file** (`ecosystem.config.js`) replaces CLI flags — commit it to your repo
+- **`pm2 startup`** generates systemd/init scripts so your app starts on server reboot
+- **`pm2-logrotate`** prevents logs from filling up your disk
+- **`pm2-runtime`** is the Docker-optimised PM2 — runs in foreground, handles signals
+- **Forever** is simpler but lacks clustering, reloads, and log management — prefer PM2

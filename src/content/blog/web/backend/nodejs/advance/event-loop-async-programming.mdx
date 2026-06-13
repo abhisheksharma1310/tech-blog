@@ -1,0 +1,476 @@
+---
+title: "Event Loop & Async Programming"
+description: "Deep dive into Node.js event loop phases — nextTick, setImmediate, timers, and microtasks"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Advanced"]
+tags: ["Node.js", "Advanced", "Event Loop", "Async"]
+slug: "nodejs-event-loop"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Understanding the Event Loop
+
+The event loop is the **core mechanism** that makes Node.js asynchronous. Despite JavaScript being single-threaded, Node.js can handle thousands of concurrent connections because the event loop never blocks — it keeps moving through its phases, picking up new work as it becomes available.
+
+Think of the event loop like a **restaurant kitchen**:
+
+- The **head chef** is the event loop — one person doing one thing at a time
+- **Orders** are events (HTTP requests, file reads, timer callbacks)
+- The chef takes an order, hands it to a **station** (file system, network), and moves on to the next order
+- When a station finishes, the chef picks up the result and processes it
+
+This is the **non-blocking I/O model**. While one order is being cooked (file being read), the chef can handle other orders instead of standing around waiting.
+
+## The Six Phases of the Event Loop
+
+Unlike the browser event loop (which has just a few phases), Node.js has **six phases** that run in a循环. Each phase has a FIFO (first-in, first-out) callback queue.
+
+```
+   ┌───────────────────────────┐
+┌─>│         timers            │ ← setTimeout, setInterval
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │     pending callbacks      │ ← I/O callbacks deferred
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │     idle, prepare          │ ← internal use only
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │         poll               │ ← retrieve I/O events
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │         check              │ ← setImmediate
+│  └─────────────┬─────────────┘
+│  ┌─────────────┴─────────────┐
+│  │     close callbacks        │ ← close events (socket.on('close'))
+│  └───────────────────────────┘
+└───────────────────────────────┘
+```
+
+The event loop is implemented by the **libuv** library — the same library that handles all I/O operations across different operating systems. Each loop iteration is called a **tick**.
+
+## Phase Breakdown
+
+### 1. Timers Phase
+
+This phase executes callbacks scheduled by `setTimeout` and `setInterval`. The timers are stored in a **min-heap** data structure, ordered by their expiry time.
+
+```js
+setTimeout(() => console.log('timeout'), 0);
+setTimeout(() => console.log('timeout 100ms'), 100);
+```
+
+> **Critical insight:** `setTimeout(fn, 0)` does **not** run immediately. It runs after the **poll phase** completes, with at least a 1ms delay enforced by the kernel. This is because Node.js delegates the timing to libuv, and most operating systems have a minimum timer resolution of 1ms.
+
+### 2. Pending Callbacks Phase
+
+Executes I/O callbacks that were **deferred** from the previous loop iteration. For example, if a TCP connection fails, the error callback is queued here rather than in the poll phase.
+
+```js
+const net = require('net');
+
+const socket = net.createConnection(9999, 'localhost');
+socket.on('connect', () => console.log('connected'));
+socket.on('error', (err) => console.error('Connection error:', err.message));
+// The error callback runs in the pending callbacks phase
+```
+
+### 3. Idle / Prepare Phase
+
+Used internally by libuv. You never interact with this phase directly. It prepares the event loop for the upcoming poll phase.
+
+### 4. Poll Phase — The Heart of the Event Loop
+
+This is the most important phase. Its job is to:
+
+1. **Retrieve new I/O events** — file reads, network data, incoming HTTP requests
+2. **Execute I/O callbacks** — run the callbacks associated with those events
+3. **Decide what to do next** — based on whether there are pending timers or `setImmediate` callbacks
+
+```
+Poll Phase Decision Tree:
+
+Are there timers ready?
+    ├── Yes → Go back to Timers phase
+    └── No
+        └── Are there setImmediate callbacks?
+            ├── Yes → Go to Check phase
+            └── No → Wait for new I/O events (blocking)
+```
+
+```js
+const fs = require('fs');
+
+// This callback runs in the poll phase
+fs.readFile(__filename, 'utf8', (err, data) => {
+  console.log('File read complete. Length:', data.length);
+});
+
+// This runs once the poll phase has no more work
+setTimeout(() => console.log('Timer fired after poll'), 0);
+```
+
+> **The poll phase blocks** when there's nothing to do. It waits for new I/O events to arrive. This is why Node.js can be idle — it's sleeping in the poll phase, waiting for work.
+
+### 5. Check Phase
+
+Runs **all** `setImmediate` callbacks. This phase runs **immediately after** the poll phase, making it ideal for callbacks that must execute after I/O completes.
+
+```js
+const fs = require('fs');
+
+fs.readFile(__filename, () => {
+  setImmediate(() => console.log('Runs in check phase'));
+  setTimeout(() => console.log('Runs in next timer phase'), 0);
+});
+// Always:
+// Runs in check phase
+// Runs in next timer phase
+```
+
+### 6. Close Callbacks Phase
+
+Handles cleanup callbacks like `socket.on('close')`, `stream.destroy()`, or `process.on('exit')`.
+
+```js
+const server = require('http').createServer();
+
+server.on('close', () => {
+  console.log('Server closed — this runs in close callbacks phase');
+});
+
+server.close();
+```
+
+## `setTimeout(fn, 0)` vs `setImmediate`
+
+This is one of the most commonly asked Node.js interview questions. The answer depends on **where** you call them.
+
+```js
+// Outside any I/O callback — non-deterministic
+setTimeout(() => console.log('timeout'), 0);
+setImmediate(() => console.log('immediate'));
+```
+
+Output is **non-deterministic** when called from the main module:
+
+```
+# May output:
+timeout
+immediate
+
+# Or:
+immediate
+timeout
+```
+
+**Why?** At the top level, the poll phase hasn't started yet. The event loop starts with the timers phase. If the system timer fires before the timers phase is checked, `setTimeout` wins. Otherwise, the loop reaches the check phase first.
+
+But **inside an I/O callback**, `setImmediate` always wins:
+
+```js
+const fs = require('fs');
+
+fs.readFile(__filename, () => {
+  setTimeout(() => console.log('timeout'), 0);
+  setImmediate(() => console.log('immediate'));
+});
+// Always:
+// immediate
+// timeout
+```
+
+**Why?** Inside an I/O callback, you are in the poll phase. The poll phase runs `setImmediate` callbacks next (check phase). The timers phase only comes around on the **next** loop iteration.
+
+## `process.nextTick` — The Phase Interrupter
+
+Technically **not part of** the event loop at all. `process.nextTick` callbacks are processed **after the current operation finishes, before the next phase begins**.
+
+```
+Current operation (whatever you're doing right now)
+       │
+       ▼
+  nextTick queue ──► ALL nextTick callbacks run here
+       │
+       ▼
+  Event loop phase (timers → pending → ...)
+```
+
+```js
+// nextTick-demo.js
+console.log('start');
+
+process.nextTick(() => console.log('nextTick 1'));
+process.nextTick(() => console.log('nextTick 2'));
+
+setTimeout(() => console.log('timeout'), 0);
+
+console.log('end');
+
+// Output:
+// start
+// end
+// nextTick 1
+// nextTick 2
+// timeout
+```
+
+**Why this output?** The synchronous `console.log` calls run first. Then, after the current operation (the entire script) finishes, the entire nextTick queue is drained **before** moving to the timers phase.
+
+> **Warning:** Recursive `process.nextTick` can **starve the event loop** because it runs before I/O phases. The event loop never gets a chance to process I/O if you keep adding to the nextTick queue.
+
+```js
+// ❌ BAD — starves I/O forever
+function recursiveNextTick() {
+  process.nextTick(recursiveNextTick);
+}
+recursiveNextTick();
+
+// Any I/O callback here will never run
+
+// ✅ BETTER — use setImmediate (gives I/O a chance between iterations)
+function recursiveImmediate() {
+  setImmediate(recursiveImmediate);
+}
+recursiveImmediate();
+
+// I/O callbacks will run in the poll phase between immediate callbacks
+```
+
+### When to Use `process.nextTick`
+
+- To ensure a callback runs **before** any I/O or timer callbacks
+- To re-emit events before the next phase (internal Node.js pattern)
+- To handle errors in event emitters before I/O can proceed
+
+## Microtasks (Promises)
+
+Promise callbacks (`.then`, `.catch`, `.finally`) run in the **microtask queue**. This queue is checked **after each individual macrotask** completes — not just after each phase.
+
+```
+Macrotask (e.g., setTimeout callback)
+    │
+    ├──► Microtask queue (all Promise callbacks)
+    │
+    ├──► nextTick queue
+    │
+    ▼
+Next macrotask
+```
+
+```js
+// microtask-order.js
+console.log('1');
+
+setTimeout(() => console.log('2'), 0);
+
+Promise.resolve().then(() => console.log('3'));
+
+process.nextTick(() => console.log('4'));
+
+console.log('5');
+
+// Output:
+// 1
+// 5
+// 4      ← nextTick before Promise microtasks
+// 3      ← Promise microtask
+// 2      ← setTimeout macrotask
+```
+
+### The Complete Priority Order
+
+```
+1. Synchronous code (current operation)
+2. process.nextTick queue (all of it)
+3. Promise microtask queue (all of it)
+4. Event loop phases:
+   a. Timers (setTimeout, setInterval)
+   b. Pending callbacks
+   c. Idle/Prepare
+   d. Poll (I/O callbacks)
+   e. Check (setImmediate)
+   f. Close callbacks
+```
+
+### Nested Microtasks
+
+```js
+// microtask-nesting.js
+Promise.resolve().then(() => {
+  console.log('microtask 1');
+  Promise.resolve().then(() => {
+    console.log('microtask 2 (nested)');
+  });
+});
+
+setTimeout(() => console.log('timeout'), 0);
+
+// Output:
+// microtask 1
+// microtask 2 (nested)
+// timeout
+```
+
+**Key insight:** Microtask queues are drained **recursively** — adding a microtask from within a microtask keeps the event loop in the microtask phase until the microtask queue is empty. This is similar to how `process.nextTick` works but one level lower.
+
+## async/await Under the Hood
+
+`async/await` is syntactic sugar over Promises. Every `await` creates a microtask boundary:
+
+```js
+// Under the hood, this:
+async function example() {
+  console.log('A');
+  await delay(0);
+  console.log('C');
+}
+
+// Is roughly equivalent to:
+function example() {
+  console.log('A');
+  return delay(0).then(() => {
+    console.log('C');
+  });
+}
+
+// The continuation after 'await' runs as a microtask
+```
+
+```js
+console.log('1');
+
+async function test() {
+  console.log('2');
+  await Promise.resolve();
+  console.log('4'); // This runs as a microtask
+}
+
+test();
+
+console.log('3');
+
+// Output:
+// 1
+// 2
+// 3
+// 4
+```
+
+## Common Event Loop Pitfalls
+
+### Pitfall 1: Blocking the Event Loop
+
+```js
+// ❌ BAD — blocks everything
+function blockEventLoop(durationMs) {
+  const start = Date.now();
+  while (Date.now() - start < durationMs) {
+    // Busy wait — nothing else can run
+  }
+}
+
+blockEventLoop(5000);
+// No I/O, no timers, no requests processed for 5 seconds
+```
+
+### Pitfall 2: JSON.parse on Large Data in Request Path
+
+```js
+// ❌ BAD
+app.post('/api/upload', (req, res) => {
+  const data = JSON.parse(req.body); // Can block for seconds on large input
+  // ...
+});
+
+// ✅ BETTER — use streaming or offload
+const { Transform } = require('stream');
+// Parse chunks incrementally instead of all at once
+```
+
+### Pitfall 3: Synchronous APIs in Hot Paths
+
+```js
+const crypto = require('crypto');
+
+app.get('/api/hash', (req, res) => {
+  // ❌ BAD — crypto.pbkdf2Sync blocks the loop
+  const hash = crypto.pbkdf2Sync('password', 'salt', 100000, 64, 'sha512');
+
+  // ✅ GOOD — async version yields to event loop
+  crypto.pbkdf2('password', 'salt', 100000, 64, 'sha512', (err, hash) => {
+    res.json({ hash: hash.toString('hex') });
+  });
+});
+```
+
+## Practical: Building a Delay Utility
+
+```js
+// delay.js
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function run() {
+  console.log('Starting...');
+  await delay(1000);
+  console.log('1 second later');
+  await delay(500);
+  console.log('500ms later');
+}
+
+run();
+```
+
+## Practical: Measuring Event Loop Lag
+
+```js
+// event-loop-lag.js
+let lastCheck = Date.now();
+
+setInterval(() => {
+  const now = Date.now();
+  const lag = now - lastCheck - 1000;
+  if (lag > 50) {
+    console.warn(`Event loop lag detected: ${lag}ms`);
+  }
+  lastCheck = now;
+}, 1000);
+
+// Simulate a blocking operation
+setTimeout(() => {
+  const start = Date.now();
+  while (Date.now() - start < 200) { /* block */ }
+  console.log('Blocked for 200ms');
+}, 2000);
+```
+
+## Practical: Safe JSON Parsing
+
+```js
+const { Transform } = require('stream');
+const { parse } = require('jsonparse'); // npm install jsonparse
+
+// Parse JSON in chunks without blocking the event loop
+const parser = new Transform({
+  readableObjectMode: true,
+  transform(chunk, encoding, callback) {
+    // Process each chunk rather than the entire payload at once
+    // ...
+    callback();
+  },
+});
+```
+
+## Key Takeaways
+
+- The Node.js event loop has **6 phases**: timers → pending → idle → poll → check → close
+- **`setImmediate`** runs in the check phase (immediately after poll); **`setTimeout(fn, 0)`** runs in the next timer phase
+- Inside I/O callbacks, `setImmediate` **always** fires before `setTimeout(fn, 0)` — the poll phase leads to check, not timers
+- **`process.nextTick`** is not part of the event loop — it interrupts between phases and runs before microtasks
+- **Priority order**: nextTick > Promise microtasks > setTimeout macrotask
+- Never use recursive `process.nextTick` — it starves I/O and can crash the process
+- Blocking the event loop (sync APIs, heavy JSON, long loops) stops **everything** — always use async alternatives
+- Microtask queues drain recursively — nested Promise chains run to completion before the next macrotask

@@ -1,0 +1,492 @@
+---
+title: "Error Handling in Node.js"
+description: "Master error handling in Node.js — synchronous exceptions, promise rejections, async/await, and global handlers"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Advanced"]
+tags: ["Node.js", "Advanced", "Error Handling", "Async"]
+slug: "nodejs-error-handling"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## The Error Handling Landscape
+
+Node.js has **four** categories of errors, each requiring a different handling approach. Understanding which category you're dealing with is the first step to handling it correctly.
+
+| Category | Mechanism | Example |
+|----------|-----------|---------|
+| Synchronous | `try/catch` | `JSON.parse()`, `TypeError`, `ReferenceError` |
+| Callback-based | Error-first callback | `fs.readFile()`, legacy APIs |
+| Promise-based | `.catch()` / `try/catch` with async | `fetch()`, `fs.promises` |
+| Global | `process.on('uncaughtException')` | Unexpected crashes, programmer bugs |
+
+### Operational vs Programmer Errors
+
+Before diving in, understand this critical distinction:
+
+- **Operational errors** — expected runtime problems (file not found, network timeout, invalid input). Handle these gracefully.
+- **Programmer errors** — bugs in your code (typo in variable name, calling non-function). These should **crash** the process because the application is in an unknown state.
+
+```js
+// Operational — expected, handle it
+try {
+  const data = fs.readFileSync('/config.json');
+} catch (err) {
+  if (err.code === 'ENOENT') {
+    // File doesn't exist — use defaults
+    config = getDefaultConfig();
+  }
+}
+
+// Programmer — bug, let it crash
+const x = 5;
+x.toUpperCase(); // TypeError: x.toUpperCase is not a function
+// This should crash — it's a coding mistake
+```
+
+## 1. Synchronous Errors
+
+Synchronous code either throws or doesn't. There's no in-between.
+
+```js
+// sync-errors.js
+try {
+  const data = JSON.parse('invalid json');
+} catch (err) {
+  console.error('Parse error:', err.message);
+  // Parse error: Unexpected token i in JSON at position 0
+}
+```
+
+### What Actually Happens When You Throw
+
+```js
+function divide(a, b) {
+  if (b === 0) throw new Error('Division by zero');
+  return a / b;
+}
+
+try {
+  divide(10, 0);
+} catch (err) {
+  console.error(err.name);   // 'Error'
+  console.error(err.message); // 'Division by zero'
+  console.error(err.stack);   // Full stack trace
+}
+```
+
+When `throw` is executed:
+1. The function stops executing immediately
+2. The call stack unwinds until it finds a matching `catch` block
+3. If no `catch` block is found, the process crashes
+
+### Synchronous APIs You Should Always Wrap
+
+```js
+// JSON.parse — always wrap
+try { JSON.parse(input); } catch { /* handle */ }
+
+// URL — always wrap
+try { new URL(input); } catch { /* handle */ }
+
+// Number conversion
+try { BigInt(input); } catch { /* handle */ }
+
+// parseInt doesn't throw (returns NaN) — check explicitly
+const n = parseInt(input);
+if (isNaN(n)) { /* handle */ }
+```
+
+## 2. Callback Pattern (Error-First)
+
+Node.js legacy APIs use the **error-first callback** convention. The first argument is always `err` (or `null` on success). This was the standard before Promises existed.
+
+```js
+const fs = require('fs');
+
+fs.readFile('/nonexistent/file.txt', 'utf8', (err, data) => {
+  if (err) {
+    // err is always first — check it immediately
+    console.error('Read failed:', err.message);
+
+    // Common error codes:
+    if (err.code === 'ENOENT') {
+      console.error('File does not exist');
+    } else if (err.code === 'EACCES') {
+      console.error('Permission denied');
+    } else if (err.code === 'EISDIR') {
+      console.error('Path is a directory');
+    }
+    return; // Never forget to return
+  }
+
+  // If we reach here, err is null — safe to use data
+  console.log('File content:', data);
+});
+```
+
+> **Rule:** The first argument to a callback is always `err` (or `null` on success). Always check it before using the result. Forgetting to check `err` is the source of countless production bugs.
+
+### Converting Callbacks to Promises
+
+```js
+const fs = require('fs');
+const { promisify } = require('util');
+
+const readFile = promisify(fs.readFile);
+
+async function read() {
+  try {
+    const data = await readFile('/config.json', 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    if (err.code === 'ENOENT') return { port: 3000 }; // Default
+    throw err; // Re-throw unexpected errors
+  }
+}
+```
+
+## 3. Promise Rejections
+
+Promises represent a value that may be available now, later, or never. When a promise fails, it is **rejected**.
+
+```js
+// promise-errors.js
+const fetchData = () => {
+  return new Promise((resolve, reject) => {
+    const success = Math.random() > 0.5;
+    success ? resolve('data') : reject(new Error('Network error'));
+  });
+};
+
+// Correct: chain .catch()
+fetchData()
+  .then(data => console.log(data))
+  .catch(err => console.error('Caught:', err.message));
+```
+
+### The Danger of Unhandled Promise Rejections
+
+```js
+// ❌ BAD — unhandled rejection (no .catch, no await)
+Promise.reject(new Error('Silent failure'));
+
+// Node.js 18+ behavior:
+// (node:12345) UnhandledPromiseRejectionWarning: Error: Silent failure
+// (node:12346) [DEP0018] DeprecationWarning: Unhandled promise rejections
+// are deprecated. In the future, promise rejections that are not handled
+// will terminate the Node.js process with a non-zero exit code.
+```
+
+> Since **Node.js 15**, unhandled rejections emit `'unhandledRejection'`. Starting in **Node.js 18**, the process **terminates** on unhandled rejections. Always handle rejections.
+
+### Common Ways Promises Are Accidentally Unhandled
+
+```js
+// ❌ Mistake 1: forgetting to return the promise
+function load() {
+  fetchData().then(data => console.log(data));
+  // No return — caller can't catch errors
+}
+
+// ❌ Mistake 2: catching but not re-throwing
+try {
+  const data = await riskyFunction();
+} catch (err) {
+  // Swallowed — the error disappears
+}
+
+// ❌ Mistake 3: .catch at the wrong level
+fetchData()
+  .then(data => {
+    processData(data); // If this throws, it's not caught
+  })
+  .catch(err => {
+    // Only catches errors from fetchData, not processData
+  });
+
+// ✅ Correct: handle errors at every level
+fetchData()
+  .then(data => processData(data))
+  .catch(err => console.error(err));
+
+// Or use async/await
+try {
+  const data = await fetchData();
+  await processData(data);
+} catch (err) {
+  console.error(err);
+}
+```
+
+## 4. Async/Await
+
+`async/await` is syntactic sugar over Promises. The `await` keyword **unwraps** the Promise — if the promise rejects, it throws the rejection reason.
+
+```js
+// async-errors.js
+async function readConfig(path) {
+  const fs = require('fs').promises;
+  try {
+    const data = await fs.readFile(path, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    // Use err.code to distinguish missing file from parse errors
+    if (err.code === 'ENOENT') {
+      console.error('Config file not found, using defaults');
+      return { port: 3000 };
+    }
+    throw err; // Re-throw unexpected errors
+  }
+}
+
+async function start() {
+  try {
+    const config = await readConfig('/etc/myapp/config.json');
+    console.log('Config:', config);
+  } catch (err) {
+    console.error('Fatal:', err.message);
+    process.exit(1);
+  }
+}
+
+start();
+```
+
+### The Error Swallowing Problem
+
+```js
+// ❌ BAD — await swallows if not inside try/catch
+async function risky() {
+  throw new Error('fail');
+}
+
+async function caller() {
+  risky(); // 🔴 This promise rejection is unhandled!
+  // The caller doesn't await it, so the rejection goes nowhere
+}
+
+// ✅ GOOD
+async function caller() {
+  await risky(); // Now errors propagate to caller's try/catch
+}
+```
+
+## 5. Global Error Handlers
+
+Global handlers are your **last resort** — they catch errors that fall through everything else.
+
+```js
+// global-handlers.js
+process.on('uncaughtException', (err, origin) => {
+  console.error('Uncaught exception:', err.message);
+  console.error('Origin:', origin);
+
+  // Log the error, close resources, then exit
+  cleanupResources();
+  process.exit(1); // Always exit — state is corrupted
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection at:', promise);
+  console.error('Reason:', reason);
+
+  // For rejections, you don't have to exit (but you should log aggressively)
+  // The process might be recoverable
+});
+```
+
+> **`uncaughtException`** should be used to **log and exit gracefully** — not to resume normal operation. The application is in an undefined state after an uncaught exception. Trying to continue will lead to data corruption and security vulnerabilities.
+
+```js
+// ❌ BAD — don't try to continue after uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error(err);
+  // Don't just swallow it and continue — the app state is corrupted
+  // Variables could be in inconsistent states
+  // File handles might be leaking
+  // Database transactions might be half-committed
+});
+```
+
+## 6. Custom Error Classes
+
+Built-in `Error` objects are too generic for real applications. Create custom error classes to:
+
+1. **Distinguish error types** — 404 vs 400 vs 500
+2. **Add structured metadata** — which field failed, which resource was missing
+3. **Handle errors differently** in error middleware
+
+```js
+// custom-errors.js
+class AppError extends Error {
+  constructor(message, statusCode = 500) {
+    super(message);
+    this.name = 'AppError';
+    this.statusCode = statusCode;
+    this.timestamp = new Date().toISOString();
+
+    // Capture stack trace, excluding the constructor
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+class NotFoundError extends AppError {
+  constructor(resource, id) {
+    super(`${resource} with id ${id} not found`, 404);
+    this.name = 'NotFoundError';
+    this.resource = resource;
+    this.id = id;
+  }
+}
+
+class ValidationError extends AppError {
+  constructor(field, message) {
+    super(`Validation failed: ${field} — ${message}`, 400);
+    this.name = 'ValidationError';
+    this.field = field;
+    this.timestamp = new Date().toISOString();
+  }
+}
+
+// Usage
+function getUser(id) {
+  if (!id) throw new ValidationError('id', 'is required');
+  if (id !== '42') throw new NotFoundError('User', id);
+  return { id, name: 'Alice' };
+}
+
+try {
+  getUser('invalid');
+} catch (err) {
+  console.log(`${err.name}: ${err.message} (HTTP ${err.statusCode})`);
+  // ValidationError: Validation failed: id — is required (HTTP 400)
+}
+```
+
+### Why instanceof with Custom Errors is Fragile
+
+```js
+class MyError extends Error {}
+
+try {
+  throw new MyError('test');
+} catch (err) {
+  console.log(err instanceof MyError); // true in same realm
+
+  // But across module boundaries or with multiple Error copies:
+  console.log(err instanceof Error); // usually true
+  // instanceof can fail if MyError is imported from a different copy
+}
+
+// ✅ Safer: use err.name === 'MyError'
+```
+
+## 7. Error Handling in Express
+
+Express has a special middleware signature — **4 parameters** — that marks it as an error handler:
+
+```js
+// express-error-handling.js
+const express = require('express');
+const app = express();
+
+// Async error wrapper — catches rejected promises and forwards to next()
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+// Routes
+app.get('/users/:id', asyncHandler(async (req, res) => {
+  const user = await db.findUser(req.params.id);
+  if (!user) {
+    const err = new NotFoundError('User', req.params.id);
+    throw err;
+  }
+  res.json(user);
+}));
+
+// Central error handler middleware — 4 parameters means "I'm an error handler"
+app.use((err, req, res, next) => {
+  const status = err.statusCode || 500;
+  const response = {
+    error: {
+      message: err.message || 'Internal Server Error',
+      status,
+      ...(err.field && { field: err.field }),
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    },
+  };
+
+  res.status(status).json(response);
+  console.error(`[${new Date().toISOString()}] ${err.stack}`);
+});
+```
+
+**Order matters:** The error handler must be registered **after** all routes. Express skips error handlers until it finds one with 4 parameters.
+
+## 8. Practical: Retry with Exponential Backoff
+
+Network calls fail. That's a fact. The correct response is to retry with **exponential backoff** — wait longer between each attempt:
+
+```js
+// retry.js
+async function fetchWithRetry(url, options = {}) {
+  const maxRetries = options.retries || 3;
+  const baseDelay = options.baseDelay || 1000;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response;
+    } catch (err) {
+      if (attempt === maxRetries) {
+        console.error(`All ${maxRetries} attempts failed for ${url}`);
+        throw err; // Last attempt — let caller handle it
+      }
+
+      // Exponential: 1s, 2s, 4s
+      const delay = baseDelay * Math.pow(2, attempt - 1);
+      console.warn(`Attempt ${attempt}/${maxRetries} failed (${err.message}), retrying in ${delay}ms`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
+async function main() {
+  try {
+    const res = await fetchWithRetry('https://api.example.com/data', { retries: 3 });
+    const data = await res.json();
+    console.log('Got data:', data);
+  } catch (err) {
+    console.error('Request ultimately failed:', err.message);
+    // Fallback to cached data, return empty, etc.
+  }
+}
+```
+
+## Error Handling Strategy Checklist
+
+| Scenario | Strategy |
+|----------|----------|
+| JSON.parse | `try/catch` immediately — don't let it propagate |
+| File read | `try/catch` with `err.code` check (`ENOENT`, `EACCES`, `EISDIR`) |
+| Network request | Retry + exponential backoff + timeout + fallback |
+| User input | Validate at boundary, throw typed ValidationError |
+| Unknown error | Log full stack, then re-throw or exit |
+| Startup failure | Exit with clear error message — don't start half-working |
+| Background job | Catch everything, log, continue (but track failure count) |
+| Database query | Catch, check connection state, handle disconnect |
+
+## Key Takeaways
+
+- **Operational errors** (file not found, timeout) should be handled gracefully. **Programmer errors** (undefined variable, type error) should crash.
+- Use **`try/catch`** for sync code and async/await code
+- Use **`.catch()`** for promise chains
+- **Always handle promise rejections** — unhandled ones crash the process in Node.js 18+
+- Create **custom error classes** with typed fields for different error categories
+- Use **`process.on('uncaughtException')`** only to log, clean up, and exit — never to recover
+- **Centralise error handling** in Express apps with a 4-parameter error middleware
+- **Retry transient failures** with exponential backoff — but set a maximum retry count and fail ultimately
+- **Log stacks in development, hide them in production** — never leak internals to clients

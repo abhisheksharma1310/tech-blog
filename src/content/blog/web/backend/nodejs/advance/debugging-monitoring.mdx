@@ -1,0 +1,527 @@
+---
+title: "Debugging & Monitoring"
+description: "Debug Node.js with the built-in inspector, logging strategies, and production monitoring best practices"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Advanced"]
+tags: ["Node.js", "Advanced", "Debugging", "Monitoring", "Logging"]
+slug: "nodejs-debugging-monitoring"
+author: "Abhishek Sharma"
+order: 6
+---
+
+## Debugging with the Built-In Inspector
+
+Node.js ships with the **Chrome DevTools protocol built in**. No extra tools, no plugins — just Node.js and a browser.
+
+### How the Inspector Works
+
+When you start Node.js with `--inspect`, it opens a **WebSocket** connection that speaks the Chrome DevTools Protocol (CDP). Chrome DevTools connects to this WebSocket and gives you full debugging capabilities.
+
+```
+Node.js Process              Chrome DevTools
+┌────────────────┐          ┌────────────────┐
+│ V8 Engine      │◄─WS────►│ Sources Tab    │
+│ Inspector      │  CDP    │ Console Tab    │
+│ --inspect      │          │ Profiler Tab   │
+│ --inspect-brk  │          │ Memory Tab     │
+└────────────────┘          └────────────────┘
+```
+
+### 1. Basic Inspector
+
+```bash
+# Start with inspector enabled
+node --inspect app.js
+
+# Output:
+# Debugger listening on ws://127.0.0.1:9229/...
+# Chrome DevTools URL: chrome-devtools://...
+```
+
+Open **`chrome://inspect`** in Chrome → click "Open dedicated DevTools for Node".
+
+### 2. Break on Start
+
+Normally, the inspector connects **after** your code starts running. If you need to debug from the very first line:
+
+```bash
+# Pause immediately on first line
+node --inspect-brk app.js
+```
+
+This pauses execution before any JavaScript runs. You can then set breakpoints in DevTools and resume.
+
+### 3. The `debugger` Statement
+
+You can insert breakpoints directly in your code:
+
+```js
+// debug-demo.js
+function calculateTotal(items) {
+  debugger; // Execution pauses here when inspector is attached
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+
+const cart = [
+  { name: 'Laptop', price: 999 },
+  { name: 'Mouse', price: 25 },
+];
+
+console.log(calculateTotal(cart));
+```
+
+Then:
+
+```bash
+node --inspect-brk debug-demo.js
+```
+
+When execution hits `debugger`, DevTools will pause, letting you inspect all variables, step through, and even edit values live.
+
+### What You Can Do in Chrome DevTools
+
+| Feature | How | Use Case |
+|---------|-----|----------|
+| Breakpoints | Click line numbers in Sources tab | Pause at specific code |
+| Watch expressions | Right-click → Add to watch | Track variable values |
+| Call stack | Right panel in Sources | See how you got here |
+| Scope variables | Right panel → Scope | Inspect local/closure/global |
+| Console | Bottom panel | Run arbitrary JS in paused context |
+| Edit live code | Double-click in Sources | Fix bug without restart |
+| Conditional breakpoints | Right-click line number | Break only when condition is true |
+| Logpoints | Right-click → Add logpoint | Log without changing code |
+
+### 4. CLI Debugger (`node inspect`)
+
+If you don't have Chrome (e.g., on a remote server via SSH):
+
+```bash
+node inspect app.js
+# Debugger listening on ws://127.0.0.1:9229/...
+# ok
+debug> n           # next line
+debug> s           # step into a function
+debug> o           # step out of current function
+debug> c           # continue to next breakpoint
+debug> pause       # pause execution immediately
+debug> repl        # open REPL (evaluate expressions)
+debug> watch('myVar')  # watch a variable
+debug> watchers    # list watched variables
+debug> help        # show all commands
+debug> quit        # exit debugger
+```
+
+## CPU Profiling
+
+Profiling identifies **which functions consume the most CPU time**. Without a profile, you're guessing.
+
+### Using `--cpu-prof`
+
+Node.js can generate a CPU profile file directly — no Chrome needed:
+
+```js
+// cpu-heavy.js
+function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+function main() {
+  console.log('Computing fib(40)...');
+  const result = fib(40);
+  console.log('Result:', result);
+}
+
+main();
+```
+
+```bash
+# Generate CPU profile
+node --cpu-prof --cpu-prof-dir=./profiles cpu-heavy.js
+
+# After execution, you'll find a file like:
+# ./profiles/isolate-0x123456789-cpu-profile.cpuprofile
+
+# Upload this file to chrome://inspect → CPU Profiler → Load
+```
+
+### Understanding the Output
+
+The `.cpuprofile` file is JSON. When you load it in Chrome DevTools:
+
+- **Flame Chart** — shows call stack over time. Wider bars = more CPU time
+- **Heavy (Bottom Up)** — sorted by total time, from most expensive to least
+- **Tree (Top Down)** — shows call hierarchy starting from the root
+
+Look for functions with high **self time** — time spent inside the function excluding its children. These are your true bottlenecks.
+
+### Using Clinic.js
+
+Clinic.js provides beautiful flamegraphs with zero setup:
+
+```bash
+npm install -g clinic
+
+# CPU flamegraph
+clinic doctor -- node app.js
+# Opens a flamegraph in the browser
+# Red/orange areas indicate hot functions
+
+# More detailed view
+clinic flame -- node app.js
+# Interactive flamegraph — click any function to zoom
+```
+
+## Memory Profiling
+
+Memory leaks are insidious — they degrade performance slowly until the process runs out of memory.
+
+### Detecting a Memory Leak
+
+```js
+// memory-leak.js
+const leaks = [];
+
+function createLeak() {
+  // Each call allocates an array and keeps a reference
+  const largeArray = new Array(10000).fill('memory leak data');
+  leaks.push(largeArray); // Never released — growth forever
+}
+
+setInterval(createLeak, 100);
+```
+
+### Taking Heap Snapshots
+
+```bash
+node --inspect memory-leak.js
+```
+
+In Chrome DevTools:
+
+1. Go to **Memory** tab
+2. Select "Heap snapshot" → Take snapshot
+3. Wait a few seconds → Take another snapshot
+4. Select the second snapshot → **Comparison** view
+5. Filter by "Delta" (positive = growing objects)
+
+What to look for:
+- **Detached DOM nodes** (not relevant for Node.js)
+- **Closures** holding large arrays
+- **Event listeners** that were never removed
+- **Caches without eviction** — grow unbounded
+
+### Programmatic Memory Monitoring
+
+```js
+const v8 = require('v8');
+
+function logMemory() {
+  const usage = process.memoryUsage();
+  const heap = v8.getHeapStatistics();
+
+  console.log({
+    rss: `${(usage.rss / 1024 / 1024).toFixed(1)} MB`,
+    heapUsed: `${(usage.heapUsed / 1024 / 1024).toFixed(1)} MB`,
+    heapTotal: `${(usage.heapTotal / 1024 / 1024).toFixed(1)} MB`,
+    external: `${(usage.external / 1024 / 1024).toFixed(1)} MB`,
+    heapLimit: `${(heap.heap_size_limit / 1024 / 1024).toFixed(1)} MB`,
+    heapAvailable: `${(heap.total_available_size / 1024 / 1024).toFixed(1)} MB`,
+  });
+}
+
+// Log every 5 seconds in development
+if (process.env.NODE_ENV === 'development') {
+  setInterval(logMemory, 5000);
+}
+```
+
+**Warning signs:**
+- RSS growing continuously without plateaus
+- `heapUsed` approaching `heapLimit`
+- GC pauses becoming longer (measured via event loop lag)
+
+## Logging Strategies
+
+### Why Structured Logging?
+
+Raw `console.log` is fine for development but useless in production. When you have 20 servers each producing 1000 lines per second, you need logs that machines can parse.
+
+### 1. Structured JSON Logging
+
+```js
+// structured-logger.js
+const levels = { error: 0, warn: 1, info: 2, debug: 3 };
+
+class Logger {
+  constructor(name, level = 'info') {
+    this.name = name;
+    this.level = levels[level] ?? levels.info;
+  }
+
+  _log(level, message, meta = {}) {
+    if (levels[level] > this.level) return;
+
+    const entry = {
+      timestamp: new Date().toISOString(),
+      level,
+      logger: this.name,
+      message,
+      ...meta,
+    };
+    const output = JSON.stringify(entry) + '\n';
+
+    // Errors go to stderr, everything else to stdout
+    if (level === 'error') {
+      process.stderr.write(output);
+    } else {
+      process.stdout.write(output);
+    }
+  }
+
+  error(msg, meta) { this._log('error', msg, meta); }
+  warn(msg, meta) { this._log('warn', msg, meta); }
+  info(msg, meta) { this._log('info', msg, meta); }
+  debug(msg, meta) { this._log('debug', msg, meta); }
+}
+
+// Usage
+const logger = new Logger('app', 'debug');
+logger.info('Server started', { port: 3000, env: process.env.NODE_ENV });
+logger.error('DB connection failed', { database: 'users', error: 'ECONNREFUSED' });
+```
+
+Output:
+
+```json
+{"timestamp":"2026-06-13T10:30:00.000Z","level":"info","logger":"app","message":"Server started","port":3000,"env":"development"}
+{"timestamp":"2026-06-13T10:30:00.001Z","level":"error","logger":"app","message":"DB connection failed","database":"users","error":"ECONNREFUSED"}
+```
+
+> **Why JSON:** Structured logs are parseable by Logstash, Datadog, Grafana Loki, AWS CloudWatch, and every other log aggregator. Raw text logs require fragile regex parsing.
+
+### 2. Using `pino` (Production-Ready)
+
+Pino is the fastest Node.js logger — it produces JSON with minimal overhead:
+
+```bash
+npm install pino
+npm install -D pino-pretty  # Human-readable output in dev
+```
+
+```js
+const pino = require('pino');
+
+const logger = pino({
+  level: process.env.LOG_LEVEL || 'info',
+  // Pretty-print in development
+  transport: process.env.NODE_ENV === 'development'
+    ? { target: 'pino-pretty', options: { colorize: true, translateTime: true } }
+    : undefined,
+});
+
+// Usage — first argument is structured metadata, second is message
+logger.info({ port: 3000 }, 'Server listening');
+logger.error({ err: new Error('Connection timeout'), url: '/api/data' }, 'Request failed');
+logger.warn({ diskUsage: '85%' }, 'Disk space running low');
+
+// Pino handles Error objects correctly — includes stack trace
+logger.error({ err: new Error('DB crash'), db: 'primary' }, 'Database failure');
+```
+
+### 3. Request Logging Middleware
+
+Automatically log every HTTP request with timing:
+
+```js
+const express = require('express');
+const pino = require('pino');
+const pinoHttp = require('pino-http');
+
+const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
+const app = express();
+
+// Log all HTTP requests automatically
+app.use(pinoHttp({
+  logger,
+  autoLogging: {
+    ignore: (req) => req.url === '/health', // Don't log health checks
+  },
+}));
+
+app.get('/api/users', async (req, res) => {
+  req.log.info({ userId: req.query.id }, 'Fetching user');
+  const users = await db.findUsers();
+  res.json(users);
+});
+
+app.listen(3000);
+```
+
+Each request logs:
+```json
+{"level":30,"time":"2026-06-13T10:30:00.000Z","req":{"method":"GET","url":"/api/users"},"res":{"statusCode":200},"responseTime":12}
+```
+
+## Application Monitoring
+
+### Health Check Endpoint
+
+Every production app should expose a health endpoint. Load balancers and orchestrators (Kubernetes, Docker Swarm) use this to decide if your app is alive:
+
+```js
+// health.js
+const express = require('express');
+const app = express();
+
+// Track health state
+const health = {
+  status: 'ok',
+  uptime: process.uptime(),
+  timestamp: Date.now(),
+  checks: {
+    database: false,
+    memory: true,
+  },
+};
+
+app.get('/health', async (req, res) => {
+  try {
+    await db.ping({ timeout: 2000 });
+    health.checks.database = true;
+    health.status = 'ok';
+  } catch (err) {
+    health.checks.database = false;
+    health.status = 'degraded';
+    // Don't crash — load balancer can route elsewhere
+  }
+
+  // Fail if memory exceeds 500MB
+  health.checks.memory = process.memoryUsage().heapUsed < 500 * 1024 * 1024;
+  if (!health.checks.memory) health.status = 'degraded';
+
+  health.timestamp = Date.now();
+  health.uptime = process.uptime();
+
+  // Return 503 if degraded — orchestrator will restart
+  const httpStatus = health.status === 'ok' ? 200 : 503;
+  res.status(httpStatus).json(health);
+});
+
+app.listen(3000);
+```
+
+**Kubernetes probe example:**
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 15
+```
+
+### Graceful Shutdown
+
+When your app receives `SIGTERM` (from Kubernetes, PM2, or a process manager), it should:
+
+1. Stop accepting new connections
+2. Finish in-flight requests
+3. Close database connections
+4. Exit cleanly
+
+```js
+// shutdown.js
+const server = app.listen(3000);
+
+function shutdown(signal) {
+  console.log(`Received ${signal}, shutting down gracefully...`);
+
+  // Stop accepting new connections immediately
+  server.close(() => {
+    console.log('HTTP server closed — no more connections accepted');
+
+    // Close database connection
+    db.close(() => {
+      console.log('Database connection closed');
+      process.exit(0);
+    });
+  });
+
+  // Force exit after 10 seconds — don't block forever
+  setTimeout(() => {
+    console.error('Forced shutdown after 10s timeout');
+    process.exit(1); // Non-zero exit — orchestrator will handle
+  }, 10000);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));  // Ctrl+C
+```
+
+## Post-Mortem Debugging
+
+When a process crashes in production (and you can't attach a debugger), use these:
+
+### 1. Core Dumps
+
+```bash
+# Enable core dumps
+ulimit -c unlimited
+node --abort-on-uncaught-exception app.js
+
+# When it crashes, a core file is produced
+# Analyze with:
+gdb node core
+# or
+llnode core    # (npm install -g llnode)
+```
+
+### 2. Heap Dumps on Out-of-Memory
+
+```bash
+# Take a heap dump when an OOM happens
+node --max-old-space-size=256 --heapsnapshot-signal=SIGUSR2 app.js
+kill -USR2 <pid>  # Triggers heap snapshot
+```
+
+### 3. Process Managers (PM2)
+
+```bash
+npm install -g pm2
+pm2 start app.js --name my-app
+pm2 logs my-app           # View logs
+pm2 monit                 # Real-time CPU/memory
+pm2 dump                  # Save process list for resurrection
+```
+
+## Production Checklist
+
+| Tool/Practice | Purpose |
+|---------------|---------|
+| `node --inspect` | Real-time debugging with Chrome DevTools |
+| `node --cpu-prof` | CPU profiling to find hot functions |
+| `clinic.js` | Flamegraph visualisation |
+| Heap snapshots | Memory leak detection via Chrome DevTools |
+| Structured JSON logging | Parseable logs for ELK/Datadog/Grafana |
+| `pino` | Fastest production logger |
+| `pino-http` | Automatic request/response logging |
+| Health endpoint | Container orchestration checks |
+| Graceful shutdown | SIGTERM → clean exit (zero-dropped requests) |
+| `--heapsnapshot-signal` | Trigger heap dump on demand |
+| `SIGTERM` handler | Required for Kubernetes/Docker |
+| Error-to-stderr | Log errors to stderr, info to stdout |
+
+## Key Takeaways
+
+- Use **`node --inspect`** or **`node --inspect-brk`** for Chrome DevTools debugging
+- The **`debugger`** statement inserts breakpoints directly in your code
+- Use **`node --cpu-prof`** or **Clinic.js** to find CPU bottlenecks without Chrome
+- Take **heap snapshots** in Chrome DevTools and compare them to detect memory leaks
+- **Structured JSON logging** (Pino) is essential for production — raw text logs don't parse
+- Expose a **`/health` endpoint** with database and memory checks for orchestration
+- **Graceful shutdown** (`SIGTERM` → close server → close DB → exit) prevents dropped connections
+- Always log to **stdout/stderr** — let Docker/systemd handle log routing
+- Use **`pino-http`** to automatically log every request with timing
+- Set up **CPU profiling** and **heap snapshots** before you need them — you can't attach a debugger after a crash

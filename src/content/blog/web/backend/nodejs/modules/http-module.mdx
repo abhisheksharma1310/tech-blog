@@ -1,0 +1,540 @@
+---
+title: "HTTP Module"
+description: "Master Node.js HTTP module — create servers, handle requests and responses, parse URLs, and build REST APIs"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Modules"]
+tags: ["Node.js", "Modules", "HTTP", "Server"]
+slug: "nodejs-http-module"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## The `http` Module
+
+The `http` module is Node.js's built-in HTTP server and client. Without any frameworks like Express or Koa, it provides everything you need to handle HTTP requests and responses.
+
+```js
+const http = require('http');
+```
+
+> **Why learn raw `http`?** Understanding the underlying HTTP module helps you debug framework issues, write middleware, and build custom servers when frameworks add too much overhead.
+
+## Creating an HTTP Server
+
+The simplest possible HTTP server in Node.js:
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Hello World\n');
+});
+
+server.listen(3000, () => {
+  console.log('Server running at http://localhost:3000/');
+});
+```
+
+Let's break down what happens here:
+
+1. `http.createServer()` returns a `net.Server` instance (which extends `EventEmitter`)
+2. The callback is shorthand for `server.on('request', handler)`
+3. `req` is an `http.IncomingMessage` (a Readable stream)
+4. `res` is an `http.ServerResponse` (a Writable stream)
+5. `server.listen()` binds to the port and starts accepting connections
+
+## The `req` Object (IncomingMessage)
+
+The request object contains everything about the incoming HTTP request:
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  // --- Request Line ---
+  console.log('Method:', req.method);       // 'GET', 'POST', etc.
+  console.log('URL:', req.url);             // '/api/users?page=1'
+  console.log('HTTP Version:', req.httpVersion); // '1.1'
+
+  // --- Headers ---
+  console.log('Headers:', req.headers);
+  // {
+  //   'content-type': 'application/json',
+  //   'user-agent': 'curl/8.0',
+  //   'accept': '*/*',
+  //   'host': 'localhost:3000'
+  // }
+
+  // --- URL Parsing (manual) ---
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  console.log('Path:', url.pathname);       // '/api/users'
+  console.log('Query:', url.searchParams.get('page')); // '1'
+
+  // --- Socket Info ---
+  console.log('Remote address:', req.socket.remoteAddress);
+  console.log('Remote port:', req.socket.remotePort);
+
+  res.end('OK');
+});
+```
+
+### Common `req` Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `req.method` | string | HTTP method (GET, POST, PUT, DELETE, etc.) |
+| `req.url` | string | Request URL path + query string |
+| `req.headers` | object | HTTP headers (all lowercase keys) |
+| `req.httpVersion` | string | HTTP version (1.0, 1.1, 2.0) |
+| `req.socket` | net.Socket | Underlying TCP socket |
+| `req.statusCode` | number | Response status code (client-side only) |
+| `req.statusMessage` | string | Response status message (client-side only) |
+
+## The `res` Object (ServerResponse)
+
+The response object is used to send data back to the client:
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  // --- Set Status Code ---
+  res.statusCode = 200;
+
+  // --- Set Headers (3 ways) ---
+
+  // Way 1: Set individual header
+  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('X-Powered-By', 'Node.js');
+
+  // Way 2: Set all at once (overwrites previous headers)
+  res.writeHead(200, {
+    'Content-Type': 'application/json',
+    'X-Custom-Header': 'value',
+  });
+
+  // Way 3: Convenience methods
+  res.getHeader('Content-Type');          // Read header
+  res.hasHeader('Content-Type');          // Check header exists
+  res.removeHeader('X-Custom-Header');    // Remove header
+  res.headersSent;                        // Boolean — have headers been sent?
+
+  // --- Send Body ---
+  // write() sends chunks, end() signals completion
+  res.write('<html>');
+  res.write('<body>');
+  res.write('<h1>Hello</h1>');
+  res.write('</body>');
+  res.write('</html>');
+  res.end();  // Must call end() to finish
+
+  // Shorthand: res.end(body)
+  // res.end(JSON.stringify({ message: 'Hello' }));
+});
+```
+
+> **Critical:** You must call `res.end()` eventually. If you don't, the client hangs until the timeout. Always `end()` the response.
+
+### Response Flow
+
+```
+res.statusCode = 404
+res.setHeader('Content-Type', 'text/plain')
+res.write('Not found')      ← Can call multiple times for streaming
+res.end()                   ← Signals completion
+```
+
+**Once `res.end()` is called:**
+- The response is fully sent to the client
+- No more writes are allowed
+- The `'finish'` event fires on the response
+
+## Reading Request Body
+
+The request (`req`) is a **Readable stream**. You need to collect the data manually:
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  if (req.method === 'POST') {
+    let body = '';
+
+    // Collect data chunks
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+      // ⚠️ Warning: For large payloads, buffer to an array
+      // or use a size limit to prevent memory exhaustion
+    });
+
+    // All data received
+    req.on('end', () => {
+      console.log('Received body:', body);
+
+      try {
+        const data = JSON.parse(body);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ received: data }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+
+  } else {
+    res.writeHead(405, { 'Content-Type': 'text/plain' });
+    res.end('Method not allowed');
+  }
+});
+```
+
+### Buffer Body with Size Limit
+
+```js
+function readBody(req, maxSize = 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let totalSize = 0;
+
+    req.on('data', (chunk) => {
+      totalSize += chunk.length;
+      if (totalSize > maxSize) {
+        reject(new Error('Request body too large'));
+        req.destroy();  // Close the connection
+        return;
+      }
+      chunks.push(chunk);
+    });
+
+    req.on('end', () => {
+      resolve(Buffer.concat(chunks).toString());
+    });
+
+    req.on('error', reject);
+  });
+}
+
+// Usage
+const body = await readBody(req, 512 * 1024); // Max 512KB
+const data = JSON.parse(body);
+```
+
+## Building a Simple Router
+
+Without Express, you build routing manually:
+
+```js
+const http = require('http');
+const url = require('url');
+
+// Route definitions
+const routes = {
+  'GET /users': listUsers,
+  'GET /users/:id': getUser,
+  'POST /users': createUser,
+  'DELETE /users/:id': deleteUser,
+};
+
+function matchRoute(method, pathname) {
+  // Exact match first
+  const key = `${method} ${pathname}`;
+  if (routes[key]) return { handler: routes[key], params: {} };
+
+  // Parametrized match
+  for (const [routeKey, handler] of Object.entries(routes)) {
+    const [routeMethod, routePath] = routeKey.split(' ');
+    if (routeMethod !== method) continue;
+
+    const routeParts = routePath.split('/');
+    const pathParts = pathname.split('/');
+
+    if (routeParts.length !== pathParts.length) continue;
+
+    const params = {};
+    let match = true;
+
+    for (let i = 0; i < routeParts.length; i++) {
+      if (routeParts[i].startsWith(':')) {
+        params[routeParts[i].slice(1)] = pathParts[i];
+      } else if (routeParts[i] !== pathParts[i]) {
+        match = false;
+        break;
+      }
+    }
+
+    if (match) return { handler, params };
+  }
+
+  return null;
+}
+
+const server = http.createServer(async (req, res) => {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+  const match = matchRoute(req.method, parsedUrl.pathname);
+
+  if (!match) {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
+    return;
+  }
+
+  // Enhanced req with parsed data
+  req.params = match.params;
+  req.query = parsedUrl.searchParams;
+
+  // Enhanced res with json helper
+  res.json = (data, status = 200) => {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+  };
+
+  try {
+    await match.handler(req, res);
+  } catch (err) {
+    console.error('Route error:', err);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Internal server error' }));
+  }
+});
+
+// Route handlers
+const users = [
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' },
+];
+
+async function listUsers(req, res) {
+  res.json(users);
+}
+
+async function getUser(req, res) {
+  const id = parseInt(req.params.id);
+  const user = users.find(u => u.id === id);
+
+  if (!user) {
+    return res.json({ error: 'User not found' }, 404);
+  }
+  res.json(user);
+}
+
+async function createUser(req, res) {
+  const body = await readBody(req);
+  const data = JSON.parse(body);
+
+  const user = { id: users.length + 1, name: data.name };
+  users.push(user);
+
+  res.json(user, 201);
+}
+
+async function deleteUser(req, res) {
+  const id = parseInt(req.params.id);
+  const index = users.findIndex(u => u.id === id);
+
+  if (index === -1) {
+    return res.json({ error: 'User not found' }, 404);
+  }
+
+  users.splice(index, 1);
+  res.json({ success: true });
+}
+
+server.listen(3000);
+console.log('API server at http://localhost:3000/');
+```
+
+## Request Events
+
+The request object emits several events you can listen to:
+
+```js
+req.on('data', (chunk) => {
+  // Called one or more times with body chunks
+});
+
+req.on('end', () => {
+  // Called exactly once when body is fully received
+});
+
+req.on('error', (err) => {
+  // Called if the request stream has an error
+  // e.g., connection terminated prematurely
+});
+
+req.on('aborted', () => {
+  // Called if the client disconnects before end
+  // After this, calling res.end() is safe (no-op)
+  // But you should stop processing
+});
+```
+
+## Response Events
+
+```js
+res.on('close', () => {
+  // Called when the underlying connection is closed
+  // Could be before or after end() — check finished
+});
+
+res.on('finish', () => {
+  // Called when res.end() has been called and data is flushed
+  // All headers and body have been sent
+});
+
+res.on('error', (err) => {
+  // Response stream error
+});
+```
+
+## Streaming Responses
+
+For large responses, write in chunks instead of buffering everything:
+
+```js
+const http = require('http');
+const fs = require('fs');
+
+const server = http.createServer((req, res) => {
+  if (req.url === '/large-file') {
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': 'attachment; filename="data.zip"',
+    });
+
+    // Stream directly from disk to response — never buffers in RAM
+    const readStream = fs.createReadStream('./large-file.zip');
+    readStream.pipe(res);
+
+    readStream.on('error', (err) => {
+      console.error('Stream error:', err);
+      if (!res.headersSent) {
+        res.writeHead(500);
+      }
+      res.end();
+    });
+  }
+});
+```
+
+> **Streaming advantage:** A 5GB file can be sent with < 64KB of RAM usage because data flows in chunks through the pipe.
+
+## Making HTTP Requests (Client-Side)
+
+The `http` module also provides a client for making outgoing requests:
+
+```js
+const http = require('http');
+
+// GET request
+http.get('http://api.example.com/users', (res) => {
+  let data = '';
+
+  res.on('data', (chunk) => { data += chunk; });
+  res.on('end', () => {
+    const users = JSON.parse(data);
+    console.log('Users:', users);
+  });
+}).on('error', (err) => {
+  console.error('Request failed:', err.message);
+});
+```
+
+### POST Request
+
+```js
+const http = require('http');
+
+const postData = JSON.stringify({ name: 'Charlie' });
+
+const options = {
+  hostname: 'localhost',
+  port: 3000,
+  path: '/users',
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(postData),
+  },
+};
+
+const req = http.request(options, (res) => {
+  let body = '';
+
+  res.on('data', (chunk) => { body += chunk; });
+  res.on('end', () => {
+    console.log('Response:', body);
+  });
+});
+
+req.on('error', (err) => {
+  console.error('Request error:', err);
+});
+
+// Write body and send
+req.write(postData);
+req.end();  // Must call end() to send
+```
+
+### Convenience: Using `fetch` (Node.js 18+)
+
+Node.js now has a built-in `fetch` (based on `undici`):
+
+```js
+// GET — no import needed, it's global
+const response = await fetch('http://api.example.com/users');
+const users = await response.json();
+
+// POST
+const createResponse = await fetch('http://localhost:3000/users', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'Charlie' }),
+});
+const newUser = await createResponse.json();
+```
+
+## HTTPS Module
+
+For TLS/SSL, use the `https` module instead:
+
+```js
+const https = require('https');
+const fs = require('fs');
+
+const options = {
+  key: fs.readFileSync('private-key.pem'),
+  cert: fs.readFileSync('certificate.pem'),
+};
+
+https.createServer(options, (req, res) => {
+  res.writeHead(200);
+  res.end('Secure hello\n');
+}).listen(443);
+```
+
+## Key Takeaways
+
+- **`http.createServer(handler)`** creates a server; the handler receives `req` and `res`
+- **`req`** is an `IncomingMessage` (Readable stream) — has `method`, `url`, `headers`
+- **`res`** is a `ServerResponse` (Writable stream) — use `writeHead()`, `write()`, `end()`
+- **Always call `res.end()`** — otherwise the client hangs forever
+- **Read the body manually** via `req.on('data')` and `req.on('end')` — it's a stream
+- **Set a body size limit** when reading request bodies to prevent memory exhaustion
+- **Stream large responses** with `.pipe()` instead of buffering everything in RAM
+- **Use `URL` class** to parse `req.url` into pathname and query parameters
+- **Handle errors** on both request and response streams — aborted connections are common
+- **`http.request()`** makes outgoing HTTP requests; Node.js 18+ also has built-in `fetch`
+- **`http.Server` extends `EventEmitter`** — events: `request`, `connection`, `close`, `error`, `upgrade`
+- Raw http module is powerful but verbose — for complex apps, consider Express or Fastify on top

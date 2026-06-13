@@ -1,0 +1,248 @@
+---
+title: "package.json & package-lock.json Essentials"
+description: "Understand every key field in package.json and why package-lock.json is critical for reproducible builds"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "npm", "package.json"]
+slug: "nodejs-package-json"
+author: "Abhishek Sharma"
+order: 9
+---
+
+## The Heart of Every Node.js Project
+
+Every Node.js project has a `package.json` file. It's the **manifest** that describes your project — its name, version, dependencies, scripts, and more.
+
+```
+package.json         ───► Human-readable manifest
+package-lock.json   ───► Machine-generated lock file
+node_modules/       ───► Installed packages (gitignored)
+```
+
+## package.json — Key Fields
+
+### 1. Metadata
+
+```json
+{
+  "name": "my-awesome-app",
+  "version": "1.0.0",
+  "description": "A Node.js app that does awesome things",
+  "author": "Abhishek Sharma",
+  "license": "MIT",
+  "keywords": ["nodejs", "api", "tutorial"]
+}
+```
+
+| Field | Required | Purpose |
+|-------|----------|---------|
+| `name` | Yes (for publishing) | Package name (lowercase, no spaces) |
+| `version` | Yes (for publishing) | SemVer version |
+| `description` | No | Brief summary |
+| `author` | No | Creator name/email |
+| `license` | No | License type (MIT, ISC, GPL) |
+
+### 2. Entry Point
+
+```json
+{
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  }
+}
+```
+
+- **`main`** — CommonJS entry point (used by `require()`)
+- **`module`** — ES Module entry point (used by bundlers)
+- **`exports`** — Modern field for conditional exports (Node.js 12+)
+- **`types`** — TypeScript type definitions
+
+### 3. Dependencies
+
+```json
+{
+  "dependencies": {
+    "express": "^4.18.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.2"
+  }
+}
+```
+
+| Section | Purpose | Installed by default? |
+|---------|---------|----------------------|
+| `dependencies` | Runtime packages your app needs | Yes |
+| `devDependencies` | Build/lint/test tools | No (`npm install --production`) |
+| `peerDependencies` | Host package expected to provide | No (warning if missing) |
+| `optionalDependencies` | Non-critical, might fail to install | Yes (silent failure) |
+
+### 4. Scripts
+
+```json
+{
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "build": "tsc",
+    "test": "jest --coverage",
+    "lint": "eslint .",
+    "preview": "node dist/index.js"
+  }
+}
+```
+
+Run with:
+
+```bash
+npm start
+npm run dev
+npm test
+npm run build
+```
+
+> **Special scripts:** `prestart`, `poststart`, `prebuild`, `postbuild` run automatically before/after the named script. For example, `prebuild` runs before `npm run build`.
+
+### 5. Engines
+
+```json
+{
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
+```
+
+Blocks installation on incompatible Node.js versions. Set this in library packages to enforce minimum versions.
+
+### 6. Configuration
+
+```json
+{
+  "type": "module",
+  "private": true,
+  "sideEffects": false
+}
+```
+
+| Field | Purpose |
+|-------|---------|
+| `"type": "module"` | Use ES Modules by default (`.js` files are ESM) |
+| `"private": true` | Prevent accidental `npm publish` |
+| `"sideEffects": false` | Tells bundlers it's safe to tree-shake |
+
+## package-lock.json
+
+### What It Is
+
+`package-lock.json` is **automatically generated** by npm. It records the **exact** version of every installed package (including transitive dependencies).
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "lockfileVersion": 3,
+  "packages": {
+    "node_modules/express": {
+      "version": "4.18.2",
+      "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz",
+      "integrity": "sha512-...sha512-hash..."
+    }
+  }
+}
+```
+
+### Why You Must Commit It
+
+```
+Without lock file:                 With lock file:
+npm install          ===> 4.18.2   npm install       ===> 4.18.2 (locked)
+npm install (day 2)  ===> 4.19.0   npm install (day 2) ===> 4.18.2 (same!)
+```
+
+| | package.json | package-lock.json |
+|---|---|---|
+| **Author** | You (manual) | npm (auto) |
+| **Committed to git?** | Yes | **Yes** (always!) |
+| **Version ranges** | `^4.17.21` | Exact: `4.17.21` |
+| **Purpose** | Declare intent | Lock exact versions |
+| **Changes** | You edit it | npm updates it |
+
+> **Critical:** Always commit `package-lock.json` to git. Without it, two developers can get different `node_modules` trees from the same `package.json`.
+
+## Comparing package-lock.json and package.json
+
+```bash
+# Check what's actually installed
+npm ls --depth=0
+
+# See the full tree
+npm ls
+
+# Diff your installed versions against what's allowed
+npm outdated
+```
+
+## `npm ci` — Clean Install
+
+```bash
+# Deletes node_modules and installs exact versions from lock file
+npm ci
+```
+
+| | `npm install` | `npm ci` |
+|---|---|---|
+| Uses lock file | Updates it | Reads it (read-only) |
+| Speed | Slower (resolves versions) | Faster (skips resolution) |
+| node_modules | Updates existing | Deletes and reinstalls |
+| Use case | Development | CI/CD, production builds |
+
+## Minimal Production package.json
+
+```json
+{
+  "name": "my-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test src/**/*.test.js",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
+```
+
+## Key Takeaways
+
+- **package.json** is the project manifest — name, version, dependencies, scripts, and metadata
+- **package-lock.json** locks exact dependency versions — **always commit it**
+- **`npm ci`** is the correct way to install in CI/CD — it's faster and deterministic
+- Use **`"type": "module"`** to opt into ES Modules across your project
+- **`"private": true`** prevents accidental publishing
+- The **`exports`** field is the modern way to define package entry points

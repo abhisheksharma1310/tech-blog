@@ -1,0 +1,429 @@
+---
+title: "Environment Variables & Config Management"
+description: "Manage environment variables and configuration in Node.js — .env files, validation, dotenv, and production secrets"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Production"]
+tags: ["Node.js", "Production", "Configuration", "Environment Variables"]
+slug: "nodejs-environment-variables"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Why Environment Variables?
+
+Environment variables separate **configuration from code**. The same codebase deploys to development, staging, and production — only the environment variables change.
+
+```
+Same Codebase              Different Configs
+┌────────────────┐         ┌────────────────┐
+│ app.js          │         │ dev .env       │
+│ lib/            │         │   DB=localhost │
+│ routes/         │         │   PORT=3000    │
+│ services/       │         └────────────────┘
+│ config.js       │────►    ┌────────────────┐
+└────────────────┘         │ prod env vars  │
+                           │   DB=prod-host  │
+                           │   PORT=8080     │
+                           └────────────────┘
+```
+
+**Golden rule:** Never hardcode secrets, URLs, or environment-specific values in your code.
+
+## Accessing Environment Variables
+
+```js
+// In Node.js, all env vars are on process.env
+console.log(process.env.NODE_ENV);  // 'production'
+console.log(process.env.PORT);      // '8080' (always strings!)
+console.log(process.env.MY_VAR);    // undefined (if not set)
+```
+
+> **All values are strings.** `process.env.PORT` returns `'8080'`, not `8080`. Always parse numbers and booleans explicitly.
+
+## Using `dotenv` for Development
+
+In development, use a `.env` file. In production, use system environment variables.
+
+```bash
+npm install dotenv
+```
+
+```js
+// config.js — load at the very top of your app
+require('dotenv').config();
+
+// Now process.env has values from .env (if any)
+// .env values do NOT override existing environment variables
+```
+
+```bash
+# .env (gitignored — never commit!)
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=postgres://localhost:5432/myapp_dev
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=dev-secret-not-for-production
+LOG_LEVEL=debug
+```
+
+### `.env` Rules
+
+```
+# Comments start with #
+KEY=VALUE          # No spaces around =
+DB_URL="postgres://user:pass@host:5432/db"  # Quotes are stripped
+MULTI_LINE="line1
+line2"             # Multi-line values are supported
+EMPTY=             # Empty string
+```
+
+## Config Module Pattern
+
+Build a centralised config module instead of scattering `process.env` calls everywhere:
+
+```js
+// config/index.js
+require('dotenv').config();
+
+const config = {
+  env: process.env.NODE_ENV || 'development',
+  isDev: () => config.env === 'development',
+  isProd: () => config.env === 'production',
+  isTest: () => config.env === 'test',
+
+  server: {
+    port: parseInt(process.env.PORT, 10) || 3000,
+    host: process.env.HOST || '0.0.0.0',
+  },
+
+  database: {
+    url: process.env.DATABASE_URL,
+    pool: {
+      min: parseInt(process.env.DB_POOL_MIN, 10) || 2,
+      max: parseInt(process.env.DB_POOL_MAX, 10) || 10,
+    },
+    ssl: process.env.DB_SSL === 'true',
+  },
+
+  redis: {
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
+  },
+
+  jwt: {
+    secret: process.env.JWT_SECRET,
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  },
+
+  logging: {
+    level: process.env.LOG_LEVEL || (config?.env === 'production' ? 'info' : 'debug'),
+  },
+
+  cors: {
+    origin: process.env.CORS_ORIGIN || '*',
+  },
+};
+
+module.exports = config;
+
+// Usage
+const config = require('./config');
+const server = app.listen(config.server.port, config.server.host);
+```
+
+## Config Validation
+
+Catch missing or invalid config **at startup**, not at runtime:
+
+```js
+// config/validate.js
+class ConfigError extends Error {
+  constructor(missing) {
+    super(`Configuration validation failed: missing or invalid: ${missing.join(', ')}`);
+    this.missing = missing;
+    this.name = 'ConfigError';
+  }
+}
+
+function validateConfig(config) {
+  const errors = [];
+
+  // Required string values
+  const requiredStrings = [
+    { key: 'database.url', value: config.database.url },
+    { key: 'jwt.secret', value: config.jwt.secret },
+  ];
+
+  for (const { key, value } of requiredStrings) {
+    if (!value || typeof value !== 'string') {
+      errors.push(`${key} (required string)`);
+    }
+  }
+
+  // Required number values
+  if (isNaN(config.server.port) || config.server.port < 1 || config.server.port > 65535) {
+    errors.push('server.port (valid port number)');
+  }
+
+  // Enum validation
+  const validEnvs = ['development', 'production', 'test', 'staging'];
+  if (!validEnvs.includes(config.env)) {
+    errors.push(`env (must be one of: ${validEnvs.join(', ')})`);
+  }
+
+  if (errors.length > 0) {
+    throw new ConfigError(errors);
+  }
+
+  return true;
+}
+
+module.exports = { validateConfig };
+```
+
+```js
+// app.js — validate at startup
+const config = require('./config');
+const { validateConfig } = require('./config/validate');
+
+try {
+  validateConfig(config);
+  console.log('Configuration validated successfully');
+} catch (err) {
+  console.error('FATAL:', err.message);
+  process.exit(1);
+}
+
+// Continue with confidence — all required config is present
+app.listen(config.server.port);
+```
+
+## Environment-Specific Config Files
+
+For complex setups, use multiple config files:
+
+```js
+// config/development.js
+module.exports = {
+  database: { host: 'localhost', database: 'myapp_dev' },
+  logging: { level: 'debug' },
+  cache: { enabled: false },
+};
+
+// config/production.js
+module.exports = {
+  database: {
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    ssl: { rejectUnauthorized: true },
+  },
+  logging: { level: 'info' },
+  cache: { enabled: true, ttl: 3600 },
+};
+```
+
+```js
+// config/index.js
+const common = {
+  port: parseInt(process.env.PORT) || 3000,
+  // ... common config
+};
+
+const envConfig = require(`./${process.env.NODE_ENV || 'development'}.js`);
+
+module.exports = { ...common, ...envConfig };
+```
+
+## Secrets Management in Production
+
+**Never use `.env` files in production.** Instead:
+
+### Option 1: Platform Environment Variables
+
+```bash
+# Railway
+railway variables set JWT_SECRET=...
+
+# Heroku
+heroku config:set JWT_SECRET=...
+
+# Render
+# Dashboard → Environment → Add Variable
+
+# Docker
+docker run -e JWT_SECRET=... -e DATABASE_URL=... my-api
+```
+
+### Option 2: Secrets Manager
+
+```js
+// AWS Secrets Manager
+const AWS = require('aws-sdk');
+
+async function loadSecrets() {
+  const secrets = new AWS.SecretsManager({ region: 'us-east-1' });
+  const data = await secrets.getSecretValue({ SecretId: 'production/my-api' }).promise();
+  const parsed = JSON.parse(data.SecretString);
+
+  // Merge into process.env
+  Object.assign(process.env, parsed);
+}
+
+await loadSecrets();
+```
+
+### Option 3: Docker Secrets
+
+```bash
+# Docker Swarm secrets
+echo "my-secret-value" | docker secret create jwt_secret -
+
+# Access in app:
+const secret = require('fs').readFileSync('/run/secrets/jwt_secret', 'utf8').trim();
+```
+
+## Best Practices
+
+### 1. Never Commit `.env`
+
+```bash
+# .gitignore
+.env
+.env.local
+.env.production
+```
+
+Create a `.env.example` as documentation:
+
+```bash
+# .env.example
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=postgres://user:pass@host:5432/db
+JWT_SECRET=change-me
+LOG_LEVEL=debug
+CORS_ORIGIN=*
+```
+
+### 2. Prefix Your Variables
+
+Use a prefix to namespace your app's variables:
+
+```bash
+# ❌ Generic — might conflict
+PORT=3000
+SECRET=abc
+
+# ✅ Namespaced — no conflicts
+MY_API_PORT=3000
+MY_API_JWT_SECRET=abc
+MY_API_DB_URL=postgres://...
+```
+
+### 3. Use Sensible Defaults
+
+```js
+const port = process.env.PORT || 3000;         // Dev default
+const host = process.env.HOST || '0.0.0.0';    // Bind all interfaces
+const logLevel = process.env.LOG_LEVEL || 'info';
+```
+
+> **Defaults should be safe for development only.** Production should explicitly set every variable.
+
+### 4. Parse and Validate at Startup
+
+```js
+const port = parseInt(process.env.PORT, 10);
+if (isNaN(port)) {
+  throw new Error('PORT must be a number');
+}
+```
+
+### 5. Document Every Variable
+
+Create a `README` or `CONFIG.md`:
+
+```markdown
+# Configuration Reference
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| PORT | No | 3000 | HTTP server port |
+| DATABASE_URL | Yes | - | PostgreSQL connection string |
+| JWT_SECRET | Yes | - | Secret for signing JWT tokens |
+| LOG_LEVEL | No | info | Logging level (debug, info, warn, error) |
+| CORS_ORIGIN | No | * | Allowed CORS origin |
+```
+
+## Complete Config Module
+
+```js
+// config/index.js
+require('dotenv').config();
+
+function envInt(key, defaultVal) {
+  const val = process.env[key];
+  if (val === undefined) return defaultVal;
+  const parsed = parseInt(val, 10);
+  if (isNaN(parsed)) throw new Error(`Environment variable ${key} must be a number`);
+  return parsed;
+}
+
+function envBool(key, defaultVal) {
+  const val = process.env[key];
+  if (val === undefined) return defaultVal;
+  return val === 'true' || val === '1' || val === 'yes';
+}
+
+function envRequired(key) {
+  const val = process.env[key];
+  if (!val) throw new Error(`Missing required environment variable: ${key}`);
+  return val;
+}
+
+const config = {
+  env: process.env.NODE_ENV || 'development',
+  isDev: () => config.env === 'development',
+  isProd: () => config.env === 'production',
+
+  server: {
+    port: envInt('PORT', 3000),
+    host: process.env.HOST || '0.0.0.0',
+    trustProxy: envBool('TRUST_PROXY', false),
+  },
+
+  database: {
+    url: envRequired('DATABASE_URL'),
+    poolMax: envInt('DB_POOL_MAX', 10),
+    ssl: envBool('DB_SSL', config.env === 'production'),
+  },
+
+  jwt: {
+    secret: envRequired('JWT_SECRET'),
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  },
+
+  redis: {
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
+  },
+
+  rateLimit: {
+    windowMs: envInt('RATE_LIMIT_WINDOW_MS', 60000),
+    max: envInt('RATE_LIMIT_MAX', 100),
+  },
+};
+
+module.exports = config;
+```
+
+## Key Takeaways
+
+- **`process.env`** gives access to environment variables — all values are strings
+- Use **`dotenv`** to load `.env` files in development — never commit `.env` to git
+- **Centralise config** in a `config/index.js` module — don't scatter `process.env` calls
+- **Validate config at startup** — catch missing variables before the app starts serving requests
+- **Parse and coerce types** — `parseInt` for numbers, `=== 'true'` for booleans
+- **Use sensible development defaults** (PORT=3000), but require explicit values for secrets
+- **In production**, use system environment variables or a secrets manager — never `.env` files
+- **Document every variable** in a `.env.example` file and a config reference table
+- **Prefix variables** with your app name to avoid namespace conflicts
+- **Fail fast** — if a required variable is missing, crash immediately at startup, not halfway through a request

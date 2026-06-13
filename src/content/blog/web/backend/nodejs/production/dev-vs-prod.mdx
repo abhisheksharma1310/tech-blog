@@ -1,0 +1,299 @@
+---
+title: "Development vs Production Differences"
+description: "Understand the critical differences between development and production Node.js environments — logging, errors, performance, and configuration"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Production"]
+tags: ["Node.js", "Production", "DevOps"]
+slug: "nodejs-dev-vs-prod"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## The Core Distinction
+
+Development and production environments serve fundamentally different goals:
+
+| Concern | Development | Production |
+|---------|-------------|------------|
+| Goal | Developer productivity | User reliability |
+| Errors | Verbose stack traces | Safe, generic messages |
+| Logging | Human-readable, noisy | Structured JSON, level-filtered |
+| Performance | Unoptimised, fast iteration | Optimised, max throughput |
+| Restarts | Manual (`Ctrl+C`, `node --watch`) | Automatic (PM2, systemd) |
+| Secrets | `.env` file (gitignored) | Environment variables |
+| Dependencies | Full `devDependencies` | `npm ci --production` |
+
+## 1. The `NODE_ENV` Variable
+
+`NODE_ENV` is the standard way to tell your app which environment it's in:
+
+```js
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  // Use production database
+  // Enable caching
+  // Disable debug logging
+} else {
+  // Use local development database
+  // Pretty-print logs
+  // Show error stack traces
+}
+```
+
+Set it when starting your app:
+
+```bash
+# Development
+NODE_ENV=development node app.js
+
+# Production
+NODE_ENV=production node app.js
+```
+
+> **Important:** Many libraries (Express, React, Vue) change behaviour based on `NODE_ENV`. Express disables view caching and verbose logging in development mode. Always set `NODE_ENV=production` in production.
+
+## 2. Error Handling Differences
+
+### Development — Show Everything
+
+```js
+if (!isProduction) {
+  app.use((err, req, res, next) => {
+    console.error(err.stack); // Full stack trace
+    res.status(500).json({
+      error: err.message,
+      stack: err.stack,           // Expose internals
+      details: err.details,       // Debug info
+    });
+  });
+}
+```
+
+### Production — Hide Internals
+
+```js
+if (isProduction) {
+  app.use((err, req, res, next) => {
+    // Log the full error internally
+    console.error(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      error: err.message,
+      stack: err.stack,
+      requestId: req.id,
+      url: req.url,
+    }));
+
+    // Send a safe, generic message to the client
+    res.status(500).json({
+      error: 'Internal server error',
+      requestId: req.id,       // For support reference
+    });
+  });
+}
+```
+
+## 3. Logging Differences
+
+### Development — Pretty, Verbose
+
+```js
+// Development logger — human-readable
+const devLogger = {
+  info(msg, meta) { console.log(`ℹ️ ${msg}`, meta || ''); },
+  warn(msg, meta) { console.warn(`⚠️ ${msg}`, meta || ''); },
+  error(msg, meta) { console.error(`❌ ${msg}`, meta || ''); },
+  debug(msg, meta) { console.debug(`🔍 ${msg}`, meta || ''); },
+};
+```
+
+### Production — Structured, Filtered
+
+```js
+// Production logger — JSON, level-filtered
+const prodLogger = {
+  info(msg, meta) {
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log(JSON.stringify({ level: 'info', msg, ...meta, timestamp: new Date().toISOString() }));
+    }
+  },
+  warn(msg, meta) {
+    console.warn(JSON.stringify({ level: 'warn', msg, ...meta, timestamp: new Date().toISOString() }));
+  },
+  error(msg, meta) {
+    console.error(JSON.stringify({ level: 'error', msg, ...meta, timestamp: new Date().toISOString() }));
+  },
+};
+```
+
+## 4. Dependency Management
+
+```bash
+# Development — install everything
+npm install
+
+# Production — only runtime dependencies
+npm ci --production
+# Or: NODE_ENV=production npm ci
+```
+
+**`devDependencies` vs `dependencies`:**
+
+```json
+{
+  "dependencies": {
+    "express": "^4.18.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",       // Testing — not needed in prod
+    "eslint": "^8.0.0",      // Linting — not needed in prod
+    "nodemon": "^3.0.0",     // Auto-restart — not needed in prod
+    "supertest": "^6.0.0"    // Testing — not needed in prod
+  }
+}
+```
+
+## 5. Startup Differences
+
+### Development — Watch Mode
+
+```bash
+# Auto-restart on file changes
+node --watch app.js
+
+# Or with nodemon for older Node versions
+npx nodemon app.js
+```
+
+### Production — Process Manager
+
+```bash
+# PM2 — production process manager
+pm2 start app.js -i max --name my-api
+pm2 save
+pm2 startup
+```
+
+## 6. Environment Variables
+
+### Development — `.env` File
+
+```bash
+# .env (gitignored)
+PORT=3000
+DATABASE_URL=postgres://localhost:5432/myapp_dev
+DEBUG=true
+```
+
+### Production — System Environment
+
+```bash
+# Set by deployment platform (Heroku, Railway, Docker, etc.)
+# Never use .env files in production
+export PORT=8080
+export DATABASE_URL=postgres://user:pass@prod-host:5432/myapp
+export NODE_ENV=production
+```
+
+## 7. Security Differences
+
+| Feature | Development | Production |
+|---------|-------------|------------|
+| CORS | Allow all origins (`*`) | Restrict to specific domains |
+| Rate limiting | Disabled | Enabled (100 req/min per IP) |
+| HTTPS | Self-signed cert | Valid TLS certificate |
+| Helmet headers | Optional | Enabled (all security headers) |
+| Session secrets | Hardcoded or simple | Strong random secret |
+
+## 8. Database Configuration
+
+```js
+// config/database.js
+const dbConfig = {
+  development: {
+    host: 'localhost',
+    port: 5432,
+    database: 'myapp_dev',
+    user: 'dev_user',
+    password: 'dev_password',
+    max: 5,                // Small pool for dev
+    idleTimeoutMillis: 30000,
+  },
+  production: {
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT) || 5432,
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    max: 25,                // Larger pool for production
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+    ssl: { rejectUnauthorized: true },  // Enforce SSL
+  },
+};
+
+module.exports = dbConfig[process.env.NODE_ENV || 'development'];
+```
+
+## 9. Graceful Shutdown
+
+Production requires clean shutdown — finish in-flight requests, close connections:
+
+```js
+function shutdown(signal) {
+  console.log(`${signal} received. Shutting down gracefully...`);
+
+  server.close(() => {
+    console.log('HTTP server closed');
+    db.pool.end(() => {
+      console.log('DB pool closed');
+      process.exit(0);
+    });
+  });
+
+  // Force exit after timeout
+  setTimeout(() => {
+    console.error('Forced shutdown after 10s');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));  // Production (PM2, Docker, K8s)
+process.on('SIGINT', () => shutdown('SIGINT'));     // Development (Ctrl+C)
+```
+
+## Quick Reference: Environment Checklist
+
+```js
+// env.js
+const env = process.env.NODE_ENV || 'development';
+
+module.exports = {
+  isDev: env === 'development',
+  isProd: env === 'production',
+  isTest: env === 'test',
+
+  // Safe errors in prod, verbose in dev
+  errorResponse: (err) => ({
+    error: env === 'production' ? 'Internal server error' : err.message,
+    ...(env !== 'production' && { stack: err.stack }),
+  }),
+
+  // Pretty logs in dev, JSON in prod
+  log: env === 'production'
+    ? (level, msg, meta) => process.stdout.write(JSON.stringify({ level, msg, ...meta }) + '\n')
+    : (level, msg, meta) => console[level](`[${level.toUpperCase()}] ${msg}`, meta || ''),
+};
+```
+
+## Key Takeaways
+
+- **`NODE_ENV=production`** changes behaviour in Express, React, and many libraries — always set it
+- **Never leak stack traces** in production — log them internally, send safe messages to clients
+- Use **structured JSON logging** in production — it's parseable by log aggregators
+- Install **only `dependencies`** in production (`npm ci --production`)
+- Use **`.env` files only in development** — use system environment variables in production
+- **Graceful shutdown** (`SIGTERM` → close server → close DB → exit) prevents data loss
+- **Rate limiting, CORS restrictions, HTTPS, and security headers** are production-only concerns
+- **Connection pool sizes** should be larger in production (more concurrent users)

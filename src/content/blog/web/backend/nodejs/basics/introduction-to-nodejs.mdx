@@ -1,0 +1,111 @@
+---
+title: "Introduction to Node.js"
+description: "Learn what Node.js is, why it exists, and how it revolutionised server-side JavaScript"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "JavaScript", "Backend"]
+slug: "nodejs-introduction"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## What is Node.js?
+
+Node.js is an **open-source, cross-platform JavaScript runtime** that lets you run JavaScript outside the browser. Built on Chrome's V8 engine, it brings JavaScript to the server, command line, and even IoT devices.
+
+```
+┌──────────────┐
+│  JavaScript  │
+│   (your      │
+│    code)     │
+├──────────────┤
+│  Node.js     │
+│  APIs        │
+├──────────────┤
+│  V8 Engine   │
+├──────────────┤
+│  OS Layer    │
+└──────────────┘
+```
+
+## Why Node.js?
+
+Before Node.js (2009), JavaScript was trapped in the browser. Developers had to learn a different language (PHP, Python, Ruby, Java) to write backend code. Node.js changed that by:
+
+- **Unifying language** — use JavaScript everywhere
+- **Non-blocking I/O** — handle thousands of concurrent connections with a single thread
+- **NPM ecosystem** — the largest package registry on earth
+
+## Who Uses Node.js?
+
+| Company | Use Case |
+|---------|----------|
+| Netflix | Faster startup & rendering |
+| Uber | High-throughput data processing |
+| PayPal | Unified frontend/backend stacks |
+| LinkedIn | Mobile server architecture |
+| Walmart | Real-time inventory |
+
+## Your First Node.js Script
+
+Create a file `hello.js`:
+
+```js
+// hello.js
+console.log('Hello, Node.js!');
+console.log('Running on', process.version);
+```
+
+Run it:
+
+```bash
+node hello.js
+# Output:
+# Hello, Node.js!
+# Running on v22.x.x
+```
+
+> **Note:** The exact version depends on what you have installed. This is fine — all code in this tutorial works across modern Node.js versions.
+
+## Node.js is Event-Driven
+
+Node.js uses an **event-driven, non-blocking I/O model**. Instead of waiting for a file to read or a database to respond, it registers a callback and moves on:
+
+```js
+// non-blocking.js
+const fs = require('fs');
+
+console.log('1. Start reading file...');
+
+fs.readFile('hello.js', 'utf8', (err, data) => {
+  if (err) throw err;
+  console.log('3. File read complete');
+});
+
+console.log('2. Done! (but file read is still in progress)');
+```
+
+Output:
+
+```
+1. Start reading file...
+2. Done! (but file is still in progress)
+3. File read complete
+```
+
+## Node.js vs Traditional Servers
+
+| | Traditional (PHP, Python, Ruby) | Node.js |
+|---|---|---|
+| Concurrency model | Multi-threaded (one thread per request) | Single-threaded + event loop |
+| Blocking I/O | Yes — thread waits | No — callback is queued |
+| Memory usage | Higher (many threads) | Lower (single thread) |
+| Best for | CPU-heavy tasks | I/O-heavy apps (APIs, real-time) |
+
+## Key Takeaways
+
+- Node.js is a **JavaScript runtime** for the server, not a framework
+- Built on the **V8 JavaScript engine**
+- Uses **non-blocking, event-driven I/O** for high concurrency
+- **npm** provides access to over 2 million packages
+- Perfect for **APIs, real-time apps, CLIs, and microservices**

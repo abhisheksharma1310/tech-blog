@@ -1,0 +1,432 @@
+---
+title: "Process Management — Child Processes & Clustering"
+description: "Learn how to spawn child processes and cluster Node.js instances for multi-core performance"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Advanced"]
+tags: ["Node.js", "Advanced", "Process", "Clustering", "Child Process"]
+slug: "nodejs-process-management"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Why Process Management Matters
+
+Node.js runs on a **single thread** with a single event loop. This is great for I/O-bound work but means:
+
+1. **You can only use one CPU core** — the other 7, 15, or 63 cores sit idle
+2. **CPU-heavy tasks block everything** — if you sort a million records, no HTTP requests get processed
+3. **One crash kills everything** — there's no isolation between components
+
+Process management solves all three problems:
+
+```
+Single Node.js Process           Multi-core Clustering
+┌────────────────────┐           ┌────────────────────┐
+│    Event Loop      │           │  Master (load balancer) │
+│    (1 core only)   │           └────────┬───────────┘
+└────────────────────┘              ┌─────┼─────┐
+                                    ▼     ▼     ▼
+                               ┌────┐ ┌────┐ ┌────┐
+                               │ W1 │ │ W2 │ │ W3 │
+                               │Core│ │Core│ │Core│
+                               └────┘ └────┘ └────┘
+```
+
+## The `child_process` Module
+
+Node.js provides four methods in the `child_process` module, each designed for different scenarios:
+
+| Method | Use Case | Output | IPC |
+|--------|----------|--------|-----|
+| `spawn` | Large data, streaming | Streams (stdout/stderr events) | No |
+| `exec` | Short commands, small output | Buffered (callback with stdout) | No |
+| `execFile` | Execute a binary file | Like exec but more efficient | No |
+| `fork` | New Node.js process | Streams + built-in messaging | Yes |
+
+### `spawn` — The Streaming Workhorse
+
+`spawn` creates a new process and returns a `ChildProcess` object with `stdout` and `stderr` streams. Data flows as it's produced — no buffering.
+
+```js
+// spawn.js
+const { spawn } = require('child_process');
+
+// spawn(command, [args], [options])
+const child = spawn('ls', ['-lh', '/usr']);
+
+// stdout is a Readable stream — data arrives in chunks
+child.stdout.on('data', (data) => {
+  process.stdout.write(data.toString());
+});
+
+child.stderr.on('data', (data) => {
+  console.error(`stderr: ${data}`);
+});
+
+child.on('close', (code) => {
+  console.log(`Child exited with code ${code}`);
+});
+```
+
+**When to use `spawn`:**
+- Running commands that produce large output (log processing, file listings)
+- When you need to process output as it arrives (streaming JSON parsing)
+- When memory matters (no buffer)
+
+### `exec` — Convenience for Small Output
+
+`exec` runs a command in a shell and buffers the entire output:
+
+```js
+const { exec } = require('child_process');
+
+exec('find / -name "*.js" 2>/dev/null', { maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+  if (error) {
+    console.error(`Error: ${error.message}`);
+    return;
+  }
+  const lines = stdout.trim().split('\n');
+  console.log(`Found ${lines.length} JS files`);
+  console.log(lines.slice(0, 5).join('\n'));
+});
+```
+
+**When to use `exec`:**
+- Short commands with small output (git status, npm version)
+- When you need shell features like pipes (`|`) and redirects (`>`)
+- When the convenience of a single callback outweighs memory concerns
+
+> **Warning:** `exec` has a default `maxBuffer` of 1024×1024 bytes (1 MB). If the command produces more output than this, the process is killed. For large output, use `spawn`.
+
+### `fork` — Node.js-to-Node.js IPC
+
+`fork` is special — it creates a new Node.js process with an **IPC channel** built in. You can send messages back and forth using `child.send()` and `process.on('message')`.
+
+```
+Parent Process                   Child Process
+┌────────────────┐              ┌────────────────┐
+│ parent.js      │              │ worker.js      │
+│                │              │                │
+│ child.send()   │───IPC──────►│ process.on()   │
+│                │              │                │
+│ child.on('msg')│◄───IPC──────│ process.send() │
+└────────────────┘              └────────────────┘
+```
+
+```js
+// parent.js
+const { fork } = require('child_process');
+
+const child = fork('./worker.js');
+
+// Send a message to the child
+child.send({ task: 'compute', data: { iterations: 1e8 } });
+
+// Receive messages from the child
+child.on('message', (msg) => {
+  console.log('Result:', msg.result);
+  child.disconnect();
+});
+
+child.on('exit', (code) => console.log(`Worker exited: ${code}`));
+```
+
+```js
+// worker.js
+process.on('message', (msg) => {
+  if (msg.task === 'compute') {
+    // CPU-heavy work — this won't block the parent
+    let result = 0;
+    for (let i = 0; i < msg.data.iterations; i++) {
+      result += Math.sqrt(i);
+    }
+    process.send({ result: Math.floor(result) });
+  }
+});
+```
+
+> **Use `fork` when:** You need to offload CPU-intensive operations without blocking the event loop. The child runs on its own CPU core with its own event loop and heap.
+
+### `execSync` / `spawnSync` — Blocking Variants
+
+These block the event loop until the child process exits. Use them sparingly:
+
+```js
+const { execSync } = require('child_process');
+
+try {
+  const output = execSync('git log --oneline -5', {
+    encoding: 'utf8',
+    timeout: 5000,    // Kill after 5 seconds
+    stdio: 'pipe',     // Capture output
+  });
+  console.log('Recent commits:\n', output);
+} catch (err) {
+  console.error('Command failed:', err.stderr?.toString());
+}
+```
+
+> **Only use sync methods:** at startup (checking dependencies), in CLI tools (user expects blocking), or in build scripts. Never use them inside HTTP request handlers.
+
+## The `cluster` Module
+
+The `cluster` module takes process management to the next level. Instead of managing individual child processes, it creates a **master/worker farm** where all workers share the same server port.
+
+```js
+// cluster.js
+const cluster = require('cluster');
+const http = require('http');
+const os = require('os');
+
+if (cluster.isMaster) {
+  // --- Master process ---
+  const cpuCount = os.cpus().length;
+  console.log(`Master ${process.pid} forking ${cpuCount} workers`);
+
+  // Fork one worker per CPU core
+  for (let i = 0; i < cpuCount; i++) {
+    cluster.fork();
+  }
+
+  // Auto-restart crashed workers
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died (code: ${code}). Restarting...`);
+    cluster.fork();
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('Master received SIGTERM, killing workers...');
+    for (const id in cluster.workers) {
+      cluster.workers[id].kill();
+    }
+    process.exit(0);
+  });
+
+} else {
+  // --- Worker process ---
+  http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end(`Handled by worker ${process.pid}\n`);
+  }).listen(3000);
+
+  console.log(`Worker ${process.pid} started`);
+}
+```
+
+Run it:
+
+```bash
+node cluster.js
+# Master 12345 forking 8 workers
+# Worker 12346 started
+# Worker 12347 started
+# ...
+# (8 workers handling requests on port 3000)
+```
+
+### How Cluster Load Balancing Works
+
+The master process **listens on the port** (port 3000). When a connection arrives, it distributes it to one of the workers:
+
+```
+Request ──► Master (port 3000) ──► Round Robin ──► Worker 1 on core 0
+                                                   ├► Worker 2 on core 1
+                                                   ├► Worker 3 on core 2
+                                                   └► Worker 4 on core 3
+```
+
+- **On Linux/macOS:** Default is round-robin (`cluster.SCHED_RR`) — the master distributes connections one by one
+- **On Windows:** Default is OS scheduling (`cluster.SCHED_NONE`) — the OS decides which worker gets the connection
+- You can change this with `cluster.schedulingPolicy`
+
+### Why Workers Must Use the Same Port
+
+All workers call `.listen(3000)`. The master intercepts this and creates a **shared file descriptor** — only one socket binds to port 3000, and all workers share it. This is what makes cluster seamless — no reverse proxy needed.
+
+## Practical: Zero-Downtime Restart
+
+When deploying a new version, you don't want to drop any in-flight requests. This pattern restarts workers one at a time:
+
+```js
+// graceful-restart.js
+const cluster = require('cluster');
+const os = require('os');
+
+if (cluster.isMaster) {
+  const workers = [];
+  const cpuCount = os.cpus().length;
+
+  // Fork initial workers
+  for (let i = 0; i < cpuCount; i++) {
+    const worker = cluster.fork();
+    workers.push(worker);
+  }
+
+  async function restartAll() {
+    console.log('Starting rolling restart...');
+
+    for (const worker of workers) {
+      console.log(`Restarting worker ${worker.process.pid}...`);
+
+      // Kill the old worker
+      worker.kill('SIGTERM');
+
+      // Wait for new worker to start listening
+      await new Promise(resolve => {
+        const newWorker = cluster.fork();
+        newWorker.on('listening', () => {
+          console.log(`New worker ${newWorker.process.pid} is ready`);
+          resolve();
+        });
+      });
+    }
+
+    console.log('All workers restarted successfully');
+  }
+
+  // Trigger: kill -SIGUSR2 <master-pid>
+  process.on('SIGUSR2', () => {
+    restartAll().catch(err => console.error('Restart failed:', err));
+  });
+
+} else {
+  require('./app.js'); // Your Express/Koa app
+}
+```
+
+**How it works:**
+1. Kill worker 1 → it stops accepting connections
+2. Fork a new worker → it starts listening
+3. Repeat for all workers
+4. During the process, (n-1)/n capacity is maintained
+
+## Practical: Process Pool (Controlled Concurrency)
+
+If you have many CPU-intensive tasks, forking a process for each one would overwhelm the system. Use a pool instead:
+
+```js
+// process-pool.js
+const { fork } = require('child_process');
+
+class ProcessPool {
+  constructor(workerPath, size = 4) {
+    this.workers = [];
+    this.queue = [];
+    this.available = [];
+
+    // Fork the pool
+    for (let i = 0; i < size; i++) {
+      const worker = fork(workerPath);
+
+      // When a worker responds, resolve the waiting promise
+      worker.on('message', (msg) => {
+        const resolver = this.available.find(r => r.worker === worker);
+        if (resolver) {
+          resolver.resolve(msg);
+          this.available = this.available.filter(r => r.worker !== worker);
+        }
+        // Return worker to pool
+        this.workers.push(worker);
+        this.processQueue();
+      });
+
+      this.workers.push(worker);
+    }
+  }
+
+  exec(data) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ data, resolve, reject });
+      this.processQueue();
+    });
+  }
+
+  processQueue() {
+    if (this.queue.length === 0 || this.workers.length === 0) return;
+
+    const worker = this.workers.pop();
+    const task = this.queue.shift();
+    this.available.push({ worker, resolve: task.resolve });
+    worker.send(task.data);
+  }
+}
+
+// Usage
+const pool = new ProcessPool('./worker.js', 4);
+
+async function main() {
+  const results = await Promise.all([
+    pool.exec({ iterations: 1e7 }),
+    pool.exec({ iterations: 2e7 }),
+    pool.exec({ iterations: 3e7 }),
+    pool.exec({ iterations: 4e7 }),
+  ]);
+  console.log('Results:', results);
+}
+```
+
+## Understanding Process Signals
+
+Signals are OS-level notifications sent to processes:
+
+| Signal | Purpose | Default Action |
+|--------|---------|----------------|
+| `SIGTERM` | Graceful termination (default) | Exit |
+| `SIGINT` | Interrupt (Ctrl+C) | Exit |
+| `SIGUSR1` / `SIGUSR2` | User-defined signals | Ignore |
+| `SIGHUP` | Hangup (terminal closed) | Exit |
+| `SIGKILL` | Force kill (cannot be caught) | Exit |
+
+```js
+// Handle signals in your process
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received — shutting down');
+  server.close(() => process.exit(0));
+});
+
+process.on('SIGINT', () => {
+  console.log('Ctrl+C pressed — cleaning up');
+  cleanup();
+  process.exit(0);
+});
+
+// Send signals from code
+process.kill(child.pid, 'SIGTERM');
+```
+
+## PM2 vs Manual Clustering
+
+You can write clustering manually (as above) or use **PM2**, a production process manager:
+
+```bash
+npm install -g pm2
+
+pm2 start app.js -i max       # Fork one worker per CPU
+pm2 reload app.js             # Zero-downtime restart
+pm2 list                      # Show all processes
+pm2 monit                     # Monitor CPU/memory
+pm2 logs                      # View logs
+```
+
+| Feature | Manual cluster | PM2 |
+|---------|---------------|-----|
+| Load balancing | Built-in | Built-in |
+| Zero-downtime restart | Custom code | `pm2 reload` |
+| Log management | Manual | Built-in log rotation |
+| Monitoring | Custom | `pm2 monit` |
+| Startup scripts | Manual | `pm2 startup` |
+| Control | Full control | Configuration-based |
+
+## Key Takeaways
+
+- Use **`spawn`** for streaming output from external programs
+- Use **`exec`** for short, shell-based commands with small output
+- Use **`fork`** to offload CPU-heavy work to another Node.js process with IPC
+- Use **`cluster`** to utilise all CPU cores for HTTP servers
+- **Auto-restart** crashed workers — always handle `cluster.on('exit')`
+- **Round-robin** is the default load-balancing strategy on Linux/macOS
+- Always handle **`SIGTERM`** for graceful shutdown in production
+- Use a **process pool** pattern to limit concurrent child processes
+- PM2 provides clustering, monitoring, and zero-downtime reloads out of the box
+- **Sync methods** (`execSync`, `spawnSync`) block the event loop — only use at startup or in CLI tools

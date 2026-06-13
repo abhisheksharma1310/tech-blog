@@ -1,0 +1,238 @@
+---
+title: "Console I/O in Node.js"
+description: "Master Node.js console — stdout, stderr, timers, progress bars, colouring, and formatting output"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "Console", "CLI"]
+slug: "nodejs-console-io"
+author: "Abhishek Sharma"
+order: 7
+---
+
+## The `console` Module
+
+Node.js's `console` module is more powerful than browser `console.log`. It writes to `stdout` and `stderr` streams and includes formatting, timing, and grouping.
+
+```
+console.log()    ───► stdout
+console.error()  ───► stderr
+```
+
+## Basic Output
+
+```js
+// stdout
+console.log('Hello World');
+
+// stderr
+console.error('Something went wrong');
+
+// Format strings (%s = string, %d = number, %j = JSON)
+console.log('User: %s, Age: %d', 'Alice', 30);
+console.log('Data: %j', { id: 1, name: 'Bob' });
+
+// Output:
+// User: Alice, Age: 30
+// Data: {"id":1,"name":"Bob"}
+```
+
+> **Why stderr matters:** `console.error` goes to stderr (fd 2), not stdout (fd 1). This lets you do `node app.js 2> errors.log` to separate errors from normal output.
+
+## Redirecting stdout and stderr
+
+```js
+// redirect.js
+console.log('This is normal output');
+console.error('This is an error message');
+```
+
+```bash
+node redirect.js 2> err.txt
+# Terminal shows: This is normal output
+# err.txt contains: This is an error message
+
+node redirect.js > output.txt 2>&1
+# Both stdout and stderr go to output.txt
+```
+
+## Console Methods
+
+### `console.table` — Tabular Data
+
+```js
+const users = [
+  { name: 'Alice', age: 30, role: 'admin' },
+  { name: 'Bob', age: 25, role: 'user' },
+  { name: 'Charlie', age: 35, role: 'moderator' },
+];
+
+console.table(users);
+```
+
+```
+┌─────────┬─────────┬─────┬────────────┐
+│ (index) │  name   │ age │    role    │
+├─────────┼─────────┼─────┼────────────┤
+│    0    │ 'Alice' │ 30  │  'admin'   │
+│    1    │  'Bob'  │ 25  │  'user'    │
+│    2    │ 'Charlie'│ 35  │ 'moderator'│
+└─────────┴─────────┴─────┴────────────┘
+```
+
+### `console.group` — Indented Output
+
+```js
+console.group('User details');
+console.log('Name: Alice');
+console.log('Age: 30');
+console.group('Permissions');
+console.log('Can read:', true);
+console.log('Can write:', true);
+console.groupEnd();
+console.groupEnd();
+```
+
+### `console.count` — Counting
+
+```js
+function processUser(name) {
+  console.count(`Processed user`);
+  console.count(`Name: ${name}`);
+}
+
+processUser('Alice');
+processUser('Bob');
+processUser('Alice');
+```
+
+```
+Processed user: 1
+Name: Alice: 1
+Processed user: 2
+Name: Bob: 1
+Processed user: 3
+Name: Alice: 2
+```
+
+## Timers
+
+### `console.time` / `console.timeEnd`
+
+```js
+console.time('fetch-data');
+// Simulate async work
+setTimeout(() => {
+  console.timeEnd('fetch-data');
+  // fetch-data: 1002.345ms
+}, 1000);
+
+// Multiple timers
+console.time('loop');
+let sum = 0;
+for (let i = 0; i < 1000000; i++) sum += i;
+console.timeEnd('loop');
+// loop: 2.456ms
+```
+
+### `console.timeLog`
+
+```js
+console.time('request');
+// ... part 1 ...
+console.timeLog('request', 'after query');
+// request: 12ms after query
+// ... part 2 ...
+console.timeEnd('request');
+// request: 34ms
+```
+
+## Colouring Output
+
+Use ANSI escape codes or the `chalk` package:
+
+### Raw ANSI Codes
+
+```js
+const RESET = '\x1b[0m';
+const RED = '\x1b[31m';
+const GREEN = '\x1b[32m';
+const YELLOW = '\x1b[33m';
+const BLUE = '\x1b[34m';
+const BOLD = '\x1b[1m';
+
+console.log(RED + 'Error message' + RESET);
+console.log(GREEN + 'Success!' + RESET);
+console.log(BOLD + 'Important heading' + RESET);
+```
+
+### With `chalk` (recommended)
+
+```bash
+npm install chalk
+```
+
+```js
+import chalk from 'chalk';  // ES modules
+
+console.log(chalk.red('Error: Something failed'));
+console.log(chalk.green('✓ Build successful'));
+console.log(chalk.blue.bold('Info:'));
+console.log(chalk.yellow.bgRed(' WARNING '));
+```
+
+## Progress Bar (Manual)
+
+```js
+function progressBar(current, total, barLength = 30) {
+  const filled = Math.round((current / total) * barLength);
+  const empty = barLength - filled;
+  const percent = ((current / total) * 100).toFixed(1);
+  process.stdout.write(
+    `\r[${'█'.repeat(filled)}${'░'.repeat(empty)}] ${percent}%`
+  );
+}
+
+const total = 100;
+for (let i = 0; i <= total; i++) {
+  progressBar(i, total);
+  // Simulate work
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30);
+}
+process.stdout.write('\nDone!\n');
+```
+
+## Assertions
+
+```js
+console.assert(2 + 2 === 5, 'Math is broken');
+// Assertion failed: Math is broken
+
+// Only prints when assertion fails
+console.assert(2 + 2 === 4, 'This will not print');
+```
+
+## Tracing the Call Stack
+
+```js
+function foo() {
+  bar();
+}
+function bar() {
+  console.trace('Trace at bar');
+}
+
+foo();
+// Trace: Trace at bar
+//     at bar (app.js:5:11)
+//     at foo (app.js:2:5)
+//     at Object.<anonymous> (app.js:8:1)
+```
+
+## Key Takeaways
+
+- `console.log` → **stdout**, `console.error` → **stderr** — use them intentionally
+- `console.table`, `console.group`, `console.count` for structured output
+- `console.time` / `console.timeEnd` for simple performance measurement
+- **ANSI escape codes** or **chalk** for coloured terminal output
+- `process.stdout.write('\r...')` for progress bars and live-updating output
+- `console.trace()` prints the call stack — invaluable for debugging

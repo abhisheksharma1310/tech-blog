@@ -1,0 +1,196 @@
+---
+title: "npm Fundamentals"
+description: "Master npm — install, update, uninstall, semantic versioning, global vs local packages, and npx"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "npm", "Package Manager"]
+slug: "nodejs-npm-fundamentals"
+author: "Abhishek Sharma"
+order: 8
+---
+
+## What is npm?
+
+**npm** (Node Package Manager) is the default package manager for Node.js. It gives you access to over **2 million packages** — the largest software registry in the world.
+
+```
+npm ───► package.json ◄─── Your project
+ │
+ ├──► node_modules/     ◄─── Installed packages
+ ├──► package-lock.json ◄─── Exact dependency tree
+ └──► npm registry      ◄─── Remote package source
+```
+
+## Installing Packages
+
+### Local Install (project-specific)
+
+```bash
+# Install a package
+npm install lodash
+# or shorthand
+npm i express
+
+# Install a specific version
+npm install react@18.2.0
+
+# Install as dev dependency (testing, building)
+npm install --save-dev jest
+# shorthand
+npm i -D typescript
+```
+
+After install, the package appears in `node_modules/` and is recorded in `package.json`:
+
+```json
+{
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
+```
+
+### Global Install (system-wide)
+
+```bash
+# Install globally (available as CLI commands)
+npm install -g nodemon
+npm install -g typescript
+
+# List global packages
+npm list -g --depth=0
+```
+
+| Install | Where packages go | Used for |
+|---------|------------------|----------|
+| `npm install <pkg>` | `./node_modules/` | App dependencies |
+| `npm install -g <pkg>` | `/usr/local/lib/node_modules/` | CLI tools |
+
+> **Tip:** `npm install -g` without sudo on macOS/Linux? Install via nvm or configure npm prefix. Otherwise global installs may fail with permission errors.
+
+## Updating Packages
+
+```bash
+# Check for outdated packages
+npm outdated
+
+# Update all packages per semver rules
+npm update
+
+# Update a specific package to latest
+npm install express@latest
+
+# Major version upgrade (if you want to force it)
+npm install express@5.0.0
+```
+
+## Uninstalling Packages
+
+```bash
+# Remove from node_modules and package.json
+npm uninstall lodash
+npm uninstall --save-dev jest
+
+# Remove global package
+npm uninstall -g typescript
+```
+
+## Semantic Versioning (SemVer)
+
+npm uses semantic versioning: `MAJOR.MINOR.PATCH`
+
+```
+Version:  4 . 17 . 21
+           │    │    └── Patch (bug fixes, backwards compatible)
+           │    └─────── Minor (new features, backwards compatible)
+           └──────────── Major (breaking changes)
+```
+
+### Version Ranges in package.json
+
+| Range | Meaning | Example |
+|-------|---------|---------|
+| `^4.17.21` | Compatible with 4.x.x (up to 5.0.0) | `^4.17.21` allows `4.18.0` |
+| `~4.17.21` | Approximate (only patch updates) | `~4.17.21` allows `4.17.22` |
+| `4.17.21` | Exact version | Only `4.17.21` |
+| `*` | Any version | Avoid in production |
+| `>=4.0.0 <5.0.0` | Range | Version between 4 and 5 |
+
+## `npx` — Execute Without Installing
+
+**npx** (bundled with npm) runs a package without permanently installing it:
+
+```bash
+# Run create-react-app without installing it globally
+npx create-react-app my-app
+
+# Run a specific version
+npx cowsay@1.5.0 "Hello"
+
+# Run a one-off tool
+npx http-server
+
+# Run from a local install
+npx jest --coverage
+```
+
+| | `npm install -g` | `npx` |
+|---|---|---|
+| Disk usage | Permanent install | Cached, auto-cleaned |
+| Version control | You update manually | Picks latest each time |
+| Use case | Daily driver tools | One-off or rare tools |
+
+## `npm init` — Starting a Project
+
+```bash
+# Interactive setup
+npm init
+
+# Quick setup (skips prompts)
+npm init -y
+```
+
+Creates a `package.json`:
+
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
+```
+
+## Common npm Commands Cheatsheet
+
+```bash
+npm init -y              # Create package.json
+npm install <pkg>        # Install as dependency
+npm i -D <pkg>           # Install as dev dependency
+npm uninstall <pkg>      # Remove package
+npm update               # Update all packages
+npm outdated             # List outdated packages
+npm list --depth=0       # List top-level packages
+npm audit                # Check for security vulnerabilities
+npm audit fix            # Auto-fix vulnerabilities
+npm cache clean --force  # Clear cache (troubleshooting)
+npm help <command>       # Get help for a command
+```
+
+## Key Takeaways
+
+- **npm** is the default Node.js package manager — 2M+ packages available
+- **`npm install <pkg>`** saves to `dependencies`; **`--save-dev`** to `devDependencies`
+- **`npm install -g`** for CLI tools; **npx** for one-off execution
+- **SemVer**: `^` for minor updates, `~` for patches, exact version for pinning
+- **`npm outdated`** and **`npm audit`** keep your project healthy
+- **`package-lock.json`** locks the exact dependency tree for reproducible builds

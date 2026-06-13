@@ -1,0 +1,379 @@
+---
+title: "OS Module"
+description: "Master the Node.js OS module — system information, memory, CPU, network interfaces, and platform utilities"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Modules"]
+tags: ["Node.js", "Modules", "OS", "System"]
+slug: "nodejs-os-module"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## The `os` Module
+
+The `os` module provides operating system-related utility methods. It gives you access to system-level information about the machine your Node.js process is running on — CPU, memory, network, platform, and more.
+
+```js
+const os = require('os');
+```
+
+> **Why use `os`?** Any time you need to make decisions based on the underlying hardware — how many workers to fork, how much memory is available, what platform you're on — the `os` module is the answer.
+
+## System Information
+
+### Platform & Architecture
+
+```js
+const os = require('os');
+
+console.log('Platform:', os.platform());
+// 'linux' | 'darwin' (macOS) | 'win32' | 'freebsd'
+
+console.log('Architecture:', os.arch());
+// 'x64' | 'arm64' | 'ia32'
+
+console.log('Release:', os.release());
+// '6.5.0' (kernel version)
+
+console.log('Type:', os.type());
+// 'Linux' | 'Darwin' | 'Windows_NT'
+
+console.log('Hostname:', os.hostname());
+// 'my-server' or 'abhishek-laptop'
+
+console.log('Home directory:', os.homedir());
+// '/home/abhishek' or 'C:\\Users\\Abhishek'
+
+console.log('Temp directory:', os.tmpdir());
+// '/tmp' or 'C:\\Users\\Abhishek\\AppData\\Local\\Temp'
+```
+
+### Uptime
+
+```js
+const os = require('os');
+
+const uptimeSeconds = os.uptime();
+const days = Math.floor(uptimeSeconds / 86400);
+const hours = Math.floor((uptimeSeconds % 86400) / 3600);
+const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+
+console.log(`System uptime: ${days}d ${hours}h ${minutes}m`);
+// 'System uptime: 12d 5h 34m'
+
+// Process uptime (separate from system uptime)
+console.log('Process uptime:', process.uptime(), 'seconds');
+```
+
+**Why two uptime values?** `os.uptime()` is how long the machine has been running. `process.uptime()` is how long your Node.js process has been running. If you're monitoring a long-running server, both are useful.
+
+## CPU Information
+
+### CPU Cores
+
+```js
+const os = require('os');
+
+// Get number of logical CPU cores
+const cpuCount = os.cpus().length;
+console.log('CPU cores:', cpuCount);
+// Most useful for: cluster.fork() count
+
+// Detailed per-core information
+const cpus = os.cpus();
+cpus.forEach((cpu, index) => {
+  console.log(`Core ${index}:`);
+  console.log('  Model:', cpu.model);
+  console.log('  Speed:', cpu.speed, 'MHz');
+  console.log('  Times:', cpu.times);
+  // { user: 12345, nice: 0, sys: 6789, idle: 98765, irq: 123 }
+});
+```
+
+### CPU Load Average
+
+```js
+const os = require('os');
+
+// 1, 5, and 15 minute load averages
+const load = os.loadavg();
+console.log(`Load average: ${load[0].toFixed(2)} / ${load[1].toFixed(2)} / ${load[2].toFixed(2)}`);
+// 'Load average: 1.52 / 0.78 / 0.45'
+
+// Normalize by CPU count for meaningful numbers
+const cpuCount = os.cpus().length;
+console.log(`Per-core load: ${(load[0] / cpuCount * 100).toFixed(0)}%`);
+```
+
+> **Understanding load average:** A load of 1.0 on a single-core machine means the CPU is fully utilised. On a 4-core machine, 1.0 means 25% utilisation. Always normalise by CPU count. A per-core load consistently above 0.7 indicates the system is under strain.
+
+## Memory Information
+
+```js
+const os = require('os');
+
+function formatBytes(bytes) {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+  }
+  return `${value.toFixed(1)} ${units[unitIndex]}`;
+}
+
+console.log('Total memory:', formatBytes(os.totalmem()));
+console.log('Free memory:', formatBytes(os.freemem()));
+console.log('Used memory:', formatBytes(os.totalmem() - os.freemem()));
+console.log('Memory usage:', ((1 - os.freemem() / os.totalmem()) * 100).toFixed(1) + '%');
+
+// Process-specific memory (from process module)
+const mem = process.memoryUsage();
+console.log('Process RSS:', formatBytes(mem.rss));          // Resident Set Size
+console.log('Heap total:', formatBytes(mem.heapTotal));      // V8 heap total
+console.log('Heap used:', formatBytes(mem.heapUsed));        // V8 heap used
+console.log('External:', formatBytes(mem.external));         // C++ objects
+```
+
+### Memory Pressure Detection
+
+```js
+function checkMemoryPressure() {
+  const freeMem = os.freemem();
+  const totalMem = os.totalmem();
+  const usagePercent = ((1 - freeMem / totalMem) * 100);
+
+  if (usagePercent > 90) {
+    console.error('CRITICAL: System memory > 90%');
+    // Alert, scale up, or start rejecting requests
+    return 'critical';
+  } else if (usagePercent > 75) {
+    console.warn('WARNING: System memory > 75%');
+    return 'warning';
+  }
+
+  return 'healthy';
+}
+```
+
+## Network Information
+
+### Network Interfaces
+
+```js
+const os = require('os');
+
+const interfaces = os.networkInterfaces();
+
+for (const [name, entries] of Object.entries(interfaces)) {
+  console.log(`Interface: ${name}`);
+
+  for (const entry of entries) {
+    if (entry.family === 'IPv4' && !entry.internal) {
+      console.log(`  IP: ${entry.address}`);
+      console.log(`  Netmask: ${entry.netmask}`);
+      console.log(`  MAC: ${entry.mac}`);
+      console.log(`  Internal: ${entry.internal}`);
+    }
+  }
+}
+```
+
+### Finding Your External IP
+
+```js
+function getExternalIPv4() {
+  const interfaces = os.networkInterfaces();
+
+  for (const entries of Object.values(interfaces)) {
+    for (const entry of entries) {
+      if (entry.family === 'IPv4' && !entry.internal) {
+        return entry.address;
+      }
+    }
+  }
+  return '127.0.0.1';
+}
+
+console.log('Server IP:', getExternalIPv4());
+```
+
+## User Information
+
+```js
+const os = require('os');
+
+// Current user info
+console.log('Username:', os.userInfo().username);
+console.log('Home:', os.userInfo().homedir);
+console.log('Shell:', os.userInfo().shell);
+// 'shell' is null on Windows
+
+// Endianness
+console.log('Endianness:', os.endianness());
+// 'LE' (little-endian, most common) or 'BE' (big-endian)
+
+// Number of CPUs (alias for os.cpus().length)
+console.log('Available parallelism:', os.availableParallelism());
+// Node.js 19+ — returns the number of CPUs Node.js can use
+```
+
+## Practical: Health Check System
+
+```js
+const os = require('os');
+
+class SystemMonitor {
+  getStats() {
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const cpus = os.cpus();
+    const load = os.loadavg();
+
+    // Calculate per-core CPU usage
+    const cpuUsage = cpus.map((cpu, i) => {
+      const total = Object.values(cpu.times).reduce((a, b) => a + b, 0);
+      const idle = cpu.times.idle;
+      return {
+        core: i,
+        model: cpu.model,
+        usage: ((total - idle) / total * 100).toFixed(1) + '%',
+      };
+    });
+
+    return {
+      hostname: os.hostname(),
+      platform: os.platform(),
+      uptime: this.formatUptime(os.uptime()),
+      memory: {
+        total: this.formatBytes(totalMem),
+        free: this.formatBytes(freeMem),
+        used: this.formatBytes(totalMem - freeMem),
+        usagePercent: ((1 - freeMem / totalMem) * 100).toFixed(1) + '%',
+      },
+      cpu: {
+        cores: cpus.length,
+        model: cpus[0]?.model,
+        loadAverage: {
+          '1min': load[0].toFixed(2),
+          '5min': load[1].toFixed(2),
+          '15min': load[2].toFixed(2),
+        },
+        perCore: cpuUsage,
+      },
+      process: {
+        pid: process.pid,
+        uptime: this.formatUptime(process.uptime()),
+        memory: process.memoryUsage(),
+        nodeVersion: process.version,
+      },
+    };
+  }
+
+  formatUptime(seconds) {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return `${d}d ${h}h ${m}m ${s}s`;
+  }
+
+  formatBytes(bytes) {
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = bytes;
+    let i = 0;
+    while (value >= 1024 && i < units.length - 1) {
+      value /= 1024;
+      i++;
+    }
+    return `${value.toFixed(1)} ${units[i]}`;
+  }
+
+  isHealthy() {
+    const freeMem = os.freemem();
+    const totalMem = os.totalmem();
+    const memUsage = freeMem / totalMem;
+
+    // At least 10% free memory and load < 4x CPU count
+    return memUsage > 0.1 &&
+      os.loadavg()[0] < os.cpus().length * 4;
+  }
+}
+
+// Usage
+const monitor = new SystemMonitor();
+console.log(JSON.stringify(monitor.getStats(), null, 2));
+```
+
+## Practical: Automatic Worker Count
+
+```js
+const os = require('os');
+const cluster = require('cluster');
+
+function getOptimalWorkerCount() {
+  const cpuCount = os.cpus().length;
+  const freeMem = os.freemem();
+  const totalMem = os.totalmem();
+
+  // Base: one worker per CPU core
+  let workers = cpuCount;
+
+  // If memory-constrained, reduce workers
+  const memPerWorker = 256 * 1024 * 1024; // Assume 256MB per worker
+  const maxByMem = Math.floor(freeMem / memPerWorker);
+
+  workers = Math.min(workers, maxByMem);
+
+  // Minimum 1, maximum sensible
+  return Math.max(1, Math.min(workers, 32));
+}
+
+if (cluster.isMaster) {
+  const workerCount = getOptimalWorkerCount();
+  console.log(`Starting ${workerCount} workers based on system resources`);
+  console.log(`CPU cores: ${os.cpus().length}, Free memory: ${(os.freemem() / 1024 / 1024).toFixed(0)}MB`);
+
+  for (let i = 0; i < workerCount; i++) {
+    cluster.fork();
+  }
+} else {
+  // Worker code
+  require('./app.js');
+}
+```
+
+## One-Liner Utility Functions
+
+```js
+const os = require('os');
+
+// Cross-platform EOL (End of Line)
+const lines = 'line1' + os.EOL + 'line2';
+// Linux/macOS: 'line1\nline2'
+// Windows:     'line1\r\nline2'
+
+// All environment variables (as an object)
+// (Available as process.env, but os module doesn't add to this)
+
+// Check if running as administrator/root
+const isRoot = os.userInfo().uid === 0; // Linux/macOS
+// On Windows, use: process.isAdmin (not native)
+
+// Get the system's temporary directory for scratch files
+const tempFile = require('path').join(os.tmpdir(), 'my-app-temp-' + Date.now());
+```
+
+## Key Takeaways
+
+- **`os.cpus()`** — get CPU count (for clustering) and per-core info
+- **`os.totalmem()`** / **`os.freemem()`** — system memory for capacity planning
+- **`os.loadavg()`** — CPU load average (1, 5, 15 minutes) — normalise by CPU count
+- **`os.networkInterfaces()`** — find the server's IP address, MAC, and interface details
+- **`os.platform()`** / **`os.arch()`** — detect the OS and architecture for platform-specific code
+- **`os.uptime()`** — system uptime (different from `process.uptime()`)
+- **`os.homedir()`** / **`os.tmpdir()`** — standard system directories
+- **`os.userInfo()`** — current user details (username, home, shell)
+- **`os.EOL`** — platform-appropriate end-of-line character
+- Use `os` data to make runtime decisions: how many workers to fork, when to scale, monitoring thresholds

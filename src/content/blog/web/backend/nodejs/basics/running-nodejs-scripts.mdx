@@ -1,0 +1,227 @@
+---
+title: "Running Node.js Scripts"
+description: "Master the Node.js CLI — running files, REPL, arguments, environment variables, and shebang scripts"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "CLI", "REPL"]
+slug: "nodejs-running-scripts"
+author: "Abhishek Sharma"
+order: 6
+---
+
+## Three Ways to Run JavaScript with Node.js
+
+| Method | Command | Use Case |
+|--------|---------|----------|
+| Script file | `node app.js` | Most common |
+| REPL | `node` | Quick experiments |
+| Evaluate | `node -e "code"` | One-liners |
+
+## 1. Running a Script File
+
+```bash
+node app.js
+node path/to/script.js
+```
+
+```js
+// app.js
+console.log('Hello from a file!');
+```
+
+### Watch Mode (Node.js 18+)
+
+```bash
+node --watch app.js
+```
+
+Restarts automatically when files change — no need for `nodemon`.
+
+## 2. The REPL (Read-Eval-Print Loop)
+
+Launch it with just `node`:
+
+```bash
+$ node
+Welcome to Node.js v22.x.x.
+> 2 + 2
+4
+> const greeting = `Hello, ${process.env.USER}`;
+undefined
+> greeting
+'Hello, abhishek'
+> .exit
+```
+
+### Useful REPL Commands
+
+| Command | Action |
+|---------|--------|
+| `.help` | Show all commands |
+| `.break` | Exit multi-line input |
+| `.clear` | Reset context |
+| `.save file.js` | Save session to file |
+| `.load file.js` | Load file into session |
+| `.editor` | Multi-line editor mode |
+| `.exit` | Quit |
+
+### REPL One-liner with `-e`
+
+```bash
+node -e "console.log(2 ** 10)"   # 1024
+node -e "console.log(new Date().getFullYear())"
+node --eval "const os = require('os'); console.log(os.cpus().length)"
+```
+
+## 3. Command-Line Arguments
+
+Access arguments via `process.argv`:
+
+```js
+// greet.js
+const args = process.argv.slice(2);
+const name = args[0] || 'World';
+console.log(`Hello, ${name}!`);
+```
+
+```bash
+node greet.js Abhishek
+# Hello, Abhishek!
+
+node greet.js
+# Hello, World!
+```
+
+> `process.argv[0]` is the node binary path, `process.argv[1]` is the script path. `slice(2)` gets your actual arguments.
+
+### Parsing Flags
+
+```js
+// args.js
+const args = process.argv.slice(2);
+const flags = {};
+
+for (let i = 0; i < args.length; i++) {
+  if (args[i].startsWith('--')) {
+    const key = args[i].slice(2);
+    const value = args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : true;
+    flags[key] = value;
+    if (value !== true) i++;
+  }
+}
+
+console.log(flags);
+```
+
+```bash
+node args.js --name Abhishek --verbose
+# { name: 'Abhishek', verbose: true }
+```
+
+## 4. Environment Variables
+
+```js
+// env.js
+console.log('Home:', process.env.HOME);
+console.log('Node env:', process.env.NODE_ENV);
+console.log('Custom:', process.env.MY_VAR);
+```
+
+```bash
+MY_VAR=hello node env.js
+# Home: /home/abhishek
+# Node env: undefined
+# Custom: hello
+```
+
+> **Pro tip:** Use a `.env` file with the `dotenv` package for managing environment variables in development.
+
+### Accessing `process.env`
+
+```js
+const config = {
+  port: parseInt(process.env.PORT, 10) || 3000,
+  host: process.env.HOST || '0.0.0.0',
+  debug: process.env.DEBUG === 'true',
+  db: {
+    url: process.env.DATABASE_URL,
+    pool: parseInt(process.env.DB_POOL, 10) || 10,
+  },
+};
+```
+
+## 5. Shebang Scripts (CLI Executables)
+
+Make Node.js scripts executable like system commands:
+
+```js
+#!/usr/bin/env node
+// greet-x.js
+const name = process.argv[2] || 'World';
+console.log(`Hello, ${name}!`);
+```
+
+```bash
+chmod +x greet-x.js
+./greet-x.js Abhishek
+# Hello, Abhishek!
+```
+
+## 6. Exit Codes
+
+```js
+// exit.js
+const args = process.argv.slice(2);
+
+if (args.length === 0) {
+  console.error('Error: No arguments provided');
+  process.exit(1);  // Non-zero = failure
+}
+
+console.log('Arguments:', args);
+process.exit(0);  // Zero = success
+```
+
+```bash
+node exit.js && echo "Success"
+# Arguments: []
+# Error: No arguments provided
+
+node exit.js hello && echo "Success"
+# Arguments: [ 'hello' ]
+# Success
+```
+
+## Putting It All Together
+
+```js
+#!/usr/bin/env node
+// cli-tool.js
+
+const name = process.argv[2] || process.env.USER || 'World';
+const debug = process.argv.includes('--debug');
+
+if (debug) {
+  console.log('Args:', process.argv);
+  console.log('Env:', process.env.NODE_ENV);
+  console.log('CWD:', process.cwd());
+}
+
+console.log(`Hello, ${name}!`);
+```
+
+```bash
+node cli-tool.js Alice --debug
+# Args: [ '/usr/bin/node', '/path/to/cli-tool.js', 'Alice', '--debug' ]
+# Env: undefined
+# CWD: /path/to
+# Hello, Alice!
+```
+
+## Key Takeaways
+
+- Use **`node script.js`** to run files, **`node`** for the REPL
+- Access CLI arguments via **`process.argv`**
+- Read environment variables from **`process.env`**
+- Shebang (`#!/usr/bin/env node`) turns scripts into executables
+- `process.exit(code)` controls the exit status (0 = success, non-zero = error)

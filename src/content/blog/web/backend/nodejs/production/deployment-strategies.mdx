@@ -1,0 +1,475 @@
+---
+title: "Deployment Strategies — CI/CD & Docker"
+description: "Automate Node.js deployments with CI/CD pipelines and Docker — from GitHub Actions to zero-downtime production releases"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Production"]
+tags: ["Node.js", "Production", "Deployment", "Docker", "CI/CD"]
+slug: "nodejs-deployment-strategies"
+author: "Abhishek Sharma"
+order: 7
+---
+
+## The Deployment Pipeline
+
+A proper deployment pipeline moves code from a developer's machine to production safely and repeatably:
+
+```
+Developer ──► Git Push ──► CI (test + build) ──► CD (deploy) ──► Production
+    │              │                │                    │
+   Write        GitHub            GitHub              Docker /
+   code         GitLab            Actions              SSH /
+                Bitbucket         Jenkins              PM2
+```
+
+## 1. Docker — Consistent Environments
+
+Docker packages your app with its environment (Node.js version, OS packages, dependencies) into a portable image. This eliminates "it works on my machine" problems.
+
+### Dockerfile
+
+```dockerfile
+# ── Base Stage ──
+FROM node:22-alpine AS base
+WORKDIR /app
+COPY package*.json ./
+
+# ── Dependencies Stage ──
+FROM base AS deps
+RUN npm ci --production
+
+# ── Build Stage ──
+FROM base AS build
+RUN npm ci
+COPY . .
+RUN npm run build  # if you have a build step (TypeScript, etc.)
+
+# ── Production Stage ──
+FROM node:22-alpine AS production
+WORKDIR /app
+
+# Copy only what's needed for production
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY package*.json ./
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S appuser && \
+    adduser -S appuser -u 1001 -G appuser
+USER appuser
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+CMD ["node", "dist/app.js"]
+```
+
+### Docker Compose (Multi-Service Setup)
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgres://user:pass@db:5432/myapp
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=myapp
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d myapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+```
+
+### .dockerignore
+
+```dockerignore
+node_modules
+.git
+.gitignore
+.env
+.env.*
+*.md
+coverage
+test
+tests
+docker-compose*.yml
+```
+
+## 2. CI/CD with GitHub Actions
+
+Automate testing, building, and deploying on every push:
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [main]  # Deploy on push to main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t my-api:${{ github.sha }} .
+          docker tag my-api:${{ github.sha }} my-api:latest
+
+      - name: Push to container registry
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker push my-api:${{ github.sha }}
+          docker push my-api:latest
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/my-api
+            docker-compose pull app
+            docker-compose up -d --no-deps app
+            docker image prune -f
+```
+
+## 3. Deployment Strategies
+
+### Strategy 1: Rolling Deploy (PM2)
+
+```bash
+# Zero-downtime reload — restarts workers one at a time
+pm2 reload ecosystem.config.js --env production
+```
+
+### Strategy 2: Blue-Green Deployment
+
+Maintain two identical environments — switch traffic between them:
+
+```
+Before:                          After:
+┌────────┐                       ┌────────┐
+│ Blue   │──► Traffic            │ Blue   │
+│ (v1)   │                       │ (v1)   │ (idle)
+└────────┘                       └────────┘
+┌────────┐                       ┌────────┐
+│ Green  │                       │ Green  │──► Traffic
+│ (v2)   │                       │ (v2)   │
+└────────┘                       └────────┘
+```
+
+```bash
+# Using Docker Compose
+# Deploy new version as "green"
+docker-compose -f docker-compose.green.yml up -d
+
+# Wait for health check
+curl --retry 10 --retry-delay 2 http://localhost:3001/health
+
+# Switch load balancer to green
+# (Update Nginx upstream or DNS)
+
+# Tear down blue
+docker-compose -f docker-compose.blue.yml down
+```
+
+### Strategy 3: Database Migrations
+
+Apply migrations **before** deploying new code:
+
+```bash
+#!/bin/bash
+# deploy-with-migrations.sh
+
+set -e
+
+echo "1. Running database migrations..."
+npm run migrate:up
+
+echo "2. Pulling new code..."
+git pull origin main
+
+echo "3. Installing production dependencies..."
+npm ci --production
+
+echo "4. Reloading application..."
+pm2 reload ecosystem.config.js --env production
+
+echo "5. Running post-deployment migrations (if any)..."
+npm run migrate:after
+
+echo "Deployment complete!"
+```
+
+### Migration Safety
+
+```js
+// Always make migrations backwards-compatible
+// ❌ BAD — renaming a column before code is updated
+// ALTER TABLE users RENAME COLUMN username TO login;
+
+// ✅ GOOD — add new column, deploy code, then remove old
+// Step 1: Add new column (deploy first)
+// ALTER TABLE users ADD COLUMN login VARCHAR(255);
+// Step 2: Update code to use 'login' instead of 'username'
+// Step 3: Drop old column
+// ALTER TABLE users DROP COLUMN username;
+```
+
+## 4. Environment-Specific Docker Compose
+
+```yaml
+# docker-compose.override.yml (development — extends base)
+services:
+  app:
+    build:
+      context: .
+      target: build  # Include dev dependencies
+    volumes:
+      - .:/app       # Live code reload
+      - /app/node_modules
+    command: node --watch dist/app.js
+    environment:
+      - NODE_ENV=development
+```
+
+```yaml
+# docker-compose.prod.yml (production)
+services:
+  app:
+    build:
+      context: .
+      target: production  # Minimal image
+    deploy:
+      replicas: 3        # Run 3 instances
+      resources:
+        limits:
+          cpus: '0.5'    # Limit to 0.5 CPU core
+          memory: 256M
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+```bash
+# Development
+docker compose up -d
+
+# Production
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+## 5. Health Checks & Readiness
+
+```js
+// app.js — health endpoint
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  };
+
+  try {
+    await db.query('SELECT 1');
+    health.database = 'connected';
+  } catch (err) {
+    health.database = 'disconnected';
+    health.status = 'degraded';
+  }
+
+  // Kubernetes / Docker uses this to know when to route traffic
+  const httpStatus = health.status === 'ok' ? 200 : 503;
+  res.status(httpStatus).json(health);
+});
+
+// Readiness endpoint (for Kubernetes)
+app.get('/ready', (req, res) => {
+  // Is this instance ready to serve traffic?
+  // Check: DB connected, cache warmed, etc.
+  res.status(ready ? 200 : 503).json({ ready });
+});
+```
+
+## 6. Automated Deployment Script
+
+```bash
+#!/bin/bash
+# deploy.sh — Full automation
+
+set -e
+
+APP_NAME="my-api"
+DEPLOY_DIR="/opt/$APP_NAME"
+BACKUP_DIR="/opt/backups/$APP_NAME"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+echo "=== Deploying $APP_NAME ==="
+
+# 1. Backup current version
+echo "Backing up current version..."
+mkdir -p "$BACKUP_DIR"
+cp -r "$DEPLOY_DIR" "$BACKUP_DIR/$TIMESTAMP"
+
+# 2. Pull latest code
+echo "Pulling latest code..."
+cd "$DEPLOY_DIR"
+git pull origin main
+
+# 3. Install dependencies
+echo "Installing dependencies..."
+npm ci --production
+
+# 4. Run migrations
+echo "Running migrations..."
+npm run migrate:up
+
+# 5. Build (if needed)
+if [ -f "package.json" ]; then
+  if grep -q "\"build\"" package.json; then
+    echo "Building..."
+    npm run build
+  fi
+fi
+
+# 6. Reload application
+echo "Reloading application..."
+pm2 reload ecosystem.config.js --env production
+
+# 7. Health check
+echo "Running health check..."
+for i in {1..30}; do
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/health)
+  if [ "$STATUS" = "200" ]; then
+    echo "Health check passed!"
+    break
+  fi
+  if [ "$i" = "30" ]; then
+    echo "Health check failed — rolling back..."
+    cp -r "$BACKUP_DIR/$TIMESTAMP"/* "$DEPLOY_DIR/"
+    pm2 reload ecosystem.config.js --env production
+    exit 1
+  fi
+  sleep 2
+done
+
+# 8. Cleanup (keep last 5 backups)
+echo "Cleaning up old backups..."
+ls -t "$BACKUP_DIR" | tail -n +6 | xargs -I {} rm -rf "$BACKUP_DIR/{}"
+
+echo "=== Deployment complete! ==="
+```
+
+## 7. Rollback Strategy
+
+When a deployment fails, roll back quickly:
+
+```bash
+# PM2 rollback
+pm2 deploy ecosystem.config.js production revert 1
+
+# Docker rollback
+docker compose down
+docker compose up -d  # Uses previous image
+
+# Git rollback
+git revert HEAD
+git push
+pm2 reload ecosystem.config.js --env production
+```
+
+## Deployment Checklist
+
+| Step | Check | Tool |
+|------|-------|------|
+| Tests pass | All unit + integration tests | `npm test` in CI |
+| Lint passes | No style violations | `npm run lint` |
+| Build succeeds | TypeScript/Webpack compiles | `npm run build` |
+| Dependencies | Vuln scan passes | `npm audit` |
+| Image built | Docker image created | `docker build` |
+| Migration ran | DB schema up to date | `npm run migrate:up` |
+| Health check | App responds on /health | `curl /health` |
+| Logs checked | No startup errors | `pm2 logs --lines 50` |
+| Monitoring | Metrics look normal | Dashboards |
+| Backups | Previous version saved | `cp -r` or DB dump |
+
+## Key Takeaways
+
+- **Docker** ensures consistent environments — write a multi-stage Dockerfile for minimal production images
+- **CI/CD** (GitHub Actions) automates the pipeline: test → build → deploy
+- **Zero-downtime deploys** — use PM2 reload (rolling restart) or blue-green (switch traffic)
+- **Run database migrations before deploying new code** — backward-compatible migrations prevent downtime
+- **Health checks** (`/health`, `/ready`) let orchestration tools (Docker, K8s) know when your app is ready
+- **Rollbacks** must be fast — have a strategy (PM2 revert, Docker tag rollback, git revert)
+- **Backup before deploying** — keep the last N versions for quick rollback
+- **Use multi-stage Docker builds** — the production stage should be minimal (no build tools, no dev dependencies)
+- **Environment-specific Docker Compose** — override files for dev vs prod without duplicating config
+- **Monitor after deployment** — health checks pass at startup, but metrics (error rate, latency) tell the real story

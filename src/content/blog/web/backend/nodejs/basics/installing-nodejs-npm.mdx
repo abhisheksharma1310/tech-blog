@@ -1,0 +1,142 @@
+---
+title: "Installing Node.js & npm"
+description: "Install Node.js and npm on Windows, macOS, and Linux — plus version management with nvm"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "npm", "Installation"]
+slug: "nodejs-installation"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Installation Options
+
+There are three ways to install Node.js:
+
+| Method | Best For | Notes |
+|--------|----------|-------|
+| Official installer | Beginners | Download from nodejs.org |
+| Package manager | System-wide install | `apt`, `brew`, `choco` |
+| Version manager (nvm) | Developers switching versions | Most flexible |
+
+## Method 1: Official Installer
+
+Go to [nodejs.org](https://nodejs.org) and download the **LTS** version (recommended for most users) or **Current** (latest features).
+
+```
+nodejs.org
+    │
+    ├── LTS (e.g., 22.x) — stable, production-ready
+    └── Current (e.g., 24.x) — latest V8, experimental APIs
+```
+
+After installation, verify:
+
+```bash
+node --version
+# v22.x.x
+
+npm --version
+# 10.x.x
+```
+
+## Method 2: Package Manager
+
+### macOS (Homebrew)
+
+```bash
+brew install node
+```
+
+### Linux (Ubuntu/Debian)
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+### Windows (winget)
+
+```bash
+winget install OpenJS.NodeJS.LTS
+```
+
+## Method 3: Version Manager (Recommended)
+
+**nvm** (Node Version Manager) lets you install and switch between multiple Node.js versions:
+
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+
+# Restart terminal, then:
+nvm install 22       # Install latest v22
+nvm install 20       # Install latest v20
+nvm use 22           # Switch to v22
+nvm default 22       # Set v22 as default
+```
+
+> **Pro tip:** With nvm, you can test your code against multiple Node.js versions in seconds.
+
+## What Gets Installed?
+
+When you install Node.js, you get three things:
+
+```
+/usr/local/bin/
+├── node          # The JavaScript runtime
+├── npm           # Package manager
+└── npx           # Run npm packages without installing
+```
+
+Verify all three:
+
+```bash
+node -e "console.log('Node works')"
+npm help
+npx --version
+```
+
+## Your First Node.js Project
+
+```bash
+# Create a project directory
+mkdir my-first-app
+cd my-first-app
+
+# Create a file
+echo 'console.log("Node.js is ready!");' > index.js
+
+# Run it
+node index.js
+```
+
+## Updating Node.js
+
+| Method | Command |
+|--------|---------|
+| nvm | `nvm install 22 --reinstall-packages-from=20` |
+| macOS Homebrew | `brew upgrade node` |
+| Linux (nodesource) | `sudo apt-get upgrade nodejs` |
+| Windows | Re-run the installer |
+
+## Uninstalling Node.js
+
+```bash
+# nvm
+nvm uninstall 22
+
+# macOS Homebrew
+brew uninstall node
+
+# Ubuntu/Debian
+sudo apt-get remove nodejs
+```
+
+## Key Takeaways
+
+- Use the **official installer** for a quick start
+- Use **nvm** if you switch between Node.js versions
+- `node --version` and `npm --version` verify the installation
+- Node.js ships with **node, npm, and npx** out of the box
+- Always prefer the **LTS version** for production

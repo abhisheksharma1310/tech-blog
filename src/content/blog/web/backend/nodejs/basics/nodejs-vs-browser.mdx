@@ -1,0 +1,171 @@
+---
+title: "Node.js vs Browser — Key Differences"
+description: "Understand how JavaScript behaves differently in Node.js vs the browser — global objects, APIs, and modules"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Basics"]
+tags: ["Node.js", "Basics", "Browser", "JavaScript"]
+slug: "nodejs-vs-browser"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Same Language, Different Environment
+
+JavaScript in the browser and Node.js share the **same core language** (ECMAScript), but their environments are completely different:
+
+```
+Browser Environment          Node.js Environment
+┌──────────────────┐         ┌──────────────────┐
+│ ECMAScript       │         │ ECMAScript       │
+│ DOM, BOM, fetch  │         │ fs, http, path   │
+│ window, document │         │ global, process  │
+│ user interaction │         │ server/CLI ops   │
+└──────────────────┘         └──────────────────┘
+```
+
+## Global Objects
+
+| Browser | Node.js | Purpose |
+|---------|---------|---------|
+| `window` | `global` | Global scope |
+| `document` | ❌ | DOM access |
+| `history` | ❌ | Browser history |
+| ❌ | `process` | System/process info |
+| ❌ | `require()` | Module loading |
+| `fetch()` | `fetch()` (v18+) | HTTP requests |
+| `localStorage` | ❌ | Client-side storage |
+
+## What Node.js Has That the Browser Doesn't
+
+### 1. File System Access
+
+```js
+const fs = require('fs');
+
+// Read a file
+const data = fs.readFileSync('/etc/hostname', 'utf8');
+console.log('Hostname:', data.trim());
+
+// Write a file
+fs.writeFileSync('log.txt', 'Server started at ' + new Date());
+```
+
+> **Security:** Browsers can never access your local file system — that would be a massive security risk.
+
+### 2. Process & System Info
+
+```js
+console.log('PID:', process.pid);
+console.log('Platform:', process.platform);
+console.log('Memory:', process.memoryUsage());
+console.log('Args:', process.argv);
+console.log('CWD:', process.cwd());
+```
+
+### 3. Environment Variables
+
+```js
+// Set: PORT=3000 node app.js
+const port = process.env.PORT || 3000;
+console.log('Listening on port', port);
+```
+
+### 4. HTTP Server (No Browser Required)
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.end('Hello from Node.js!');
+});
+
+server.listen(3000);
+// Visit http://localhost:3000
+```
+
+## What the Browser Has That Node.js Doesn't
+
+### 1. The DOM
+
+```js
+// ❌ This does NOT work in Node.js
+document.getElementById('app')   // ReferenceError
+document.querySelector('div')   // ReferenceError
+```
+
+### 2. Window & BOM APIs
+
+```js
+// ❌ Node.js errors
+alert('Hi')       // ReferenceError
+confirm('Sure?')  // ReferenceError
+localStorage      // ReferenceError
+```
+
+## Module Systems
+
+| Feature | Browser | Node.js |
+|---------|---------|---------|
+| Module system | ES Modules (`<script type="module">`) | CommonJS (`require`) + ES Modules |
+| Code loading | `<script src="...">` | `require()` / `import` |
+| Bundling needed? | Often yes (Webpack, Vite) | No — native module resolution |
+
+```js
+// Node.js — CommonJS
+const fs = require('fs');
+const path = require('path');
+
+// Node.js — ES Modules (with "type": "module")
+import fs from 'fs';
+import path from 'path';
+```
+
+## Event Loop Differences
+
+Both use the **same event loop** concept, but Node.js adds extra phases:
+
+```
+Browser Event Loop:        Node.js Event Loop:
+┌──────────────┐           ┌──────────────────┐
+│ Microtasks   │           │ timers           │
+│ (Promises)   │           │ pending callbacks│
+│ Render       │           │ idle, prepare    │
+│ Macro tasks  │           │ poll             │
+└──────────────┘           │ check (setImmediate)│
+                           │ close callbacks  │
+                           └──────────────────┘
+```
+
+Node.js phases include **timers** (`setTimeout`), **I/O callbacks**, **poll** (retrieve I/O events), and **setImmediate**.
+
+## Practical Test
+
+Run this file in both environments to see the difference:
+
+```js
+// env-test.js
+console.log('Global:', typeof globalThis);
+console.log('process:', typeof process);
+console.log('window:', typeof window);
+console.log('document:', typeof document);
+console.log('fs:', typeof require);
+```
+
+```bash
+# Node.js output:
+Global: object
+process: object
+window: undefined
+document: undefined
+fs: function
+```
+
+In the browser console, `window` exists but `process` and `require` don't.
+
+## Key Takeaways
+
+- Node.js and browser share **ECMAScript** but have **totally different APIs**
+- Node.js adds **fs, process, http, path, crypto** for server-side work
+- Browsers add **DOM, BOM, localStorage** for client-side interaction
+- Node.js uses **CommonJS by default** (`.require`); browsers use **ES Modules**
+- **The V8 engine is the same** — only the environment APIs differ

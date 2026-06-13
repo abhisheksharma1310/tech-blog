@@ -1,0 +1,469 @@
+---
+title: "Events Module"
+description: "Deep dive into Node.js events module — EventEmitter methods, patterns, memory management, and real-world usage"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Modules"]
+tags: ["Node.js", "Modules", "Events", "EventEmitter"]
+slug: "nodejs-events-module"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## The `events` Module
+
+The `events` module provides the `EventEmitter` class — the foundation of Node.js's event-driven architecture. Many core Node.js modules (`http.Server`, `fs.ReadStream`, `net.Socket`, `stream`) either extend or use `EventEmitter` internally.
+
+```js
+const EventEmitter = require('events');
+```
+
+## Creating an EventEmitter
+
+```js
+const EventEmitter = require('events');
+
+const emitter = new EventEmitter();
+
+// Register a listener (subscribe)
+emitter.on('greet', (name) => {
+  console.log(`Hello, ${name}!`);
+});
+
+// Emit the event (publish)
+emitter.emit('greet', 'Alice');
+// Hello, Alice!
+```
+
+When you call `emitter.emit('greet', 'Alice')`:
+1. Node.js looks up the `'greet'` event in its internal listener map
+2. It iterates through all registered listeners **synchronously** in registration order
+3. Each listener receives the arguments passed to `emit()`
+4. `emit()` returns `true` if there were listeners, `false` otherwise
+
+## Core Methods
+
+| Method | Description |
+|--------|-------------|
+| `emitter.on(event, listener)` | Register a listener (alias: `addListener`) |
+| `emitter.once(event, listener)` | Fire once then auto-remove |
+| `emitter.emit(event, ...args)` | Emit an event, returns `true`/`false` |
+| `emitter.off(event, listener)` | Remove a listener (alias: `removeListener`) |
+| `emitter.removeAllListeners([event])` | Remove all or one event's listeners |
+| `emitter.listeners(event)` | Get copy of listeners array |
+| `emitter.listenerCount(event)` | Count listeners for an event |
+| `emitter.eventNames()` | Array of events with listeners |
+| `emitter.prependListener(event, listener)` | Add listener to front of queue |
+| `emitter.prependOnceListener(event, listener)` | Add one-time listener to front |
+| `emitter.rawListeners(event)` | Get listeners (including wrappers) |
+| `emitter.getMaxListeners()` / `emitter.setMaxListeners(n)` | Get/set max listener limit |
+
+## Synchronous Nature of Events
+
+EventEmitter calls listeners **synchronously** by default:
+
+```js
+const EventEmitter = require('events');
+const emitter = new EventEmitter();
+
+emitter.on('data', () => console.log('Listener 1 (sync)'));
+emitter.on('data', () => console.log('Listener 2 (sync)'));
+
+console.log('Before emit');
+emitter.emit('data');
+console.log('After emit');
+
+// Output:
+// Before emit
+// Listener 1 (sync)
+// Listener 2 (sync)
+// After emit
+```
+
+`emit()` only returns after all listeners have executed. If you need async behaviour, the listeners themselves must be async:
+
+```js
+emitter.on('data', async (data) => {
+  await processData(data);  // Fire and forget — emitter won't wait
+});
+```
+
+> **Important:** The emitter does not `await` async listeners. If you need the emitter to wait, use a different pattern (e.g., return promises from listeners and collect them).
+
+## `once` — One-Time Listeners
+
+```js
+const EventEmitter = require('events');
+const emitter = new EventEmitter();
+
+let counter = 0;
+
+emitter.once('increment', () => {
+  counter++;
+  console.log('Counter:', counter);
+});
+
+emitter.emit('increment'); // Counter: 1
+emitter.emit('increment'); // (nothing — listener was removed)
+```
+
+**How `once` works internally:** Node.js wraps your listener in a function. The wrapper calls `removeListener(this.event, wrappedListener)` first, then calls your original listener. This ensures the listener is removed even if it throws.
+
+### Use Cases for `once`
+
+- **Initialisation events** — "ready", "connected", "open"
+- **One-shot operations** — first request, first error
+- **Promise wrapping** — convert event-based API to promise
+
+```js
+function connectToDatabase(config) {
+  return new Promise((resolve, reject) => {
+    const connection = createConnection(config);
+
+    connection.once('connected', () => resolve(connection));
+    connection.once('error', reject);
+
+    // Timeout after 10 seconds
+    setTimeout(() => reject(new Error('Database connection timeout')), 10000);
+  });
+}
+```
+
+## Passing Arguments and `this`
+
+```js
+const emitter = new EventEmitter();
+
+// With regular functions, `this` is the emitter
+emitter.on('data', function(data) {
+  console.log('Event name:', this.eventNames().includes('data')); // true
+  console.log('Listener count:', this.listenerCount('data'));     // 2
+  console.log('Data:', data);
+});
+
+// With arrow functions, `this` is lexical (NOT the emitter)
+emitter.on('data', (data) => {
+  // `this` is whatever `this` was when the listener was defined
+  // NOT the emitter
+});
+
+// Multiple arguments
+emitter.emit('user-updated', userId, { name: 'Alice' }, new Date());
+```
+
+## Error Handling
+
+The `'error'` event is **special** in EventEmitter. If it's emitted and there's no listener, Node.js throws the error and crashes the process:
+
+```js
+const emitter = new EventEmitter();
+
+// ❌ This crashes the process
+emitter.emit('error', new Error('Something went wrong'));
+// Error: Something went wrong
+//     at Object.<anonymous> (.../app.js:4:20)
+// (The process exits with a non-zero code)
+
+// ✅ Always handle 'error' events
+emitter.on('error', (err) => {
+  console.error('Caught:', err.message);
+  // Clean up, log, notify
+});
+
+// Now it's safe
+emitter.emit('error', new Error('Something went wrong'));
+// Caught: Something went wrong
+```
+
+> **Rule:** Always register an `error` listener on any long-lived EventEmitter. An unhandled `error` event is equivalent to a synchronous throw — the process terminates.
+
+## Memory Management
+
+### Memory Leak Prevention
+
+Node.js warns if you attach more than **10** listeners to a single event:
+
+```js
+const emitter = new EventEmitter();
+
+for (let i = 0; i < 11; i++) {
+  emitter.on('data', () => {});
+}
+// (node:12345) MaxListenersExceededWarning: Possible EventEmitter memory leak detected.
+// 11 data listeners added to [EventEmitter]. Use emitter.setMaxListeners() to increase limit
+```
+
+```js
+// Increase limit intentionally
+emitter.setMaxListeners(20);
+
+// Disable limit entirely (not recommended for production)
+emitter.setMaxListeners(0);
+```
+
+### The Real Memory Leak
+
+The warning catches a specific pattern: **accumulating listeners on a long-lived emitter from short-lived objects**.
+
+```js
+// ❌ Memory leak pattern
+class RequestHandler {
+  constructor(server) {
+    this.server = server;
+
+    // Every new RequestHandler adds another listener
+    // If RequestHandler is garbage collected, the listener still exists
+    // because the server holds a reference to the listener closure
+    server.on('request', (req) => {
+      this.handle(req);  // `this` is captured in the closure
+    });
+  }
+
+  handle(req) {
+    console.log('Handling:', req.url);
+  }
+}
+
+// Every request creates a new handler — listeners accumulate forever
+server.on('request', (req) => {
+  new RequestHandler(server);
+});
+```
+
+**Fix: Use a weak reference or remove listeners explicitly:**
+
+```js
+// ✅ Proper cleanup
+class RequestHandler {
+  constructor(server) {
+    this.server = server;
+    this.boundHandle = (req) => this.handle(req);
+    server.on('request', this.boundHandle);
+  }
+
+  handle(req) {
+    console.log('Handling:', req.url);
+  }
+
+  destroy() {
+    this.server.off('request', this.boundHandle);
+  }
+}
+```
+
+### `listenerCount` and `listeners`
+
+```js
+const emitter = new EventEmitter();
+emitter.on('a', () => {});
+emitter.on('a', () => {});
+emitter.on('b', () => {});
+
+console.log(emitter.listenerCount('a'));           // 2
+console.log(emitter.listeners('a').length);         // 2
+console.log(emitter.eventNames());                  // [ 'a', 'b' ]
+console.log(emitter.rawListeners('a')[0].name);     // '' (anonymous)
+```
+
+## Removing Listeners
+
+```js
+function onData(data) {
+  console.log('Received:', data);
+}
+
+const emitter = new EventEmitter();
+emitter.on('data', onData);
+
+// Later — stop listening
+emitter.off('data', onData);
+// or
+emitter.removeListener('data', onData);
+
+// Remove all listeners for a specific event
+emitter.removeAllListeners('data');
+
+// Remove all listeners for all events (use with extreme caution)
+emitter.removeAllListeners();
+
+// Check if any listeners remain
+console.log(emitter.eventNames().length); // 0
+```
+
+## Practical: Event Bus
+
+A central event bus for cross-module communication:
+
+```js
+// event-bus.js
+const EventEmitter = require('events');
+
+class EventBus extends EventEmitter {
+  constructor() {
+    super();
+    this.setMaxListeners(50);
+  }
+
+  // Publish with logging
+  publish(event, data) {
+    this.emit(event, data);
+  }
+
+  // Subscribe with optional filter
+  subscribe(event, handler, filterFn) {
+    if (filterFn) {
+      const wrappedHandler = (data) => {
+        if (filterFn(data)) handler(data);
+      };
+      this.on(event, wrappedHandler);
+    } else {
+      this.on(event, handler);
+    }
+  }
+}
+
+// Singleton bus — used across the application
+const bus = new EventBus();
+
+// Module A: publishes
+bus.publish('user.registered', { id: 1, email: 'alice@example.com' });
+
+// Module B: subscribes (only users with .com email)
+bus.subscribe('user.registered', (user) => {
+  console.log('Send welcome email to', user.email);
+}, (user) => user.email.endsWith('.com'));
+
+// Module C: subscribes
+bus.subscribe('user.registered', (user) => {
+  console.log('Add to analytics for user', user.id);
+});
+```
+
+## Practical: Database Connection Pool with Events
+
+```js
+const EventEmitter = require('events');
+const { EventEmitter } = require('events');
+
+class ConnectionPool extends EventEmitter {
+  constructor(size = 5) {
+    super();
+    this.pool = [];
+    this.waiting = [];
+    this.ready = false;
+
+    this.initialize(size);
+  }
+
+  async initialize(size) {
+    console.log('Initializing connection pool...');
+
+    for (let i = 0; i < size; i++) {
+      try {
+        const conn = await this.createConnection();
+        this.pool.push(conn);
+      } catch (err) {
+        this.emit('error', err);
+      }
+    }
+
+    this.ready = true;
+    this.emit('ready', this.pool.length);
+  }
+
+  async createConnection() {
+    // Simulate database connection
+    await new Promise(r => setTimeout(r, 100));
+    return { id: Math.random().toString(36).slice(2) };
+  }
+
+  async acquire() {
+    if (!this.ready) {
+      await new Promise(resolve => this.once('ready', resolve));
+    }
+
+    if (this.pool.length > 0) {
+      const conn = this.pool.pop();
+      this.emit('acquire', conn.id);
+      return conn;
+    }
+
+    // Queue waiting callers
+    return new Promise((resolve) => {
+      this.waiting.push(resolve);
+    });
+  }
+
+  release(conn) {
+    if (this.waiting.length > 0) {
+      const resolve = this.waiting.shift();
+      resolve(conn);
+    } else {
+      this.pool.push(conn);
+    }
+    this.emit('release', conn.id);
+  }
+
+  get size() { return this.pool.length; }
+  get pending() { return this.waiting.length; }
+}
+
+// Usage
+const pool = new ConnectionPool(3);
+
+pool.on('ready', (count) => console.log(`Pool ready with ${count} connections`));
+pool.on('acquire', (id) => console.log(`Acquired: ${id}`));
+pool.on('release', (id) => console.log(`Released: ${id}`));
+pool.on('error', (err) => console.error('Pool error:', err));
+
+async function query() {
+  const conn = await pool.acquire();
+  console.log(`Got connection ${conn.id}, pool has ${pool.size} left`);
+
+  // Simulate work
+  await new Promise(r => setTimeout(r, 500));
+
+  pool.release(conn);
+}
+
+// Run multiple concurrent queries
+await Promise.all([query(), query(), query(), query(), query()]);
+```
+
+## EventEmitter in Node.js Core
+
+Understanding EventEmitter helps you understand Node.js internals:
+
+```js
+const http = require('http');
+const fs = require('fs');
+const net = require('net');
+const stream = require('stream');
+
+// HTTP server — events: request, connection, close, error
+const server = http.createServer();
+server.on('request', (req, res) => { /* ... */ });
+server.on('close', () => { /* ... */ });
+
+// Readable stream — events: data, end, error, close
+const readStream = fs.createReadStream('file.txt');
+readStream.on('data', (chunk) => { /* ... */ });
+readStream.on('end', () => { /* ... */ });
+
+// TCP socket — events: connect, data, close, error, drain, timeout
+const socket = new net.Socket();
+socket.on('connect', () => { /* ... */ });
+socket.on('data', (data) => { /* ... */ });
+```
+
+## Key Takeaways
+
+- **`EventEmitter`** is the foundation of Node.js's event-driven architecture — understand it to understand Node.js
+- **`on()`** to subscribe, **`emit()`** to publish — listeners run **synchronously** in registration order
+- **`once()`** auto-removes after first fire — perfect for initialisation events and promise wrappers
+- **Always handle `error` events** — unhandled `error` events crash the process
+- **Listener memory leaks** happen when you add listeners to a long-lived emitter (server) from short-lived objects (request handlers) — remove them with `off()`
+- **`setMaxListeners()`** controls the warning threshold for many listeners
+- Use **`prependListener()`** to insert at the front of the listener queue
+- **`rawListeners()`** differs from `listeners()` for `once` — the latter strips the wrapper
+- The **`'error'` event behaviour** (crash if unhandled) is unique — no other event has this property
+- Node.js core modules (`http`, `fs`, `net`, `stream`) all use EventEmitter — these patterns apply everywhere

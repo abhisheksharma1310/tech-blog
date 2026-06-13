@@ -1020,6 +1020,258 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"web/backend/nodejs/advance/debugging-monitoring.mdx": {
+	id: "web/backend/nodejs/advance/debugging-monitoring.mdx";
+  slug: "nodejs-debugging-monitoring";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/advance/error-handling.mdx": {
+	id: "web/backend/nodejs/advance/error-handling.mdx";
+  slug: "nodejs-error-handling";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/advance/event-loop-async-programming.mdx": {
+	id: "web/backend/nodejs/advance/event-loop-async-programming.mdx";
+  slug: "nodejs-event-loop";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/advance/eventemitter-custom-events.mdx": {
+	id: "web/backend/nodejs/advance/eventemitter-custom-events.mdx";
+  slug: "nodejs-eventemitter";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/advance/performance-optimization.mdx": {
+	id: "web/backend/nodejs/advance/performance-optimization.mdx";
+  slug: "nodejs-performance-optimization";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/advance/process-management.mdx": {
+	id: "web/backend/nodejs/advance/process-management.mdx";
+  slug: "nodejs-process-management";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/console-io.mdx": {
+	id: "web/backend/nodejs/basics/console-io.mdx";
+  slug: "nodejs-console-io";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/history-and-evolution.mdx": {
+	id: "web/backend/nodejs/basics/history-and-evolution.mdx";
+  slug: "nodejs-history-evolution";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/installing-nodejs-npm.mdx": {
+	id: "web/backend/nodejs/basics/installing-nodejs-npm.mdx";
+  slug: "nodejs-installation";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/introduction-to-nodejs.mdx": {
+	id: "web/backend/nodejs/basics/introduction-to-nodejs.mdx";
+  slug: "nodejs-introduction";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/nodejs-vs-browser.mdx": {
+	id: "web/backend/nodejs/basics/nodejs-vs-browser.mdx";
+  slug: "nodejs-vs-browser";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/npm-fundamentals.mdx": {
+	id: "web/backend/nodejs/basics/npm-fundamentals.mdx";
+  slug: "nodejs-npm-fundamentals";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/package-json-essentials.mdx": {
+	id: "web/backend/nodejs/basics/package-json-essentials.mdx";
+  slug: "nodejs-package-json";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/running-nodejs-scripts.mdx": {
+	id: "web/backend/nodejs/basics/running-nodejs-scripts.mdx";
+  slug: "nodejs-running-scripts";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/basics/v8-engine-performance.mdx": {
+	id: "web/backend/nodejs/basics/v8-engine-performance.mdx";
+  slug: "nodejs-v8-engine";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/modules/events-module.mdx": {
+	id: "web/backend/nodejs/modules/events-module.mdx";
+  slug: "nodejs-events-module";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/modules/file-system.mdx": {
+	id: "web/backend/nodejs/modules/file-system.mdx";
+  slug: "nodejs-file-system";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/modules/http-module.mdx": {
+	id: "web/backend/nodejs/modules/http-module.mdx";
+  slug: "nodejs-http-module";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/modules/os-module.mdx": {
+	id: "web/backend/nodejs/modules/os-module.mdx";
+  slug: "nodejs-os-module";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/modules/path-module.mdx": {
+	id: "web/backend/nodejs/modules/path-module.mdx";
+  slug: "nodejs-path-module";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/production/deployment-strategies.mdx": {
+	id: "web/backend/nodejs/production/deployment-strategies.mdx";
+  slug: "nodejs-deployment-strategies";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/production/dev-vs-prod.mdx": {
+	id: "web/backend/nodejs/production/dev-vs-prod.mdx";
+  slug: "nodejs-dev-vs-prod";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/production/environment-variables-config.mdx": {
+	id: "web/backend/nodejs/production/environment-variables-config.mdx";
+  slug: "nodejs-environment-variables";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/production/hosting-options.mdx": {
+	id: "web/backend/nodejs/production/hosting-options.mdx";
+  slug: "nodejs-hosting-options";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/production/process-management-pm2.mdx": {
+	id: "web/backend/nodejs/production/process-management-pm2.mdx";
+  slug: "nodejs-process-management-pm2";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/production/scaling-nodejs.mdx": {
+	id: "web/backend/nodejs/production/scaling-nodejs.mdx";
+  slug: "nodejs-scaling";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/production/security-best-practices.mdx": {
+	id: "web/backend/nodejs/production/security-best-practices.mdx";
+  slug: "nodejs-security-best-practices";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/streams/custom-streams.mdx": {
+	id: "web/backend/nodejs/streams/custom-streams.mdx";
+  slug: "nodejs-custom-streams";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/streams/stream-powered-apis.mdx": {
+	id: "web/backend/nodejs/streams/stream-powered-apis.mdx";
+  slug: "nodejs-stream-apis";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/streams/types-of-streams.mdx": {
+	id: "web/backend/nodejs/streams/types-of-streams.mdx";
+  slug: "nodejs-stream-types";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/streams/using-pipe.mdx": {
+	id: "web/backend/nodejs/streams/using-pipe.mdx";
+  slug: "nodejs-stream-pipe";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/streams/what-are-streams.mdx": {
+	id: "web/backend/nodejs/streams/what-are-streams.mdx";
+  slug: "nodejs-streams-introduction";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/web-server/building-http-server.mdx": {
+	id: "web/backend/nodejs/web-server/building-http-server.mdx";
+  slug: "nodejs-http-server";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/web-server/http-methods-crud.mdx": {
+	id: "web/backend/nodejs/web-server/http-methods-crud.mdx";
+  slug: "nodejs-http-methods";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/web-server/making-http-requests.mdx": {
+	id: "web/backend/nodejs/web-server/making-http-requests.mdx";
+  slug: "nodejs-http-client";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/nodejs/web-server/parsing-request-body.mdx": {
+	id: "web/backend/nodejs/web-server/parsing-request-body.mdx";
+  slug: "nodejs-request-body";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "web/frontend/css/adding-css.mdx": {
 	id: "web/frontend/css/adding-css.mdx";
   slug: "css-adding-css";

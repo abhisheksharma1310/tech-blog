@@ -1,0 +1,538 @@
+---
+title: "Handling GET, POST, PUT, DELETE Requests"
+description: "Implement full CRUD with Node.js HTTP server — GET, POST, PUT, DELETE methods, status codes, and RESTful conventions"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Web Server"]
+tags: ["Node.js", "Web Server", "HTTP", "REST", "CRUD"]
+slug: "nodejs-http-methods"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## HTTP Methods and CRUD
+
+Each HTTP method maps to a specific operation in RESTful APIs:
+
+| Method | CRUD Operation | Idempotent? | Safe? | Body? |
+|--------|---------------|-------------|-------|-------|
+| GET | Read | Yes | Yes | No |
+| POST | Create | No | No | Yes |
+| PUT | Replace/Update | Yes | No | Yes |
+| PATCH | Partial Update | No | No | Yes |
+| DELETE | Delete | Yes | No | Optional |
+
+- **Idempotent**: Multiple identical requests produce the same result
+- **Safe**: Request does not modify server state
+
+## Building a Complete CRUD API
+
+Let's build a task management API with in-memory storage that demonstrates all HTTP methods properly:
+
+```js
+const http = require('http');
+
+// ── In-Memory Database ──
+let tasks = [
+  { id: 1, title: 'Learn Node.js', completed: false },
+  { id: 2, title: 'Build an API', completed: true },
+];
+
+let nextId = 3;
+
+// ── Router ──
+const routes = {
+  'GET /tasks': listTasks,
+  'GET /tasks/:id': getTask,
+  'POST /tasks': createTask,
+  'PUT /tasks/:id': updateTask,
+  'DELETE /tasks/:id': deleteTask,
+};
+
+// ── Server ──
+const server = http.createServer(async (req, res) => {
+  // Enable JSON helpers on res
+  res.json = (data, status = 200) => {
+    const json = JSON.stringify(data);
+    res.writeHead(status, {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(json),
+    });
+    res.end(json);
+  };
+
+  try {
+    await handleRequest(req, res);
+  } catch (err) {
+    console.error('Unhandled error:', err);
+    res.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+async function handleRequest(req, res) {
+  const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+  const pathname = parsedUrl.pathname;
+  const method = req.method;
+
+  // OPTIONS handler for CORS
+  if (method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+    res.end();
+    return;
+  }
+
+  // ── Route Matching (supports :id param) ──
+  for (const [routeKey, handler] of Object.entries(routes)) {
+    const [routeMethod, routePath] = routeKey.split(' ');
+    if (routeMethod !== method) continue;
+
+    const routeParts = routePath.split('/');
+    const pathParts = pathname.split('/');
+
+    if (routeParts.length !== pathParts.length) continue;
+
+    const params = {};
+    let match = true;
+
+    for (let i = 0; i < routeParts.length; i++) {
+      if (routeParts[i].startsWith(':')) {
+        params[routeParts[i].slice(1)] = pathParts[i];
+      } else if (routeParts[i] !== pathParts[i]) {
+        match = false;
+        break;
+      }
+    }
+
+    if (match) {
+      req.params = params;
+      req.query = parsedUrl.searchParams;
+      await handler(req, res);
+      return;
+    }
+  }
+
+  // No route matched
+  res.json({ error: `Route ${method} ${pathname} not found` }, 404);
+}
+```
+
+## GET — Listing Resources
+
+```js
+async function listTasks(req, res) {
+  // Support query filtering
+  const completed = req.query.get('completed');
+
+  let result = tasks;
+
+  if (completed === 'true') {
+    result = tasks.filter(t => t.completed);
+  } else if (completed === 'false') {
+    result = tasks.filter(t => !t.completed);
+  }
+
+  // Support search query
+  const search = req.query.get('q');
+  if (search) {
+    const term = search.toLowerCase();
+    result = result.filter(t => t.title.toLowerCase().includes(term));
+  }
+
+  // Support pagination
+  const page = parseInt(req.query.get('page')) || 1;
+  const limit = Math.min(parseInt(req.query.get('limit')) || 10, 100);
+  const start = (page - 1) * limit;
+  const paginated = result.slice(start, start + limit);
+
+  res.json({
+    data: paginated,
+    pagination: {
+      page,
+      limit,
+      total: result.length,
+      totalPages: Math.ceil(result.length / limit),
+    },
+  });
+}
+```
+
+**Testing:**
+
+```bash
+# List all tasks
+curl http://localhost:3000/tasks
+
+# Filter by completion
+curl http://localhost:3000/tasks?completed=false
+
+# Search
+curl http://localhost:3000/tasks?q=learn
+
+# Pagination
+curl "http://localhost:3000/tasks?page=1&limit=5"
+```
+
+## GET — Single Resource
+
+```js
+async function getTask(req, res) {
+  const id = parseInt(req.params.id);
+  const task = tasks.find(t => t.id === id);
+
+  if (!task) {
+    return res.json({ error: 'Task not found' }, 404);
+  }
+
+  res.json({ data: task });
+}
+```
+
+**Testing:**
+
+```bash
+curl http://localhost:3000/tasks/1
+# {"data":{"id":1,"title":"Learn Node.js","completed":false}}
+
+curl http://localhost:3000/tasks/999
+# {"error":"Task not found"}  (status 404)
+```
+
+### GET Status Codes
+
+| Scenario | Status Code |
+|----------|-------------|
+| Resource found | 200 OK |
+| Resource not found | 404 Not Found |
+| Invalid ID format | 400 Bad Request |
+
+## POST — Creating Resources
+
+```js
+async function createTask(req, res) {
+  // Read request body
+  const body = await readBody(req);
+
+  // Validate required fields
+  if (!body.title || typeof body.title !== 'string') {
+    return res.json({
+      error: 'Validation failed',
+      details: { title: 'Title is required and must be a string' },
+    }, 400);
+  }
+
+  // Trim and validate length
+  const title = body.title.trim();
+  if (title.length < 1 || title.length > 200) {
+    return res.json({
+      error: 'Validation failed',
+      details: { title: 'Title must be between 1 and 200 characters' },
+    }, 400);
+  }
+
+  // Create the resource
+  const task = {
+    id: nextId++,
+    title,
+    completed: body.completed === true, // Default to false
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  tasks.push(task);
+
+  // 201 Created — include Location header
+  res.writeHead(201, {
+    'Content-Type': 'application/json',
+    'Location': `/tasks/${task.id}`,
+  });
+  res.end(JSON.stringify({ data: task }));
+}
+```
+
+```js
+// Helper: read JSON body
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let totalSize = 0;
+    const maxSize = 1024 * 100; // 100KB limit
+
+    req.on('data', (chunk) => {
+      totalSize += chunk.length;
+      if (totalSize > maxSize) {
+        reject(new Error('Request body too large'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+
+    req.on('end', () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString());
+        resolve(body);
+      } catch (err) {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+
+    req.on('error', reject);
+  });
+}
+```
+
+**Testing:**
+
+```bash
+curl -X POST http://localhost:3000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Write tests", "completed": false}'
+# 201 Created
+# {"data":{"id":3,"title":"Write tests","completed":false,"createdAt":"...","updatedAt":"..."}}
+
+# Validation error
+curl -X POST http://localhost:3000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{}'
+# 400 Bad Request
+# {"error":"Validation failed","details":{"title":"Title is required..."}}
+```
+
+### POST Status Codes
+
+| Scenario | Status Code |
+|----------|-------------|
+| Resource created | 201 Created |
+| Invalid input | 400 Bad Request |
+| Missing required fields | 422 Unprocessable Entity |
+
+> **Why 201 and not 200?** 201 specifically means "Created". It tells the client that a new resource was created as a result of this request. Include a `Location` header pointing to the new resource.
+
+## PUT — Replacing/Updating Resources
+
+PUT is **idempotent** — calling it multiple times should have the same effect as calling it once. It typically replaces the entire resource:
+
+```js
+async function updateTask(req, res) {
+  const id = parseInt(req.params.id);
+  const body = await readBody(req);
+
+  const index = tasks.findIndex(t => t.id === id);
+
+  if (index === -1) {
+    return res.json({ error: 'Task not found' }, 404);
+  }
+
+  // PUT replaces the resource — require all fields
+  if (!body.title || typeof body.title !== 'string') {
+    return res.json({
+      error: 'Validation failed',
+      details: { title: 'Title is required' },
+    }, 400);
+  }
+
+  // Replace the entire resource
+  tasks[index] = {
+    id,
+    title: body.title.trim(),
+    completed: body.completed === true,
+    createdAt: tasks[index].createdAt, // Preserve original creation time
+    updatedAt: new Date().toISOString(),
+  };
+
+  res.json({ data: tasks[index] });
+}
+```
+
+**Testing:**
+
+```bash
+# Replace entire resource
+curl -X PUT http://localhost:3000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Master Node.js streams", "completed": true}'
+# 200 OK
+
+# If you omit a field, it's gone (PUT replaces everything)
+curl -X PUT http://localhost:3000/tasks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Just title"}'
+# completed defaults to false (it was replaced!)
+```
+
+> **PUT vs PATCH:** PUT replaces the **entire** resource. If you send only `{ "title": "new" }`, the `completed` field disappears. PATCH (partial update) only modifies the fields you send. Use PATCH for partial updates; use PUT for full replacements.
+
+### PUT Status Codes
+
+| Scenario | Status Code |
+|----------|-------------|
+| Resource updated | 200 OK |
+| Resource created (new ID) | 201 Created |
+| Resource not found | 404 Not Found |
+| Invalid data | 400 Bad Request |
+
+## DELETE — Removing Resources
+
+```js
+async function deleteTask(req, res) {
+  const id = parseInt(req.params.id);
+  const index = tasks.findIndex(t => t.id === id);
+
+  if (index === -1) {
+    return res.json({ error: 'Task not found' }, 404);
+  }
+
+  // Remove the resource
+  const deleted = tasks.splice(index, 1)[0];
+
+  // Log the deletion
+  console.log(`Deleted task ${id}: "${deleted.title}"`);
+
+  // 200 with body, or 204 No Content
+  res.json({ data: deleted, message: 'Task deleted' });
+}
+```
+
+```bash
+curl -X DELETE http://localhost:3000/tasks/1
+# {"data":{"id":1,"title":"Master Node.js streams","completed":true},"message":"Task deleted"}
+
+curl -X DELETE http://localhost:3000/tasks/999
+# {"error":"Task not found"}  (status 404)
+```
+
+### DELETE Status Codes
+
+| Scenario | Status Code |
+|----------|-------------|
+| Resource deleted | 200 OK (with body) or 204 No Content |
+| Resource not found | 404 Not Found |
+| Resource exists but can't be deleted | 409 Conflict |
+
+> **204 vs 200 for DELETE:** Some APIs return 204 No Content (no body) because the resource is gone and there's nothing to return. Others return 200 with a confirmation body. Both are valid — choose one and be consistent.
+
+## Handling Edge Cases
+
+### Method Not Allowed
+
+Return 405 when the route exists but the method is wrong:
+
+```js
+if (!match) {
+  // Check if the path exists with a different method
+  const allowedMethods = findAllowedMethods(pathname);
+
+  if (allowedMethods.length > 0) {
+    res.writeHead(405, { 'Allow': allowedMethods.join(', ') });
+    res.json({ error: `Method ${method} not allowed. Allowed: ${allowedMethods.join(', ')}` });
+  } else {
+    res.json({ error: 'Not found' }, 404);
+  }
+}
+
+function findAllowedMethods(pathname) {
+  const methods = [];
+  for (const key of Object.keys(routes)) {
+    const [routeMethod, routePath] = key.split(' ');
+    if (routePath === pathname) methods.push(routeMethod);
+  }
+  return methods;
+}
+```
+
+```bash
+curl -X DELETE http://localhost:3000/tasks
+# 405 Method Not Allowed
+# Allow: GET, POST
+```
+
+### Idempotency in Practice
+
+```js
+// DELETE is idempotent: deleting the same resource twice
+// First call: 200 OK
+DELETE /tasks/1  → 200
+
+// Second call: 404 (already gone) — still idempotent
+DELETE /tasks/1  → 404
+
+// The server state after both calls is the same
+
+// PUT is idempotent: same PUT multiple times
+PUT /tasks/1 { title: "Fixed", completed: true }
+// First: 200, title = "Fixed", completed = true
+// Second: 200, title = "Fixed", completed = true
+// Third: 200, title = "Fixed", completed = true
+// Result is identical every time
+```
+
+## Complete Server with All Methods
+
+```js
+const http = require('http');
+
+const server = http.createServer(async (req, res) => {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  // JSON helper
+  res.json = (data, status = 200) => {
+    const json = JSON.stringify(data);
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(json);
+  };
+
+  // Simple router
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const path = url.pathname;
+  const method = req.method;
+
+  try {
+    if (path === '/tasks') {
+      if (method === 'GET') return await listTasks(req, res);
+      if (method === 'POST') return await createTask(req, res);
+      // Method not allowed
+      return res.json({ error: 'Method not allowed' }, 405);
+    }
+
+    const match = path.match(/^\/tasks\/(\d+)$/);
+    if (match) {
+      req.params = { id: parseInt(match[1]) };
+      if (method === 'GET') return await getTask(req, res);
+      if (method === 'PUT') return await updateTask(req, res);
+      if (method === 'DELETE') return await deleteTask(req, res);
+      return res.json({ error: 'Method not allowed' }, 405);
+    }
+
+    res.json({ error: 'Not found' }, 404);
+  } catch (err) {
+    console.error('Error:', err.message);
+    res.json({ error: err.message }, 400);
+  }
+});
+
+server.listen(3000);
+```
+
+## Key Takeaways
+
+- **GET** — read resources (safe, idempotent). Never modify state. Support filtering, pagination.
+- **POST** — create resources (not idempotent). Return 201 Created with a Location header. Always validate input.
+- **PUT** — replace entire resources (idempotent). Require all fields. Missing fields = removed data.
+- **DELETE** — remove resources (idempotent). Return 200 or 204. Second call returns 404.
+- Always return proper **HTTP status codes** — 200, 201, 204, 400, 404, 405, 422, 500
+- Send **Location headers** on creation so clients know the new resource URL
+- **Validate input** — check types, lengths, required fields before processing
+- **Handle OPTIONS** for CORS preflight when serving browser clients
+- Return 405 Method Not Allowed with an `Allow` header when the method is wrong but the path exists

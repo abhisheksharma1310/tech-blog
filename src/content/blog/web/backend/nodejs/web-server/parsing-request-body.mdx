@@ -1,0 +1,532 @@
+---
+title: "Parsing Request Body Data"
+description: "Master HTTP request body parsing — JSON, URL-encoded, multipart/form-data, file uploads, streaming parsers, and validation"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Node.js", "Web Server"]
+tags: ["Node.js", "Web Server", "HTTP", "Body Parsing", "JSON"]
+slug: "nodejs-request-body"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## How Request Bodies Work
+
+An HTTP request body is a **Readable stream**. The data arrives in chunks over time. You must collect these chunks and assemble them before you can work with the data.
+
+```
+Client sends:                   Server receives:
+POST /api/users                 req.on('data') ──► chunk 1
+Content-Type: application/json  req.on('data') ──► chunk 2
+Content-Length: 42              req.on('data') ──► chunk 3
+                                req.on('end')  ──► assemble & parse
+{"name":"Alice","role":"admin"}
+```
+
+## Content-Type Determines the Parser
+
+The `Content-Type` header tells you how the body is encoded:
+
+| Content-Type | Format | Common Use |
+|-------------|--------|------------|
+| `application/json` | JSON | REST APIs |
+| `application/x-www-form-urlencoded` | `key=value&key2=value2` | HTML forms |
+| `multipart/form-data` | MIME parts with boundaries | File uploads |
+| `text/plain` | Raw text | Simple webhooks |
+| `application/octet-stream` | Binary | Raw file uploads |
+
+## 1. JSON Body Parsing
+
+The most common format for modern APIs:
+
+```js
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  if (req.method !== 'POST' || req.headers['content-type'] !== 'application/json') {
+    res.writeHead(400);
+    res.end('Expected JSON');
+    return;
+  }
+
+  let body = '';
+
+  req.on('data', (chunk) => {
+    body += chunk.toString();
+  });
+
+  req.on('end', () => {
+    try {
+      const data = JSON.parse(body);
+      console.log('Parsed body:', data);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ received: data }));
+    } catch (err) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    }
+  });
+});
+```
+
+### Reusable JSON Body Parser
+
+```js
+// body-parsers.js
+function parseJSON(req, maxSize = 1024 * 100) {
+  return new Promise((resolve, reject) => {
+    if (req.method === 'GET' || req.method === 'DELETE') {
+      resolve(null);
+      return;
+    }
+
+    const contentType = req.headers['content-type'] || '';
+    if (!contentType.includes('application/json')) {
+      reject(new Error('Expected Content-Type: application/json'));
+      return;
+    }
+
+    const chunks = [];
+    let totalSize = 0;
+
+    req.on('data', (chunk) => {
+      totalSize += chunk.length;
+      if (totalSize > maxSize) {
+        reject(new Error(`Body exceeds ${maxSize} byte limit`));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+
+    req.on('end', () => {
+      try {
+        const raw = Buffer.concat(chunks).toString();
+        if (!raw) {
+          resolve(null);
+          return;
+        }
+        resolve(JSON.parse(raw));
+      } catch (err) {
+        reject(new Error('Invalid JSON in request body'));
+      }
+    });
+
+    req.on('error', reject);
+  });
+}
+```
+
+### Why String Concatenation Is Suboptimal
+
+```js
+// ❌ BAD — toString on every chunk is wasteful
+let body = '';
+req.on('data', (chunk) => {
+  body += chunk.toString(); // Creates a new string + buffer conversion each time
+});
+
+// ✅ GOOD — buffer chunks, concat once
+const chunks = [];
+req.on('data', (chunk) => chunks.push(chunk));
+req.on('end', () => {
+  const body = Buffer.concat(chunks).toString();
+  // Single allocation, single conversion
+});
+```
+
+## 2. URL-Encoded Form Data
+
+HTML forms submit data as `application/x-www-form-urlencoded`:
+
+```js
+const http = require('http');
+const querystring = require('querystring');
+
+const server = http.createServer((req, res) => {
+  if (req.headers['content-type']?.includes('application/x-www-form-urlencoded')) {
+    let body = '';
+
+    req.on('data', chunk => body += chunk.toString());
+    req.on('end', () => {
+      const parsed = querystring.parse(body);
+      // parsed = { username: 'alice', password: 'secret123' }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ received: parsed }));
+    });
+  }
+});
+```
+
+**What querystring.parse produces:**
+
+```
+Input:  name=Alice&age=30&city=New+York
+Output: { name: 'Alice', age: '30', city: 'New York' }
+
+Input:  colors[]=red&colors[]=blue
+Output: { 'colors[]': ['red', 'blue'] }
+```
+
+> **Note:** `querystring.parse` doesn't handle nested objects or arrays in the intuitive way. For complex form data, use the `qs` package instead of the built-in `querystring`.
+
+## 3. Raw Text Body
+
+```js
+async function parseText(req, maxSize = 1024 * 1024) {
+  if (!req.headers['content-type']?.includes('text/plain')) {
+    throw new Error('Expected Content-Type: text/plain');
+  }
+
+  const chunks = [];
+  let totalSize = 0;
+
+  for await (const chunk of req) {
+    totalSize += chunk.length;
+    if (totalSize > maxSize) throw new Error('Body too large');
+    chunks.push(chunk);
+  }
+
+  return Buffer.concat(chunks).toString();
+}
+
+// Usage
+const text = await parseText(req);
+console.log('Received text:', text);
+```
+
+## 4. Multipart/Form-Data (File Uploads)
+
+`multipart/form-data` is the most complex format. Each part has its own headers and content, separated by a boundary string.
+
+```
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="username"
+
+Alice
+------WebKitFormBoundary
+Content-Disposition: form-data; name="avatar"; filename="photo.jpg"
+Content-Type: image/jpeg
+
+<binary data...>
+------WebKitFormBoundary--
+```
+
+### Manual Multipart Parsing (Educational)
+
+```js
+function parseBoundary(contentType) {
+  const match = contentType.match(/boundary=(.+)$/);
+  return match ? `--${match[1]}` : null;
+}
+
+function parseMultipart(req, maxFileSize = 10 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const boundary = parseBoundary(req.headers['content-type']);
+    if (!boundary) return reject(new Error('No boundary found'));
+
+    const buffer = [];
+
+    req.on('data', chunk => buffer.push(chunk));
+
+    req.on('end', () => {
+      const raw = Buffer.concat(buffer);
+      const parts = [];
+      const sections = raw.toString('latin1').split(boundary);
+
+      for (const section of sections) {
+        if (section === '--\r\n' || section === '\r\n' || section === '') continue;
+
+        const headerEnd = section.indexOf('\r\n\r\n');
+        if (headerEnd === -1) continue;
+
+        const headerBlock = section.slice(0, headerEnd);
+        let contentStart = headerEnd + 4;
+
+        // Extract disposition to get field name
+        const dispositionMatch = headerBlock.match(/Content-Disposition:\s*form-data;\s*name="([^"]+)"/);
+        if (!dispositionMatch) continue;
+
+        const name = dispositionMatch[1];
+        const filenameMatch = headerBlock.match(/filename="([^"]+)"/);
+        const filename = filenameMatch ? filenameMatch[1] : null;
+
+        // Content ends with \r\n before the next boundary
+        let content = section.slice(contentStart);
+        if (content.endsWith('\r\n')) content = content.slice(0, -2);
+
+        if (filename) {
+          parts.push({ name, filename, data: Buffer.from(content, 'latin1') });
+        } else {
+          parts.push({ name, value: content });
+        }
+      }
+
+      resolve(parts);
+    });
+  });
+}
+```
+
+### Using `busboy` (Production-Grade Multipart Parser)
+
+```bash
+npm install busboy
+```
+
+```js
+const http = require('http');
+const Busboy = require('busboy');
+
+const server = http.createServer((req, res) => {
+  if (req.method === 'POST' && req.headers['content-type']?.includes('multipart/form-data')) {
+    const busboy = Busboy({ headers: req.headers });
+    const fields = {};
+    const files = [];
+
+    // Handle text fields
+    busboy.on('field', (name, val) => {
+      fields[name] = val;
+    });
+
+    // Handle file uploads
+    busboy.on('file', (fieldname, file, info) => {
+      const { filename, encoding, mimeType } = info;
+      const chunks = [];
+
+      file.on('data', (data) => chunks.push(data));
+      file.on('limit', () => console.warn(`File ${filename} exceeded size limit`));
+
+      file.on('end', () => {
+        files.push({
+          fieldname,
+          filename,
+          mimeType,
+          data: Buffer.concat(chunks),
+          size: Buffer.concat(chunks).length,
+        });
+      });
+    });
+
+    busboy.on('finish', () => {
+      console.log('Fields:', fields);
+      console.log('Files:', files.map(f => ({ name: f.filename, size: f.size })));
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ fields, files: files.map(f => f.filename) }));
+    });
+
+    req.pipe(busboy);
+  }
+});
+```
+
+## 5. Streaming Body Parsing for Large Payloads
+
+For very large JSON payloads (hundreds of MB), never buffer the entire body. Use a streaming JSON parser:
+
+```bash
+npm install jsonparse
+```
+
+```js
+const http = require('http');
+const { parser } = require('jsonparse');
+
+const server = http.createServer((req, res) => {
+  if (req.method === 'POST' && req.headers['content-type'] === 'application/json') {
+    const p = new parser();
+
+    p.on('key', (key) => console.log('Key:', key));
+    p.on('value', (value) => {
+      if (typeof value === 'object' && value !== null) {
+        console.log('Object received:', JSON.stringify(value).slice(0, 100));
+      }
+    });
+
+    // Process chunks as they arrive — no buffering
+    req.on('data', (chunk) => {
+      p.parse(chunk);
+    });
+
+    req.on('end', () => {
+      res.writeHead(200);
+      res.end('Streaming parse complete');
+    });
+  }
+});
+```
+
+## Body Validation
+
+Always validate parsed bodies. Never trust client input:
+
+```js
+function validateTaskBody(body) {
+  const errors = {};
+
+  if (!body || typeof body !== 'object') {
+    return { valid: false, errors: { _error: 'Body must be a JSON object' } };
+  }
+
+  // title: required, string, 1-200 chars
+  if (!body.title || typeof body.title !== 'string') {
+    errors.title = 'Title is required and must be a string';
+  } else if (body.title.trim().length === 0) {
+    errors.title = 'Title cannot be empty';
+  } else if (body.title.length > 200) {
+    errors.title = 'Title must be 200 characters or less';
+  }
+
+  // completed: optional, boolean
+  if (body.completed !== undefined && typeof body.completed !== 'boolean') {
+    errors.completed = 'Completed must be a boolean';
+  }
+
+  // priority: optional, must be one of
+  const validPriorities = ['low', 'medium', 'high'];
+  if (body.priority && !validPriorities.includes(body.priority)) {
+    errors.priority = `Priority must be one of: ${validPriorities.join(', ')}`;
+  }
+
+  // Reject unknown fields
+  const allowed = ['title', 'completed', 'priority', 'dueDate'];
+  const extra = Object.keys(body).filter(k => !allowed.includes(k));
+  if (extra.length > 0) {
+    errors._unknown = `Unknown fields: ${extra.join(', ')}`;
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  };
+}
+
+// Usage in handler
+async function createTask(req, res) {
+  const body = await parseJSON(req);
+  const validation = validateTaskBody(body);
+
+  if (!validation.valid) {
+    return res.status(400).json({ error: 'Validation failed', details: validation.errors });
+  }
+
+  // Safe to use body.title, body.completed, etc.
+  const task = { title: body.title.trim(), completed: body.completed || false };
+  // ... save and respond
+}
+```
+
+## Body Size Limits
+
+Always enforce size limits to prevent memory exhaustion attacks:
+
+```js
+function createBodyParser(maxSize) {
+  return function parseBody(req) {
+    return new Promise((resolve, reject) => {
+      const chunks = [];
+      let totalSize = 0;
+
+      req.on('data', (chunk) => {
+        totalSize += chunk.length;
+        if (totalSize > maxSize) {
+          reject(new Error(`Request body exceeds ${maxSize} byte limit`));
+          req.destroy(); // Close the connection
+          return;
+        }
+        chunks.push(chunk);
+      });
+
+      req.on('end', () => {
+        const raw = Buffer.concat(chunks).toString();
+        resolve(raw);
+      });
+
+      req.on('error', reject);
+    });
+  };
+}
+
+// Different limits for different routes
+const parseSmallBody = createBodyParser(1024 * 10);       // 10KB for config
+const parseMediumBody = createBodyParser(1024 * 100);     // 100KB for normal requests
+const parseLargeBody = createBodyParser(1024 * 1024 * 5); // 5MB for file metadata
+
+app.post('/api/config', async (req, res) => {
+  const raw = await parseSmallBody(req);
+  // ...
+});
+```
+
+## Combining Parsers
+
+A universal parser that detects Content-Type:
+
+```js
+const querystring = require('querystring');
+
+async function parseBody(req, options = {}) {
+  const { maxSize = 1024 * 100 } = options;
+  const contentType = req.headers['content-type'] || '';
+
+  // Read raw body first
+  const chunks = [];
+  let totalSize = 0;
+
+  for await (const chunk of req) {
+    totalSize += chunk.length;
+    if (totalSize > maxSize) throw new Error('Body too large');
+    chunks.push(chunk);
+  }
+
+  const raw = Buffer.concat(chunks).toString();
+
+  if (!raw) return null;
+
+  if (contentType.includes('application/json')) {
+    return JSON.parse(raw);
+  }
+
+  if (contentType.includes('application/x-www-form-urlencoded')) {
+    return querystring.parse(raw);
+  }
+
+  if (contentType.includes('text/plain')) {
+    return raw;
+  }
+
+  // Binary or unknown — return Buffer
+  return Buffer.concat(chunks);
+}
+
+// Usage
+const server = http.createServer(async (req, res) => {
+  if (req.method === 'POST') {
+    try {
+      const data = await parseBody(req);
+      console.log('Parsed body:', data);
+      // data could be object (JSON/form), string (text), or Buffer (binary)
+    } catch (err) {
+      res.writeHead(400);
+      res.end(err.message);
+    }
+  }
+});
+```
+
+## Key Takeaways
+
+- **Request bodies are streams** — you must collect chunks manually with `req.on('data')` / `req.on('end')`
+- **Always buffer with arrays** (`chunks.push(chunk)`) and `Buffer.concat()` — not string concatenation
+- **Check `Content-Type`** to determine how to parse the body
+- **JSON** — most common for APIs — parse with `JSON.parse()`, catch syntax errors
+- **URL-encoded** — HTML forms — parse with `querystring.parse()` or the `qs` package
+- **Multipart** — file uploads — use `busboy` for production, don't write your own parser
+- **Always validate** parsed bodies — check types, required fields, string lengths, allowed values
+- **Always enforce size limits** — prevent memory exhaustion from large bodies
+- **`for await (const chunk of req)`** is a clean way to iterate over request chunks
+- For **very large JSON payloads**, use a streaming parser instead of buffering the entire body

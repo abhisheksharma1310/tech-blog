@@ -23,9 +23,9 @@ Each cookie has these attributes:
 | `domain` | Which domains can read the cookie | `.example.com` |
 | `path` | URL path scope | `/` |
 | `expires` / `max-age` | Expiration date | `Session` or specific date |
-| `secure` | Only send over HTTPS | — |
+| `secure` | Only send over HTTPS | - |
 | `samesite` | Cross-site request behavior | `Lax`, `Strict`, `None` |
-| `httponly` | Not accessible via JavaScript | — (server-set only) |
+| `httponly` | Not accessible via JavaScript | - (server-set only) |
 
 ## Reading Cookies
 
@@ -175,9 +175,9 @@ document.getElementById('util-del').onclick = function() {
 | `max-age` | Seconds | Cookie lifetime |
 | `path` | `/`, `/app` | URL path scope |
 | `domain` | `.example.com` | Allow subdomains |
-| `secure` | — | Only HTTPS |
+| `secure` | - | Only HTTPS |
 | `samesite` | `Strict`, `Lax`, `None` | CSRF protection |
-| `httponly` | — | Not accessible via JS |
+| `httponly` | - | Not accessible via JS |
 
 ## SameSite Explained
 
@@ -206,8 +206,8 @@ document.getElementById('util-del').onclick = function() {
 
 - `document.cookie` reads all cookies (except HttpOnly) as a string
 - Set cookies by assigning to `document.cookie` (appends, doesn't replace)
-- Cookies are **sent with every HTTP request** — affects performance
-- Max 4KB per cookie — use `localStorage` for larger data
+- Cookies are **sent with every HTTP request** - affects performance
+- Max 4KB per cookie - use `localStorage` for larger data
 - `SameSite=Lax` is the modern default for security
 - `HttpOnly` cookies (set by server) are **invisible to JavaScript**
 - Always `encodeURIComponent`/`decodeURIComponent` cookie values

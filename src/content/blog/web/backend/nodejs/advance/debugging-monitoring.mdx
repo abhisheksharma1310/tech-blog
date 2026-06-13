@@ -11,7 +11,7 @@ order: 6
 
 ## Debugging with the Built-In Inspector
 
-Node.js ships with the **Chrome DevTools protocol built in**. No extra tools, no plugins — just Node.js and a browser.
+Node.js ships with the **Chrome DevTools protocol built in**. No extra tools, no plugins - just Node.js and a browser.
 
 ### How the Inspector Works
 
@@ -117,7 +117,7 @@ Profiling identifies **which functions consume the most CPU time**. Without a pr
 
 ### Using `--cpu-prof`
 
-Node.js can generate a CPU profile file directly — no Chrome needed:
+Node.js can generate a CPU profile file directly - no Chrome needed:
 
 ```js
 // cpu-heavy.js
@@ -149,11 +149,11 @@ node --cpu-prof --cpu-prof-dir=./profiles cpu-heavy.js
 
 The `.cpuprofile` file is JSON. When you load it in Chrome DevTools:
 
-- **Flame Chart** — shows call stack over time. Wider bars = more CPU time
-- **Heavy (Bottom Up)** — sorted by total time, from most expensive to least
-- **Tree (Top Down)** — shows call hierarchy starting from the root
+- **Flame Chart** - shows call stack over time. Wider bars = more CPU time
+- **Heavy (Bottom Up)** - sorted by total time, from most expensive to least
+- **Tree (Top Down)** - shows call hierarchy starting from the root
 
-Look for functions with high **self time** — time spent inside the function excluding its children. These are your true bottlenecks.
+Look for functions with high **self time** - time spent inside the function excluding its children. These are your true bottlenecks.
 
 ### Using Clinic.js
 
@@ -169,12 +169,12 @@ clinic doctor -- node app.js
 
 # More detailed view
 clinic flame -- node app.js
-# Interactive flamegraph — click any function to zoom
+# Interactive flamegraph - click any function to zoom
 ```
 
 ## Memory Profiling
 
-Memory leaks are insidious — they degrade performance slowly until the process runs out of memory.
+Memory leaks are insidious - they degrade performance slowly until the process runs out of memory.
 
 ### Detecting a Memory Leak
 
@@ -185,7 +185,7 @@ const leaks = [];
 function createLeak() {
   // Each call allocates an array and keeps a reference
   const largeArray = new Array(10000).fill('memory leak data');
-  leaks.push(largeArray); // Never released — growth forever
+  leaks.push(largeArray); // Never released - growth forever
 }
 
 setInterval(createLeak, 100);
@@ -209,7 +209,7 @@ What to look for:
 - **Detached DOM nodes** (not relevant for Node.js)
 - **Closures** holding large arrays
 - **Event listeners** that were never removed
-- **Caches without eviction** — grow unbounded
+- **Caches without eviction** - grow unbounded
 
 ### Programmatic Memory Monitoring
 
@@ -302,7 +302,7 @@ Output:
 
 ### 2. Using `pino` (Production-Ready)
 
-Pino is the fastest Node.js logger — it produces JSON with minimal overhead:
+Pino is the fastest Node.js logger - it produces JSON with minimal overhead:
 
 ```bash
 npm install pino
@@ -320,12 +320,12 @@ const logger = pino({
     : undefined,
 });
 
-// Usage — first argument is structured metadata, second is message
+// Usage - first argument is structured metadata, second is message
 logger.info({ port: 3000 }, 'Server listening');
 logger.error({ err: new Error('Connection timeout'), url: '/api/data' }, 'Request failed');
 logger.warn({ diskUsage: '85%' }, 'Disk space running low');
 
-// Pino handles Error objects correctly — includes stack trace
+// Pino handles Error objects correctly - includes stack trace
 logger.error({ err: new Error('DB crash'), db: 'primary' }, 'Database failure');
 ```
 
@@ -393,7 +393,7 @@ app.get('/health', async (req, res) => {
   } catch (err) {
     health.checks.database = false;
     health.status = 'degraded';
-    // Don't crash — load balancer can route elsewhere
+    // Don't crash - load balancer can route elsewhere
   }
 
   // Fail if memory exceeds 500MB
@@ -403,7 +403,7 @@ app.get('/health', async (req, res) => {
   health.timestamp = Date.now();
   health.uptime = process.uptime();
 
-  // Return 503 if degraded — orchestrator will restart
+  // Return 503 if degraded - orchestrator will restart
   const httpStatus = health.status === 'ok' ? 200 : 503;
   res.status(httpStatus).json(health);
 });
@@ -440,7 +440,7 @@ function shutdown(signal) {
 
   // Stop accepting new connections immediately
   server.close(() => {
-    console.log('HTTP server closed — no more connections accepted');
+    console.log('HTTP server closed - no more connections accepted');
 
     // Close database connection
     db.close(() => {
@@ -449,10 +449,10 @@ function shutdown(signal) {
     });
   });
 
-  // Force exit after 10 seconds — don't block forever
+  // Force exit after 10 seconds - don't block forever
   setTimeout(() => {
     console.error('Forced shutdown after 10s timeout');
-    process.exit(1); // Non-zero exit — orchestrator will handle
+    process.exit(1); // Non-zero exit - orchestrator will handle
   }, 10000);
 }
 
@@ -519,9 +519,9 @@ pm2 dump                  # Save process list for resurrection
 - The **`debugger`** statement inserts breakpoints directly in your code
 - Use **`node --cpu-prof`** or **Clinic.js** to find CPU bottlenecks without Chrome
 - Take **heap snapshots** in Chrome DevTools and compare them to detect memory leaks
-- **Structured JSON logging** (Pino) is essential for production — raw text logs don't parse
+- **Structured JSON logging** (Pino) is essential for production - raw text logs don't parse
 - Expose a **`/health` endpoint** with database and memory checks for orchestration
 - **Graceful shutdown** (`SIGTERM` → close server → close DB → exit) prevents dropped connections
-- Always log to **stdout/stderr** — let Docker/systemd handle log routing
+- Always log to **stdout/stderr** - let Docker/systemd handle log routing
 - Use **`pino-http`** to automatically log every request with timing
-- Set up **CPU profiling** and **heap snapshots** before you need them — you can't attach a debugger after a crash
+- Set up **CPU profiling** and **heap snapshots** before you need them - you can't attach a debugger after a crash

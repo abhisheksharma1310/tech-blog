@@ -11,19 +11,19 @@ order: 2
 
 # Head Element in HTML
 
-The `<head>` element is a container for **metadata** — data about the HTML document that is not displayed on the page. It sits between the `<html>` opening tag and the `<body>` element. Despite being invisible, the `<head>` is crucial for SEO, styling, behaviour, and browser compatibility.
+The `<head>` element is a container for **metadata** - data about the HTML document that is not displayed on the page. It sits between the `<html>` opening tag and the `<body>` element. Despite being invisible, the `<head>` is crucial for SEO, styling, behaviour, and browser compatibility.
 
 ## What goes inside the head element?
 
 The `<head>` can contain these elements:
 
-- `<title>` — page title (required)
-- `<meta>` — metadata like character encoding, description, viewport settings
-- `<link>` — external resources like CSS files, favicons
-- `<style>` — internal CSS rules
-- `<script>` — JavaScript (can also go in `<body>`)
-- `<noscript>` — content for browsers with JavaScript disabled
-- `<base>` — base URL for relative links
+- `<title>` - page title (required)
+- `<meta>` - metadata like character encoding, description, viewport settings
+- `<link>` - external resources like CSS files, favicons
+- `<style>` - internal CSS rules
+- `<script>` - JavaScript (can also go in `<body>`)
+- `<noscript>` - content for browsers with JavaScript disabled
+- `<base>` - base URL for relative links
 
 Example of a complete `<head>`:
 
@@ -65,7 +65,7 @@ The `<title>` element sets the page title shown in the browser tab. It is **requ
 The `<meta>` element provides structured metadata about the page. It is a **void element** (self-closing). Common uses:
 
 ```html
-<!-- Character encoding — must be in first 1024 bytes -->
+<!-- Character encoding - must be in first 1024 bytes -->
 <meta charset="UTF-8">
 
 <!-- Viewport settings for responsive design -->
@@ -192,7 +192,7 @@ With `<base href="https://example.com/folder/">`, a relative link like `<a href=
 
 | Tag | Attribute | Values | Description |
 |---|---|---|---|
-| `<title>` | — | Text | Page title shown in browser tab |
+| `<title>` | - | Text | Page title shown in browser tab |
 | `<meta>` | `charset` | `UTF-8`, `ISO-8859-1` | Character encoding |
 | `<meta>` | `name` | `description`, `viewport`, `author`, `keywords`, `robots` | Metadata type |
 | `<meta>` | `content` | varies | Value paired with name or property |
@@ -205,7 +205,7 @@ With `<base href="https://example.com/folder/">`, a relative link like `<a href=
 | `<link>` | `crossorigin` | `anonymous`, `use-credentials` | CORS setting |
 | `<link>` | `as` | `font`, `style`, `script`, `image` | Resource type for preload |
 | `<link>` | `sizes` | `16x16`, `32x32`, `any` | Icon dimensions |
-| `<style>` | — | CSS rules | Embedded CSS |
+| `<style>` | - | CSS rules | Embedded CSS |
 | `<style>` | `type` | `text/css` (default) | Style language |
 | `<style>` | `media` | `screen`, `print`, `all` | Media condition |
 | `<script>` | `src` | URL | External script location |
@@ -213,6 +213,6 @@ With `<base href="https://example.com/folder/">`, a relative link like `<a href=
 | `<script>` | `async` | (boolean) | Loads and executes asynchronously |
 | `<script>` | `type` | `text/javascript`, `module` | Script language / module |
 | `<script>` | `integrity` | hash | Subresource integrity (SRI) |
-| `<noscript>` | — | HTML | Content shown when JS disabled |
+| `<noscript>` | - | HTML | Content shown when JS disabled |
 | `<base>` | `href` | URL | Base URL for relative links |
 | `<base>` | `target` | `_self`, `_blank`, `_parent`, `_top` | Default link target |

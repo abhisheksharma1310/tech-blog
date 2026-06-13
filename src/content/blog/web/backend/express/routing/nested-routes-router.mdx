@@ -1,0 +1,364 @@
+---
+title: "Nested Routes & Modular Routers (express.Router)"
+description: "Organize your Express app with modular routers, nested routes, and route grouping"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Routing"]
+tags: ["Express", "Router", "Modular", "Nested Routes", "express.Router"]
+slug: "express-nested-routes-router"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## The Problem: Monolithic Route Files
+
+As your app grows, putting all routes in `index.js` becomes unmanageable:
+
+```javascript
+// ❌ This gets out of hand fast
+app.get('/api/users', ...);
+app.post('/api/users', ...);
+app.get('/api/users/:id', ...);
+app.put('/api/users/:id', ...);
+app.delete('/api/users/:id', ...);
+app.get('/api/posts', ...);
+app.post('/api/posts', ...);
+app.get('/api/posts/:id', ...);
+app.get('/api/posts/:id/comments', ...);
+app.post('/api/posts/:id/comments', ...);
+// ... 50 more routes
+```
+
+## express.Router to the Rescue
+
+`express.Router()` creates a **mini Express application** that can have its own middleware and routes. You mount it on the main app like middleware.
+
+```
+app.js                      routes/
+│                           ├── users.js
+│ app.use('/api/users', ───│   router.get('/')       → GET /api/users
+│   usersRouter)            │   router.get('/:id')    → GET /api/users/:id
+│                           │   router.post('/')      → POST /api/users
+│                           │   router.put('/:id')    → PUT /api/users/:id
+│                           │   router.delete('/:id')  → DELETE /api/users/:id
+│                           │
+│ app.use('/api/posts', ───│   router.get('/')       → GET /api/posts
+│   postsRouter)            │   router.post('/')      → POST /api/posts
+│                           │   router.get('/:id')    → GET /api/posts/:id
+│                           └── router.get('/:id/comments', ...)
+```
+
+## Creating a Router
+
+**routes/users.js:**
+```javascript
+const express = require('express');
+const router = express.Router();
+
+// In-memory data
+let users = [
+  { id: 1, name: 'Alice', email: 'alice@example.com' },
+  { id: 2, name: 'Bob', email: 'bob@example.com' }
+];
+let nextId = 3;
+
+// All routes here are relative to the mount point
+router.get('/', (req, res) => {
+  res.json(users);
+});
+
+router.get('/:id', (req, res) => {
+  const user = users.find(u => u.id === parseInt(req.params.id));
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json(user);
+});
+
+router.post('/', (req, res) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Name and email required' });
+  }
+  const user = { id: nextId++, name, email };
+  users.push(user);
+  res.status(201).json(user);
+});
+
+router.put('/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = users.findIndex(u => u.id === id);
+  if (index === -1) return res.status(404).json({ error: 'Not found' });
+  users[index] = { id, ...req.body };
+  res.json(users[index]);
+});
+
+router.delete('/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = users.findIndex(u => u.id === id);
+  if (index === -1) return res.status(404).json({ error: 'Not found' });
+  users.splice(index, 1);
+  res.status(204).send();
+});
+
+module.exports = router;
+```
+
+## Mounting the Router
+
+**index.js:**
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+// Mount routers
+app.use('/api/users', require('./routes/users'));
+app.use('/api/posts', require('./routes/posts'));
+
+app.listen(3000);
+```
+
+Now routes defined as `/` in the router become `/api/users/` in the app.
+
+## Router-Level Middleware
+
+Routers can have their own middleware that only applies to their routes:
+
+**routes/users.js:**
+```javascript
+const express = require('express');
+const router = express.Router();
+
+// Logger specific to user routes
+router.use((req, res, next) => {
+  console.log(`[Users API] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// Auth check for all user routes
+router.use((req, res, next) => {
+  if (!req.headers['authorization']) {
+    return res.status(401).json({ error: 'Auth required' });
+  }
+  next();
+});
+
+router.get('/', (req, res) => {
+  res.json(users);
+});
+// ... more user routes
+```
+
+## Nested Routers
+
+Routers can be nested inside other routers for deep hierarchies:
+
+**routes/posts.js:**
+```javascript
+const express = require('express');
+const router = express.Router();
+
+const commentsRouter = require('./comments');
+
+// Post routes
+router.get('/', (req, res) => { /* ... */ });
+router.get('/:id', (req, res) => { /* ... */ });
+router.post('/', (req, res) => { /* ... */ });
+
+// Mount comments router under posts
+router.use('/:postId/comments', commentsRouter);
+
+module.exports = router;
+```
+
+**routes/comments.js:**
+```javascript
+const express = require('express');
+const router = express.Router({ mergeParams: true });
+//              ⬆️ This is crucial! ⬆️
+
+// Now we can access :postId from the parent router
+router.get('/', (req, res) => {
+  // req.params.postId comes from the parent route
+  const postId = req.params.postId;
+  const postComments = comments.filter(c => c.postId === parseInt(postId));
+  res.json(postComments);
+});
+
+router.post('/', (req, res) => {
+  const postId = req.params.postId;
+  const comment = {
+    id: nextCommentId++,
+    postId: parseInt(postId),
+    text: req.body.text
+  };
+  comments.push(comment);
+  res.status(201).json(comment);
+});
+
+module.exports = router;
+```
+
+The `{ mergeParams: true }` option is required for nested routers to access parameters from parent routes.
+
+## Complete Project Structure
+
+```
+project/
+├── routes/
+│   ├── index.js           # Main router that aggregates all routes
+│   ├── users.js           # /api/users
+│   ├── posts.js           # /api/posts
+│   ├── comments.js        # /api/posts/:postId/comments
+│   ├── auth.js            # /api/auth
+│   └── admin.js           # /api/admin
+├── middleware/
+│   ├── auth.js            # Auth middleware
+│   └── validate.js        # Validation middleware
+├── models/
+│   ├── User.js
+│   └── Post.js
+├── index.js               # Entry point
+└── package.json
+```
+
+## Creating a Routes Index
+
+**routes/index.js** - aggregates and mounts all sub-routers:
+
+```javascript
+const express = require('express');
+const router = express.Router();
+
+// Mount all route modules
+router.use('/users', require('./users'));
+router.use('/posts', require('./posts'));
+router.use('/auth', require('./auth'));
+router.use('/admin', require('./admin'));
+
+// Health check
+router.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+module.exports = router;
+```
+
+**index.js** - only one mount point:
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+// Single mount point for all API routes
+app.use('/api', require('./routes'));
+
+app.listen(3000);
+```
+
+## Scoped Middleware per Router
+
+Each router can have its own authentication and validation middleware:
+
+**routes/admin.js:**
+```javascript
+const express = require('express');
+const router = express.Router();
+
+const { requireAdmin } = require('../middleware/auth');
+
+// Every admin route requires admin privileges
+router.use(requireAdmin);
+
+router.get('/users', (req, res) => {
+  // Only admins can access this
+  res.json(allUsersWithSensitiveData);
+});
+
+router.delete('/users/:id', (req, res) => {
+  // Admin-only delete
+  users = users.filter(u => u.id !== parseInt(req.params.id));
+  res.status(204).send();
+});
+
+module.exports = router;
+```
+
+## Router Prefix Aliasing
+
+You can mount the same router under multiple paths:
+
+```javascript
+const apiV1 = require('./routes/v1');
+const apiV2 = require('./routes/v2');
+
+app.use('/api/v1', apiV1);
+app.use('/api/v2', apiV2);
+// Or mount the same router under two prefixes:
+const usersRouter = require('./routes/users');
+app.use('/api/users', usersRouter);
+app.use('/api/admin/users', usersRouter);
+```
+
+## Error Handling in Routers
+
+Each router can have its own error handler:
+
+```javascript
+router.use((err, req, res, next) => {
+  console.error(`[Users Router Error] ${err.message}`);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error'
+  });
+});
+```
+
+Or define a global error handler that catches errors from all routers.
+
+## Route Listing Pattern
+
+Group routes in a clean, readable structure:
+
+```javascript
+// routes/users.js
+router.route('/')
+  .get(listUsers)
+  .post(createUser);
+
+router.route('/:id')
+  .get(getUser)
+  .put(updateUser)
+  .patch(partialUpdateUser)
+  .delete(deleteUser);
+```
+
+Then define handler functions separately:
+
+```javascript
+async function listUsers(req, res) {
+  const users = await User.find();
+  res.json(users);
+}
+
+async function createUser(req, res) {
+  const user = await User.create(req.body);
+  res.status(201).json(user);
+}
+
+async function getUser(req, res) {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Not found' });
+  res.json(user);
+}
+// ... etc
+```
+
+## Key Takeaways
+
+- `express.Router()` creates **modular, mountable** route handlers
+- Routers can have **their own middleware** scoped to their routes
+- Use `{ mergeParams: true }` to access **parent route params** in nested routers
+- Organize routes by **resource** (users, posts, comments) into separate files
+- Mount routers on the app or on other routers with `app.use()` / `router.use()`
+- Single Responsibility: each router file handles one resource

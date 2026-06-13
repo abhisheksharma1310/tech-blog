@@ -13,7 +13,7 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
 
 # Fingerprint Sensor (R305 / AS608)
 
-The R305 (and its variants ZFM-20, AS608, GT-511C3) is an optical fingerprint module with an onboard DSP that handles fingerprint enrollment, image capture, feature extraction, and matching — no complex image processing on the host microcontroller is needed. Communication is via UART (serial) at 57600 baud (default). The module stores up to 300–1000 fingerprints in its onboard flash memory and returns a confidence score for each match. It is widely used for biometric access control, door locks, and attendance systems.
+The R305 (and its variants ZFM-20, AS608, GT-511C3) is an optical fingerprint module with an onboard DSP that handles fingerprint enrollment, image capture, feature extraction, and matching - no complex image processing on the host microcontroller is needed. Communication is via UART (serial) at 57600 baud (default). The module stores up to 300–1000 fingerprints in its onboard flash memory and returns a confidence score for each match. It is widely used for biometric access control, door locks, and attendance systems.
 
 <CloudinaryImage 
    publicId="R305-fingerprint-sensor_krpjxw" 
@@ -39,7 +39,7 @@ VCC (red)       -->    5V
 GND (black)     -->    GND
 TX (white)      -->    Digital Pin 2 (Arduino RX via SoftwareSerial)
 RX (green)      -->    Digital Pin 3 (Arduino TX via SoftwareSerial)
-Touch (blue)    -->    Digital Pin 4 (optional — wakes the sensor)
+Touch (blue)    -->    Digital Pin 4 (optional - wakes the sensor)
 ```
 
 On an Arduino Mega, use Serial1 (pins 19 RX1 / 18 TX1) instead of SoftwareSerial:
@@ -51,7 +51,7 @@ Mega Pin 18 (TX1)  -->  Sensor RX
 
 ### Voltage level
 
-The sensor operates at 3.3V logic but includes an onboard regulator that accepts 5V supply. The UART TX of the sensor outputs 3.3V — this is safe for the Arduino's 5V RX pin (ATmega328P treats ≥ 3V as HIGH). The Arduino's 5V TX signal goes to the sensor's RX, which is also 5V tolerant. **No level shifting is needed.**
+The sensor operates at 3.3V logic but includes an onboard regulator that accepts 5V supply. The UART TX of the sensor outputs 3.3V - this is safe for the Arduino's 5V RX pin (ATmega328P treats ≥ 3V as HIGH). The Arduino's 5V TX signal goes to the sensor's RX, which is also 5V tolerant. **No level shifting is needed.**
 
 ## Pin Map
 
@@ -100,7 +100,7 @@ void setup()
   else
   {
     Serial.println("Fingerprint sensor NOT found. Check wiring.");
-    Serial.println("Entering loop — check Serial Monitor for errors.");
+    Serial.println("Entering loop - check Serial Monitor for errors.");
     while (1) { delay(1); }
   }
 
@@ -113,8 +113,8 @@ void setup()
 
   Serial.println();
   Serial.println("Commands:");
-  Serial.println("  E — Enroll a new fingerprint (ID #1)");
-  Serial.println("  S — Scan finger to match");
+  Serial.println("  E - Enroll a new fingerprint (ID #1)");
+  Serial.println("  S - Scan finger to match");
   Serial.println();
 }
 
@@ -252,21 +252,21 @@ uint8_t scanFingerprint()
 
 ### Code breakdown
 
-- `Adafruit_Fingerprint finger(&serial)` — creates a fingerprint object on the given serial port (SoftwareSerial or hardware UART).
-- `finger.begin(baud)` — sets the serial baud rate (default 57600).
-- `finger.verifyPassword()` — sends the default password (0x00000000) to authenticate with the sensor. Returns `false` if the sensor is not responding.
-- `finger.getParameters()` — reads and populates `finger.capacity` (max stored fingerprints) and `finger.security_level` (1–5, higher = stricter matching).
-- `finger.getImage()` — captures a fingerprint from the optical sensor. Returns `FINGERPRINT_OK` (0x00) on success, `FINGERPRINT_NOFINGER` (0x02) if no finger is present.
-- `finger.image2Tz(slot)` — processes the captured image into a 512-byte feature template stored in slot 1 or 2 of the sensor's RAM.
-- `finger.createModel()` — combines two templates (slot 1 and slot 2) into one model. Returns error if the two captures are too different.
-- `finger.storeModel(id)` — stores the model in flash memory at the given ID number (0–capacity-1).
-- `finger.fingerFastSearch()` — searches all stored templates for a match. Sets `finger.fingerID` and `finger.confidence` on success. Confidence is 0–255 (≥ 60 is generally a reliable match).
-- `finger.deleteModel(id)` — removes a stored fingerprint model.
+- `Adafruit_Fingerprint finger(&serial)` - creates a fingerprint object on the given serial port (SoftwareSerial or hardware UART).
+- `finger.begin(baud)` - sets the serial baud rate (default 57600).
+- `finger.verifyPassword()` - sends the default password (0x00000000) to authenticate with the sensor. Returns `false` if the sensor is not responding.
+- `finger.getParameters()` - reads and populates `finger.capacity` (max stored fingerprints) and `finger.security_level` (1–5, higher = stricter matching).
+- `finger.getImage()` - captures a fingerprint from the optical sensor. Returns `FINGERPRINT_OK` (0x00) on success, `FINGERPRINT_NOFINGER` (0x02) if no finger is present.
+- `finger.image2Tz(slot)` - processes the captured image into a 512-byte feature template stored in slot 1 or 2 of the sensor's RAM.
+- `finger.createModel()` - combines two templates (slot 1 and slot 2) into one model. Returns error if the two captures are too different.
+- `finger.storeModel(id)` - stores the model in flash memory at the given ID number (0–capacity-1).
+- `finger.fingerFastSearch()` - searches all stored templates for a match. Sets `finger.fingerID` and `finger.confidence` on success. Confidence is 0–255 (≥ 60 is generally a reliable match).
+- `finger.deleteModel(id)` - removes a stored fingerprint model.
 
 ### Using hardware serial (Mega)
 
 ```cpp
-// For Arduino Mega — use Serial1
+// For Arduino Mega - use Serial1
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&Serial1);
 
 void setup()
@@ -338,8 +338,8 @@ finger.setSecurityLevel(3);  // Default
 
 - Clean the sensor window with a soft, lint-free cloth before use.
 - Place the same finger twice in a **similar orientation** during enrollment.
-- Dry or very oily fingers may fail to enroll — try different fingers.
-- The sensor stores the template internally — it persists even after power-off.
+- Dry or very oily fingers may fail to enroll - try different fingers.
+- The sensor stores the template internally - it persists even after power-off.
 
 ## Caution
 
@@ -348,7 +348,7 @@ finger.setSecurityLevel(3);  // Default
 - **SoftwareSerial limitations:** On Uno/Nano, `SoftwareSerial` cannot send and receive simultaneously at 57600 baud reliably on all pin pairs. Use pins 2 and 3 (the default `SoftwareSerial` example). If you experience garbled data, switch to **hardware serial** by using an Arduino Mega or temporarily disconnecting the sensor's TX during upload to avoid data collision.
 - **Upload interference:** The R305's TX pin sends data continuously when powered. During Arduino sketch upload, this data on pin 2 (RX via SoftwareSerial) can interfere with USB communication. **Disconnect the sensor's TX wire** from pin 2 during upload, or power the sensor separately. On Mega using Serial1, this is not an issue.
 - **Power consumption:** The sensor draws 30–50 mA during idle and 80–120 mA during fingerprint capture/LED illumination (the bright blue LED). Do not power from the Arduino's 3.3V pin. Use the 5V pin, which is powered from the USB 5V rail (500 mA max).
-- **Sensor blank (no response):** The sensor requires 5V supply **and** the UART pins connected correctly. If `verifyPassword()` fails every time: check that RX/TX are not swapped, the baud rate is correct, and the sensor is powered (its blue LED should glow during capture). If still failing, serial data may be corrupted — a logic analyser can verify.
+- **Sensor blank (no response):** The sensor requires 5V supply **and** the UART pins connected correctly. If `verifyPassword()` fails every time: check that RX/TX are not swapped, the baud rate is correct, and the sensor is powered (its blue LED should glow during capture). If still failing, serial data may be corrupted - a logic analyser can verify.
 - **Template storage endurance:** The sensor's onboard flash is rated for approximately **100,000 erase/write cycles** per fingerprint slot. This is adequate for frequent re-enrollment in hobby projects but may be a concern for industrial door-lock applications. Each fingerprint model occupies ≈ 512 bytes of the sensor's internal flash.
 - **Finger condition:** Wet, excessively dry, scarred, or dirty fingers may fail to enroll or match reliably. The sensor's security level adjusts the false-rejection/false-acceptance trade-off. Level 3 (default) balances both. Level 5 reduces false accepts but increases false rejects. Level 1 is the opposite. Adjust via `finger.setSecurityLevel(n)`.
 - **Touch pin (WAKE):** The blue wire (Touch/Wake) on the R305 can be used to detect finger presence without serial communication. When wired to a digital input with a pull-up, it goes LOW when a finger is touched. This allows the Arduino to wake from sleep or power up the sensor only when needed. Some R305 clones do not expose this pin.

@@ -1,0 +1,482 @@
+---
+title: "CI/CD Pipelines for Express Apps"
+description: "Set up continuous integration and deployment for Express apps using GitHub Actions, testing, and automated deployment"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Production"]
+tags: ["Express", "CI/CD", "GitHub Actions", "Automation", "Testing", "Deployment"]
+slug: "express-cicd"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## What is CI/CD?
+
+**CI/CD** automates the process of testing and deploying your application:
+
+```
+Developer pushes code
+        │
+        ▼
+┌─────────────────┐
+│  CI (Continuous │  Build → Lint → Test
+│  Integration)   │  (Every commit)
+└────────┬────────┘
+         │ (all tests pass)
+         ▼
+┌─────────────────┐
+│  CD (Continuous │  Deploy to staging/production
+│  Deployment)    │  (Automatic or on merge to main)
+└─────────────────┘
+```
+
+## CI/CD Pipeline Stages
+
+```
+1. Code Push ──→ 2. Checkout ──→ 3. Install Dependencies
+                                      │
+                                      ▼
+                              4. Lint Code
+                                      │
+                                      ▼
+                              5. Run Tests
+                                      │
+                                      ▼
+                              6. Build (if needed)
+                                      │
+                                      ▼
+                              7. Deploy ──→ Staging / Production
+```
+
+## 1. GitHub Actions CI Pipeline
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://localhost:27017/test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret-key-for-ci-at-least-32-chars
+          SESSION_SECRET: test-session-secret-for-ci
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: coverage/
+```
+
+## 2. Full CI/CD Pipeline with Deployment
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://localhost:27017/test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t myapp:${{ github.sha }} .
+          docker tag myapp:${{ github.sha }} myapp:latest
+
+      - name: Push to registry
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker push myapp:${{ github.sha }}
+          docker push myapp:latest
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd /app
+            docker-compose pull
+            docker-compose up -d --force-recreate
+            docker system prune -f
+```
+
+## 3. Environment-Specific Pipelines
+
+```yaml
+# .github/workflows/staging.yml
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm test
+        env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://localhost:27017/test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+
+      - name: Deploy to staging
+        run: |
+          # Deploy to staging server
+          echo "Deploying to staging..."
+          # rsync, SSH, or use a deployment tool
+```
+
+## 4. Package.json Scripts for CI
+
+```json
+{
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest --forceExit --detectOpenHandles --verbose",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "format": "prettier --write 'src/**/*.js'",
+    "ci": "npm run lint && npm test",
+    "build": "echo 'No build step needed'",
+    "precommit": "lint-staged"
+  },
+  "lint-staged": {
+    "*.js": ["eslint --fix", "prettier --write"]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run ci"
+    }
+  }
+}
+```
+
+## 5. Pre-Commit Hooks (Husky)
+
+```bash
+npm install --save-dev husky lint-staged
+```
+
+```json
+// package.json
+{
+  "lint-staged": {
+    "*.js": ["eslint --fix", "prettier --write"],
+    "*.{json,md}": ["prettier --write"]
+  }
+}
+```
+
+```bash
+npx husky init
+```
+
+```bash
+# .husky/pre-commit
+npx lint-staged
+```
+
+```bash
+# .husky/pre-push
+npm run ci
+```
+
+## 6. Environment Secrets in CI
+
+```yaml
+# GitHub Actions Secrets (set in repo settings):
+# Settings → Secrets and variables → Actions
+
+# Required secrets:
+# - JWT_SECRET: production JWT secret
+# - SESSION_SECRET: production session secret
+# - MONGO_URI: production MongoDB connection string
+# - REDIS_URL: production Redis URL
+# - DEPLOY_HOST: SSH host for deployment
+# - DEPLOY_USER: SSH username
+# - DEPLOY_KEY: SSH private key
+# - DOCKER_USERNAME: Docker registry username
+# - DOCKER_PASSWORD: Docker registry password
+```
+
+## 7. Docker-Based CI/CD
+
+```yaml
+# .github/workflows/docker-deploy.yml
+name: Docker Build & Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/myapp:latest
+            ${{ secrets.DOCKER_USERNAME }}/myapp:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+```
+
+## 8. Deployment Script
+
+```bash
+#!/bin/bash
+# scripts/deploy.sh
+
+set -e
+
+echo "🚀 Starting deployment..."
+
+# Pull latest code
+git pull origin main
+
+# Install dependencies
+npm ci --only=production
+
+# Run database migrations (if using Prisma/Sequelize)
+npx prisma migrate deploy
+
+# Restart application
+pm2 reload ecosystem.config.js
+
+echo "✅ Deployment complete!"
+```
+
+## 9. Health Check After Deployment
+
+```yaml
+# Add this step after deployment
+- name: Health check
+  run: |
+    for i in {1..10}; do
+      curl -f http://localhost:3000/health && break
+      sleep 5
+    done
+
+- name: Rollback if health check fails
+  if: failure()
+  run: |
+    echo "Health check failed. Rolling back..."
+    # Rollback logic (e.g., redeploy previous Docker tag)
+```
+
+## 10. Database Migrations in CI
+
+```yaml
+- name: Run migrations
+  run: npx prisma migrate deploy
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+# Or for Sequelize:
+- name: Run migrations
+  run: npx sequelize-cli db:migrate
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+```
+
+## Complete Production Pipeline
+
+```yaml
+name: Production Pipeline
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: production
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '18', cache: 'npm' }
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports: [27017:27017]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '18', cache: 'npm' }
+      - run: npm ci
+      - run: npm test
+        env:
+          MONGO_URI: mongodb://localhost:27017/test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t myapp:${{ github.sha }} .
+      - name: Push to registry
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker tag myapp:${{ github.sha }} myapp:latest
+          docker push myapp:${{ github.sha }}
+          docker push myapp:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd /app
+            docker-compose pull
+            docker-compose up -d --force-recreate
+            sleep 10
+            curl -f http://localhost:3000/health || docker-compose down && exit 1
+
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify on Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+## Key Takeaways
+
+- **CI** runs on every commit: lint → test → build
+- **CD** runs on merge to main: deploy to production
+- Use **GitHub Actions** with services (MongoDB, Redis) for integration tests
+- Store all secrets in **GitHub Secrets** - never in code
+- Use **environment-specific** pipelines for staging vs production
+- Add **pre-commit hooks** (Husky) for catching issues early
+- Implement **health checks** after deployment with auto-rollback on failure
+- Use **concurrency groups** to prevent parallel deployments
+- Set up **notifications** (Slack, email) for deployment status
+- Use **version tags** (v1.0.0) for release-based deployment

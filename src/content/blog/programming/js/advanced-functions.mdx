@@ -237,7 +237,7 @@ let account = createBankAccount(1000);
 console.log(account.deposit(500));  // → 1500
 console.log(account.withdraw(200)); // → 1300
 console.log(account.getBalance());  // → 1300
-// console.log(account.balance);    // → undefined — private!
+// console.log(account.balance);    // → undefined - private!
 ```
 
 ### Closure in Loops (the classic problem)
@@ -338,7 +338,7 @@ console.log(globalThis.parseInt === parseInt); // → true
 
 ## Function Object, NFE
 
-Functions are objects — they have properties and methods:
+Functions are objects - they have properties and methods:
 
 ```js
 function greet(name) {
@@ -363,7 +363,7 @@ let sayHi = function(name) {
   if (name) return "Hi, " + name;
 };
 
-// Named function expression — has a name for internal reference
+// Named function expression - has a name for internal reference
 let sayHi = function greeting(name) {
   if (name) return "Hi, " + name;
   // return greeting("Guest"); // Can reference itself
@@ -426,12 +426,12 @@ let intervalId = setInterval(() => {
 ### Recursive setTimeout vs setInterval
 
 ```js
-// setInterval — fixed interval, doesn't wait for execution
+// setInterval - fixed interval, doesn't wait for execution
 let id = setInterval(() => {
   console.log("Running...");
 }, 1000);
 
-// Recursive setTimeout — waits for execution to finish
+// Recursive setTimeout - waits for execution to finish
 function recursiveTimeout() {
   console.log("Running...");
   setTimeout(recursiveTimeout, 1000);
@@ -469,7 +469,7 @@ let intervalId = setInterval(() => {
 
 ## Decorators and Forwarding, call/apply
 
-### Decorator — a function that wraps another function
+### Decorator - a function that wraps another function
 
 ```js
 function slow(x) {
@@ -564,7 +564,7 @@ let user = {
 // Direct call works
 user.greet(); // → "Hello, Alice"
 
-// Passed as callback — this is lost
+// Passed as callback - this is lost
 setTimeout(user.greet, 1000); // → "Hello, undefined"
 ```
 
@@ -606,7 +606,7 @@ error("Something broke"); // → "[ERROR] Something broke"
 
 ## Arrow Functions Revisited
 
-Arrow functions are not just shorter syntax — they have fundamental differences:
+Arrow functions are not just shorter syntax - they have fundamental differences:
 
 ### No "this"
 
@@ -614,14 +614,14 @@ Arrow functions are not just shorter syntax — they have fundamental difference
 let user = {
   name: "Alice",
   greet() {
-    // Regular function — has own this
+    // Regular function - has own this
     setTimeout(function() {
       console.log("Hello, " + this.name); // this is window/undefined
     }, 100);
   },
 
   greetArrow() {
-    // Arrow — inherits this from surrounding scope
+    // Arrow - inherits this from surrounding scope
     setTimeout(() => {
       console.log("Hello, " + this.name); // this is user
     }, 100);

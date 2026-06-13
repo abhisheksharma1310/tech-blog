@@ -48,7 +48,7 @@ class RetargetDemo extends HTMLElement {
       <div class='inner' id='shadow-btn'>Click me (inside Shadow DOM)</div>
     `;
 
-    // Inside shadow — sees original target
+    // Inside shadow - sees original target
     shadow.querySelector('#shadow-btn').addEventListener('click', function(e) {
       const out = document.getElementById('retarget-out');
       out.textContent = '[Shadow] event.target: ' + e.target.id + ' (' + e.target.tagName + ')\\n';
@@ -56,7 +56,7 @@ class RetargetDemo extends HTMLElement {
   }
 
   connectedCallback() {
-    // Light DOM — sees retargeted target
+    // Light DOM - sees retargeted target
     this.addEventListener('click', function(e) {
       const out = document.getElementById('retarget-out');
       out.textContent += '[Light] event.target: ' + e.target.tagName + ' (retargeted to host!)';
@@ -179,7 +179,7 @@ class PathDemo extends HTMLElement {
         .box { padding: 16px; background: #fef9c3; border: 2px solid #eab308; border-radius: 8px; cursor: pointer; }
       </style>
       <div class='box' id='inner-box'>
-        Click here — see composedPath
+        Click here - see composedPath
       </div>
     `;
 
@@ -222,14 +222,14 @@ document.addEventListener('click', function(e) {
 1. Always set `composed: true` on custom events that need to cross shadow boundaries
 2. Use `bubbles: true` along with `composed: true` for maximum compatibility
 3. Use `event.composedPath()` for debugging event propagation
-4. Remember that `event.target` is **retargeted** — use `event.composedPath()[0]` for the original target
+4. Remember that `event.target` is **retargeted** - use `event.composedPath()[0]` for the original target
 5. For delegation on light DOM, use `event.target.closest('my-element')`
 
 ## Key Takeaways
 
 - Event **retargeting** changes `event.target` to the host element when crossing shadow boundary
 - Set `composed: true` on custom events to **cross the shadow boundary**
-- `bubbles` alone is not enough — events also need `composed`
+- `bubbles` alone is not enough - events also need `composed`
 - `event.composedPath()` returns the **full propagation path** including shadow roots
 - Most native UI events (`click`, `keydown`, `focus`) are composed by default
 - Some events (`mouseenter`, `scroll`) **don't compose** by design

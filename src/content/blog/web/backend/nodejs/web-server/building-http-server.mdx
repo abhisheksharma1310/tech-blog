@@ -1,6 +1,6 @@
 ---
 title: "Building an HTTP Server with Core http Module"
-description: "Build production-ready HTTP servers with Node.js core http module — from hello world to routing, middleware, and static files"
+description: "Build production-ready HTTP servers with Node.js core http module - from hello world to routing, middleware, and static files"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Web Server"]
 tags: ["Node.js", "Web Server", "HTTP", "Server"]
@@ -314,7 +314,7 @@ server.listen(PORT, () => {
 
 ## Static File Server
 
-A common task — serve files from a directory:
+A common task - serve files from a directory:
 
 ```js
 const http = require('http');
@@ -390,7 +390,7 @@ const server = http.createServer(handler);
 
 server.on('connection', (socket) => {
   console.log('New TCP connection from', socket.remoteAddress);
-  // socket is a net.Socket — set timeouts, etc.
+  // socket is a net.Socket - set timeouts, etc.
   socket.setTimeout(30000); // 30 second timeout
 });
 
@@ -420,7 +420,7 @@ server.on('upgrade', (req, socket, head) => {
 
 ## Graceful Shutdown
 
-Production servers must shut down gracefully — finish in-flight requests, then exit:
+Production servers must shut down gracefully - finish in-flight requests, then exit:
 
 ```js
 const server = http.createServer(handler);
@@ -451,11 +451,11 @@ server.listen(3000);
 
 - **`http.createServer(handler)`** creates a server; the handler receives `req` (IncomingMessage) and `res` (ServerResponse)
 - **Always parse `req.url`** with the `URL` class (`new URL(req.url, base)`); never parse it manually
-- **`res.end()` must always be called** — otherwise the connection hangs
-- **Headlers must be set before `res.write()` or `res.end()`** — once headers are sent (`res.headersSent`), you can't change them
-- Build a **router** to map method+path to handler functions — this is what Express does internally
+- **`res.end()` must always be called** - otherwise the connection hangs
+- **Headlers must be set before `res.write()` or `res.end()`** - once headers are sent (`res.headersSent`), you can't change them
+- Build a **router** to map method+path to handler functions - this is what Express does internally
 - **CORS preflight** (`OPTIONS` requests) must be handled for browser-based API clients
 - Use **`fs.createReadStream` + `pipeline`** to serve files without buffering in RAM
-- **Listen to server events** — `connection` for rate limiting, `error` for port conflicts
+- **Listen to server events** - `connection` for rate limiting, `error` for port conflicts
 - **Graceful shutdown** via `SIGTERM`/`SIGINT` handlers prevents dropped connections
 - The raw `http` module is educational and gives full control, but for production APIs consider Express or Fastify for middleware, routing, and error handling

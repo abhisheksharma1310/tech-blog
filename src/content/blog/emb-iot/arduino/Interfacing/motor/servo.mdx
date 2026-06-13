@@ -13,7 +13,7 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
 
 # Servo Motor – Precise angular control
 
-A servo motor is a rotary actuator that allows precise control of angular position (typically 0–180°). It consists of a DC motor, a gear train, a potentiometer for position feedback, and a control circuit. The desired angle is communicated via PWM pulses — a 1 ms pulse drives the servo to 0°, 1.5 ms to 90°, and 2 ms to 180° (at 50 Hz / 20 ms period). Servos are widely used in robotics, camera gimbals, pan-tilt mechanisms, and radio-controlled models.
+A servo motor is a rotary actuator that allows precise control of angular position (typically 0–180°). It consists of a DC motor, a gear train, a potentiometer for position feedback, and a control circuit. The desired angle is communicated via PWM pulses - a 1 ms pulse drives the servo to 0°, 1.5 ms to 90°, and 2 ms to 180° (at 50 Hz / 20 ms period). Servos are widely used in robotics, camera gimbals, pan-tilt mechanisms, and radio-controlled models.
 
 <CloudinaryImage 
    publicId="4-SG90-servo-motor-positional-rotation-servo-motor_y1w0rm" 
@@ -77,7 +77,7 @@ The Arduino Servo library uses hardware timers to generate the 50 Hz PWM signal:
 
 ## Install necessary Library
 
-The **Servo** library is built into the Arduino IDE — no installation is required. Include it with:
+The **Servo** library is built into the Arduino IDE - no installation is required. Include it with:
 
 ```cpp
 #include <Servo.h>
@@ -168,14 +168,14 @@ void sweep()
 
 ### Code breakdown
 
-- `#include <Servo.h>` — includes the built-in Servo library. No separate installation needed.
-- `Servo myservo` — creates a Servo object to control a single servo.
-- `myservo.attach(pin)` — associates the Servo object with a PWM-capable pin. Optionally accepts min and max pulse widths: `attach(pin, min, max)` where min/max are in µs (default 544 / 2400).
-- `myservo.write(angle)` — sets the servo to a specific angle (0–180). The library converts the angle to the corresponding PWM pulse width.
-- `myservo.writeMicroseconds(pulseWidth)` — directly sets the PWM pulse width in microseconds (e.g., 1500 µs = 90°). Useful for fine-tuning or non-standard servos.
-- `myservo.read()` — returns the last written angle (not necessarily the current physical position).
-- `myservo.detach()` — stops the servo signal, allowing the servo to relax (saves power and prevents jitter). Call `attach()` again to re-enable control.
-- `myservo.attached()` — returns `true` if the Servo object is currently attached to a pin.
+- `#include <Servo.h>` - includes the built-in Servo library. No separate installation needed.
+- `Servo myservo` - creates a Servo object to control a single servo.
+- `myservo.attach(pin)` - associates the Servo object with a PWM-capable pin. Optionally accepts min and max pulse widths: `attach(pin, min, max)` where min/max are in µs (default 544 / 2400).
+- `myservo.write(angle)` - sets the servo to a specific angle (0–180). The library converts the angle to the corresponding PWM pulse width.
+- `myservo.writeMicroseconds(pulseWidth)` - directly sets the PWM pulse width in microseconds (e.g., 1500 µs = 90°). Useful for fine-tuning or non-standard servos.
+- `myservo.read()` - returns the last written angle (not necessarily the current physical position).
+- `myservo.detach()` - stops the servo signal, allowing the servo to relax (saves power and prevents jitter). Call `attach()` again to re-enable control.
+- `myservo.attached()` - returns `true` if the Servo object is currently attached to a pin.
 
 ### Using continuous rotation servos
 
@@ -224,7 +224,7 @@ void setup()
 {
   servo1.attach(9);
   servo2.attach(10);
-  servo3.attach(11); // Uno — note: pins 9 & 10 share Timer1
+  servo3.attach(11); // Uno - note: pins 9 & 10 share Timer1
 
   servo1.write(0);
   servo2.write(90);
@@ -243,7 +243,7 @@ On a Mega, you can attach up to 12 servos on any of pins 2–13 and 44–46.
 5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 6. Upload the sketch to the Arduino.
 7. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-8. Type `s` to start the sweep mode — the servo will sweep from 0° to 180° and back.
+8. Type `s` to start the sweep mode - the servo will sweep from 0° to 180° and back.
 9. Enter a number (0–180) to move the servo to a specific angle.
 10. Type `d` to detach the servo (the shaft becomes free to rotate manually).
 

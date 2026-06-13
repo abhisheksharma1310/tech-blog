@@ -1,0 +1,352 @@
+---
+title: "File Uploads (Multer)"
+description: "Handle file uploads in Express using Multer - single/multiple files, storage engines, validation, and processing"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Advanced"]
+tags: ["Express", "Multer", "File Upload", "Multipart", "Storage"]
+slug: "express-file-uploads-multer"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## What is Multer?
+
+**Multer** is a Node.js middleware for handling `multipart/form-data` - the format used for file uploads.
+
+```
+Browser                              Server
+  │                                    │
+  │── POST /upload ───────────────────→│
+  │   Content-Type: multipart/form-data│
+  │   ┌─────────────────────────┐      │
+  │   │ name: "Alice"           │      │
+  │   │ avatar: (binary file)   │──────→│ Multer parses
+  │   │ resume: (binary file)   │      │ req.body → { name: "Alice" }
+  │   └─────────────────────────┘      │ req.files → [{...file data}]
+  │                                    │
+```
+
+## Installation
+
+```bash
+npm install multer
+```
+
+## Basic Setup
+
+```javascript
+const multer = require('multer');
+const path = require('path');
+
+// Configure storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+// File filter
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only JPEG, PNG, and GIF files are allowed'), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter
+});
+
+module.exports = upload;
+```
+
+## Upload Routes
+
+### Single File Upload
+
+```javascript
+const upload = require('./middleware/upload');
+
+// Single file - field name "avatar"
+app.post('/upload/avatar', upload.single('avatar'), (req, res) => {
+  console.log(req.file); // Uploaded file info
+  console.log(req.body); // Other form fields
+
+  res.json({
+    success: true,
+    message: 'File uploaded',
+    file: req.file.filename
+  });
+});
+```
+
+### Multiple Files (Same Field)
+
+```javascript
+// Multiple files - same field "gallery", max 5
+app.post('/upload/gallery', upload.array('gallery', 5), (req, res) => {
+  res.json({
+    success: true,
+    files: req.files.map(f => f.filename)
+  });
+});
+```
+
+### Multiple Fields
+
+```javascript
+// Different fields with different limits
+const cpUpload = upload.fields([
+  { name: 'avatar', maxCount: 1 },
+  { name: 'gallery', maxCount: 8 },
+  { name: 'documents', maxCount: 3 }
+]);
+
+app.post('/upload/profile', cpUpload, (req, res) => {
+  console.log(req.files.avatar);     // Array of 1 file
+  console.log(req.files.gallery);    // Array of up to 8 files
+  console.log(req.files.documents);  // Array of up to 3 files
+  console.log(req.body);             // Text fields
+
+  res.json({ success: true });
+});
+```
+
+## req.file / req.files Properties
+
+```javascript
+{
+  fieldname: 'avatar',         // Form field name
+  originalname: 'profile.jpg', // Original file name
+  encoding: '7bit',            // Encoding type
+  mimetype: 'image/jpeg',      // MIME type
+  destination: 'uploads/',     // Storage directory
+  filename: '1689000000-123.jpg', // Generated filename
+  path: 'uploads/1689000000-123.jpg', // Full path
+  size: 24567                  // File size in bytes
+}
+```
+
+## Storage Engines
+
+### Disk Storage (Default)
+
+```javascript
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Create date-based subdirectories
+    const date = new Date();
+    const dir = `uploads/${date.getFullYear()}/${date.getMonth() + 1}`;
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    // Preserve original extension, add unique prefix
+    const name = file.originalname.replace(/\s+/g, '-').toLowerCase();
+    cb(null, `${Date.now()}-${name}`);
+  }
+});
+```
+
+### Memory Storage (For Cloud Uploads)
+
+```javascript
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+app.post('/upload', upload.single('file'), async (req, res) => {
+  // req.file.buffer contains the file as a Buffer
+  // Upload directly to S3, Cloudinary, etc.
+  const result = await cloudinary.uploader.upload_stream({
+    resource_type: 'auto',
+    public_id: `uploads/${Date.now()}`
+  }, (error, result) => {
+    if (error) return res.status(500).json({ error: 'Upload failed' });
+    res.json({ url: result.secure_url });
+  }).end(req.file.buffer);
+});
+```
+
+### Cloud Storage (S3 Example)
+
+```javascript
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+const { S3Client } = require('@aws-sdk/client-s3');
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY,
+    secretAccessKey: process.env.AWS_SECRET_KEY
+  }
+});
+
+const upload = multer({
+  storage: multerS3({
+    s3,
+    bucket: 'myapp-uploads',
+    acl: 'public-read',
+    metadata: (req, file, cb) => {
+      cb(null, { fieldName: file.fieldname });
+    },
+    key: (req, file, cb) => {
+      cb(null, `uploads/${Date.now()}-${file.originalname}`);
+    }
+  })
+});
+```
+
+## File Validation
+
+```javascript
+// Upload middleware with validation
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    // Check file type
+    const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const docTypes = ['application/pdf', 'application/msword'];
+    const allAllowed = [...imageTypes, ...docTypes];
+
+    if (!allAllowed.includes(file.mimetype)) {
+      return cb(new Error(`Invalid file type: ${file.mimetype}`), false);
+    }
+
+    // Check file name length
+    if (file.originalname.length > 100) {
+      return cb(new Error('File name too long'), false);
+    }
+
+    cb(null, true);
+  }
+});
+
+// Handle multer errors
+app.post('/upload', (req, res) => {
+  upload.single('file')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Max 5MB.' });
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ error: 'Too many files.' });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ error: 'Unexpected file field.' });
+      }
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    res.json({ success: true, file: req.file.filename });
+  });
+});
+```
+
+## HTML Form Example
+
+```html
+<!-- Single file -->
+<form action="/upload/avatar" method="POST" enctype="multipart/form-data">
+  <input type="text" name="name" placeholder="Your name" />
+  <input type="file" name="avatar" accept="image/*" />
+  <button type="submit">Upload</button>
+</form>
+
+<!-- Multiple files -->
+<form action="/upload/gallery" method="POST" enctype="multipart/form-data">
+  <input type="file" name="gallery" multiple accept="image/*" />
+  <button type="submit">Upload Gallery</button>
+</form>
+```
+
+## Upload with Fetch API (Frontend)
+
+```javascript
+async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  formData.append('name', 'Alice');
+
+  const res = await fetch('/upload/avatar', {
+    method: 'POST',
+    body: formData // No Content-Type header - browser sets it with boundary
+  });
+
+  return res.json();
+}
+
+// Upload multiple files
+async function uploadGallery(files) {
+  const formData = new FormData();
+  files.forEach(f => formData.append('gallery', f));
+
+  const res = await fetch('/upload/gallery', {
+    method: 'POST',
+    body: formData
+  });
+
+  return res.json();
+}
+```
+
+## Serving Uploaded Files
+
+```javascript
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
+
+// Now files are accessible at:
+// http://localhost:3000/uploads/1689000000-123.jpg
+```
+
+## Cleanup Old Files
+
+```javascript
+const fs = require('fs');
+const path = require('path');
+
+// Schedule cleanup of files older than 24 hours
+setInterval(() => {
+  const uploadDir = 'uploads/';
+  const now = Date.now();
+
+  fs.readdir(uploadDir, (err, files) => {
+    if (err) return;
+
+    files.forEach(file => {
+      const filePath = path.join(uploadDir, file);
+      fs.stat(filePath, (err, stats) => {
+        if (err) return;
+        if (now - stats.mtimeMs > 24 * 60 * 60 * 1000) {
+          fs.unlink(filePath, () => {});
+        }
+      });
+    });
+  });
+}, 60 * 60 * 1000); // Run every hour
+```
+
+## Key Takeaways
+
+- Multer parses `multipart/form-data` - use for file uploads
+- Configure **storage** (disk, memory, S3), **limits**, and **fileFilter**
+- Use `upload.single('field')` for one file, `upload.array('field', n)` for multiple
+- Handle **MulterError** (file too large, too many files) separately from other errors
+- Always **validate file types and sizes** before saving
+- Store files in **date-based subdirectories** for organization
+- Serve uploaded files via `express.static('uploads')`
+- For cloud storage, use **memoryStorage** and upload the buffer to S3/Cloudinary

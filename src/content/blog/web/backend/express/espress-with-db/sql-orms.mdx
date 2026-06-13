@@ -1,0 +1,415 @@
+---
+title: "Using PostgreSQL/MySQL with Sequelize/Prisma/Drizzle"
+description: "Connect Express to SQL databases using Sequelize, Prisma, and Drizzle ORM with practical examples"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Database"]
+tags: ["Express", "PostgreSQL", "MySQL", "Sequelize", "Prisma", "Drizzle", "ORM"]
+slug: "express-sql-orms"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Choosing an ORM
+
+Three popular ORMs for Node.js + SQL databases:
+
+| ORM | Database Support | Style | Type Safety | Learning Curve |
+|---|---|---|---|---|
+| **Sequelize** | PostgreSQL, MySQL, SQLite, MSSQL | Promise-based, class models | Low | Medium |
+| **Prisma** | PostgreSQL, MySQL, SQLite, MongoDB, CockroachDB | Declarative schema, auto-generated client | Excellent | Low |
+| **Drizzle** | PostgreSQL, MySQL, SQLite | SQL-like, lightweight, zero-abstraction | Excellent | Medium |
+
+```
+Express App
+    │
+    ├─── Sequelize ───→ PostgreSQL / MySQL
+    ├─── Prisma ───────→ PostgreSQL / MySQL
+    └─── Drizzle ──────→ PostgreSQL / MySQL
+```
+
+## 1. Sequelize
+
+### Installation
+
+```bash
+npm install sequelize pg pg-hstore   # PostgreSQL
+npm install sequelize mysql2         # MySQL
+```
+
+### Connection Setup
+
+```javascript
+const { Sequelize } = require('sequelize');
+
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'myapp',
+  process.env.DB_USER || 'postgres',
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST || 'localhost',
+    dialect: 'postgres', // or 'mysql'
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    }
+  }
+);
+
+async function connectDB() {
+  try {
+    await sequelize.authenticate();
+    console.log('Database connected');
+  } catch (err) {
+    console.error('Connection failed:', err);
+  }
+}
+
+module.exports = { sequelize, connectDB };
+```
+
+### Defining Models
+
+```javascript
+// models/User.js
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  name: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    validate: {
+      len: [2, 50]
+    }
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true
+    }
+  },
+  age: {
+    type: DataTypes.INTEGER,
+    validate: {
+      min: 13,
+      max: 120
+    }
+  },
+  role: {
+    type: DataTypes.ENUM('user', 'admin', 'moderator'),
+    defaultValue: 'user'
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  timestamps: true, // Adds createdAt, updatedAt
+  tableName: 'users'
+});
+
+module.exports = User;
+```
+
+### Model Relationships
+
+```javascript
+// models/Post.js
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+const User = require('./User');
+
+const Post = sequelize.define('Post', {
+  title: { type: DataTypes.STRING, allowNull: false },
+  body: { type: DataTypes.TEXT, allowNull: false }
+}, { timestamps: true });
+
+// Associations
+User.hasMany(Post, { foreignKey: 'userId' });
+Post.belongsTo(User, { foreignKey: 'userId' });
+
+module.exports = Post;
+```
+
+### CRUD with Sequelize
+
+```javascript
+const User = require('./models/User');
+const Post = require('./models/Post');
+
+// CREATE
+const user = await User.create({ name: 'Alice', email: 'alice@test.com' });
+
+// READ
+const users = await User.findAll();
+const user = await User.findByPk(id);
+const adults = await User.findAll({ where: { age: { [Op.gte]: 18 } } });
+const user = await User.findOne({ where: { email: 'alice@test.com' } });
+
+// READ with includes (JOIN)
+const posts = await Post.findAll({
+  include: [{ model: User, attributes: ['name', 'email'] }],
+  order: [['createdAt', 'DESC']],
+  limit: 10,
+  offset: 0
+});
+
+// UPDATE
+await User.update({ age: 31 }, { where: { id } });
+
+// DELETE
+await User.destroy({ where: { id } });
+```
+
+### Syncing Models
+
+```javascript
+// In development - sync all models (creates tables)
+async function initDB() {
+  await sequelize.sync({ alter: true });
+  //   alter: true - adjusts tables to match model changes
+  //   force: true - drops and recreates (loses data!)
+}
+
+// In production - use migrations instead
+```
+
+## 2. Prisma
+
+### Installation
+
+```bash
+npm install prisma @prisma/client
+npx prisma init
+```
+
+### Schema Definition (prisma/schema.prisma)
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // or "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  age       Int?
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  posts     Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  published Boolean  @default(false)
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("posts")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+```
+
+### Run Migrations
+
+```bash
+npx prisma migrate dev --name init
+npx prisma generate
+```
+
+### CRUD with Prisma
+
+```javascript
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// CREATE
+const user = await prisma.user.create({
+  data: {
+    name: 'Alice',
+    email: 'alice@test.com',
+    age: 30
+  }
+});
+
+// READ
+const users = await prisma.user.findMany({
+  where: { age: { gte: 18 } },
+  orderBy: { createdAt: 'desc' },
+  take: 10,
+  skip: 0,
+  select: { id: true, name: true, email: true }
+});
+
+const user = await prisma.user.findUnique({
+  where: { email: 'alice@test.com' },
+  include: { posts: true }
+});
+
+// UPDATE
+const user = await prisma.user.update({
+  where: { id },
+  data: { age: 31 }
+});
+
+// DELETE
+await prisma.user.delete({ where: { id } });
+```
+
+### Prisma Client Setup
+
+```javascript
+// config/prisma.js
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development'
+    ? ['query', 'info', 'warn']
+    : ['error']
+});
+
+module.exports = prisma;
+```
+
+## 3. Drizzle
+
+### Installation
+
+```bash
+npm install drizzle-orm pg
+npm install -D drizzle-kit @types/pg
+npx drizzle-kit init
+```
+
+### Schema Definition
+
+```javascript
+// db/schema.js
+const { pgTable, serial, text, integer, boolean, timestamp } = require('drizzle-orm/pg-core');
+
+const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  age: integer('age'),
+  role: text('role').default('user'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+module.exports = { users };
+```
+
+### CRUD with Drizzle
+
+```javascript
+const { drizzle } = require('drizzle-orm/node-postgres');
+const { Pool } = require('pg');
+const { users } = require('./db/schema');
+const { eq, and, gte, desc } = require('drizzle-orm');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
+const db = drizzle(pool);
+
+// CREATE
+const [user] = await db.insert(users).values({
+  name: 'Alice',
+  email: 'alice@test.com',
+  age: 30
+}).returning();
+
+// READ
+const allUsers = await db.select().from(users);
+const adults = await db.select()
+  .from(users)
+  .where(gte(users.age, 18));
+const user = await db.select()
+  .from(users)
+  .where(eq(users.email, 'alice@test.com'))
+  .limit(1);
+
+// UPDATE
+await db.update(users)
+  .set({ age: 31 })
+  .where(eq(users.id, id));
+
+// DELETE
+await db.delete(users).where(eq(users.id, id));
+```
+
+## Comparison: Same Route with Each ORM
+
+```javascript
+// Sequelize
+app.get('/api/users', async (req, res) => {
+  const users = await User.findAll({
+    include: { model: Post, attributes: ['title'] }
+  });
+  res.json(users);
+});
+
+// Prisma
+app.get('/api/users', async (req, res) => {
+  const users = await prisma.user.findMany({
+    include: { posts: { select: { title: true } } }
+  });
+  res.json(users);
+});
+
+// Drizzle (raw SQL-like)
+app.get('/api/users', async (req, res) => {
+  const users = await db.select({
+    id: users.id,
+    name: users.name,
+    posts: {
+      title: posts.title
+    }
+  })
+  .from(users)
+  .leftJoin(posts, eq(users.id, posts.authorId));
+  res.json(users);
+});
+```
+
+## Key Takeaways
+
+- **Sequelize** is the most mature ORM with rich model associations and hooks
+- **Prisma** provides the best developer experience with auto-generated type-safe client
+- **Drizzle** is the lightest - you write SQL-like queries with full type safety
+- All support PostgreSQL, MySQL, and SQLite
+- Use **migrations** to manage schema changes in production
+- Store database URL in environment variable (`DATABASE_URL`)
+- Always handle connection errors and configure connection pooling
+- Choose based on your team's needs: features (Sequelize), DX (Prisma), or performance (Drizzle)

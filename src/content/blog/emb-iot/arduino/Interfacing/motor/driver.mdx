@@ -58,7 +58,7 @@ OUT3, OUT4    -->     DC Motor B
 
 The L298N module has a jumper that controls the onboard 5V regulator:
 
-- **Jumper ON (default):** The 5V regulator is enabled. The module outputs 5V on the 5V pin (can power the Arduino if VS ≥ 7V). **Do not connect Arduino 5V to this pin** — only one source should supply 5V.
+- **Jumper ON (default):** The 5V regulator is enabled. The module outputs 5V on the 5V pin (can power the Arduino if VS ≥ 7V). **Do not connect Arduino 5V to this pin** - only one source should supply 5V.
 - **Jumper OFF:** The 5V regulator is disabled. You must supply 5V to the 5V pin from the Arduino (or another 5V supply). Use this when VS is between 5–7V (too low for the regulator) or when you want the Arduino to power the logic.
 
 For this tutorial, **keep the jumper ON** and do not connect the module 5V pin to the Arduino.
@@ -102,7 +102,7 @@ Same logic applies to IN3/IN4 for Motor B.
 
 No external library is required. The L298N uses standard `digitalWrite()` and `analogWrite()` functions built into Arduino.
 
-For convenience, the **RoboClaw** or **AFMotor** libraries offer higher-level interfaces — this tutorial uses the direct approach for full control.
+For convenience, the **RoboClaw** or **AFMotor** libraries offer higher-level interfaces - this tutorial uses the direct approach for full control.
 
 ## Code with complete explanation
 
@@ -221,9 +221,9 @@ void loop()
 
 ### Code breakdown
 
-- `digitalWrite(in1, HIGH)` / `digitalWrite(in2, LOW)` — sets the direction for Motor A. The truth table above defines the four possible states.
-- `analogWrite(enA, speed)` — sets the PWM duty cycle on the enable pin (0–255) to control the motor speed. 0 = stopped, 255 = full speed.
-- `digitalWrite(enA, LOW)` — disables the motor completely (the H-bridge outputs are high-impedance, letting the motor coast).
+- `digitalWrite(in1, HIGH)` / `digitalWrite(in2, LOW)` - sets the direction for Motor A. The truth table above defines the four possible states.
+- `analogWrite(enA, speed)` - sets the PWM duty cycle on the enable pin (0–255) to control the motor speed. 0 = stopped, 255 = full speed.
+- `digitalWrite(enA, LOW)` - disables the motor completely (the H-bridge outputs are high-impedance, letting the motor coast).
 - The loop first ramps Motor A forward (speed 0 → 255 → 0), then backward (same ramp), then runs Motor B through three cycles of forward-speed-increase, pause, backward-speed-increase.
 
 ### Controlling a single motor from Serial Monitor
@@ -305,14 +305,14 @@ If a motor does not move, test each channel:
 
 1. Disconnect both motors.
 2. Set IN1 = HIGH, IN2 = LOW, ENA = HIGH.
-3. Measure voltage between OUT1 and OUT2 with a multimeter — you should see the motor supply voltage.
+3. Measure voltage between OUT1 and OUT2 with a multimeter - you should see the motor supply voltage.
 4. If no voltage, check the enable pin jumper (ENA must have a jumper or be driven HIGH).
 
 ## Caution
 
-- **Power supply:** The L298N can deliver up to 2 A per channel, but this requires a power supply capable of supplying the full motor current. A 9V battery may work for one small motor but will drain quickly under load. Use a benchtop supply or a lead-acid battery for sustained use. The L298N's voltage drop (around 2 V per channel at 1 A) means a 6V motor will only receive ~4V — account for this in your power budget.
-- **Heatsink required:** The L298N IC dissipates significant heat when driving motors at high current. The module ships with a heatsink — ensure it is properly attached. Without adequate cooling, the L298N enters thermal shutdown (outputs disabled) at approximately 170°C.
-- **Flyback diodes:** The L298N module includes flyback diodes (1N4007 or similar) to protect against back-EMF from the motors. If you are using a bare L298N IC (not a module), you must add these diodes externally — one from each output to VS and one from each output to GND.
+- **Power supply:** The L298N can deliver up to 2 A per channel, but this requires a power supply capable of supplying the full motor current. A 9V battery may work for one small motor but will drain quickly under load. Use a benchtop supply or a lead-acid battery for sustained use. The L298N's voltage drop (around 2 V per channel at 1 A) means a 6V motor will only receive ~4V - account for this in your power budget.
+- **Heatsink required:** The L298N IC dissipates significant heat when driving motors at high current. The module ships with a heatsink - ensure it is properly attached. Without adequate cooling, the L298N enters thermal shutdown (outputs disabled) at approximately 170°C.
+- **Flyback diodes:** The L298N module includes flyback diodes (1N4007 or similar) to protect against back-EMF from the motors. If you are using a bare L298N IC (not a module), you must add these diodes externally - one from each output to VS and one from each output to GND.
 - **5V regulator jumper:** When the jumper is ON and VS is at least 7V, the module outputs 5V on the 5V pin. This can power the Arduino (connect 5V → Arduino 5V, GND → Arduino GND). However, if VS drops below 7V, the 5V output becomes unstable. In that case, remove the jumper and supply 5V from the Arduino to the logic pin.
 - **Common ground:** The L298N GND must always be connected to the Arduino GND. Without this connection, the logic inputs are floating and the motor may run erratically or not at all.
 - **Stall current:** If a motor is physically blocked, the current through the L298N can exceed 2 A per channel, potentially damaging the IC. Use current limiting (e.g., a fuse or a current-sense circuit) if the motor may stall under normal operation.

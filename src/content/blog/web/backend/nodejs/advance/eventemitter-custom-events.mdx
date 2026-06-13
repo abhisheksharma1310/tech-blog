@@ -1,6 +1,6 @@
 ---
 title: "EventEmitter & Custom Events"
-description: "Master Node.js EventEmitter — create, emit, and manage custom events for decoupled architectures"
+description: "Master Node.js EventEmitter - create, emit, and manage custom events for decoupled architectures"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Advanced"]
 tags: ["Node.js", "Advanced", "EventEmitter", "Events"]
@@ -51,7 +51,7 @@ emitter.emit('greet', 'Alice');
 // Hello, Alice!
 ```
 
-When you call `emitter.emit('greet', 'Alice')`, Node.js synchronously iterates through all registered listeners for the `'greet'` event and calls them in the order they were registered. This means listeners are called in the **same tick** as `emit()` — they are not deferred to the next event loop phase.
+When you call `emitter.emit('greet', 'Alice')`, Node.js synchronously iterates through all registered listeners for the `'greet'` event and calls them in the order they were registered. This means listeners are called in the **same tick** as `emit()` - they are not deferred to the next event loop phase.
 
 ## Core Methods
 
@@ -99,7 +99,7 @@ emitter.on('data', async (data) => {
 });
 ```
 
-But be careful — the emitter won't `await` the Promise. The listener fires and forgets.
+But be careful - the emitter won't `await` the Promise. The listener fires and forgets.
 
 ## Real-World Example: Payment Gateway
 
@@ -126,7 +126,7 @@ class PaymentGateway extends EventEmitter {
   }
 }
 
-// Each service subscribes independently — no coupling between them
+// Each service subscribes independently - no coupling between them
 const gateway = new PaymentGateway();
 
 gateway.on('payment.success', (data) => {
@@ -204,7 +204,7 @@ system.processOrder(order.id);
 
 > **Why extend EventEmitter?** By extending, callers get a familiar API. Anyone who's used `server.on('request', ...)` or `stream.on('data', ...)` can immediately use your class.
 
-## `once` — One-Time Listeners
+## `once` - One-Time Listeners
 
 `once` is perfect for events that should trigger exactly once, like initialization events:
 
@@ -219,7 +219,7 @@ emitter.once('increment', () => {
 });
 
 emitter.emit('increment'); // Counter: 1
-emitter.emit('increment'); // (nothing — listener was removed)
+emitter.emit('increment'); // (nothing - listener was removed)
 ```
 
 **How `once` works internally:** Node.js wraps your listener in a function that first removes itself (using `removeListener`), then calls your original listener. That's why if you call `emitter.rawListeners('increment')` you won't see your original function directly.
@@ -233,7 +233,7 @@ emitter.on('data', function(data) {
   console.log('Data:', data);
 });
 
-// Using arrow functions — `this` is lexical, NOT the emitter
+// Using arrow functions - `this` is lexical, NOT the emitter
 emitter.on('data', (data) => {
   // `this` is whatever `this` was in the surrounding scope
   // NOT the emitter
@@ -244,12 +244,12 @@ emitter.on('data', (data) => {
 
 ## Error Handling
 
-If an `error` event is emitted but no listener exists, Node.js **throws the error and crashes the process**. This is unique to the `'error'` event — it's the only event with this behavior.
+If an `error` event is emitted but no listener exists, Node.js **throws the error and crashes the process**. This is unique to the `'error'` event - it's the only event with this behavior.
 
 ```js
 const emitter = new EventEmitter();
 
-// ❌ This crashes the process — no 'error' listener
+// ❌ This crashes the process - no 'error' listener
 emitter.emit('error', new Error('Something went wrong'));
 
 // ✅ Always handle 'error' events
@@ -263,7 +263,7 @@ emitter.emit('error', new Error('Something went wrong'));
 // Caught: Something went wrong
 ```
 
-> **Rule:** Always register an `error` listener when using EventEmitter, or use `emitter.on('error', ...)` as a global safety net. An unhandled `error` event is equivalent to a synchronous throw — the process exits.
+> **Rule:** Always register an `error` listener when using EventEmitter, or use `emitter.on('error', ...)` as a global safety net. An unhandled `error` event is equivalent to a synchronous throw - the process exits.
 
 ## Removing Listeners
 
@@ -276,7 +276,7 @@ function onData(data) {
 
 emitter.on('data', onData);
 
-// Later — stop listening
+// Later - stop listening
 emitter.off('data', onData);
 // or
 emitter.removeListener('data', onData);
@@ -287,7 +287,7 @@ emitter.removeAllListeners();
 
 > **Memory leak:** If your emitter is long-lived (like a server) and you keep attaching listeners from short-lived objects (like request handlers), you must remove the listeners when the short-lived object is destroyed. Otherwise, the listener holds a reference to the object and prevents garbage collection.
 
-## Maximum Listeners — Preventing Memory Leaks
+## Maximum Listeners - Preventing Memory Leaks
 
 Node.js warns if you attach more than **10** listeners to a single event. This is a heuristic for detecting accidental memory leaks:
 
@@ -308,13 +308,13 @@ If you intentionally need many listeners (e.g., a central event bus), increase t
 Use **namespaced event names** to avoid collisions and convey meaning:
 
 ```js
-// Good — namespaced
+// Good - namespaced
 emitter.emit('user.created', user);
 emitter.emit('user.deleted', userId);
 emitter.emit('payment.success', payment);
 emitter.emit('payment.failed', error);
 
-// Bad — too generic
+// Bad - too generic
 emitter.emit('create', user);
 emitter.emit('delete', userId);
 emitter.emit('success', payment);
@@ -324,7 +324,7 @@ Common patterns: `resource.action`, `module:event`, `domain/event`.
 
 ## Practical: Event-Driven Retry Handler
 
-This pattern is common in real-world applications — an event-driven retry mechanism that decouples the retry logic from the business logic:
+This pattern is common in real-world applications - an event-driven retry mechanism that decouples the retry logic from the business logic:
 
 ```js
 class RetryHandler extends EventEmitter {
@@ -404,11 +404,11 @@ socket.on('connect', () => { /* ... */ });
 
 ## Key Takeaways
 
-- **EventEmitter** implements the Pub/Sub pattern — publishers and subscribers are fully decoupled
+- **EventEmitter** implements the Pub/Sub pattern - publishers and subscribers are fully decoupled
 - Use `on()` to subscribe, `emit()` to publish events
-- **Listeners run synchronously** in registration order — `emit()` returns only after all listeners execute
-- **`once()`** auto-removes after the first fire — perfect for initialization events
-- **Always handle `error` events** — an unhandled `error` event crashes the process
+- **Listeners run synchronously** in registration order - `emit()` returns only after all listeners execute
+- **`once()`** auto-removes after the first fire - perfect for initialization events
+- **Always handle `error` events** - an unhandled `error` event crashes the process
 - Increase `setMaxListeners()` if you intentionally have many listeners per event
 - **Namespaced event names** (e.g., `user.created`, `payment.failed`) prevent collisions
 - Remove listeners with `off()` to prevent memory leaks in long-lived emitters

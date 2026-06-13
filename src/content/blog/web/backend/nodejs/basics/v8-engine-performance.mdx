@@ -1,6 +1,6 @@
 ---
 title: "The V8 Engine & Performance"
-description: "How Google's V8 engine compiles and optimises JavaScript — and what it means for Node.js performance"
+description: "How Google's V8 engine compiles and optimises JavaScript - and what it means for Node.js performance"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Basics"]
 tags: ["Node.js", "Basics", "V8", "Performance"]
@@ -74,7 +74,7 @@ const p2 = new Point(3, 4);  // Reuses the same hidden classes
 ### Bad vs Good
 
 ```js
-// ❌ Bad — different property order every time
+// ❌ Bad - different property order every time
 function createUser(role) {
   const user = {};
   if (role === 'admin') {
@@ -87,7 +87,7 @@ function createUser(role) {
   return user;
 }
 
-// ✅ Good — consistent property order
+// ✅ Good - consistent property order
 function createUser(role) {
   const user = { role: 'user', permissions: [] };
   if (role === 'admin') {
@@ -111,8 +111,8 @@ New Space (Young Gen)        Old Space (Old Gen)
 └──────────────────┘         └──────────────────┘
 ```
 
-- **Scavenge** — fast collection on young generation
-- **Mark-Sweep-Compact** — slower full collection on old generation
+- **Scavenge** - fast collection on young generation
+- **Mark-Sweep-Compact** - slower full collection on old generation
 
 ## Measuring Performance in Node.js
 
@@ -174,7 +174,7 @@ function add(a, b) { return a + b; }  // Always called with numbers
 // ❌ Don't: Polymorphic calls
 function add(a, b) { return a + b; }
 add(1, 2);      // number + number
-add('a', 'b');  // string + string — triggers deopt
+add('a', 'b');  // string + string - triggers deopt
 
 // ✅ Do: Use typed arrays for numeric data
 const buffer = new Float64Array(1000000);
@@ -182,7 +182,7 @@ const buffer = new Float64Array(1000000);
 
 ## Key Takeaways
 
-- **V8** is the JavaScript engine behind Node.js — written in C++, JIT-compiles JS to machine code
+- **V8** is the JavaScript engine behind Node.js - written in C++, JIT-compiles JS to machine code
 - Uses **Ignition** (interpreter) + **TurboFan** (optimising compiler)
 - **Hidden classes** and **inline caching** make property access fast
 - **Generational GC** keeps memory pressure low

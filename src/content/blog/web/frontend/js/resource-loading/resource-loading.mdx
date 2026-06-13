@@ -91,15 +91,15 @@ function loadScript(src, label) {
   script.src = src;
 
   script.onload = function() {
-    log.textContent = label + ' — loaded successfully at ' + new Date().toLocaleTimeString();
+    log.textContent = label + ' - loaded successfully at ' + new Date().toLocaleTimeString();
   };
 
   script.onerror = function() {
-    log.textContent = label + ' — FAILED to load! (script not found or network error)';
+    log.textContent = label + ' - FAILED to load! (script not found or network error)';
   };
 
   document.head.appendChild(script);
-  log.textContent = label + ' — downloading...';
+  log.textContent = label + ' - downloading...';
 }
 
 document.getElementById('load-ext-script').onclick = function() {
@@ -224,7 +224,7 @@ The global `window.onload` fires when all resources on the page are loaded:
 
 ```javascript
 window.addEventListener('load', function() {
-  // Everything is loaded — images, styles, scripts, fonts
+  // Everything is loaded - images, styles, scripts, fonts
   console.log('Page fully loaded');
 });
 ```
@@ -237,4 +237,4 @@ window.addEventListener('load', function() {
 - Native `loading="lazy"` defers off-screen image loading
 - `link rel="preload"` hints the browser to fetch critical resources early
 - `window.addEventListener('load')` fires when **all** page resources are loaded
-- Always handle `onerror` — resources fail (network issues, wrong URLs)
+- Always handle `onerror` - resources fail (network issues, wrong URLs)

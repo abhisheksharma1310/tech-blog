@@ -1,6 +1,6 @@
 ---
 title: "OS Module"
-description: "Master the Node.js OS module — system information, memory, CPU, network interfaces, and platform utilities"
+description: "Master the Node.js OS module - system information, memory, CPU, network interfaces, and platform utilities"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Modules"]
 tags: ["Node.js", "Modules", "OS", "System"]
@@ -11,13 +11,13 @@ order: 3
 
 ## The `os` Module
 
-The `os` module provides operating system-related utility methods. It gives you access to system-level information about the machine your Node.js process is running on — CPU, memory, network, platform, and more.
+The `os` module provides operating system-related utility methods. It gives you access to system-level information about the machine your Node.js process is running on - CPU, memory, network, platform, and more.
 
 ```js
 const os = require('os');
 ```
 
-> **Why use `os`?** Any time you need to make decisions based on the underlying hardware — how many workers to fork, how much memory is available, what platform you're on — the `os` module is the answer.
+> **Why use `os`?** Any time you need to make decisions based on the underlying hardware - how many workers to fork, how much memory is available, what platform you're on - the `os` module is the answer.
 
 ## System Information
 
@@ -216,7 +216,7 @@ console.log('Endianness:', os.endianness());
 
 // Number of CPUs (alias for os.cpus().length)
 console.log('Available parallelism:', os.availableParallelism());
-// Node.js 19+ — returns the number of CPUs Node.js can use
+// Node.js 19+ - returns the number of CPUs Node.js can use
 ```
 
 ## Practical: Health Check System
@@ -367,13 +367,13 @@ const tempFile = require('path').join(os.tmpdir(), 'my-app-temp-' + Date.now());
 
 ## Key Takeaways
 
-- **`os.cpus()`** — get CPU count (for clustering) and per-core info
-- **`os.totalmem()`** / **`os.freemem()`** — system memory for capacity planning
-- **`os.loadavg()`** — CPU load average (1, 5, 15 minutes) — normalise by CPU count
-- **`os.networkInterfaces()`** — find the server's IP address, MAC, and interface details
-- **`os.platform()`** / **`os.arch()`** — detect the OS and architecture for platform-specific code
-- **`os.uptime()`** — system uptime (different from `process.uptime()`)
-- **`os.homedir()`** / **`os.tmpdir()`** — standard system directories
-- **`os.userInfo()`** — current user details (username, home, shell)
-- **`os.EOL`** — platform-appropriate end-of-line character
+- **`os.cpus()`** - get CPU count (for clustering) and per-core info
+- **`os.totalmem()`** / **`os.freemem()`** - system memory for capacity planning
+- **`os.loadavg()`** - CPU load average (1, 5, 15 minutes) - normalise by CPU count
+- **`os.networkInterfaces()`** - find the server's IP address, MAC, and interface details
+- **`os.platform()`** / **`os.arch()`** - detect the OS and architecture for platform-specific code
+- **`os.uptime()`** - system uptime (different from `process.uptime()`)
+- **`os.homedir()`** / **`os.tmpdir()`** - standard system directories
+- **`os.userInfo()`** - current user details (username, home, shell)
+- **`os.EOL`** - platform-appropriate end-of-line character
 - Use `os` data to make runtime decisions: how many workers to fork, when to scale, monitoring thresholds

@@ -109,9 +109,9 @@ void toggleLED()
 ```
 
 `attachInterrupt(interruptNumber, ISR, mode)`:
-- `interruptNumber` — use `digitalPinToInterrupt(pin)` to convert a pin number
-- `ISR` — the function to run (must be `void` with no arguments)
-- `mode` — one of `LOW`, `CHANGE`, `RISING`, `FALLING`, or `HIGH` (board-dependent)
+- `interruptNumber` - use `digitalPinToInterrupt(pin)` to convert a pin number
+- `ISR` - the function to run (must be `void` with no arguments)
+- `mode` - one of `LOW`, `CHANGE`, `RISING`, `FALLING`, or `HIGH` (board-dependent)
 
 Available interrupt pins: Uno/Nano: pins 2 and 3; Mega: 2, 3, 18, 19, 20, 21; Zero/Due: any digital pin.
 

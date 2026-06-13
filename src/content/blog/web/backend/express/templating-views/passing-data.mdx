@@ -1,0 +1,452 @@
+---
+title: "Passing Data from Routes to Views"
+description: "Pass data from Express route handlers to templates using res.render, res.locals, and app.locals"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Templating & Views"]
+tags: ["Express", "Data Passing", "res.locals", "app.locals", "Views"]
+slug: "express-passing-data-views"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## The Three Ways to Pass Data
+
+Express provides three mechanisms to pass data to your views:
+
+| Method | Scope | When to Use |
+|---|---|---|
+| `res.render()` options | Per-request | Page-specific data (user, posts, etc.) |
+| `res.locals` | Per-request | Middleware-set data (auth, flash messages) |
+| `app.locals` | Application-wide | Globals (site name, version, constants) |
+
+```
+app.locals                          Global data (available everywhere)
+  │
+  ├─ route /home
+  │   ├─ res.locals                 Request data (set by middleware)
+  │   └─ res.render('home', { ... }) Route-specific data
+  │
+  ├─ route /profile
+  │   ├─ res.locals
+  │   └─ res.render('profile', { ... })
+  │
+  └─ route /about
+      ├─ res.locals
+      └─ res.render('about', { ... })
+```
+
+## 1. Passing Data via res.render()
+
+The most common way - pass an object as the second argument to `res.render()`:
+
+```javascript
+app.get('/profile/:id', (req, res) => {
+  const user = {
+    id: req.params.id,
+    name: 'Alice',
+    email: 'alice@example.com',
+    bio: 'Full-stack developer',
+    joined: new Date('2024-01-15')
+  };
+
+  const stats = {
+    posts: 42,
+    followers: 128,
+    following: 89
+  };
+
+  const recentPosts = [
+    { title: 'Express Tips', slug: 'express-tips', views: 1200 },
+    { title: 'Node.js Best Practices', slug: 'node-best-practices', views: 3400 }
+  ];
+
+  res.render('profile', {
+    title: `${user.name}'s Profile`,
+    user,
+    stats,
+    recentPosts,
+    isOwnProfile: req.user?.id === user.id,
+    currentYear: new Date().getFullYear()
+  });
+});
+```
+
+### Accessing in Templates
+
+**EJS:**
+```html
+<h1><%= user.name %></h1>
+<p><%= user.email %></p>
+<p><%= stats.posts %> posts published</p>
+<% if (isOwnProfile) { %>
+  <a href="/settings">Edit Profile</a>
+<% } %>
+```
+
+**Pug:**
+```pug
+h1= user.name
+p= user.email
+p #{stats.posts} posts published
+if isOwnProfile
+  a(href="/settings") Edit Profile
+```
+
+**Handlebars:**
+```html
+<h1>{{user.name}}</h1>
+<p>{{user.email}}</p>
+<p>{{stats.posts}} posts published</p>
+{{#if isOwnProfile}}
+  <a href="/settings">Edit Profile</a>
+{{/if}}
+```
+
+## 2. Passing Data via res.locals
+
+`res.locals` is an object that exists for the duration of a single request. Data set there is available to **all templates rendered during that request**.
+
+### Setting in Middleware
+
+```javascript
+// Auth middleware - attach user to every view
+function attachUser(req, res, next) {
+  if (req.session?.userId) {
+    res.locals.user = getUser(req.session.userId);
+    res.locals.isAuthenticated = true;
+  } else {
+    res.locals.user = null;
+    res.locals.isAuthenticated = false;
+  }
+  next();
+}
+
+app.use(attachUser);
+
+// Now every template can access user and isAuthenticated
+// without passing them explicitly in res.render()
+```
+
+### Flash Messages Middleware
+
+```javascript
+function flashMessages(req, res, next) {
+  res.locals.success = req.session?.success || null;
+  res.locals.error = req.session?.error || null;
+
+  // Clear after reading
+  if (req.session) {
+    delete req.session.success;
+    delete req.session.error;
+  }
+
+  next();
+}
+
+app.use(flashMessages);
+
+// Route
+app.post('/login', (req, res) => {
+  if (validLogin(req.body)) {
+    req.session.success = 'Logged in successfully!';
+    res.redirect('/dashboard');
+  } else {
+    req.session.error = 'Invalid credentials';
+    res.redirect('/login');
+  }
+});
+```
+
+### Template Usage
+
+```html
+<!-- Available in any view without passing explicitly -->
+<% if (isAuthenticated) { %>
+  <p>Welcome, <%= user.name %>!</p>
+<% } %>
+
+<% if (success) { %>
+  <div class="alert alert-success"><%= success %></div>
+<% } %>
+
+<% if (error) { %>
+  <div class="alert alert-error"><%= error %></div>
+<% } %>
+```
+
+## 3. Passing Data via app.locals
+
+`app.locals` holds data that's available across **all requests** - it persists for the app's lifetime.
+
+### Setting Globals
+
+```javascript
+app.locals.siteName = 'My Express App';
+app.locals.siteVersion = '2.0.0';
+app.locals.supportEmail = 'support@myapp.com';
+app.locals.currentYear = new Date().getFullYear();
+app.locals.features = {
+  darkMode: true,
+  comments: true,
+  analytics: false
+};
+app.locals.menu = [
+  { label: 'Home', path: '/' },
+  { label: 'About', path: '/about' },
+  { label: 'Contact', path: '/contact' }
+];
+```
+
+### Dynamic app.locals (on startup)
+
+```javascript
+async function initializeApp() {
+  const config = await loadConfig();
+  const theme = await getThemeSettings();
+  const categories = await getCategories();
+
+  app.locals.config = config;
+  app.locals.theme = theme;
+  app.locals.categories = categories;
+  app.locals.startupTime = new Date();
+}
+
+initializeApp();
+```
+
+### Accessing Globals in Templates
+
+```html
+<!-- EJS -->
+<footer>
+  &copy; <%= currentYear %> <%= siteName %>. All rights reserved.
+  <a href="mailto:<%= supportEmail %>">Support</a>
+</footer>
+
+<!-- Pug -->
+footer
+  | &copy; #{currentYear} #{siteName}. All rights reserved.
+  a(href='mailto:' + supportEmail) Support
+
+<!-- Handlebars -->
+<footer>
+  &copy; {{currentYear}} {{siteName}}. All rights reserved.
+  <a href="mailto:{{supportEmail}}">Support</a>
+</footer>
+```
+
+## Precedence and Merging
+
+When the same key exists in multiple places, **more specific wins**:
+
+```
+app.locals.theme = 'dark'       # Base default
+res.locals.theme = 'light'      # Override for this request
+res.render('page', { theme: 'custom' })  # Override for this render
+```
+
+Precedence order (highest wins):
+1. `res.render()` options
+2. `res.locals`
+3. `app.locals`
+
+## Practical Example: Full Data Flow
+
+```javascript
+// app.js
+const express = require('express');
+const path = require('path');
+
+const app = express();
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Global data
+app.locals.siteName = 'TechBlog';
+app.locals.currentYear = new Date().getFullYear();
+app.locals.categories = ['JavaScript', 'Node.js', 'Express', 'Database'];
+
+// Middleware: request data
+app.use((req, res, next) => {
+  res.locals.currentPath = req.path;
+  res.locals.query = req.query;
+  res.locals.isHome = req.path === '/';
+  next();
+});
+
+// Middleware: auth data
+app.use((req, res, next) => {
+  const token = req.cookies?.token;
+  if (token) {
+    res.locals.user = { name: 'Alice', email: 'alice@test.com' };
+    res.locals.isAuthenticated = true;
+  } else {
+    res.locals.user = null;
+    res.locals.isAuthenticated = false;
+  }
+  next();
+});
+
+// Route: page-specific data
+app.get('/blog/:slug', (req, res) => {
+  const post = {
+    title: 'Understanding Express Middleware',
+    slug: req.params.slug,
+    body: 'Express middleware is...',
+    author: 'Alice',
+    published: new Date('2026-06-10'),
+    tags: ['express', 'middleware'],
+    views: 1542
+  };
+
+  res.render('blog/post', {
+    title: post.title,
+    post,
+    relatedPosts: getRelatedPosts(post.tags)
+  });
+});
+```
+
+### views/blog/post.ejs
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= title %> - <%= siteName %></title>
+</head>
+<body>
+  <header>
+    <h1><a href="/"><%= siteName %></a></h1>
+    <nav>
+      <% categories.forEach(cat => { %>
+        <a href="/category/<%= cat %>" class="<%= currentPath.includes(cat) ? 'active' : '' %>">
+          <%= cat %>
+        </a>
+      <% }) %>
+    </nav>
+
+    <% if (isAuthenticated) { %>
+      <span>Welcome, <%= user.name %></span>
+    <% } %>
+  </header>
+
+  <main>
+    <article>
+      <h1><%= post.title %></h1>
+      <p class="meta">
+        By <%= post.author %> on <%= post.published.toDateString() %>
+        - <%= post.views %> views
+      </p>
+      <div class="content"><%= post.body %></div>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; <%= currentYear %> <%= siteName %></p>
+  </footer>
+</body>
+</html>
+```
+
+## Best Practices
+
+### 1. Use app.locals for truly global data
+
+```javascript
+// ✅ Good
+app.locals.siteName = 'MyApp';
+
+// ❌ Not global
+app.locals.currentUser = getUser(); // Different per request!
+```
+
+### 2. Use res.locals for middleware data
+
+```javascript
+// ✅ Good
+app.use((req, res, next) => {
+  res.locals.csrfToken = generateToken(req);
+  next();
+});
+
+// ❌ Don't set request-specific data in app.locals
+app.locals.csrfToken = generateToken(); // Same for all users - defeats purpose
+```
+
+### 3. Decompose complex data in the route
+
+```javascript
+// ✅ Good - prepare data before passing
+app.get('/dashboard', async (req, res) => {
+  const [user, posts, notifications] = await Promise.all([
+    getUser(req.userId),
+    getUserPosts(req.userId),
+    getNotifications(req.userId)
+  ]);
+
+  res.render('dashboard', {
+    user: user.toJSON(),
+    posts: posts.map(p => p.toJSON()),
+    notifications: notifications.slice(0, 5),
+    unreadCount: notifications.filter(n => !n.read).length
+  });
+});
+```
+
+### 4. Set defaults, then override
+
+```javascript
+app.use((req, res, next) => {
+  // Default values for every view
+  res.locals.title = 'MyApp';
+  res.locals.description = 'Default description';
+  res.locals.ogImage = '/images/default-og.png';
+  next();
+});
+
+// Routes override as needed
+app.get('/about', (req, res) => {
+  res.render('about', {
+    title: 'About Us - MyApp',
+    description: 'Learn more about our team and mission'
+  });
+});
+```
+
+## Debugging Data in Templates
+
+Temporarily dump all available data during development:
+
+### EJS
+
+```html
+<pre><%= JSON.stringify(locals, null, 2) %></pre>
+```
+
+### Pug
+
+```pug
+pre= JSON.stringify(locals, null, 2)
+```
+
+### Handlebars
+
+```html
+<pre>{{json locals}}</pre>
+```
+
+```javascript
+hbs.registerHelper('json', (context) => JSON.stringify(context, null, 2));
+```
+
+## Key Takeaways
+
+- `res.render('view', { data })` passes **page-specific** data
+- `res.locals` passes **request-scoped** data (ideal for middleware)
+- `app.locals` passes **application-wide** globals
+- Precedence: `res.render()` > `res.locals` > `app.locals`
+- Use middleware to attach common data (user, flash messages, CSRF tokens)
+- Decompose and transform data before passing to views
+- Dump `locals` during development to debug available data

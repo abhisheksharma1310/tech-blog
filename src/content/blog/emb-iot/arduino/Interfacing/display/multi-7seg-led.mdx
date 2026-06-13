@@ -13,7 +13,7 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
 
 # Multiple 7-Segment LED Displays (Multiplexed)
 
-Driving multiple 7-segment displays individually would require 8 pins per digit (7 segments + DP). For N digits, that is 8 × N pins — impractical beyond 2 digits. **Multiplexing** solves this by connecting all segment pins in parallel and using one common pin per digit. By rapidly switching which digit is active (≈ 1–2 ms per digit), persistence of vision makes all digits appear to be lit simultaneously. The TM1637 (4-digit I²C-like) and MAX7219 (SPI, 8-digit) driver ICs handle multiplexing automatically.
+Driving multiple 7-segment displays individually would require 8 pins per digit (7 segments + DP). For N digits, that is 8 × N pins - impractical beyond 2 digits. **Multiplexing** solves this by connecting all segment pins in parallel and using one common pin per digit. By rapidly switching which digit is active (≈ 1–2 ms per digit), persistence of vision makes all digits appear to be lit simultaneously. The TM1637 (4-digit I²C-like) and MAX7219 (SPI, 8-digit) driver ICs handle multiplexing automatically.
 
 <CloudinaryImage 
    publicId="multiple-7-segment_igofxc.png" 
@@ -53,7 +53,7 @@ Digit 4 cathode --[1kΩ]-- 2N2222 Base -- Pin 13
 
 Each digit's common cathode is driven by an NPN transistor (2N2222) switched by a digital pin. The segment pins drive all four digits in parallel.
 
-### TM1637 (4-digit, 2-wire interface) — recommended
+### TM1637 (4-digit, 2-wire interface) - recommended
 
 ```
 TM1637 Module         Arduino
@@ -129,7 +129,7 @@ arduino-cli lib install "LedControl"
 
 ### For direct multiplexing
 
-No library required — implement the refresh loop manually.
+No library required - implement the refresh loop manually.
 
 ## Code with complete explanation
 
@@ -285,7 +285,7 @@ void setup()
 void loop()
 {
   refreshDisplay();
-  // Other code runs here — the display is refreshed in the same loop
+  // Other code runs here - the display is refreshed in the same loop
 }
 
 void refreshDisplay()
@@ -313,7 +313,7 @@ void refreshDisplay()
 
 - **TM1637:** `display.showNumberDec(value)` displays a 4-digit integer. Leading zeros are suppressed by default. The colon is controlled by bit 6 of the second parameter to `showNumberDecEx()`.
 - **MAX7219:** `lc.setDigit(module, position, value, dp)` sets a single digit (0–9) at position 0–7. `setChar()` accepts hex digits and letters A–F.
-- **Direct multiplexing:** The `refreshDisplay()` function is called repeatedly in `loop()`. It iterates through each digit, setting the segment pattern and enabling only that digit's common cathode. The 2 ms delay per digit gives ≈ 125 Hz refresh — fast enough to avoid flicker.
+- **Direct multiplexing:** The `refreshDisplay()` function is called repeatedly in `loop()`. It iterates through each digit, setting the segment pattern and enabling only that digit's common cathode. The 2 ms delay per digit gives ≈ 125 Hz refresh - fast enough to avoid flicker.
 - The segment pattern lookup uses a bitmask approach: bit 0 = segment a, bit 1 = b, ... bit 7 = dp. This reduces the data to a single byte per digit.
 - `display.setSegments(raw, len, pos)` sends raw segment bytes directly to the TM1637, enabling custom characters like ° (degree symbol for temperature).
 
@@ -330,10 +330,10 @@ void refreshDisplay()
 
 ## Caution
 
-- **Multiplexing timing:** The human eye perceives flicker at rates below ≈ 60 Hz. For N digits at refresh rate R, each digit is on for 1/(N × R) seconds. At 4 digits and 100 Hz refresh, each digit is on for 2.5 ms — the segments must be bright enough during this short window to appear continuous. Increase brightness by lowering resistor values or reducing the digit count.
-- **Transistor drivers for direct multiplex:** Never drive the common cathode (or anode) of a multi-digit display directly from an Arduino pin. When all 8 segments are lit, the common pin carries up to 8 × 15 mA = 120 mA — far exceeding the Arduino pin's 40 mA limit. Always use a transistor (2N2222 or N-channel MOSFET for CC; PNP or P-channel for CA) per digit.
+- **Multiplexing timing:** The human eye perceives flicker at rates below ≈ 60 Hz. For N digits at refresh rate R, each digit is on for 1/(N × R) seconds. At 4 digits and 100 Hz refresh, each digit is on for 2.5 ms - the segments must be bright enough during this short window to appear continuous. Increase brightness by lowering resistor values or reducing the digit count.
+- **Transistor drivers for direct multiplex:** Never drive the common cathode (or anode) of a multi-digit display directly from an Arduino pin. When all 8 segments are lit, the common pin carries up to 8 × 15 mA = 120 mA - far exceeding the Arduino pin's 40 mA limit. Always use a transistor (2N2222 or N-channel MOSFET for CC; PNP or P-channel for CA) per digit.
 - **TM1637 vs MAX7219:** The TM1637 drives **4 digits** (or 6 in some variants) and does not support daisy-chaining. The MAX7219 drives **8 digits** per IC and supports **daisy-chaining** multiple ICs via SPI for 16, 24, or more digits. For 1–4 digits, TM1637 is simpler (2 wires). For 5+ digits, use MAX7219.
-- **TM1637 voltage:** The TM1637 operates at 5V but its logic inputs are 5V-tolerant. Do **not** use 3.3V Arduinos without a level shifter — the module may not recognise 3.3V as a logic HIGH. Some modules accept 3.3V on VCC but have reduced brightness.
+- **TM1637 voltage:** The TM1637 operates at 5V but its logic inputs are 5V-tolerant. Do **not** use 3.3V Arduinos without a level shifter - the module may not recognise 3.3V as a logic HIGH. Some modules accept 3.3V on VCC but have reduced brightness.
 - **MAX7219 capacitor:** Place a 10 µF electrolytic capacitor between VCC and GND as close to the MAX7219 as possible. The IC draws current spikes when switching digits; without the capacitor, the voltage dips can cause the display to flicker or the Arduino to reset.
 - **Decimal point (DP):** In multiplexed displays, the DP is one segment (bit 7 in the pattern). It is dimmer than the other segments because it is only on for 1/N of the time (same as all other segments). For always-on DP, a separate pin is required.
 - **Brightness vs resistor selection:** With TM1637/MAX7219, brightness is set in software (`setBrightness()` or `setIntensity()`). With direct multiplexing, brightness is determined by the series resistors on the segment lines. Lower resistors = brighter segments but higher current. Calculate: R = (V_supply - V_f) / I_seg. For a 5V supply, red LED V_f = 1.8V, desired I = 10 mA (since each segment is on 1/4 of the time, peak current can be higher): R = (5 - 1.8) / 0.01 = 320 Ω → 330 Ω standard.

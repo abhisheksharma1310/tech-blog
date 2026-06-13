@@ -1,0 +1,391 @@
+---
+title: "Handling 404 & Custom Error Routes"
+description: "Master error handling in Express - 404 pages, custom error middleware, and centralized error patterns"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Routing"]
+tags: ["Express", "Error Handling", "404", "Error Middleware", "Best Practices"]
+slug: "express-error-handling-routes"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## The Two Types of Errors
+
+In Express, errors fall into two categories:
+
+| Type | Description | Example |
+|---|---|---|
+| **404 Not Found** | No route matched the request | `GET /nonexistent` |
+| **Application Error** | A route handler threw or failed | Database connection failed |
+
+Express needs different strategies for each.
+
+```
+Client                              Server
+  │                                   │
+  │── GET /api/nonexistent ──────────→│ No matching route
+  │←── 404 { error: "Route not found" }│
+  │                                   │
+  │── GET /api/users ────────────────→│ Database crashes
+  │←── 500 { error: "Internal error" }│
+  │                                   │
+```
+
+## The 404 Catch-All Handler
+
+Place a **catch-all middleware** at the end of your route stack. If no route matched, this runs:
+
+```javascript
+const express = require('express');
+const app = express();
+
+// All your routes
+app.get('/', (req, res) => res.send('Home'));
+app.get('/about', (req, res) => res.send('About'));
+
+// ⚠️ 404 handler - must be AFTER all routes
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.originalUrl} not found`,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.listen(3000);
+```
+
+### Why it works
+
+Express runs middleware in order. When no route matches, it falls through all route handlers to the last `app.use()`, which catches every unmatched request.
+
+## Custom 404 Responses
+
+You can tailor 404 responses to your needs:
+
+```javascript
+// API 404 (JSON)
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    path: req.originalUrl
+  });
+});
+
+// Website 404 (HTML)
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+});
+
+// Dynamic 404 with template engine
+app.use((req, res) => {
+  res.status(404).render('404', {
+    title: 'Page Not Found',
+    url: req.originalUrl
+  });
+});
+```
+
+## Error-Handling Middleware
+
+Express identifies **error-handling middleware** by its four parameters `(err, req, res, next)`:
+
+```javascript
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+```
+
+Place it **after all routes and the 404 handler**:
+
+```javascript
+// 1. Routes
+app.get('/', ...);
+app.get('/users', ...);
+
+// 2. 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// 3. Error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+```
+
+## Passing Errors to the Handler
+
+Use `next(err)` to pass errors from route handlers:
+
+```javascript
+// Async route that might fail
+app.get('/users/:id', async (req, res, next) => {
+  try {
+    const user = await db.findUser(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    next(err); // Pass to error handler
+  }
+});
+
+// Sync route
+app.get('/risky', (req, res, next) => {
+  const result = someRiskyOperation();
+  if (result instanceof Error) {
+    return next(result);
+  }
+  res.json(result);
+});
+```
+
+### Express 5: Automatic Async Error Handling
+
+Express 5 (alpha/beta) catches rejected promises automatically. In Express 4, you must wrap manually or use a helper:
+
+```javascript
+// Helper to avoid try/catch in every route
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+app.get('/users/:id', asyncHandler(async (req, res) => {
+  const user = await db.findUser(req.params.id);
+  res.json(user);
+}));
+```
+
+## Custom Error Classes
+
+Create a custom error class to structure errors:
+
+```javascript
+// errors/AppError.js
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = true;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+// Usage
+const user = users.find(u => u.id === parseInt(req.params.id));
+if (!user) {
+  throw new AppError('User not found', 404);
+}
+```
+
+### Extended Error Types
+
+```javascript
+class NotFoundError extends AppError {
+  constructor(resource = 'Resource') {
+    super(`${resource} not found`, 404);
+  }
+}
+
+class ValidationError extends AppError {
+  constructor(errors) {
+    super('Validation failed', 422);
+    this.errors = errors;
+  }
+}
+
+class AuthError extends AppError {
+  constructor(message = 'Unauthorized') {
+    super(message, 401);
+  }
+}
+
+// Usage
+if (!user) throw new NotFoundError('User');
+```
+
+## Centralized Error Handler
+
+A robust error handler that handles different error types:
+
+```javascript
+// middleware/errorHandler.js
+function errorHandler(err, req, res, next) {
+  // Default values
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Internal server error';
+
+  // Log the error
+  console.error(`[${new Date().toISOString()}] ${err.stack || err}`);
+
+  // Mongoose validation error
+  if (err.name === 'ValidationError') {
+    statusCode = 422;
+    message = 'Validation failed';
+    const errors = Object.values(err.errors).map(e => e.message);
+    return res.status(statusCode).json({ error: message, details: errors });
+  }
+
+  // Mongoose duplicate key
+  if (err.code === 11000) {
+    statusCode = 409;
+    message = 'Duplicate key error';
+    const field = Object.keys(err.keyValue).join(', ');
+    return res.status(statusCode).json({ error: message, field });
+  }
+
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Invalid token';
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Token expired';
+  }
+
+  // Default error response
+  res.status(statusCode).json({
+    error: message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+}
+
+module.exports = errorHandler;
+```
+
+## Full Production Setup
+
+```javascript
+const express = require('express');
+const path = require('path');
+const errorHandler = require('./middleware/errorHandler');
+const AppError = require('./errors/AppError');
+
+const app = express();
+
+// Built-in middleware
+app.use(express.json());
+
+// Routes
+app.use('/api/users', require('./routes/users'));
+app.use('/api/posts', require('./routes/posts'));
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// 404 handler - must be after all routes
+app.all('*', (req, res, next) => {
+  next(new AppError(`Route ${req.originalUrl} not found`, 404));
+});
+
+// Global error handler
+app.use(errorHandler);
+
+app.listen(3000);
+```
+
+## Throwing Errors vs next(err)
+
+```javascript
+// ❌ This crashes the app (unhandled)
+app.get('/fail', (req, res) => {
+  throw new Error('Boom!');
+});
+
+// ✅ This sends a 500 to the client
+app.get('/fail', (req, res, next) => {
+  next(new Error('Boom!'));
+});
+
+// ✅ Using express-async-errors (requires npm install)
+require('express-async-errors');
+
+app.get('/fail', async (req, res) => {
+  throw new Error('This works with express-async-errors');
+});
+```
+
+## HTTP Status Codes for Errors
+
+| Code | Meaning | When |
+|---|---|---|
+| 400 | Bad Request | Invalid input, missing fields |
+| 401 | Unauthorized | Missing/invalid authentication |
+| 403 | Forbidden | Authenticated but not permitted |
+| 404 | Not Found | Resource doesn't exist |
+| 409 | Conflict | Duplicate entry, state conflict |
+| 422 | Unprocessable | Validation errors |
+| 429 | Too Many Requests | Rate limited |
+| 500 | Internal Server | Unexpected server failure |
+| 503 | Service Unavailable | Maintenance, overload |
+
+## Logging Errors
+
+Integrate a proper logging library:
+
+```javascript
+// Using Winston
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  level: 'error',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'error.log' }),
+    new winston.transports.Console({ format: winston.format.simple() })
+  ]
+});
+
+function errorHandler(err, req, res, next) {
+  logger.error({
+    message: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip,
+    timestamp: new Date().toISOString()
+  });
+
+  res.status(err.statusCode || 500).json({
+    error: err.isOperational ? err.message : 'Internal server error'
+  });
+}
+```
+
+## Testing Error Handling
+
+```javascript
+// Test 404
+fetch('http://localhost:3000/nonexistent')
+  .then(res => console.log(res.status)); // 404
+
+// Test server error
+fetch('http://localhost:3000/fail')
+  .then(res => console.log(res.status)); // 500
+
+// Test validation error
+fetch('http://localhost:3000/api/users', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({})
+}).then(res => console.log(res.status)); // 422
+```
+
+## Key Takeaways
+
+- Place **404 handler** after all route definitions
+- **Error-handling middleware** has 4 params: `(err, req, res, next)`
+- Pass errors with `next(err)` - never throw synchronously in handlers
+- Use **custom error classes** for structured, consistent errors
+- Centralize error handling into **one middleware function**
+- **Log errors** for debugging and monitoring
+- Include stack traces only in **development mode**
+- Always distinguish between **operational errors** (expected) and **programmer errors** (bugs)

@@ -187,13 +187,13 @@ console.log(eval(code)); // → 30
 ### Why avoid eval?
 
 ```js
-// 1. Security — code injection
+// 1. Security - code injection
 let userInput = "alert('Hacked!')";
 // eval(userInput); // DANGEROUS
 
-// 2. Performance — can't be optimized by JS engines
-// 3. Debugging — harder to trace
-// 4. Scope — can access/modify local variables
+// 2. Performance - can't be optimized by JS engines
+// 3. Debugging - harder to trace
+// 4. Scope - can access/modify local variables
 ```
 
 ### Alternatives to eval
@@ -244,7 +244,7 @@ console.log(add(1)(2)(3)); // → 6
 ### Why Currying?
 
 ```js
-// Partial application — pre-fill arguments
+// Partial application - pre-fill arguments
 let addFive = add(5); // Fix first argument
 console.log(addFive(10)(20)); // → 35 (5 + 10 + 20)
 
@@ -300,10 +300,10 @@ let user = {
   }
 };
 
-// Direct call — user.greet has the reference type (user, greet)
+// Direct call - user.greet has the reference type (user, greet)
 user.greet(); // → "Hello, Alice"
 
-// Assigned — loses the reference type
+// Assigned - loses the reference type
 let fn = user.greet;
 fn(); // → "Hello, undefined" (this lost)
 ```
@@ -470,7 +470,7 @@ words.sort((a, b) => a.localeCompare(b));
 
 ### WeakRef (ES2021)
 
-A `WeakRef` holds a weak reference to an object — it doesn't prevent garbage collection:
+A `WeakRef` holds a weak reference to an object - it doesn't prevent garbage collection:
 
 ```js
 let obj = { data: "important" };
@@ -505,7 +505,7 @@ obj = null;
 ### Use Cases
 
 ```js
-// Cache with WeakRef — entries can be GC'd when memory is needed
+// Cache with WeakRef - entries can be GC'd when memory is needed
 class WeakCache {
   constructor() {
     this.cache = new Map();
@@ -534,7 +534,7 @@ class WeakCache {
 }
 ```
 
-> **Warning:** WeakRef and FinalizationRegistry are advanced features. They should be used sparingly — the timing of GC is unpredictable and implementation-dependent.
+> **Warning:** WeakRef and FinalizationRegistry are advanced features. They should be used sparingly - the timing of GC is unpredictable and implementation-dependent.
 
 <CodePlayground
   title="Miscellaneous Features Demo"

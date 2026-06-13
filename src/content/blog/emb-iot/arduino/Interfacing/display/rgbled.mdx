@@ -59,7 +59,7 @@ Pin 11   ----[220Ω]---- B (Blue cathode)
 5V       -------------- + (Common anode)
 ```
 
-For common anode, the PWM logic is inverted — `analogWrite(pin, 255)` = LED off, `analogWrite(pin, 0)` = full brightness.
+For common anode, the PWM logic is inverted - `analogWrite(pin, 255)` = LED off, `analogWrite(pin, 0)` = full brightness.
 
 ## Pin Map
 
@@ -70,7 +70,7 @@ For common anode, the PWM logic is inverted — `analogWrite(pin, 255)` = LED of
 | Next (G) | Green | 10 (PWM) | 220 Ω |
 | Shortest (B) | Blue | 11 (PWM) | 220 Ω |
 
-Pin order varies by manufacturer — always check the datasheet. Common anode RGB LEDs have a common longest pin too (the anode).
+Pin order varies by manufacturer - always check the datasheet. Common anode RGB LEDs have a common longest pin too (the anode).
 
 ## Install necessary Library
 
@@ -94,10 +94,10 @@ void setup()
 
   Serial.println("RGB LED Colour Test");
   Serial.println("Commands:");
-  Serial.println("  R<0-255>  — Set red brightness");
-  Serial.println("  G<0-255>  — Set green brightness");
-  Serial.println("  B<0-255>  — Set blue brightness");
-  Serial.println("  C         — Cycle through colours");
+  Serial.println("  R<0-255>  - Set red brightness");
+  Serial.println("  G<0-255>  - Set green brightness");
+  Serial.println("  B<0-255>  - Set blue brightness");
+  Serial.println("  C         - Cycle through colours");
 }
 
 void loop()
@@ -206,9 +206,9 @@ void setColour(uint32_t hex)
 
 ### Code breakdown
 
-- `analogWrite(pin, value)` — outputs a PWM signal (0–255) on the specified pin, controlling LED brightness.
-- `constrain(value, 0, 255)` — clamps the input to the valid PWM range.
-- `Serial.parseInt()` — reads an integer from the serial buffer (e.g., sending `R128` sets red to 50%).
+- `analogWrite(pin, value)` - outputs a PWM signal (0–255) on the specified pin, controlling LED brightness.
+- `constrain(value, 0, 255)` - clamps the input to the valid PWM range.
+- `Serial.parseInt()` - reads an integer from the serial buffer (e.g., sending `R128` sets red to 50%).
 - Colour mixing: roughly 8 million colours (256³) are possible but the human eye cannot distinguish adjacent shades at the low end. 64 levels per channel (6-bit) is often sufficient.
 - The colour cycle cross-fades between primary and secondary colours by linearly interpolating two channels at a time.
 
@@ -228,10 +228,10 @@ void setColour(uint32_t hex)
 
 ## Caution
 
-- **Common anode requires inverted logic:** If your LED is common anode and you use common cathode code (0–255), the LED will appear to work but with inverted brightness — full brightness = 0, off = 255. Always check the datasheet or use the helper function `setColourCA()` above. Driving a common anode LED with common cathode code is safe (just looks wrong), but the reverse (CC with CA code) will not drive the LED at all.
-- **Resistor selection:** The forward voltage of each die differs: Red ≈ 1.8–2.2V, Green ≈ 3.0–3.4V, Blue ≈ 3.0–3.4V. With a 5V supply and 220 Ω resistor: Red current ≈ (5-2)/220 ≈ 14 mA, Blue current ≈ (5-3.2)/220 ≈ 8 mA. This is why white often looks pinkish — the red is brighter than blue/green. **Balance the brightness** by using different resistor values: e.g., 330 Ω (R) and 220 Ω (G, B). Or adjust the PWM levels in software to find a visually pleasing white.
+- **Common anode requires inverted logic:** If your LED is common anode and you use common cathode code (0–255), the LED will appear to work but with inverted brightness - full brightness = 0, off = 255. Always check the datasheet or use the helper function `setColourCA()` above. Driving a common anode LED with common cathode code is safe (just looks wrong), but the reverse (CC with CA code) will not drive the LED at all.
+- **Resistor selection:** The forward voltage of each die differs: Red ≈ 1.8–2.2V, Green ≈ 3.0–3.4V, Blue ≈ 3.0–3.4V. With a 5V supply and 220 Ω resistor: Red current ≈ (5-2)/220 ≈ 14 mA, Blue current ≈ (5-3.2)/220 ≈ 8 mA. This is why white often looks pinkish - the red is brighter than blue/green. **Balance the brightness** by using different resistor values: e.g., 330 Ω (R) and 220 Ω (G, B). Or adjust the PWM levels in software to find a visually pleasing white.
 - **Maximum current per pin:** The Arduino's ATmega328P can source/sink a maximum of 40 mA per pin and 200 mA total across all pins. Full brightness on all three channels (3 × 20 mA = 60 mA) is within this limit, but if adding more LEDs, use a transistor or LED driver.
-- **Perceived brightness is not linear:** The human eye perceives brightness logarithmically. A PWM value of 128 is not perceived as 50% brightness — it appears much brighter. For smooth fades, use a gamma-correction curve: `actual = pow(pct / 255.0, 2.8) * 255`.
+- **Perceived brightness is not linear:** The human eye perceives brightness logarithmically. A PWM value of 128 is not perceived as 50% brightness - it appears much brighter. For smooth fades, use a gamma-correction curve: `actual = pow(pct / 255.0, 2.8) * 255`.
 - **ESD sensitivity:** The LED dies are sensitive to electrostatic discharge. When handling the LED, touch a grounded metal object first. Avoid touching the leads.
-- **RGB vs RGBW:** Some RGB LEDs include a separate white die (RGBW) for truer whites. These require 4 PWM channels and 4 resistors. The code above controls only the R, G, B channels — leave the W pin unconnected or wire it to a 4th PWM pin.
+- **RGB vs RGBW:** Some RGB LEDs include a separate white die (RGBW) for truer whites. These require 4 PWM channels and 4 resistors. The code above controls only the R, G, B channels - leave the W pin unconnected or wire it to a 4th PWM pin.
 

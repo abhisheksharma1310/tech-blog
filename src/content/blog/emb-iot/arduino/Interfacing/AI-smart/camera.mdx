@@ -13,7 +13,7 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
 
 # OV7670 Camera – Basic image capture
 
-The OV7670 is a low-cost VGA (640×480) CMOS camera sensor from OmniVision that outputs 8-bit parallel data with pixel, line, and frame synchronisation signals. It supports many output formats including YUV, RGB565, and grayscale via SCCB (I²C-like) register configuration. Capturing images with an Arduino Uno is challenging due to limited RAM (2 KB) and clock speed — practical use requires a FIFO buffer module (AL422B) or restricting output to low-resolution grayscale (QQVGA 160×120). This tutorial covers the FIFO-based OV7670 module.
+The OV7670 is a low-cost VGA (640×480) CMOS camera sensor from OmniVision that outputs 8-bit parallel data with pixel, line, and frame synchronisation signals. It supports many output formats including YUV, RGB565, and grayscale via SCCB (I²C-like) register configuration. Capturing images with an Arduino Uno is challenging due to limited RAM (2 KB) and clock speed - practical use requires a FIFO buffer module (AL422B) or restricting output to low-resolution grayscale (QQVGA 160×120). This tutorial covers the FIFO-based OV7670 module.
 
 <CloudinaryImage 
    publicId="OV7670-camera-module_tmtme9" 
@@ -23,7 +23,7 @@ The OV7670 is a low-cost VGA (640×480) CMOS camera sensor from OmniVision that 
 
 ## For this interfacing you need the following components:
 
-- Arduino board (Uno, Nano, Mega — preferably Mega for more RAM)
+- Arduino board (Uno, Nano, Mega - preferably Mega for more RAM)
 - OV7670 camera module with FIFO (AL422B) buffer
 - Breadboard and jumper wires
 - USB cable to connect Arduino to your computer
@@ -47,7 +47,7 @@ FIFO_OE       -->     Digital Pin 5
 FIFO_WRST     -->     Digital Pin 8
 FIFO_WR       -->     Digital Pin 4
 D0–D7         -->     Digital Pins 22–29 (PORT A on Mega)
-XCLK          -->     Digital Pin 3 (PWM — generates clock)
+XCLK          -->     Digital Pin 3 (PWM - generates clock)
 ```
 
 The FIFO buffer stores a full frame so the Arduino can read it out at its own pace. The OV7670 writes continuously to the FIFO, and the Arduino reads the FIFO when a frame is ready.
@@ -141,10 +141,10 @@ void captureAndSendPGM()
 
 ### Code breakdown
 
-- `#include <Arduino_OV767X.h>` — includes the Arduino OV767X camera library.
-- `Camera.begin(QQVGA, GRAYSCALE, width, height)` — initialises the camera in QQVGA (160×120) grayscale mode. Other resolutions include `VGA` (640×480) and `QVGA` (320×240). Other pixel formats include `RGB565` and `YUV`.
-- `Camera.readFrame(buffer)` — reads one complete frame into the provided byte array. The array must be at least `width × height` bytes for grayscale or `width × height × 2` bytes for RGB565.
-- `Camera.writeRegister(reg, value)` — sets a register on the OV7670 via SCCB. Useful for adjusting gain, exposure, white balance, and output format.
+- `#include <Arduino_OV767X.h>` - includes the Arduino OV767X camera library.
+- `Camera.begin(QQVGA, GRAYSCALE, width, height)` - initialises the camera in QQVGA (160×120) grayscale mode. Other resolutions include `VGA` (640×480) and `QVGA` (320×240). Other pixel formats include `RGB565` and `YUV`.
+- `Camera.readFrame(buffer)` - reads one complete frame into the provided byte array. The array must be at least `width × height` bytes for grayscale or `width × height × 2` bytes for RGB565.
+- `Camera.writeRegister(reg, value)` - sets a register on the OV7670 via SCCB. Useful for adjusting gain, exposure, white balance, and output format.
 - The PGM format: `P5` header, width and height in ASCII, max pixel value (255), then raw binary pixel data.
 
 ### Capturing RGB565 frames
@@ -226,7 +226,7 @@ void captureToSD()
 4. Select Arduino Mega or Due as the board (`Tools > Board`).
 5. Upload the sketch.
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 115200).
-7. Type `c` and press Enter — the Serial Monitor will display raw PGM binary data.
+7. Type `c` and press Enter - the Serial Monitor will display raw PGM binary data.
 8. Save the Serial Monitor output to a file with a `.pgm` extension and open it in an image viewer (GIMP, IrfanView, etc.) to see the captured image.
 
 ### Viewing the PGM image
@@ -237,10 +237,10 @@ void captureToSD()
 
 ## Caution
 
-- **Arduino Uno is not suitable:** The OV7670 requires 8–12 GPIOs for the parallel data bus, which leaves few pins for other functions on a Uno. More importantly, a full VGA frame (307 KB) far exceeds the Uno's 2 KB RAM. Even QQVGA (19 KB) exceeds it. The FIFO buffer helps with timing, but the RAM constraint remains — use a Mega (8 KB) for QQVGA grayscale or a Due (96 KB) for larger images.
+- **Arduino Uno is not suitable:** The OV7670 requires 8–12 GPIOs for the parallel data bus, which leaves few pins for other functions on a Uno. More importantly, a full VGA frame (307 KB) far exceeds the Uno's 2 KB RAM. Even QQVGA (19 KB) exceeds it. The FIFO buffer helps with timing, but the RAM constraint remains - use a Mega (8 KB) for QQVGA grayscale or a Due (96 KB) for larger images.
 - **FIFO module required:** Without the AL422B FIFO buffer, the OV7670 must be read in real time (pixel-by-pixel as they arrive). This is nearly impossible on an Arduino because the pixel clock runs at 8–24 MHz. Always use the FIFO version of the module for any Arduino-based capture.
-- **XCLK generation:** The OV7670 requires an external master clock (XCLK) of 8–24 MHz. The Arduino_OV767X library generates this via PWM on pin 3 (~8 MHz). The frequency must be stable — toggle rate variations cause corrupted images.
+- **XCLK generation:** The OV7670 requires an external master clock (XCLK) of 8–24 MHz. The Arduino_OV767X library generates this via PWM on pin 3 (~8 MHz). The frequency must be stable - toggle rate variations cause corrupted images.
 - **Register configuration:** The default OV7670 registers produce VGA YUV output. The library configures the sensor for the requested resolution and format via SCCB during `Camera.begin()`. If the image appears garbled, the register settings may need adjustment for your specific module variant (OV7670 vs OV7675, or different clock configurations).
-- **Serial bandwidth:** Sending a full image over serial is slow. At 115200 baud (~11.5 KB/s), a QQVGA grayscale frame (19 KB) takes about 1.7 seconds. A VGA grayscale frame (307 KB) would take 27 seconds — faster interfaces (SPI to SD card) or hardware flow control are recommended for larger images.
+- **Serial bandwidth:** Sending a full image over serial is slow. At 115200 baud (~11.5 KB/s), a QQVGA grayscale frame (19 KB) takes about 1.7 seconds. A VGA grayscale frame (307 KB) would take 27 seconds - faster interfaces (SPI to SD card) or hardware flow control are recommended for larger images.
 - **Light sensitivity:** The OV7670 requires good lighting. Without adequate illumination, images will be dark and noisy even at maximum gain. The default automatic gain control (AGC) and automatic white balance (AWB) can be adjusted via registers to improve low-light performance.
 - **Lens focus:** The OV7670 lens is fixed-focus, set for distances of about 30 cm to infinity. For close-up shots (macro), add an external M12x0.5 lens mount with adjustable focus.

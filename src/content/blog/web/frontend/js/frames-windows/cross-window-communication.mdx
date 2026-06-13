@@ -11,7 +11,7 @@ order: 2
 
 ## Cross-Window Communication
 
-Modern web apps often need to communicate between windows, tabs, or iframes — even across different origins. The `postMessage` API makes this possible.
+Modern web apps often need to communicate between windows, tabs, or iframes - even across different origins. The `postMessage` API makes this possible.
 
 ## The Same-Origin Policy
 
@@ -32,9 +32,9 @@ But `postMessage` is designed for **safe cross-origin messaging**.
 otherWindow.postMessage(message, targetOrigin);
 ```
 
-- `otherWindow` — reference to the target window (iframe.contentWindow, window.opener, etc.)
-- `message` — data to send (can be objects, strings, etc.)
-- `targetOrigin` — restrict to specific origin (`'*'` for any)
+- `otherWindow` - reference to the target window (iframe.contentWindow, window.opener, etc.)
+- `message` - data to send (can be objects, strings, etc.)
+- `targetOrigin` - restrict to specific origin (`'*'` for any)
 
 **Receiver** (target window):
 
@@ -104,7 +104,7 @@ document.getElementById('send-msg').onclick = function() {
 
 ## Always Validate the Origin
 
-Never trust messages blindly — always check `event.origin`:
+Never trust messages blindly - always check `event.origin`:
 
 ```javascript
 window.addEventListener('message', function(e) {
@@ -181,4 +181,4 @@ frames.length             // number of iframes
 - Use `event.source` to reply to the sender
 - Works between windows, tabs, iframes, and popups
 - The message can be any structured data (objects, arrays, primitives)
-- For same-origin, direct DOM access is simpler — use `postMessage` only when needed
+- For same-origin, direct DOM access is simpler - use `postMessage` only when needed

@@ -1,6 +1,6 @@
 ---
 title: "Browser Environment & Specs"
-description: "Understand the JavaScript browser environment — window, DOM, BOM, and ECMAScript"
+description: "Understand the JavaScript browser environment - window, DOM, BOM, and ECMAScript"
 date: "2026-06-10"
 category: ["Web Development", "Frontend", "JavaScript DOM", "Document"]
 tags: ["JavaScript", "DOM", "Browser"]
@@ -13,9 +13,9 @@ order: 1
 
 When JavaScript runs in a browser, it gets access to a special environment with three main parts:
 
-- **ECMAScript** — the core language (variables, functions, loops, etc.)
-- **DOM (Document Object Model)** — APIs to interact with HTML/XML pages
-- **BOM (Browser Object Model)** — APIs to interact with the browser itself
+- **ECMAScript** - the core language (variables, functions, loops, etc.)
+- **DOM (Document Object Model)** - APIs to interact with HTML/XML pages
+- **BOM (Browser Object Model)** - APIs to interact with the browser itself
 
 ```
 ┌─────────────────────────────────────┐
@@ -55,20 +55,20 @@ out.innerHTML += 'Page location: ' + window.location.href;
 
 The DOM is maintained by the **W3C** and **WHATWG**. Modern browsers implement the **DOM Living Standard** which includes:
 
-- **Core DOM** — the tree structure model
-- **HTML DOM** — HTML-specific elements and attributes
-- **CSSOM** — CSS object model for styling
+- **Core DOM** - the tree structure model
+- **HTML DOM** - HTML-specific elements and attributes
+- **CSSOM** - CSS object model for styling
 
 ## BOM APIs
 
 The BOM provides browser-level objects:
 
-- `navigator` — browser info (user agent, geolocation, media devices)
-- `location` — URL information and navigation
-- `history` — session history (back, forward, pushState)
-- `screen` — screen dimensions
-- `fetch` / `XMLHttpRequest` — network requests
-- `localStorage` / `sessionStorage` — client-side storage
+- `navigator` - browser info (user agent, geolocation, media devices)
+- `location` - URL information and navigation
+- `history` - session history (back, forward, pushState)
+- `screen` - screen dimensions
+- `fetch` / `XMLHttpRequest` - network requests
+- `localStorage` / `sessionStorage` - client-side storage
 
 <CodePlayground
   title="BOM APIs in action"
@@ -84,7 +84,7 @@ el.innerHTML += 'Screen size: ' + screen.width + 'x' + screen.height;
 ## Key Takeaways
 
 - JavaScript in the browser has **three layers**: language, DOM, BOM
-- `window` is the **global object** — all browser APIs hang off it
+- `window` is the **global object** - all browser APIs hang off it
 - DOM lets you **read and modify** the page
 - BOM lets you **interact with the browser** itself
-- Both DOM and BOM are evolving standards — always check compatibility
+- Both DOM and BOM are evolving standards - always check compatibility

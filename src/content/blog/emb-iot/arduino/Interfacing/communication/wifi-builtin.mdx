@@ -21,9 +21,9 @@ Several Arduino boards include a built-in Wi-Fi module based on the u-blox NINA-
    className="my-6 rounded"
 />
 
-- **Arduino Uno WiFi Rev2** — ATmega4809 + NINA-W102
-- **Arduino MKR WiFi 1010** — SAMD21 + NINA-W102
-- **Arduino Nano 33 IoT** — SAMD21 + NINA-W102
+- **Arduino Uno WiFi Rev2** - ATmega4809 + NINA-W102
+- **Arduino MKR WiFi 1010** - SAMD21 + NINA-W102
+- **Arduino Nano 33 IoT** - SAMD21 + NINA-W102
 
 The NINA module is controlled via SPI using the **WiFiNINA** library, which provides a familiar API similar to the older WiFi101 and Ethernet libraries. This enables connecting to Wi-Fi networks, making HTTP requests, creating web servers, and communicating over TCP/UDP.
 
@@ -33,7 +33,7 @@ The NINA module is controlled via SPI using the **WiFiNINA** library, which prov
 - USB cable to connect Arduino to your computer
 - Wi-Fi network with known SSID and password
 
-No external hardware is required — the Wi-Fi module is built into the board.
+No external hardware is required - the Wi-Fi module is built into the board.
 
 ## Schematic
 
@@ -49,7 +49,7 @@ No wiring is needed. The NINA-W102 module is connected to the main microcontroll
 
 ## Pin Map
 
-### Uno WiFi Rev2 — SPI pins used by NINA
+### Uno WiFi Rev2 - SPI pins used by NINA
 
 | Pin | Function | Do Not Use For |
 |---|---|---|
@@ -247,20 +247,20 @@ void loop()
 
 ### Code breakdown
 
-- `#include <WiFiNINA.h>` — includes the WiFiNINA library for NINA-based Wi-Fi boards.
-- `WiFi.status()` — returns the current connection status. `WL_NO_MODULE` means the NINA module is not responding.
-- `WiFi.begin(ssid, password)` — attempts to connect to the specified Wi-Fi network. Returns `WL_CONNECTED` when successful.
-- `WiFi.localIP()` — returns the Arduino's IP address once connected.
-- `WiFi.RSSI()` — returns the received signal strength in dBm.
-- `WiFi.SSID()` — returns the SSID of the connected network.
-- `WiFiClient client` — creates a TCP client for outbound connections.
-- `client.connect(host, port)` — connects to a remote server. Returns `true` on success.
-- `client.println("GET / HTTP/1.1")` — sends an HTTP GET request.
-- `client.available()` — returns the number of bytes available to read from the server response.
-- `client.read()` — reads one byte from the response.
-- `client.stop()` — disconnects the TCP connection.
-- `WiFiServer server(80)` — creates a TCP server on port 80.
-- `server.available()` — returns a `WiFiClient` for an incoming connection, or a false-y client if none pending.
+- `#include <WiFiNINA.h>` - includes the WiFiNINA library for NINA-based Wi-Fi boards.
+- `WiFi.status()` - returns the current connection status. `WL_NO_MODULE` means the NINA module is not responding.
+- `WiFi.begin(ssid, password)` - attempts to connect to the specified Wi-Fi network. Returns `WL_CONNECTED` when successful.
+- `WiFi.localIP()` - returns the Arduino's IP address once connected.
+- `WiFi.RSSI()` - returns the received signal strength in dBm.
+- `WiFi.SSID()` - returns the SSID of the connected network.
+- `WiFiClient client` - creates a TCP client for outbound connections.
+- `client.connect(host, port)` - connects to a remote server. Returns `true` on success.
+- `client.println("GET / HTTP/1.1")` - sends an HTTP GET request.
+- `client.available()` - returns the number of bytes available to read from the server response.
+- `client.read()` - reads one byte from the response.
+- `client.stop()` - disconnects the TCP connection.
+- `WiFiServer server(80)` - creates a TCP server on port 80.
+- `server.available()` - returns a `WiFiClient` for an incoming connection, or a false-y client if none pending.
 
 ## Steps to perform this interfacing
 
@@ -271,7 +271,7 @@ void loop()
 5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 6. Upload the sketch to the Arduino.
 7. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-8. Wait for the Arduino to connect to Wi-Fi — the Serial Monitor will print the IP address once connected.
+8. Wait for the Arduino to connect to Wi-Fi - the Serial Monitor will print the IP address once connected.
 9. Observe the HTTP GET request to `example.com` and the response printed in the Serial Monitor.
 10. For the web server example, navigate to the Arduino's IP address in a web browser.
 
@@ -281,6 +281,6 @@ void loop()
 - **Firmware update:** The NINA-W102 module has its own firmware that must be compatible with the WiFiNINA library version. If you see `WL_NO_MODULE` despite correct wiring, update the NINA firmware using the **FirmwareUpdater** example included with WiFiNINA. Select the board, upload the updater sketch, then use Arduino IDE > Tools > WiFi101 / WiFiNINA Firmware Updater.
 - **Power consumption:** The NINA module draws approximately 200–400 mA during active Wi-Fi transmission (depending on TX power). This is within the board's regulator capacity (3.3V @ 600–1000 mA) but will cause the main regulator to heat up. For battery-powered projects, use sleep modes and periodic wake-ups instead of continuous connection.
 - **SPI bus sharing:** On the Uno WiFi Rev2, the NINA module shares the SPI bus with the ICSP header. If you connect SPI peripherals to the ICSP header, the NINA module may interfere. Use separate SPI devices with their own chip select pins and ensure only one CS is active at a time.
-- **SSL/TLS:** The WiFiNINA library supports SSL connections via `WiFiSSLClient` for secure HTTPS connections. However, the NINA module has limited SSL memory — connecting to multiple SSL hosts or using SSL with large certificates may fail.
+- **SSL/TLS:** The WiFiNINA library supports SSL connections via `WiFiSSLClient` for secure HTTPS connections. However, the NINA module has limited SSL memory - connecting to multiple SSL hosts or using SSL with large certificates may fail.
 - **Wi-Fi range:** The NINA module has a typical indoor range of 30–50 metres (similar to a smartphone). For longer range, use an external antenna (the MKR WiFi 1010 has a u.FL connector for an external antenna). The Uno WiFi Rev2 and Nano 33 IoT use a PCB antenna only.
 

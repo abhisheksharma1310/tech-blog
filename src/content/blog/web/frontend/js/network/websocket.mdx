@@ -11,7 +11,7 @@ order: 11
 
 ## WebSocket
 
-WebSocket provides **full-duplex** communication over a single TCP connection — the server can push data to the client at any time, without polling.
+WebSocket provides **full-duplex** communication over a single TCP connection - the server can push data to the client at any time, without polling.
 
 ## How WebSocket Works
 
@@ -154,10 +154,10 @@ document.getElementById('ws-send').onclick = function() {
 ## WebSocket States
 
 ```javascript
-WebSocket.CONNECTING // 0 — connecting
-WebSocket.OPEN       // 1 — open, ready to send/receive
-WebSocket.CLOSING    // 2 — closing
-WebSocket.CLOSED     // 3 — closed
+WebSocket.CONNECTING // 0 - connecting
+WebSocket.OPEN       // 1 - open, ready to send/receive
+WebSocket.CLOSING    // 2 - closing
+WebSocket.CLOSED     // 3 - closed
 
 socket.readyState    // current state
 ```
@@ -250,7 +250,7 @@ socket.onopen = function() {
 - Connect with `new WebSocket('wss://...')`
 - Handle `open`, `message`, `error`, `close` events
 - Send strings or binary data with `socket.send()`
-- WebSocket does **not** auto-reconnect — implement it yourself
+- WebSocket does **not** auto-reconnect - implement it yourself
 - Use `wss://` (secure) instead of `ws://` in production
 - Parse JSON manually: `JSON.parse(event.data)`
 - For simple server→client updates, consider **Server-Sent Events** as a simpler alternative

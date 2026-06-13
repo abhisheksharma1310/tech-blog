@@ -142,15 +142,15 @@ void loop()
 
 ### Code breakdown
 
-- `#include <DHT.h>` — includes the DHT sensor library.
-- `#define DHT_PIN 2` — assigns Arduino digital pin 2 for the sensor data line.
-- `#define DHT_TYPE DHT11` — set to `DHT11` or `DHT22` depending on your sensor.
-- `DHT dht(DHT_PIN, DHT_TYPE)` — creates a DHT object configured for your pin and sensor type.
-- `dht.begin()` — initializes the sensor in `setup()`.
-- `dht.readHumidity()` — returns relative humidity as a float (percentage).
-- `dht.readTemperature()` — returns temperature in Celsius. Pass `true` to get Fahrenheit.
-- `dht.computeHeatIndex()` — calculates the heat index (apparent temperature) using both temperature and humidity.
-- `isnan()` — checks if the reading failed (returns `NaN` on error).
+- `#include <DHT.h>` - includes the DHT sensor library.
+- `#define DHT_PIN 2` - assigns Arduino digital pin 2 for the sensor data line.
+- `#define DHT_TYPE DHT11` - set to `DHT11` or `DHT22` depending on your sensor.
+- `DHT dht(DHT_PIN, DHT_TYPE)` - creates a DHT object configured for your pin and sensor type.
+- `dht.begin()` - initializes the sensor in `setup()`.
+- `dht.readHumidity()` - returns relative humidity as a float (percentage).
+- `dht.readTemperature()` - returns temperature in Celsius. Pass `true` to get Fahrenheit.
+- `dht.computeHeatIndex()` - calculates the heat index (apparent temperature) using both temperature and humidity.
+- `isnan()` - checks if the reading failed (returns `NaN` on error).
 
 ## Steps to perform this interfacing
 

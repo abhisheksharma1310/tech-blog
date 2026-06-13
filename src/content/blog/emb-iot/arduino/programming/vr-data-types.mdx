@@ -11,7 +11,7 @@ order: 2
 
 # Data Types
 
-Arduino supports a range of data types for storing different kinds of information. Choosing the right type is important — it determines how much memory a variable uses, what values it can hold, and what operations you can perform on it. On an Arduino Uno with only 2 KB of SRAM, using the smallest appropriate type can make the difference between a working program and one that runs out of memory.
+Arduino supports a range of data types for storing different kinds of information. Choosing the right type is important - it determines how much memory a variable uses, what values it can hold, and what operations you can perform on it. On an Arduino Uno with only 2 KB of SRAM, using the smallest appropriate type can make the difference between a working program and one that runs out of memory.
 
 ## void
 
@@ -37,7 +37,7 @@ In this example, both `setup()` and `printMessage()` are declared with `void` be
 
 ## bool
 
-The `bool` type stores a Boolean value — either `true` or `false`. It occupies 1 byte of memory and is the preferred type for flags, conditions, and state tracking.
+The `bool` type stores a Boolean value - either `true` or `false`. It occupies 1 byte of memory and is the preferred type for flags, conditions, and state tracking.
 
 ```cpp
 void setup() {
@@ -96,7 +96,7 @@ void loop() {
 }
 ```
 
-In this example, both `letter` and `number` hold the same value — `'A'` (ASCII 65). Note that `char` is signed by default on Arduino. Use `unsigned char` if you need values from 0 to 255.
+In this example, both `letter` and `number` hold the same value - `'A'` (ASCII 65). Note that `char` is signed by default on Arduino. Use `unsigned char` if you need values from 0 to 255.
 
 ## unsigned char
 
@@ -173,7 +173,7 @@ void loop() {
 }
 ```
 
-Here, `distance` holds 40,000 — a value that exceeds the maximum positive value of a signed `int` (32,767). `unsigned int` is useful for quantities that are naturally non-negative, like distances, counts, and timestamps.
+Here, `distance` holds 40,000 - a value that exceeds the maximum positive value of a signed `int` (32,767). `unsigned int` is useful for quantities that are naturally non-negative, like distances, counts, and timestamps.
 
 ## word
 
@@ -276,7 +276,7 @@ This example converts 23.5°C to Fahrenheit. `float` is essential for sensor dat
 
 ## double
 
-On Uno-class Arduino boards, `double` is the same as `float` — a 32-bit value with the same precision and range. On 32-bit boards like the Due or Zero, `double` is a true 64-bit value with much higher precision.
+On Uno-class Arduino boards, `double` is the same as `float` - a 32-bit value with the same precision and range. On 32-bit boards like the Due or Zero, `double` is a true 64-bit value with much higher precision.
 
 ```cpp
 void setup() {
@@ -313,7 +313,7 @@ void loop() {
 }
 ```
 
-In this example, `greeting` is a 6-element array (5 letters + null terminator). C-style strings are memory-efficient but require careful management — you must ensure the buffer is large enough to hold the text and its null terminator.
+In this example, `greeting` is a 6-element array (5 letters + null terminator). C-style strings are memory-efficient but require careful management - you must ensure the buffer is large enough to hold the text and its null terminator.
 
 ## String (class)
 
@@ -359,7 +359,7 @@ This sketch calculates the number of elements in an array using `sizeof()` (whic
 
 ## array
 
-An array is a collection of variables of the same type, stored in contiguous memory locations. Arrays are declared with square brackets and are zero-indexed — the first element is at index 0.
+An array is a collection of variables of the same type, stored in contiguous memory locations. Arrays are declared with square brackets and are zero-indexed - the first element is at index 0.
 
 ```cpp
 void setup() {

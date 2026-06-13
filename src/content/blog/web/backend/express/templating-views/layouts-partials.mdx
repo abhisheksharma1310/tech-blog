@@ -1,0 +1,449 @@
+---
+title: "Layouts & Partials"
+description: "Create reusable layouts and partial templates in EJS, Pug, and Handlebars to keep your views DRY"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Templating & Views"]
+tags: ["Express", "EJS", "Pug", "Handlebars", "Layouts", "Partials"]
+slug: "express-layouts-partials"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Why Layouts and Partials?
+
+Without layouts, every page duplicates boilerplate:
+
+```html
+<!-- Every page needs this duplicated: -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Page-specific title</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js"></script>
+</head>
+<body>
+  <nav><!-- same nav on every page --></nav>
+
+  <!-- PAGE-SPECIFIC CONTENT HERE -->
+
+  <footer><!-- same footer on every page --></footer>
+</body>
+</html>
+```
+
+**Layouts** let you define a shell once and plug page content into it.
+**Partials** let you reuse snippets (nav, footer, sidebar) across pages.
+
+```
+Layout (shell)
+├── <head> with shared meta/scripts
+├── <header> (partial)
+├── {{{body}}} ← page content injected here
+├── <sidebar> (partial)
+└── <footer> (partial)
+```
+
+## EJS - Layouts with include
+
+EJS uses `<%- include('partial', { data }) %>` to compose templates.
+
+### Layout (views/layout.ejs)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <%- include('../partials/header', { user }) %>
+
+  <main class="container">
+    <%- body %>
+  </main>
+
+  <%- include('../partials/footer') %>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
+```
+
+### Using the Layout
+
+```javascript
+// views/profile.ejs - just the page-specific content
+<h1><%= user.name %></h1>
+<p>Email: <%= user.email %></p>
+<p>Member since: <%= user.createdAt.toDateString() %></p>
+```
+
+```javascript
+// Route
+app.get('/profile', (req, res) => {
+  const user = { name: 'Alice', email: 'alice@test.com', createdAt: new Date() };
+
+  res.render('profile', {
+    title: 'User Profile',
+    user,
+    body: '' // Will be replaced by the profile content
+  });
+});
+```
+
+A cleaner approach is to use `express-ejs-layouts`:
+
+```bash
+npm install express-ejs-layouts
+```
+
+```javascript
+const express = require('express');
+const expressLayouts = require('express-ejs-layouts');
+
+const app = express();
+
+app.set('view engine', 'ejs');
+app.use(expressLayouts);
+app.set('layout', 'layouts/layout'); // default layout
+
+// Route - content from profile.ejs goes into {{{body}}}
+app.get('/profile', (req, res) => {
+  res.render('profile', { title: 'Profile', user });
+});
+```
+
+### Partials in EJS (views/partials/)
+
+**views/partials/header.ejs:**
+```html
+<header class="site-header">
+  <nav>
+    <a href="/" class="logo">MyApp</a>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/about">About</a></li>
+      <% if (user) { %>
+        <li><a href="/profile"><%= user.name %></a></li>
+        <li><a href="/logout">Logout</a></li>
+      <% } else { %>
+        <li><a href="/login">Login</a></li>
+      <% } %>
+    </ul>
+  </nav>
+</header>
+```
+
+**views/partials/footer.ejs:**
+```html
+<footer class="site-footer">
+  <p>&copy; <%= new Date().getFullYear() %> MyApp. All rights reserved.</p>
+</footer>
+```
+
+## Pug - Layouts with extends and block
+
+Pug has built-in layout support with `extends` and `block`.
+
+### Layout (views/layouts/layout.pug)
+
+```pug
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title= title
+    link(rel="stylesheet", href="/css/style.css")
+    block extraHead
+  body
+    include ../partials/header
+
+    main.container
+      block content
+
+    include ../partials/footer
+
+    script(src="/js/app.js")
+```
+
+### Page Template (views/profile.pug)
+
+```pug
+extends layouts/layout
+
+block extraHead
+  meta(name="description", content="User profile page")
+
+block content
+  h1= user.name
+  p Email: #{user.email}
+  p Member since: #{user.createdAt.toDateString()}
+```
+
+### Partials in Pug
+
+**views/partials/header.pug:**
+```pug
+header.site-header
+  nav
+    a.logo(href="/") MyApp
+    ul
+      li: a(href="/") Home
+      li: a(href="/about") About
+      if user
+        li: a(href="/profile")= user.name
+        li: a(href="/logout") Logout
+      else
+        li: a(href="/login") Login
+```
+
+**views/partials/footer.pug:**
+```pug
+footer.site-footer
+  p &copy; #{new Date().getFullYear()} MyApp. All rights reserved.
+```
+
+### Pug Block Types
+
+```pug
+//- Default content (can be overridden)
+block sidebar
+  p Default sidebar content
+
+//- append - add to parent's block content
+block append scripts
+  script(src="/page-specific.js")
+
+//- prepend - add before parent's block content
+block prepend styles
+  link(rel="stylesheet", href="/page-specific.css")
+```
+
+## Handlebars - Layouts via express-handlebars
+
+Handlebars doesn't have built-in layouts. Use the `express-handlebars` package.
+
+### Installation
+
+```bash
+npm install express-handlebars
+```
+
+### Setup
+
+```javascript
+const express = require('express');
+const { engine } = require('express-handlebars');
+
+const app = express();
+
+app.engine('hbs', engine({
+  extname: '.hbs',
+  defaultLayout: 'main',
+  layoutsDir: path.join(__dirname, 'views/layouts'),
+  partialsDir: path.join(__dirname, 'views/partials')
+}));
+app.set('view engine', 'hbs');
+```
+
+### Layout (views/layouts/main.hbs)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  {{> header}}
+
+  <main class="container">
+    {{{body}}}
+  </main>
+
+  {{> footer}}
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
+```
+
+### Page Template (views/profile.hbs)
+
+```html
+<h1>{{user.name}}</h1>
+<p>Email: {{user.email}}</p>
+<p>Member since: {{user.createdAt}}</p>
+```
+
+### Partials in Handlebars
+
+**views/partials/header.hbs:**
+```html
+<header class="site-header">
+  <nav>
+    <a href="/" class="logo">MyApp</a>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/about">About</a></li>
+      {{#if user}}
+        <li><a href="/profile">{{user.name}}</a></li>
+        <li><a href="/logout">Logout</a></li>
+      {{else}}
+        <li><a href="/login">Login</a></li>
+      {{/if}}
+    </ul>
+  </nav>
+</header>
+```
+
+**views/partials/footer.hbs:**
+```html
+<footer class="site-footer">
+  <p>&copy; {{year}} MyApp. All rights reserved.</p>
+</footer>
+```
+
+## Project Structure Comparison
+
+### EJS with express-ejs-layouts
+
+```
+views/
+├── layouts/
+│   └── layout.ejs
+├── partials/
+│   ├── header.ejs
+│   ├── footer.ejs
+│   └── sidebar.ejs
+├── index.ejs
+├── profile.ejs
+└── about.ejs
+```
+
+### Pug
+
+```
+views/
+├── layouts/
+│   └── layout.pug
+├── partials/
+│   ├── header.pug
+│   └── footer.pug
+├── index.pug
+├── profile.pug
+└── about.pug
+```
+
+### Handlebars
+
+```
+views/
+├── layouts/
+│   └── main.hbs
+├── partials/
+│   ├── header.hbs
+│   ├── footer.hbs
+│   └── sidebar.hbs
+├── index.hbs
+├── profile.hbs
+└── about.hbs
+```
+
+## Passing Data to Partials
+
+### EJS
+
+```html
+<%- include('partials/card', { title: post.title, body: post.body }) %>
+```
+
+### Pug
+
+```pug
+include partials/card
+//- or for dynamic includes:
+each post in posts
+  +card(post)
+
+//- Mixin (reusable block)
+mixin card(post)
+  .card
+    h2= post.title
+    p= post.body
+```
+
+### Handlebars
+
+```html
+{{#> card title=post.title body=post.body}}{{/card}}
+<!-- or with a block partial: -->
+{{#> card}}
+  <h2>{{post.title}}</h2>
+  <p>{{post.body}}</p>
+{{/card}}
+```
+
+## Nested Layouts
+
+You can stack layouts:
+
+```javascript
+// admin-layout.ejs extends layout.ejs
+<%- include('layout') %>
+<%# Then override sections %>
+
+// admin/users.ejs extends admin-layout.ejs
+<%- include('admin-layout') %>
+```
+
+In Pug, nesting is natural:
+
+```pug
+//- views/layouts/admin.pug
+extends layouts/layout
+
+block content
+  .admin-wrapper
+    aside.admin-sidebar
+      block sidebar
+    main.admin-main
+      block adminContent
+```
+
+```pug
+//- views/admin/users.pug
+extends layouts/admin
+
+block sidebar
+  ul
+    li: a(href="/admin/users") Users
+    li: a(href="/admin/posts") Posts
+
+block adminContent
+  h1 Users
+  table
+    each user in users
+      tr
+        td= user.name
+        td= user.email
+```
+
+## Key Takeaways
+
+- **Layouts** wrap page content in a shared shell (head, nav, footer)
+- **Partials** are reusable template snippets included in pages
+- Use `<%- include('path') %>` in **EJS** for both layouts and partials
+- Use `extends` + `block` in **Pug** for inheritance, `include` for partials
+- Use **express-handlebars** with `{{{body}}}` for layouts, `{{> partial}}` for partials
+- Always pass required data (like `user`) down to partials that need it
+- Organize templates into `layouts/`, `partials/`, and page files

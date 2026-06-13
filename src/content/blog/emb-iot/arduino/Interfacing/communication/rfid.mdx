@@ -132,7 +132,7 @@ void loop()
     return;
   }
 
-  // Tag detected — print UID
+  // Tag detected - print UID
   Serial.print("Tag UID: ");
   printUID(rfid.uid.uidByte, rfid.uid.size);
 
@@ -210,19 +210,19 @@ bool isAuthorized(byte *uid, byte uidLength)
 
 ### Code breakdown
 
-- `#include <MFRC522.h>` — includes the MFRC522 library for SPI communication with the reader.
-- `MFRC522 rfid(SS_PIN, RST_PIN)` — creates an MFRC522 instance with the specified SPI chip select and reset pins.
-- `SPI.begin()` — initializes the SPI bus.
-- `rfid.PCD_Init()` — initializes the MFRC522 reader. `PCD` stands for Proximity Coupling Device (the reader).
-- `rfid.PCD_DumpVersionToSerial()` — prints the reader's firmware version to help verify the module is working.
-- `rfid.PICC_IsNewCardPresent()` — returns `true` if a new tag is within range. Non-blocking.
-- `rfid.PICC_ReadCardSerial()` — reads the tag's UID into `rfid.uid`. Returns `false` if the read fails.
-- `rfid.uid.uidByte` — byte array containing the tag's UID (typically 4 or 7 bytes).
-- `rfid.uid.size` — length of the UID in bytes.
-- `rfid.PICC_GetType(sak)` — returns the tag type (MIFARE Classic, Ultralight, etc.) from the SAK byte.
-- `rfid.PICC_GetTypeName(type)` — returns a human-readable string for the tag type.
-- `rfid.PICC_HaltA()` — puts the tag in halt state so it doesn't respond to the next poll.
-- `rfid.PCD_StopCrypto1()` — stops encryption on the reader.
+- `#include <MFRC522.h>` - includes the MFRC522 library for SPI communication with the reader.
+- `MFRC522 rfid(SS_PIN, RST_PIN)` - creates an MFRC522 instance with the specified SPI chip select and reset pins.
+- `SPI.begin()` - initializes the SPI bus.
+- `rfid.PCD_Init()` - initializes the MFRC522 reader. `PCD` stands for Proximity Coupling Device (the reader).
+- `rfid.PCD_DumpVersionToSerial()` - prints the reader's firmware version to help verify the module is working.
+- `rfid.PICC_IsNewCardPresent()` - returns `true` if a new tag is within range. Non-blocking.
+- `rfid.PICC_ReadCardSerial()` - reads the tag's UID into `rfid.uid`. Returns `false` if the read fails.
+- `rfid.uid.uidByte` - byte array containing the tag's UID (typically 4 or 7 bytes).
+- `rfid.uid.size` - length of the UID in bytes.
+- `rfid.PICC_GetType(sak)` - returns the tag type (MIFARE Classic, Ultralight, etc.) from the SAK byte.
+- `rfid.PICC_GetTypeName(type)` - returns a human-readable string for the tag type.
+- `rfid.PICC_HaltA()` - puts the tag in halt state so it doesn't respond to the next poll.
+- `rfid.PCD_StopCrypto1()` - stops encryption on the reader.
 
 ### Writing data to a tag
 
@@ -293,7 +293,7 @@ void loop()
 4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 5. Upload the sketch to the Arduino.
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-7. Observe the firmware version printed — this confirms the module is communicating.
+7. Observe the firmware version printed - this confirms the module is communicating.
 8. Hold an RFID tag or card near the reader (~2–5 cm). The UID and tag type will be printed.
 9. Replace the example UIDs in `authorizedTags[]` with your tag's UID to test access control.
 10. Press `*` on the Serial Monitor to read multiple tags without resetting the Arduino.
@@ -304,8 +304,8 @@ The first time you run the sketch, the Serial Monitor will show your tag's UID i
 
 ## Caution
 
-- **3.3V only:** The MFRC522 operates at 3.3V. Power it from the Arduino 3.3V pin. Connecting VCC to 5V will permanently damage the module. The SPI logic pins are also 3.3V-only — on 5V Arduino boards, the MFRC522 library relies on the module being 3.3V-tolerant of 5V signals, which works for most modules but is outside spec. For production use, add a level shifter or voltage divider on MOSI and SCK.
-- **Antenna range:** The typical read range is 2–5 cm for credit-card-sized tags and 1–3 cm for keychain fobs. Range depends on antenna design, tag size, and nearby metal objects. Do not mount the module directly on a metal surface — the antenna coil will be detuned and range will drop drastically. Maintain at least 1 cm of clearance from metal.
+- **3.3V only:** The MFRC522 operates at 3.3V. Power it from the Arduino 3.3V pin. Connecting VCC to 5V will permanently damage the module. The SPI logic pins are also 3.3V-only - on 5V Arduino boards, the MFRC522 library relies on the module being 3.3V-tolerant of 5V signals, which works for most modules but is outside spec. For production use, add a level shifter or voltage divider on MOSI and SCK.
+- **Antenna range:** The typical read range is 2–5 cm for credit-card-sized tags and 1–3 cm for keychain fobs. Range depends on antenna design, tag size, and nearby metal objects. Do not mount the module directly on a metal surface - the antenna coil will be detuned and range will drop drastically. Maintain at least 1 cm of clearance from metal.
 - **Multiple tags:** The MFRC522 reads one tag at a time. If multiple tags are in range, it may read none (collision). The library includes anti-collision logic (`PICC_ReadCardSerial` handles this), but keeping only one tag near the reader is recommended.
 - **SPI speed:** The MFRC522 operates at up to 10 MHz SPI. The default Arduino SPI library runs at 4 MHz on most boards, which works reliably. If you experience communication errors, reduce the SPI clock in the library or add 10–100 Ω series resistors on the SPI lines to reduce ringing.
 - **Power draw:** The MFRC522 draws approximately 10–30 mA during operation and up to 80 mA during RF field generation. This is within the Arduino 3.3V regulator's capacity (typically 150–200 mA), but if you have other 3.3V loads, use an external 3.3V regulator.

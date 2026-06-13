@@ -54,14 +54,14 @@ document.addEventListener('DOMContentLoaded', function() {
   js="
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('status').textContent =
-    'DOMContentLoaded fired at ' + performance.now().toFixed(0) + 'ms — DOM is ready!';
+    'DOMContentLoaded fired at ' + performance.now().toFixed(0) + 'ms - DOM is ready!';
 });
 "
 />
 
 ## `load`
 
-Fires when **everything** is fully loaded — HTML, CSS, images, fonts, iframes, etc.:
+Fires when **everything** is fully loaded - HTML, CSS, images, fonts, iframes, etc.:
 
 ```javascript
 window.addEventListener('load', function() {
@@ -136,7 +136,7 @@ window.addEventListener('unload', function() {
 });
 ```
 
-Prefer `navigator.sendBeacon()` over `fetch` in `unload` — it's designed to work during page teardown.
+Prefer `navigator.sendBeacon()` over `fetch` in `unload` - it's designed to work during page teardown.
 
 ## `readystatechange`
 
@@ -185,7 +185,7 @@ if (document.readyState === 'loading') {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  log('DOMContentLoaded — DOM ready, scripts can run', 60);
+  log('DOMContentLoaded - DOM ready, scripts can run', 60);
 });
 
 document.addEventListener('readystatechange', function() {
@@ -193,7 +193,7 @@ document.addEventListener('readystatechange', function() {
     log('readyState: interactive (DOM ready)', 60);
   }
   if (document.readyState === 'complete') {
-    log('readyState: complete — page fully loaded', 100);
+    log('readyState: complete - page fully loaded', 100);
   }
 });
 "
@@ -214,7 +214,7 @@ Where you put your `<script>` tag matters:
 
 - `DOMContentLoaded` = **DOM is ready** (HTML parsed)
 - `load` = **everything is ready** (images, fonts, etc.)
-- `beforeunload` asks **"Leave?"** — use for unsaved changes
+- `beforeunload` asks **"Leave?"** - use for unsaved changes
 - `unload` is for **cleanup** (use `sendBeacon` for async ops)
 - Check `document.readyState` for granular loading status
 - Script position (head vs body, defer vs async) affects when these fire

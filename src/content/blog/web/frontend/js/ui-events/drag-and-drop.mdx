@@ -17,14 +17,14 @@ Native drag-and-drop (`dragstart`, `dragover`, `drop`) can be awkward. Building 
 
 Custom drag-and-drop follows 3 mouse events:
 
-1. **`mousedown`** — start dragging
-2. **`mousemove`** — move the element (update position)
-3. **`mouseup`** — stop dragging
+1. **`mousedown`** - start dragging
+2. **`mousemove`** - move the element (update position)
+3. **`mouseup`** - stop dragging
 
 ```
 mousedown:  remember start position, move element to absolute/fixed
 mousemove:  update element position = initial + (mouseDelta)
-mouseup:    drop — remove listeners, finalize position
+mouseup:    drop - remove listeners, finalize position
 ```
 
 <CodePlayground
@@ -148,7 +148,7 @@ document.addEventListener('mouseup', function() {
   if (dragging) {
     dragging = false;
     dot.style.cursor = 'grab';
-    out.textContent += ' — dropped';
+    out.textContent += ' - dropped';
   }
 });
 "

@@ -47,11 +47,11 @@ console.log("Code continues..."); // → "Code continues..."
 
 ### Only Runtime Errors
 
-`try...catch` only catches runtime errors — not syntax errors:
+`try...catch` only catches runtime errors - not syntax errors:
 
 ```js
 try {
-  // Syntax error — not caught (script stops)
+  // Syntax error - not caught (script stops)
   {{{{{{{{;
 } catch (err) {
   // Never reached
@@ -81,11 +81,11 @@ let age = 15;
 
 try {
   if (age < 18) {
-    throw new Error("Access denied — too young");
+    throw new Error("Access denied - too young");
   }
   console.log("Welcome");
 } catch (err) {
-  console.log(err.message); // → "Access denied — too young"
+  console.log(err.message); // → "Access denied - too young"
 }
 ```
 
@@ -116,20 +116,20 @@ function processData(data) {
     console.log("Error:", err.message);
     return "Failed";
   } finally {
-    console.log("Cleanup — always runs");
+    console.log("Cleanup - always runs");
   }
 }
 
 console.log(processData("test"));
 // → "Processing..."
 // → "Success: test"
-// → "Cleanup — always runs"
+// → "Cleanup - always runs"
 // → "Done"
 
 console.log(processData(null));
 // → "Processing..."
 // → "Error: No data"
-// → "Cleanup — always runs"
+// → "Cleanup - always runs"
 // → "Failed"
 ```
 
@@ -164,7 +164,7 @@ try {
   if (err instanceof SyntaxError) {
     console.log("Invalid JSON:", err.message);
   } else {
-    throw err; // Unknown error — rethrow
+    throw err; // Unknown error - rethrow
   }
 }
 ```

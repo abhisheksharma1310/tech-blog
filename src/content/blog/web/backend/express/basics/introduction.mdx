@@ -1,0 +1,136 @@
+---
+title: "Introduction to Express.js"
+description: "Learn what Express.js is, its philosophy, and why it's the most popular Node.js web framework"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Basics"]
+tags: ["Express", "Node.js", "Backend", "Web Framework"]
+slug: "express-introduction"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## What is Express.js?
+
+**Express.js** is a fast, unopinionated, minimalist web framework for **Node.js**. It provides a robust set of features for building web applications and APIs, including routing, middleware support, template engines, and static file serving.
+
+Express acts as a thin layer on top of Node.js's built-in `http` module, abstracting away boilerplate code while keeping the low-level control that Node.js developers appreciate.
+
+```
+┌──────────────────────────────────────┐
+│           Your Application           │
+├──────────────────────────────────────┤
+│            Express.js                │
+├──────────────────────────────────────┤
+│         Node.js (HTTP core)          │
+├──────────────────────────────────────┤
+│            Operating System          │
+└──────────────────────────────────────┘
+```
+
+## Why Express?
+
+| Feature | Benefit |
+|---|---|
+| **Minimalist** | Small footprint, no unnecessary abstraction |
+| **Unopinionated** | You decide the structure - no forced patterns |
+| **Middleware-based** | Request pipeline is composable and flexible |
+| **Huge ecosystem** | Thousands of middleware packages on npm |
+| **Battle-tested** | Powers companies like Uber, IBM, and Fox Sports |
+| **Great docs** | Well-documented with a large community |
+
+## Key Concepts
+
+### Routing
+
+Routing determines how an application responds to a client request at a specific endpoint (URI + HTTP method):
+
+```
+GET  /users       → list users
+POST /users       → create a user
+GET  /users/:id   → get a specific user
+```
+
+### Middleware
+
+Middleware functions are functions that have access to the **request** object (`req`), the **response** object (`res`), and the **next** middleware function in the application's request-response cycle.
+
+```
+Request → Middleware 1 → Middleware 2 → Route Handler → Response
+                ↓             ↓
+          (can end)     (can end)
+```
+
+### Request & Response
+
+Express extends Node.js's native `req` and `res` objects with convenient methods:
+
+```javascript
+req.params    // Route parameters
+req.query     // URL query string
+req.body      // Request body (with body-parser)
+req.headers   // HTTP headers
+
+res.send()    // Send any response
+res.json()    // Send JSON
+res.render()  // Render a template
+res.redirect()// Redirect to another URL
+```
+
+## Express vs plain Node.js
+
+Here's the same server built with plain Node.js and with Express:
+
+**Plain Node.js:**
+```javascript
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  if (req.url === '/' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Hello World');
+  } else if (req.url === '/api/users' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify([{ id: 1, name: 'John' }]));
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
+});
+
+server.listen(3000);
+```
+
+**With Express:**
+```javascript
+const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => res.send('Hello World'));
+app.get('/api/users', (req, res) => res.json([{ id: 1, name: 'John' }]));
+
+app.listen(3000);
+```
+
+Express eliminates manual URL parsing, status code management, and content-type headers.
+
+## Who uses Express?
+
+- **APIs** - RESTful and GraphQL APIs
+- **Single Page Applications** - backend serving SPAs
+- **Microservices** - lightweight service endpoints
+- **Real-time apps** - combined with Socket.io
+- **Proxies** - middleware-based request forwarding
+
+## When NOT to use Express
+
+- **High-performance real-time** - consider Fastify or plain Node.js
+- **Strict structure needed** - consider NestJS (built on Express but opinionated)
+- **Full-stack meta-framework** - consider Next.js or Remix
+
+## Key Takeaways
+
+- Express is a **minimal, unopinionated** Node.js web framework
+- It provides **routing**, **middleware**, and **convenience methods** on top of Node's `http` module
+- Express code is significantly **cleaner and shorter** than plain Node.js
+- It has a **massive ecosystem** of third-party middleware
+- Use it for APIs, SPAs, microservices, and traditional web apps

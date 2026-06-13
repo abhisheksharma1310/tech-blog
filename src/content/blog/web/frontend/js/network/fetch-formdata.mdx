@@ -11,7 +11,7 @@ order: 2
 
 ## Fetch: FormData
 
-The `FormData` API lets you send form data — including file uploads — via `fetch`. It automatically sets the correct `Content-Type` (multipart/form-data).
+The `FormData` API lets you send form data - including file uploads - via `fetch`. It automatically sets the correct `Content-Type` (multipart/form-data).
 
 ## Sending Form Data
 
@@ -26,7 +26,7 @@ const response = await fetch('/upload', {
 });
 ```
 
-**Important**: Don't set `Content-Type` header yourself — let the browser set it with the correct boundary.
+**Important**: Don't set `Content-Type` header yourself - let the browser set it with the correct boundary.
 
 <CodePlayground
   title="FormData with Fetch"
@@ -109,7 +109,7 @@ This automatically collects all named form fields.
 Track upload progress with `XMLHttpRequest` (fetch doesn't natively support upload progress):
 
 ```javascript
-// Fetch alternative — use XHR for progress
+// Fetch alternative - use XHR for progress
 const xhr = new XMLHttpRequest();
 xhr.upload.onprogress = function(e) {
   const percent = (e.loaded / e.total) * 100;
@@ -196,7 +196,7 @@ The server receives `photos[]` as an array of files.
 
 - `new FormData(formElement)` captures all form fields automatically
 - `formData.append('file', blob, filename)` uploads files
-- **Don't set** `Content-Type` header — the browser adds `multipart/form-data` with boundary
+- **Don't set** `Content-Type` header - the browser adds `multipart/form-data` with boundary
 - Use `FormData` for forms that include file uploads
 - For upload progress tracking, use `XMLHttpRequest` instead of fetch
 - FormData supports **multiple files** with the same field name

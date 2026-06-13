@@ -1,6 +1,6 @@
 ---
-title: "Process Management — PM2 & Forever"
-description: "Manage Node.js processes in production with PM2 — clustering, monitoring, zero-downtime restarts, and log management"
+title: "Process Management - PM2 & Forever"
+description: "Manage Node.js processes in production with PM2 - clustering, monitoring, zero-downtime restarts, and log management"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Production"]
 tags: ["Node.js", "Production", "PM2", "Process Management"]
@@ -13,10 +13,10 @@ order: 3
 
 Running `node app.js` directly in production is dangerous:
 
-- If your app crashes, **it stays down** — no auto-restart
-- Your app uses **only one CPU core** — other cores sit idle
-- **Logs go to stdout** — they're lost when the terminal closes
-- **No graceful shutdown** — in-flight requests get dropped
+- If your app crashes, **it stays down** - no auto-restart
+- Your app uses **only one CPU core** - other cores sit idle
+- **Logs go to stdout** - they're lost when the terminal closes
+- **No graceful shutdown** - in-flight requests get dropped
 
 A process manager solves all of these:
 
@@ -122,7 +122,7 @@ module.exports = {
 
     // Restart behavior
     max_restarts: 10,        // Max restarts within min_uptime
-    min_uptime: 10000,       // 10 seconds — if process stays up, consider it stable
+    min_uptime: 10000,       // 10 seconds - if process stays up, consider it stable
     max_memory_restart: '500M', // Restart if memory exceeds 500MB
 
     // Logging
@@ -285,7 +285,7 @@ pm2 set pm2-logrotate:compress true    # Gzip rotated logs
 pm2 set pm2-logrotate:rotateInterval '0 0 * * *'  # Rotate daily at midnight
 ```
 
-## Forever — The Lighter Alternative
+## Forever - The Lighter Alternative
 
 **Forever** is a simpler, older process manager. It only does one thing: keep your script running.
 
@@ -337,7 +337,7 @@ RUN npm ci --production
 CMD ["pm2-runtime", "start", "ecosystem.config.js", "--env", "production"]
 ```
 
-`pm2-runtime` is designed for containers — it runs in the foreground (no daemon mode) and forwards signals correctly:
+`pm2-runtime` is designed for containers - it runs in the foreground (no daemon mode) and forwards signals correctly:
 
 ```bash
 docker build -t my-api .
@@ -346,12 +346,12 @@ docker run -d -p 3000:3000 --name my-api my-api
 
 ## Key Takeaways
 
-- **PM2** is the standard Node.js process manager — use it for all production deployments
-- **Cluster mode** (`-i max`) uses all CPU cores — scales automatically
+- **PM2** is the standard Node.js process manager - use it for all production deployments
+- **Cluster mode** (`-i max`) uses all CPU cores - scales automatically
 - **`pm2 reload`** provides zero-downtime restarts by cycling workers one at a time
-- **Handle `SIGTERM`** in your app for graceful shutdown — PM2 sends this on reload/stop
-- **Ecosystem file** (`ecosystem.config.js`) replaces CLI flags — commit it to your repo
+- **Handle `SIGTERM`** in your app for graceful shutdown - PM2 sends this on reload/stop
+- **Ecosystem file** (`ecosystem.config.js`) replaces CLI flags - commit it to your repo
 - **`pm2 startup`** generates systemd/init scripts so your app starts on server reboot
 - **`pm2-logrotate`** prevents logs from filling up your disk
-- **`pm2-runtime`** is the Docker-optimised PM2 — runs in foreground, handles signals
-- **Forever** is simpler but lacks clustering, reloads, and log management — prefer PM2
+- **`pm2-runtime`** is the Docker-optimised PM2 - runs in foreground, handles signals
+- **Forever** is simpler but lacks clustering, reloads, and log management - prefer PM2

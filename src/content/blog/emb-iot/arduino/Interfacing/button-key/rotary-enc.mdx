@@ -65,7 +65,7 @@ Alternatively, using arduino-cli:
 arduino-cli lib install "Encoder"
 ```
 
-This library uses hardware interrupts on pins 2 and 3 for the Uno. For the **Rotary** library (by Ben Buxton) — a lighter alternative that works on any pin via polling:
+This library uses hardware interrupts on pins 2 and 3 for the Uno. For the **Rotary** library (by Ben Buxton) - a lighter alternative that works on any pin via polling:
 
 ```bash
 arduino-cli lib install "Rotary"
@@ -99,7 +99,7 @@ void loop()
   // Read button
   if (digitalRead(ENC_SW) == LOW)
   {
-    Serial.println("Button pressed — resetting position");
+    Serial.println("Button pressed - resetting position");
     enc.write(0);
 
     // Simple debounce
@@ -208,10 +208,10 @@ void onEncoderChange()
 
 ### Code breakdown
 
-- `Encoder enc(pinA, pinB)` — creates an encoder object using interrupts on the specified pins.
-- `enc.read()` — returns the current position count. Positive = CW rotation, negative = CCW.
-- `enc.write(position)` — resets the position counter to an arbitrary value.
-- The Rotary library polls the encoder state in `loop()` without interrupts — suitable for applications where the encoder is read only occasionally.
+- `Encoder enc(pinA, pinB)` - creates an encoder object using interrupts on the specified pins.
+- `enc.read()` - returns the current position count. Positive = CW rotation, negative = CCW.
+- `enc.write(position)` - resets the position counter to an arbitrary value.
+- The Rotary library polls the encoder state in `loop()` without interrupts - suitable for applications where the encoder is read only occasionally.
 - Manual decoding uses `attachInterrupt()` on the CLK pin and examines the DT pin to determine direction.
 - The push button (`SW`) is read as a standard digital input with `INPUT_PULLUP` (LOW = pressed).
 
@@ -253,18 +253,18 @@ void loop()
 4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 5. Upload the sketch to the Arduino.
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-7. Rotate the knob clockwise — the position increases and "CW" is printed.
-8. Rotate counterclockwise — the position decreases and "CCW" is printed.
-9. Press the shaft (push button) — the position resets to 0.
+7. Rotate the knob clockwise - the position increases and "CW" is printed.
+8. Rotate counterclockwise - the position decreases and "CCW" is printed.
+9. Press the shaft (push button) - the position resets to 0.
 
 ## Caution
 
-- **Interrupt pins only:** The Encoder library requires pins 2 and 3 on Uno/Nano for hardware interrupts. On Mega, pins 2, 3, 18, 19, 20, 21 are interrupt-capable. On Arduino Due, MKR, or SAMD boards, any pin can be an interrupt. If you use non-interrupt pins with the Encoder library, it falls back to polling — which works but may miss steps at fast rotation speeds.
+- **Interrupt pins only:** The Encoder library requires pins 2 and 3 on Uno/Nano for hardware interrupts. On Mega, pins 2, 3, 18, 19, 20, 21 are interrupt-capable. On Arduino Due, MKR, or SAMD boards, any pin can be an interrupt. If you use non-interrupt pins with the Encoder library, it falls back to polling - which works but may miss steps at fast rotation speeds.
 - **Contact bounce:** Mechanical rotary encoders produce contact bounce on the CLK and DT outputs, especially at low rotation speeds. The Encoder library handles this internally via a state machine, but very bouncy encoders may still produce false counts. Add external 10–100 nF capacitors from CLK and DT to GND to suppress bounce in hardware.
 - **Detent vs smooth rotation:** The KY-040 has 20 detents (physical click stops) per revolution, but the encoder produces 40 pulses per revolution (both rising and falling edges on both channels). The count therefore increments by 2 per detent. If you want 1 count per detent, divide `enc.read()` by 2.
 - **Pull-up resistors:** The KY-040 module includes onboard 10 kΩ pull-up resistors on CLK and DT. If using a bare EC11 encoder without a module, add external 10 kΩ pull-up resistors from CLK to VCC and DT to VCC.
 - **High-speed rotation:** At fast rotation speeds (> 1000 RPM), the encoder may produce pulses faster than the interrupt service routine can process, causing missed steps. For high-speed applications, use a dedicated rotary decoder IC (e.g., LS7083/84) or reduce the interrupt handler's overhead.
-- **Switch debounce:** The shaft push button (SW) is a mechanical switch and bounces like any other button. The code uses a simple `delay(200)` for debounce — this blocks `loop()` for 200 ms. For production code, use the Bounce2 library or a non-blocking debounce with `millis()`.
+- **Switch debounce:** The shaft push button (SW) is a mechanical switch and bounces like any other button. The code uses a simple `delay(200)` for debounce - this blocks `loop()` for 200 ms. For production code, use the Bounce2 library or a non-blocking debounce with `millis()`.
 - **EMI sensitivity:** Long wires between the encoder and Arduino can pick up electrical noise, generating false encoder counts. Use shielded twisted-pair cable for runs > 30 cm, or add 10 nF capacitors at the Arduino end of CLK and DT lines to GND.
 
 

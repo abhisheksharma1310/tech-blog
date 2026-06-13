@@ -1,6 +1,6 @@
 ---
-title: "Deployment Strategies — CI/CD & Docker"
-description: "Automate Node.js deployments with CI/CD pipelines and Docker — from GitHub Actions to zero-downtime production releases"
+title: "Deployment Strategies - CI/CD & Docker"
+description: "Automate Node.js deployments with CI/CD pipelines and Docker - from GitHub Actions to zero-downtime production releases"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Production"]
 tags: ["Node.js", "Production", "Deployment", "Docker", "CI/CD"]
@@ -21,7 +21,7 @@ Developer ──► Git Push ──► CI (test + build) ──► CD (deploy) �
                 Bitbucket         Jenkins              PM2
 ```
 
-## 1. Docker — Consistent Environments
+## 1. Docker - Consistent Environments
 
 Docker packages your app with its environment (Node.js version, OS packages, dependencies) into a portable image. This eliminates "it works on my machine" problems.
 
@@ -120,7 +120,7 @@ volumes:
 
 ### .dockerignore
 
-```dockerignore
+```bash
 node_modules
 .git
 .gitignore
@@ -203,13 +203,13 @@ jobs:
 ### Strategy 1: Rolling Deploy (PM2)
 
 ```bash
-# Zero-downtime reload — restarts workers one at a time
+# Zero-downtime reload - restarts workers one at a time
 pm2 reload ecosystem.config.js --env production
 ```
 
 ### Strategy 2: Blue-Green Deployment
 
-Maintain two identical environments — switch traffic between them:
+Maintain two identical environments - switch traffic between them:
 
 ```
 Before:                          After:
@@ -270,10 +270,10 @@ echo "Deployment complete!"
 
 ```js
 // Always make migrations backwards-compatible
-// ❌ BAD — renaming a column before code is updated
+// ❌ BAD - renaming a column before code is updated
 // ALTER TABLE users RENAME COLUMN username TO login;
 
-// ✅ GOOD — add new column, deploy code, then remove old
+// ✅ GOOD - add new column, deploy code, then remove old
 // Step 1: Add new column (deploy first)
 // ALTER TABLE users ADD COLUMN login VARCHAR(255);
 // Step 2: Update code to use 'login' instead of 'username'
@@ -284,7 +284,7 @@ echo "Deployment complete!"
 ## 4. Environment-Specific Docker Compose
 
 ```yaml
-# docker-compose.override.yml (development — extends base)
+# docker-compose.override.yml (development - extends base)
 services:
   app:
     build:
@@ -330,7 +330,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ## 5. Health Checks & Readiness
 
 ```js
-// app.js — health endpoint
+// app.js - health endpoint
 app.get('/health', async (req, res) => {
   const health = {
     status: 'ok',
@@ -363,7 +363,7 @@ app.get('/ready', (req, res) => {
 
 ```bash
 #!/bin/bash
-# deploy.sh — Full automation
+# deploy.sh - Full automation
 
 set -e
 
@@ -413,7 +413,7 @@ for i in {1..30}; do
     break
   fi
   if [ "$i" = "30" ]; then
-    echo "Health check failed — rolling back..."
+    echo "Health check failed - rolling back..."
     cp -r "$BACKUP_DIR/$TIMESTAMP"/* "$DEPLOY_DIR/"
     pm2 reload ecosystem.config.js --env production
     exit 1
@@ -463,13 +463,13 @@ pm2 reload ecosystem.config.js --env production
 
 ## Key Takeaways
 
-- **Docker** ensures consistent environments — write a multi-stage Dockerfile for minimal production images
+- **Docker** ensures consistent environments - write a multi-stage Dockerfile for minimal production images
 - **CI/CD** (GitHub Actions) automates the pipeline: test → build → deploy
-- **Zero-downtime deploys** — use PM2 reload (rolling restart) or blue-green (switch traffic)
-- **Run database migrations before deploying new code** — backward-compatible migrations prevent downtime
+- **Zero-downtime deploys** - use PM2 reload (rolling restart) or blue-green (switch traffic)
+- **Run database migrations before deploying new code** - backward-compatible migrations prevent downtime
 - **Health checks** (`/health`, `/ready`) let orchestration tools (Docker, K8s) know when your app is ready
-- **Rollbacks** must be fast — have a strategy (PM2 revert, Docker tag rollback, git revert)
-- **Backup before deploying** — keep the last N versions for quick rollback
-- **Use multi-stage Docker builds** — the production stage should be minimal (no build tools, no dev dependencies)
-- **Environment-specific Docker Compose** — override files for dev vs prod without duplicating config
-- **Monitor after deployment** — health checks pass at startup, but metrics (error rate, latency) tell the real story
+- **Rollbacks** must be fast - have a strategy (PM2 revert, Docker tag rollback, git revert)
+- **Backup before deploying** - keep the last N versions for quick rollback
+- **Use multi-stage Docker builds** - the production stage should be minimal (no build tools, no dev dependencies)
+- **Environment-specific Docker Compose** - override files for dev vs prod without duplicating config
+- **Monitor after deployment** - health checks pass at startup, but metrics (error rate, latency) tell the real story

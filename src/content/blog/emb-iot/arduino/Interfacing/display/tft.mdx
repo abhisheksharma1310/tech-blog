@@ -52,7 +52,7 @@ The LED pin controls the backlight. Connect it to 3.3V for full brightness or to
 
 | TFT Pin | Name | Arduino Connection |
 |---|---|---|
-| VCC | Power | 5V (or 3.3V — check module specs) |
+| VCC | Power | 5V (or 3.3V - check module specs) |
 | GND | Ground | GND |
 | CS | Chip Select | Pin 10 (SS) |
 | RESET | Reset | Pin 9 |
@@ -150,7 +150,7 @@ void setup()
 
 void loop()
 {
-  // Nothing in loop — run setup once
+  // Nothing in loop - run setup once
 }
 
 void drawShapes()
@@ -204,21 +204,21 @@ void drawLines()
 
 ### Code breakdown
 
-- `#include <Adafruit_ST7735.h>` — provides the low-level ST7735 driver functions.
-- `#include <Adafruit_GFX.h>` — provides the high-level graphics primitives (shapes, text, fonts).
-- `Adafruit_ST7735 tft(CS, DC, RST)` — creates a TFT object with the specified SPI control pins.
-- `tft.initR(INITR_BLACKTAB)` — initializes the display. The parameter selects the tab color variant: `INITR_BLACKTAB` for the newer ST7735S or `INITR_REDTAB` / `INITR_GREENTAB` for older modules. If colors are inverted or the display doesn't respond, try a different tab.
-- `tft.fillScreen(color)` — fills the entire screen with a single color.
-- `tft.setTextColor(color)` — sets the text foreground color.
-- `tft.setTextSize(size)` — sets the text size multiplier (1 = 6x8 pixel font, 2 = 12x16, etc.).
-- `tft.setCursor(x, y)` — positions the text cursor at (x, y) in pixels.
-- `tft.println(text)` — prints text at the cursor position and advances to the next line.
-- `tft.fillRect(x, y, w, h, color)` — draws a filled rectangle at (x, y) with width w and height h.
-- `tft.fillCircle(x, y, r, color)` — draws a filled circle centered at (x, y) with radius r.
-- `tft.fillTriangle(x1,y1, x2,y2, x3,y3, color)` — draws a filled triangle.
-- `tft.fillRoundRect(x, y, w, h, radius, color)` — draws a filled rectangle with rounded corners.
-- `tft.drawLine(x1, y1, x2, y2, color)` — draws a line between two points.
-- `tft.width()` / `tft.height()` — returns the display width (128) and height (160) in pixels.
+- `#include <Adafruit_ST7735.h>` - provides the low-level ST7735 driver functions.
+- `#include <Adafruit_GFX.h>` - provides the high-level graphics primitives (shapes, text, fonts).
+- `Adafruit_ST7735 tft(CS, DC, RST)` - creates a TFT object with the specified SPI control pins.
+- `tft.initR(INITR_BLACKTAB)` - initializes the display. The parameter selects the tab color variant: `INITR_BLACKTAB` for the newer ST7735S or `INITR_REDTAB` / `INITR_GREENTAB` for older modules. If colors are inverted or the display doesn't respond, try a different tab.
+- `tft.fillScreen(color)` - fills the entire screen with a single color.
+- `tft.setTextColor(color)` - sets the text foreground color.
+- `tft.setTextSize(size)` - sets the text size multiplier (1 = 6x8 pixel font, 2 = 12x16, etc.).
+- `tft.setCursor(x, y)` - positions the text cursor at (x, y) in pixels.
+- `tft.println(text)` - prints text at the cursor position and advances to the next line.
+- `tft.fillRect(x, y, w, h, color)` - draws a filled rectangle at (x, y) with width w and height h.
+- `tft.fillCircle(x, y, r, color)` - draws a filled circle centered at (x, y) with radius r.
+- `tft.fillTriangle(x1,y1, x2,y2, x3,y3, color)` - draws a filled triangle.
+- `tft.fillRoundRect(x, y, w, h, radius, color)` - draws a filled rectangle with rounded corners.
+- `tft.drawLine(x1, y1, x2, y2, color)` - draws a line between two points.
+- `tft.width()` / `tft.height()` - returns the display width (128) and height (160) in pixels.
 
 ### Color constants
 
@@ -269,15 +269,15 @@ void drawBitmap()
 4. If your display has a red tab on the flex cable, change `INITR_BLACKTAB` to `INITR_REDTAB`. For green tabs, use `INITR_GREENTAB`.
 5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 6. Upload the sketch to the Arduino.
-7. Observe the display — it will show text ("Hello, World!"), then shapes (rectangles, circles, triangles), then color bars, and finally line patterns.
+7. Observe the display - it will show text ("Hello, World!"), then shapes (rectangles, circles, triangles), then color bars, and finally line patterns.
 8. If colors appear inverted or the display is blank, try a different `initR()` parameter.
 
 ## Caution
 
 - **Init tab variant:** The 1.8 TFT displays have different driver variants (ST7735B, ST7735R, ST7735S). If the display shows nothing or garbled content, try `INITR_BLACKTAB`, `INITR_REDTAB`, or `INITR_GREENTAB` in `tft.initR()`. Some modules may require `tft.initR(INITR_144GREENTAB)` or manual initialization with `tft.init(SPI, ...)`.
-- **Voltage:** Most 1.8 TFT modules have an onboard 3.3V regulator and can accept 5V on VCC. However, the logic pins (CS, DC, MOSI, SCK) are 3.3V-only. On 5V Arduino boards, use a voltage divider (2.2kΩ + 3.3kΩ) on each control pin, or use a 3.3V Arduino board. Some modules include level shifters — check your module specs.
+- **Voltage:** Most 1.8 TFT modules have an onboard 3.3V regulator and can accept 5V on VCC. However, the logic pins (CS, DC, MOSI, SCK) are 3.3V-only. On 5V Arduino boards, use a voltage divider (2.2kΩ + 3.3kΩ) on each control pin, or use a 3.3V Arduino board. Some modules include level shifters - check your module specs.
 - **Backlight current:** The LED pin can draw 20–40 mA. Do not connect it directly to a 5V pin without a current-limiting resistor (use 3.3V or a 100Ω series resistor to 5V).
 - **SPI speed:** The default SPI speed (4 MHz) works reliably. Higher speeds (8–16 MHz) may cause display artifacts on long wires. If you see glitches, reduce SPI speed in the library or use shorter wires.
-- **SD card interference:** The SD card slot shares MOSI, SCK, and GND with the display. If you are not using the SD card, leave its CS pin disconnected (not floating — pull it HIGH with a 10kΩ resistor or set it as an output HIGH).
+- **SD card interference:** The SD card slot shares MOSI, SCK, and GND with the display. If you are not using the SD card, leave its CS pin disconnected (not floating - pull it HIGH with a 10kΩ resistor or set it as an output HIGH).
 - **Heap memory:** The Adafruit GFX library uses RAM for the frame buffer only if you create a buffer. Without a buffer (~40 KB for 128x160 RGB565), drawing is direct to the screen. Calling too many drawing functions in rapid succession may cause latency on slower Arduino boards (Uno/Nano).
 - **Display orientation:** Use `tft.setRotation(n)` (0–3) to change between portrait and landscape orientations. Rotation 1 and 2 are landscape; 0 and 3 are portrait.

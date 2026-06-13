@@ -42,7 +42,7 @@ Defer:      HTML ────────────────────┤
             (script runs after HTML parsed, before DOMContentLoaded)
 ```
 
-## `defer` — Safe, Ordered Execution
+## `defer` - Safe, Ordered Execution
 
 `defer` tells the browser: "Download the script, but wait until HTML is parsed to execute it."
 
@@ -57,7 +57,7 @@ Defer:      HTML ────────────────────┤
 
 **Use `defer`** for scripts that need the DOM and depend on each other.
 
-## `async` — Independent Execution
+## `async` - Independent Execution
 
 `async` tells the browser: "Download as soon as possible, run as soon as downloaded."
 
@@ -174,7 +174,7 @@ Module scripts:
 
 ## Key Takeaways
 
-- Regular scripts **block HTML parsing** — avoid them in `<head>`
+- Regular scripts **block HTML parsing** - avoid them in `<head>`
 - `defer` = download in parallel, execute **in order** after DOM ready
 - `async` = download in parallel, execute **immediately** when ready
 - Use `defer` for **your code** (needs DOM, depends on other scripts)

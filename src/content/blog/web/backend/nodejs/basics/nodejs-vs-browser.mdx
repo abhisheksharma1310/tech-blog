@@ -1,6 +1,6 @@
 ---
-title: "Node.js vs Browser — Key Differences"
-description: "Understand how JavaScript behaves differently in Node.js vs the browser — global objects, APIs, and modules"
+title: "Node.js vs Browser - Key Differences"
+description: "Understand how JavaScript behaves differently in Node.js vs the browser - global objects, APIs, and modules"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Basics"]
 tags: ["Node.js", "Basics", "Browser", "JavaScript"]
@@ -50,7 +50,7 @@ console.log('Hostname:', data.trim());
 fs.writeFileSync('log.txt', 'Server started at ' + new Date());
 ```
 
-> **Security:** Browsers can never access your local file system — that would be a massive security risk.
+> **Security:** Browsers can never access your local file system - that would be a massive security risk.
 
 ### 2. Process & System Info
 
@@ -108,14 +108,14 @@ localStorage      // ReferenceError
 |---------|---------|---------|
 | Module system | ES Modules (`<script type="module">`) | CommonJS (`require`) + ES Modules |
 | Code loading | `<script src="...">` | `require()` / `import` |
-| Bundling needed? | Often yes (Webpack, Vite) | No — native module resolution |
+| Bundling needed? | Often yes (Webpack, Vite) | No - native module resolution |
 
 ```js
-// Node.js — CommonJS
+// Node.js - CommonJS
 const fs = require('fs');
 const path = require('path');
 
-// Node.js — ES Modules (with "type": "module")
+// Node.js - ES Modules (with "type": "module")
 import fs from 'fs';
 import path from 'path';
 ```
@@ -168,4 +168,4 @@ In the browser console, `window` exists but `process` and `require` don't.
 - Node.js adds **fs, process, http, path, crypto** for server-side work
 - Browsers add **DOM, BOM, localStorage** for client-side interaction
 - Node.js uses **CommonJS by default** (`.require`); browsers use **ES Modules**
-- **The V8 engine is the same** — only the environment APIs differ
+- **The V8 engine is the same** - only the environment APIs differ

@@ -1,0 +1,449 @@
+---
+title: "CRUD Operations with Express Routes"
+description: "Build a complete RESTful CRUD API with Express routes connected to a database"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Database"]
+tags: ["Express", "CRUD", "REST", "API", "Database", "Routing"]
+slug: "express-crud-operations"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## RESTful CRUD Mapping
+
+CRUD operations map directly to HTTP methods and routes:
+
+| Operation | HTTP Method | Route | Status Code |
+|---|---|---|---|
+| **Create** | POST | `/api/resource` | 201 Created |
+| **Read** (list) | GET | `/api/resource` | 200 OK |
+| **Read** (single) | GET | `/api/resource/:id` | 200 OK |
+| **Update** (full) | PUT | `/api/resource/:id` | 200 OK |
+| **Update** (partial) | PATCH | `/api/resource/:id` | 200 OK |
+| **Delete** | DELETE | `/api/resource/:id` | 204 No Content |
+
+## Project Structure
+
+```
+project/
+├── models/
+│   ├── User.js        # User model/schema
+│   └── Product.js     # Product model/schema
+├── routes/
+│   ├── users.js       # User CRUD routes
+│   └── products.js    # Product CRUD routes
+├── middleware/
+│   └── validate.js    # Validation middleware
+├── index.js           # Entry point
+└── package.json
+```
+
+## Complete CRUD Example with Mongoose
+
+### Model (models/Product.js)
+
+```javascript
+const mongoose = require('mongoose');
+
+const productSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Product name is required'],
+    trim: true
+  },
+  price: {
+    type: Number,
+    required: [true, 'Price is required'],
+    min: [0, 'Price cannot be negative']
+  },
+  description: {
+    type: String,
+    maxlength: [1000, 'Description too long']
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: ['electronics', 'clothing', 'food', 'books']
+  },
+  inStock: {
+    type: Boolean,
+    default: true
+  },
+  quantity: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  tags: [String],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+productSchema.index({ name: 'text', description: 'text' });
+
+module.exports = mongoose.model('Product', productSchema);
+```
+
+### Router (routes/products.js)
+
+```javascript
+const express = require('express');
+const router = express.Router();
+const Product = require('../models/Product');
+
+// CREATE - POST /api/products
+router.post('/', async (req, res, next) => {
+  try {
+    const product = await Product.create(req.body);
+    res.status(201).json({
+      success: true,
+      data: product
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// READ (all) - GET /api/products
+router.get('/', async (req, res, next) => {
+  try {
+    const { category, minPrice, maxPrice, inStock, sort, page, limit } = req.query;
+
+    // Build filter
+    const filter = {};
+    if (category) filter.category = category;
+    if (inStock !== undefined) filter.inStock = inStock === 'true';
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = parseFloat(minPrice);
+      if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+    }
+
+    // Build sort
+    let sortOption = { createdAt: -1 };
+    if (sort) {
+      const validSorts = ['price', '-price', 'name', '-name', 'createdAt', '-createdAt'];
+      if (validSorts.includes(sort)) {
+        const field = sort.replace('-', '');
+        sortOption = { [field]: sort.startsWith('-') ? -1 : 1 };
+      }
+    }
+
+    // Pagination
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 10));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limitNum)
+        .select('-__v'),
+      Product.countDocuments(filter)
+    ]);
+
+    res.json({
+      success: true,
+      count: products.length,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      },
+      data: products
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// READ (single) - GET /api/products/:id
+router.get('/:id', async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id).select('-__v');
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// UPDATE (full) - PUT /api/products/:id
+router.put('/:id', async (req, res, next) => {
+  try {
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    ).select('-__v');
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// UPDATE (partial) - PATCH /api/products/:id
+router.patch('/:id', async (req, res, next) => {
+  try {
+    // Only update provided fields
+    const updates = {};
+    const allowedFields = ['name', 'price', 'description', 'category', 'inStock', 'quantity', 'tags'];
+    for (const [key, value] of Object.entries(req.body)) {
+      if (allowedFields.includes(key)) {
+        updates[key] = value;
+      }
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-__v');
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE - DELETE /api/products/:id
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: 'Product not found'
+      });
+    }
+
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+module.exports = router;
+```
+
+### Main App (index.js)
+
+```javascript
+const express = require('express');
+const mongoose = require('mongoose');
+
+const app = express();
+
+app.use(express.json());
+
+// Routes
+app.use('/api/products', require('./routes/products'));
+app.use('/api/users', require('./routes/users'));
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Route not found' });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map(e => e.message);
+    return res.status(422).json({ success: false, error: 'Validation failed', details: messages });
+  }
+
+  if (err.name === 'CastError') {
+    return res.status(400).json({ success: false, error: 'Invalid ID format' });
+  }
+
+  if (err.code === 11000) {
+    return res.status(409).json({ success: false, error: 'Duplicate key' });
+  }
+
+  res.status(500).json({ success: false, error: 'Internal server error' });
+});
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => app.listen(3000))
+  .catch(err => console.error(err));
+```
+
+## CRUD with Prisma (for comparison)
+
+```javascript
+// routes/products.js (Prisma version)
+const express = require('express');
+const router = express.Router();
+const prisma = require('../config/prisma');
+
+router.post('/', async (req, res, next) => {
+  try {
+    const product = await prisma.product.create({ data: req.body });
+    res.status(201).json({ success: true, data: product });
+  } catch (err) { next(err); }
+});
+
+router.get('/', async (req, res, next) => {
+  try {
+    const { category, page = 1, limit = 10 } = req.query;
+    const where = category ? { category } : {};
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip: (parseInt(page) - 1) * parseInt(limit),
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.product.count({ where })
+    ]);
+
+    res.json({
+      success: true,
+      count: products.length,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total },
+      data: products
+    });
+  } catch (err) { next(err); }
+});
+
+router.get('/:id', async (req, res, next) => {
+  try {
+    const product = await prisma.product.findUnique({ where: { id: req.params.id } });
+    if (!product) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, data: product });
+  } catch (err) { next(err); }
+});
+
+router.put('/:id', async (req, res, next) => {
+  try {
+    const product = await prisma.product.update({
+      where: { id: req.params.id },
+      data: req.body
+    });
+    res.json({ success: true, data: product });
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Not found' });
+    }
+    next(err);
+  }
+});
+
+router.delete('/:id', async (req, res, next) => {
+  try {
+    await prisma.product.delete({ where: { id: req.params.id } });
+    res.status(204).send();
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ success: false, error: 'Not found' });
+    }
+    next(err);
+  }
+});
+
+module.exports = router;
+```
+
+## Testing CRUD with cURL
+
+```bash
+# CREATE
+curl -X POST http://localhost:3000/api/products \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Wireless Mouse","price":29.99,"category":"electronics","quantity":50}'
+
+# READ all
+curl http://localhost:3000/api/products
+
+# READ all with filters
+curl "http://localhost:3000/api/products?category=electronics&minPrice=10&maxPrice=100&sort=-price&page=1&limit=5"
+
+# READ single
+curl http://localhost:3000/api/products/507f1f77bcf86cd799439011
+
+# UPDATE full
+curl -X PUT http://localhost:3000/api/products/507f1f77bcf86cd799439011 \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Wireless Mouse Pro","price":49.99,"category":"electronics","quantity":30}'
+
+# UPDATE partial
+curl -X PATCH http://localhost:3000/api/products/507f1f77bcf86cd799439011 \
+  -H "Content-Type: application/json" \
+  -d '{"price":39.99}'
+
+# DELETE
+curl -X DELETE http://localhost:3000/api/products/507f1f77bcf86cd799439011
+```
+
+## Consistent Response Format
+
+```javascript
+// helpers/response.js
+function sendSuccess(res, data, statusCode = 200) {
+  res.status(statusCode).json({ success: true, data });
+}
+
+function sendError(res, message, statusCode = 500) {
+  res.status(statusCode).json({ success: false, error: message });
+}
+
+function sendPaginated(res, data, pagination, statusCode = 200) {
+  res.status(statusCode).json({
+    success: true,
+    count: data.length,
+    pagination,
+    data
+  });
+}
+
+module.exports = { sendSuccess, sendError, sendPaginated };
+```
+
+## Key Takeaways
+
+- Map **POST** → Create (201), **GET** → Read (200), **PUT/PATCH** → Update (200), **DELETE** → Delete (204)
+- Always **validate input** before database operations
+- Support **filtering, sorting, and pagination** via query parameters
+- Return **consistent JSON responses** with `success` and `data` / `error` fields
+- Handle database errors gracefully (validation, duplicate key, invalid ID)
+- Use **try/catch** or async middleware wrapper for all async routes
+- Place 404 handler and error handler **after** all routes

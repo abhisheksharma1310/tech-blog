@@ -1,6 +1,6 @@
 ---
-title: "Making HTTP Requests — Client Side"
-description: "Master Node.js HTTP client — http.request, http.get, fetch, and advanced patterns like retries, timeouts, and streaming"
+title: "Making HTTP Requests - Client Side"
+description: "Master Node.js HTTP client - http.request, http.get, fetch, and advanced patterns like retries, timeouts, and streaming"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Web Server"]
 tags: ["Node.js", "Web Server", "HTTP", "Client", "fetch"]
@@ -20,7 +20,7 @@ Node.js provides several ways to make outgoing HTTP requests:
 | `fetch()` | Yes (Node 18+, global) | Yes | Yes |
 | `undici` | Yes (core, Node 20+) | Yes | Yes |
 
-## 1. `http.get` — Simple GET Requests
+## 1. `http.get` - Simple GET Requests
 
 The simplest way to fetch data:
 
@@ -55,9 +55,9 @@ http.get('http://api.example.com/users', (res) => {
 
 ### `http.get` Key Points
 
-- `http.get()` calls `req.end()` automatically — no need to call it manually
+- `http.get()` calls `req.end()` automatically - no need to call it manually
 - The callback receives an `http.IncomingMessage` (same type as server `req`)
-- The response is a **Readable stream** — listen for `'data'` and `'end'`
+- The response is a **Readable stream** - listen for `'data'` and `'end'`
 - Always handle `'error'` events on the request object
 
 ### HTTP Status Code Handling
@@ -103,9 +103,9 @@ try {
 }
 ```
 
-## 2. `http.request` — Full Control
+## 2. `http.request` - Full Control
 
-`http.request` gives you complete control over the request — method, headers, body, and more:
+`http.request` gives you complete control over the request - method, headers, body, and more:
 
 ```js
 const http = require('http');
@@ -316,7 +316,7 @@ console.log(response.body);
 Node.js 18 introduced a global `fetch` based on `undici`:
 
 ```js
-// No import needed — it's global
+// No import needed - it's global
 
 // GET
 const response = await fetch('https://api.github.com/users/octocat');
@@ -375,7 +375,7 @@ const formResponse = await fetch('https://api.example.com/upload', {
 });
 ```
 
-### Abort Controller — Cancelling Requests
+### Abort Controller - Cancelling Requests
 
 ```js
 function fetchWithTimeout(url, timeoutMs = 5000) {
@@ -394,7 +394,7 @@ const response = await fetch(url, {
 
 ## 6. Streaming Responses (All Methods)
 
-All HTTP client methods support streaming — useful for large responses:
+All HTTP client methods support streaming - useful for large responses:
 
 ```js
 const http = require('http');
@@ -461,7 +461,7 @@ async function fetchWithRetry(url, options = {}) {
       if (err.name === 'AbortError') throw err;
       if (attempt === retries) throw err;
 
-      // Network error — retry
+      // Network error - retry
       const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay);
       console.warn(`Attempt ${attempt} failed: ${err.message}. Retrying in ${delay}ms...`);
       await new Promise(r => setTimeout(r, delay));
@@ -504,7 +504,7 @@ async function makeRequest(path) {
   });
 }
 
-// Make 100 requests — they share TCP connections
+// Make 100 requests - they share TCP connections
 const promises = Array.from({ length: 100 }, (_, i) =>
   makeRequest(`/items/${i}`)
 );
@@ -609,13 +609,13 @@ console.log('Created:', newPost.data);
 
 ## Key Takeaways
 
-- **`http.get()`** — simplest for GET requests, calls `req.end()` automatically
-- **`http.request()`** — full control over method, headers, body — requires manual `req.end()`
-- **Always handle errors** — network failures, timeouts, DNS errors, and non-2xx status codes
-- **Set timeouts** — `req.setTimeout()` or `AbortSignal.timeout()` prevents hanging requests
-- **Check `res.statusCode`** — redirects (3xx), errors (4xx, 5xx), success (2xx)
-- **Stream large responses** — use `pipeline(response, fs.createWriteStream())` for files
+- **`http.get()`** - simplest for GET requests, calls `req.end()` automatically
+- **`http.request()`** - full control over method, headers, body - requires manual `req.end()`
+- **Always handle errors** - network failures, timeouts, DNS errors, and non-2xx status codes
+- **Set timeouts** - `req.setTimeout()` or `AbortSignal.timeout()` prevents hanging requests
+- **Check `res.statusCode`** - redirects (3xx), errors (4xx, 5xx), success (2xx)
+- **Stream large responses** - use `pipeline(response, fs.createWriteStream())` for files
 - **Use keep-alive agents** for connection reuse when making many requests to the same host
-- **`fetch()`** (Node 18+) is the modern, promise-based alternative — prefer it for new code
+- **`fetch()`** (Node 18+) is the modern, promise-based alternative - prefer it for new code
 - **Implement retry with exponential backoff** for flaky networks or rate-limited APIs
 - **Build an API client class** to encapsulate base URL, headers, auth, and error handling

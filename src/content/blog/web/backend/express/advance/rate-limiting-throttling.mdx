@@ -1,0 +1,389 @@
+---
+title: "Rate Limiting & Throttling"
+description: "Protect your Express API with rate limiting, throttling, and DDoS mitigation strategies"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Advanced"]
+tags: ["Express", "Rate Limiting", "Throttling", "DDoS", "express-rate-limit", "Security"]
+slug: "express-rate-limiting-throttling"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why Rate Limiting?
+
+Rate limiting protects your API from abuse - brute-force attacks, DDoS, scraping, and runaway clients.
+
+```
+Without rate limiting:                With rate limiting:
+                                        │
+  Attacker ─── 10,000 req/s ──────→     │ Attacker ─── 10,000 req/s ──────→
+  Server: CPU 100%, DB overwhelmed      │ Rate limiter blocks 9,900
+  All users: 503 Service Unavailable    │ Legitimate users: served normally
+```
+
+## Basic Rate Limiting with express-rate-limit
+
+```bash
+npm install express-rate-limit
+```
+
+```javascript
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 100,                    // 100 requests per window
+  message: {
+    success: false,
+    error: 'Too many requests. Please try again later.'
+  },
+  standardHeaders: true,       // Return rate limit info in headers
+  legacyHeaders: false
+});
+
+app.use(limiter);
+```
+
+## Configuration Options
+
+```javascript
+const limiter = rateLimit({
+  // Time window in milliseconds
+  windowMs: 15 * 60 * 1000,
+
+  // Max requests per window
+  max: 100,
+
+  // Response when limit is reached
+  message: { error: 'Rate limit exceeded' },
+
+  // Status code when limit is reached
+  statusCode: 429,
+
+  // Response headers (standard: RateLimit-*, legacy: X-RateLimit-*)
+  standardHeaders: true,
+  legacyHeaders: false,
+
+  // Key generator (default: req.ip)
+  keyGenerator: (req) => {
+    return req.user?.id || req.ip;
+  },
+
+  // Skip rate limiting for certain requests
+  skip: (req) => {
+    return req.path === '/health' || req.ip === '127.0.0.1';
+  },
+
+  // Skip failed requests (don't count 4xx/5xx responses)
+  skipSuccessfulRequests: false,
+
+  // Handler when limit is reached
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Too many requests',
+      retryAfter: Math.ceil(req.rateLimit.resetTime / 1000 - Date.now() / 1000)
+    });
+  }
+});
+```
+
+## Tiered Rate Limiting
+
+Apply different limits to different endpoints:
+
+```javascript
+// Global: 100 req/15min
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+}));
+
+// Strict: Auth endpoints - 5 attempts/15min
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many login attempts. Account locked temporarily.' },
+  skipSuccessfulRequests: true // Only count failures
+});
+app.use('/api/login', authLimiter);
+app.use('/api/register', authLimiter);
+
+// Moderate: API endpoints - 60 req/min
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60
+});
+app.use('/api/', apiLimiter);
+
+// Generous: Public endpoints - 1000 req/min
+const publicLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 1000
+});
+app.use('/api/public', publicLimiter);
+```
+
+## Rate Limiting by User Role
+
+```javascript
+function roleBasedLimiter() {
+  return (req, res, next) => {
+    const limits = {
+      admin: { windowMs: 60 * 1000, max: 1000 },
+      user: { windowMs: 60 * 1000, max: 100 },
+      anonymous: { windowMs: 60 * 1000, max: 10 }
+    };
+
+    const role = req.user?.role || 'anonymous';
+    const config = limits[role];
+
+    const limiter = rateLimit({
+      windowMs: config.windowMs,
+      max: config.max,
+      keyGenerator: () => req.user?.id || req.ip,
+      message: { error: `Rate limit exceeded for ${role} role` }
+    });
+
+    return limiter(req, res, next);
+  };
+}
+
+app.use('/api', roleBasedLimiter());
+```
+
+## Rate Limiting with Redis (Production)
+
+For multi-server deployments, store rate limit data in Redis:
+
+```bash
+npm install rate-limit-redis ioredis
+```
+
+```javascript
+const rateLimit = require('express-rate-limit');
+const RedisStore = require('rate-limit-redis').default;
+const { createClient } = require('ioredis');
+
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+const limiter = rateLimit({
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.call(...args)
+  }),
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});
+
+app.use(limiter);
+```
+
+## Rate Limit Headers
+
+When `standardHeaders: true`, clients receive:
+
+```
+RateLimit-Limit: 100
+RateLimit-Remaining: 87
+RateLimit-Reset: 1689000000
+Retry-After: 360
+```
+
+```javascript
+// Client-side: respect rate limits
+async function apiCall(url) {
+  const res = await fetch(url);
+
+  if (res.status === 429) {
+    const retryAfter = res.headers.get('Retry-After');
+    console.log(`Rate limited. Retry after ${retryAfter} seconds`);
+    await new Promise(r => setTimeout(r, retryAfter * 1000));
+    return apiCall(url); // Retry after waiting
+  }
+
+  return res.json();
+}
+```
+
+## IP-Based Blocking
+
+```javascript
+const blockedIPs = new Set();
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  keyGenerator: (req) => req.ip,
+  handler: (req, res) => {
+    // After 3 strikes within the window, block the IP for 1 hour
+    const key = req.ip;
+    const strikeCount = req.rateLimit.current - req.rateLimit.max;
+
+    if (strikeCount >= 3) {
+      blockedIPs.add(key);
+      setTimeout(() => blockedIPs.delete(key), 60 * 60 * 1000);
+    }
+
+    res.status(429).json({
+      error: 'Too many requests',
+      blocked: blockedIPs.has(key)
+    });
+  }
+});
+
+// Middleware to check blocked IPs
+app.use((req, res, next) => {
+  if (blockedIPs.has(req.ip)) {
+    return res.status(403).json({ error: 'Your IP has been blocked' });
+  }
+  next();
+});
+```
+
+## Speed Limiter (Slow Down Instead of Block)
+
+Use `express-slow-down` to slow down excessive clients instead of blocking them:
+
+```bash
+npm install express-slow-down
+```
+
+```javascript
+const slowDown = require('express-slow-down');
+
+const speedLimiter = slowDown({
+  windowMs: 15 * 60 * 1000,
+  delayAfter: 50,       // Allow 50 requests without delay
+  delayMs: (hits) => hits * 100, // Add 100ms delay per hit after threshold
+  maxDelayMs: 5000       // Max 5 second delay
+});
+
+app.use('/api', speedLimiter);
+```
+
+## Burst Protection
+
+Allow short bursts but limit sustained traffic:
+
+```javascript
+const burstProtection = rateLimit({
+  windowMs: 1 * 1000,   // 1 second window
+  max: 10,               // 10 requests per second
+  message: { error: 'Too fast. Slow down.' }
+});
+
+const sustainedLimiter = rateLimit({
+  windowMs: 60 * 1000,  // 1 minute window
+  max: 100,              // 100 requests per minute
+  message: { error: 'Sustained rate limit exceeded' }
+});
+
+app.use('/api', burstProtection, sustainedLimiter);
+```
+
+## DDoS Mitigation Strategy
+
+```javascript
+const express = require('express');
+const rateLimit = require('express-rate-limit');
+const slowDown = require('express-slow-down');
+
+const app = express();
+
+// Layer 1: Connection limiting (via reverse proxy usually)
+
+// Layer 2: Global rate limit
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  message: { error: 'Global rate limit exceeded' }
+}));
+
+// Layer 3: Endpoint-specific limits
+app.use('/api/login', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many login attempts' },
+  skipSuccessfulRequests: true
+}));
+
+app.use('/api/search', rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Search rate limit exceeded' }
+}));
+
+// Layer 4: Slow down excessive clients
+app.use('/api', slowDown({
+  windowMs: 60 * 1000,
+  delayAfter: 100,
+  delayMs: 500
+}));
+
+// Layer 5: Body size limits
+app.use(express.json({ limit: '100kb' }));
+
+// Layer 6: Payload validation
+app.use((req, res, next) => {
+  if (req.is('application/json') && typeof req.body !== 'object') {
+    return res.status(400).json({ error: 'Invalid payload' });
+  }
+  next();
+});
+```
+
+## Rate Limit by IP or User
+
+```javascript
+// Anonymous users: limit by IP
+// Authenticated users: limit by userId
+function smartKeyGenerator(req) {
+  if (req.user?.id) {
+    return `user:${req.user.id}`;
+  }
+  return `ip:${req.ip}`;
+}
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  keyGenerator: smartKeyGenerator
+});
+```
+
+## Testing Rate Limiting
+
+```javascript
+const request = require('supertest');
+
+describe('Rate Limiting', () => {
+  it('should allow requests under the limit', async () => {
+    const res = await request(app).get('/api/test');
+    expect(res.status).toBe(200);
+    expect(res.headers['ratelimit-remaining']).toBeDefined();
+  });
+
+  it('should block requests over the limit', async () => {
+    const requests = Array(105).fill().map(() =>
+      request(app).get('/api/test')
+    );
+
+    const responses = await Promise.all(requests);
+    const blocked = responses.filter(r => r.status === 429);
+
+    expect(blocked.length).toBeGreaterThan(0);
+  });
+});
+```
+
+## Key Takeaways
+
+- Use **express-rate-limit** with `windowMs` and `max` for basic rate limiting
+- Apply **tiered limits**: strict for auth, moderate for API, generous for public
+- Use **RedisStore** for rate limiting across multiple server instances
+- Return **rate limit headers** (RateLimit-*) so clients can self-regulate
+- Use **express-slow-down** to slow excessive clients instead of blocking
+- Combine rate limiting with body size limits, validation, and DDoS protection
+- Use **smart key generators** - by userId for authenticated users, by IP for anonymous
+- Always test rate limiting with integration tests

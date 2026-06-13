@@ -11,7 +11,7 @@ order: 4
 
 ## Fetch: Abort
 
-Sometimes you need to cancel an in-progress fetch — user navigates away, search input changes, or a request takes too long. `AbortController` makes this possible.
+Sometimes you need to cancel an in-progress fetch - user navigates away, search input changes, or a request takes too long. `AbortController` makes this possible.
 
 ## AbortController Basics
 
@@ -86,10 +86,10 @@ try {
   const response = await fetch(url, { signal });
 } catch (err) {
   if (err.name === 'AbortError') {
-    // User cancelled — do nothing
+    // User cancelled - do nothing
     return;
   }
-  // Real error — handle it
+  // Real error - handle it
   console.error(err);
 }
 ```
@@ -195,7 +195,7 @@ useEffect(() => {
 
 ## AbortController for Non-Fetch
 
-`AbortController` isn't limited to fetch — you can use it for any async operation:
+`AbortController` isn't limited to fetch - you can use it for any async operation:
 
 ```javascript
 function wait(ms, { signal } = {}) {
@@ -221,6 +221,6 @@ await wait(5000, { signal: controller.signal });
 - Catch `AbortError` specifically to distinguish cancellation from real errors
 - One `AbortController` can cancel **multiple** requests
 - Combine with `setTimeout` for **request timeouts**
-- Always clean up — call `abort()` when component unmounts
+- Always clean up - call `abort()` when component unmounts
 - Check `signal.aborted` to see if abort has already been called
 - AbortController works with any async operation, not just fetch

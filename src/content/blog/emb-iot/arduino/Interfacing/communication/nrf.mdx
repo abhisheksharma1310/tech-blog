@@ -218,21 +218,21 @@ void loop()
 
 ### Code breakdown
 
-- `#include <RF24.h>` — includes the RF24 library for nRF24L01 communication.
-- `RF24 radio(CE, CSN)` — creates a radio object with the specified chip enable and chip select not pins.
-- `radio.begin()` — initializes the SPI connection and configures the radio. Returns `false` if the module is not detected.
-- `radio.setChannel(ch)` — sets the RF channel (0–125). Channel 100 = 2.500 GHz. Both units must use the same channel.
-- `radio.setDataRate(rate)` — sets the data rate. `RF24_250KBPS` (longest range), `RF24_1MBPS` (balanced), `RF24_2MBPS` (highest speed, shortest range).
-- `radio.setPALevel(level)` — sets the power amplifier level: `RF24_PA_MIN` (-18 dBm), `RF24_PA_LOW` (-12 dBm), `RF24_PA_HIGH` (-6 dBm), `RF24_PA_MAX` (0 dBm).
-- `radio.setAutoAck(true)` — enables automatic hardware acknowledgements from the receiver.
-- `radio.setRetries(delay, count)` — sets auto-retry: delay in multiples of 250 µs, count up to 15.
-- `radio.openWritingPipe(address)` — sets the transmit pipe address (40-bit).
-- `radio.openReadingPipe(pipe, address)` — opens a reading pipe (0–5) with a 40-bit address.
-- `radio.stopListening()` — sets the radio to transmit mode.
-- `radio.startListening()` — sets the radio to receive mode.
-- `radio.write(&data, size)` — transmits a data buffer. Returns `true` if acknowledged.
-- `radio.available()` — returns `true` if received data is waiting in the RX FIFO.
-- `radio.read(&data, size)` — reads received data into a buffer.
+- `#include <RF24.h>` - includes the RF24 library for nRF24L01 communication.
+- `RF24 radio(CE, CSN)` - creates a radio object with the specified chip enable and chip select not pins.
+- `radio.begin()` - initializes the SPI connection and configures the radio. Returns `false` if the module is not detected.
+- `radio.setChannel(ch)` - sets the RF channel (0–125). Channel 100 = 2.500 GHz. Both units must use the same channel.
+- `radio.setDataRate(rate)` - sets the data rate. `RF24_250KBPS` (longest range), `RF24_1MBPS` (balanced), `RF24_2MBPS` (highest speed, shortest range).
+- `radio.setPALevel(level)` - sets the power amplifier level: `RF24_PA_MIN` (-18 dBm), `RF24_PA_LOW` (-12 dBm), `RF24_PA_HIGH` (-6 dBm), `RF24_PA_MAX` (0 dBm).
+- `radio.setAutoAck(true)` - enables automatic hardware acknowledgements from the receiver.
+- `radio.setRetries(delay, count)` - sets auto-retry: delay in multiples of 250 µs, count up to 15.
+- `radio.openWritingPipe(address)` - sets the transmit pipe address (40-bit).
+- `radio.openReadingPipe(pipe, address)` - opens a reading pipe (0–5) with a 40-bit address.
+- `radio.stopListening()` - sets the radio to transmit mode.
+- `radio.startListening()` - sets the radio to receive mode.
+- `radio.write(&data, size)` - transmits a data buffer. Returns `true` if acknowledged.
+- `radio.available()` - returns `true` if received data is waiting in the RX FIFO.
+- `radio.read(&data, size)` - reads received data into a buffer.
 
 ### Bidirectional communication
 
@@ -298,9 +298,9 @@ Start with both modules on the same breadboard. Once communication is verified, 
 ## Caution
 
 - **Decoupling capacitor required:** The nRF24L01 draws short current spikes of up to 12 mA (standard) or 115 mA (PA+LNA) during transmission. Without a 10–100 µF capacitor across VCC and GND near the module, the voltage dips can cause the module to reset, hang, or corrupt data. This is the most common cause of "radio not responding" errors.
-- **3.3V power:** Standard nRF24L01 modules operate at 3.3V and are NOT 5V tolerant on VCC. Connecting VCC to 5V will destroy the module. PA+LNA modules typically include a 3.3V regulator and can accept 5V on VCC, but check your module's datasheet. The logic pins (CE, CSN, MOSI, SCK) are 3.3V-only on all variants — use a voltage divider on 5V Arduino boards or rely on the module's logic being 5V-tolerant (which varies by manufacturer).
+- **3.3V power:** Standard nRF24L01 modules operate at 3.3V and are NOT 5V tolerant on VCC. Connecting VCC to 5V will destroy the module. PA+LNA modules typically include a 3.3V regulator and can accept 5V on VCC, but check your module's datasheet. The logic pins (CE, CSN, MOSI, SCK) are 3.3V-only on all variants - use a voltage divider on 5V Arduino boards or rely on the module's logic being 5V-tolerant (which varies by manufacturer).
 - **PA+LNA current draw:** The PA+LNA variant draws up to 115 mA during transmission bursts. This exceeds the Arduino 3.3V regulator output (typically 150 mA continuous). If using a PA+LNA module with other 3.3V loads, use an external 3.3V regulator rated for at least 200 mA.
-- **Channel selection:** Channels above 125 are out of the legal 2.400–2.525 GHz ISM band. When using multiple wireless systems nearby (Wi-Fi, Bluetooth), choose a channel that avoids overlap. Wi-Fi channels 1, 6, and 11 occupy the 2.401–2.483 GHz range — nRF24L01 channels 0–125 correspond to 2.400–2.525 GHz in 1 MHz steps. For best coexistence, use channels below 5 or above 80.
+- **Channel selection:** Channels above 125 are out of the legal 2.400–2.525 GHz ISM band. When using multiple wireless systems nearby (Wi-Fi, Bluetooth), choose a channel that avoids overlap. Wi-Fi channels 1, 6, and 11 occupy the 2.401–2.483 GHz range - nRF24L01 channels 0–125 correspond to 2.400–2.525 GHz in 1 MHz steps. For best coexistence, use channels below 5 or above 80.
 - **Address uniqueness:** Each nRF24L01 communicating on the same channel must use a unique pipe address to avoid cross-talk. The address is 40 bits and should be chosen to be unique per network. For a simple pair, any 40-bit value works, but in multi-device networks, use a structured addressing scheme (e.g., network ID + device ID).
 - **SPI bus conflicts:** The nRF24L01 shares the SPI bus with other SPI devices. After each `radio.write()` or `radio.read()`, the CSN pin goes HIGH to release the bus. If you use other SPI devices (SD card, display), ensure their chip select pins are not active when the nRF24L01 is communicating.
 - **IRQ pin:** The IRQ pin (active LOW) can be used for interrupt-driven reception instead of polling `radio.available()`. Wire IRQ to a digital pin and attach an interrupt on FALLING. Call `radio.whatHappened()` inside the ISR to determine the cause (RX data received, TX success, TX max retries).

@@ -150,14 +150,14 @@ void loop()
 
 ### Code breakdown
 
-- `#include <Adafruit_INA219.h>` — includes the Adafruit INA219 library.
-- `Adafruit_INA219 ina219` — creates an INA219 object. Optionally pass the I2C address: `Adafruit_INA219 ina219(0x41)`.
-- `ina219.begin()` — initialises the sensor. Returns `false` if no INA219 is detected on the I2C bus.
-- `ina219.getShuntVoltage_mV()` — returns the voltage drop across the shunt resistor in millivolts. Positive means current flows from VIN+ to VIN-.
-- `ina219.getBusVoltage_V()` — returns the voltage at VIN- relative to GND (the bus/load voltage).
-- `ina219.getCurrent_mA()` — returns the current through the shunt in milliamps. Positive = current flowing from VIN+ to VIN-.
-- `ina219.getPower_mW()` — returns the power (bus voltage × current) in milliwatts.
-- `loadVoltage = busVoltage + (shuntVoltage / 1000.0)` — the actual voltage at the load = voltage at VIN- plus the small drop across the shunt.
+- `#include <Adafruit_INA219.h>` - includes the Adafruit INA219 library.
+- `Adafruit_INA219 ina219` - creates an INA219 object. Optionally pass the I2C address: `Adafruit_INA219 ina219(0x41)`.
+- `ina219.begin()` - initialises the sensor. Returns `false` if no INA219 is detected on the I2C bus.
+- `ina219.getShuntVoltage_mV()` - returns the voltage drop across the shunt resistor in millivolts. Positive means current flows from VIN+ to VIN-.
+- `ina219.getBusVoltage_V()` - returns the voltage at VIN- relative to GND (the bus/load voltage).
+- `ina219.getCurrent_mA()` - returns the current through the shunt in milliamps. Positive = current flowing from VIN+ to VIN-.
+- `ina219.getPower_mW()` - returns the power (bus voltage × current) in milliwatts.
+- `loadVoltage = busVoltage + (shuntVoltage / 1000.0)` - the actual voltage at the load = voltage at VIN- plus the small drop across the shunt.
 
 ### Calibration modes
 
@@ -200,7 +200,7 @@ void setup()
 
 - **Maximum voltage:** The INA219 bus voltage measurement range is 0–26 VDC. Applying more than 26 V to VIN+ or VIN- will damage the IC. The differential voltage across VIN+ and VIN- must not exceed ±320 mV (the shunt voltage range).
 - **Shunt resistor:** Most INA219 breakout boards use a 0.1 Ω, 2 W shunt resistor. This limits continuous current to approximately ±3.2 A (P = I²R = 3.2² × 0.1 ≈ 1 W safely). For higher currents, replace the shunt with a lower-value resistor and recalibrate using `setCalibration()`. For lower currents, a higher-value shunt improves resolution.
-- **Common ground:** The INA219 GND must be connected to the power supply GND and the Arduino GND. The INA219 measures voltage relative to its own GND pin — if grounds are not shared, readings will be incorrect.
+- **Common ground:** The INA219 GND must be connected to the power supply GND and the Arduino GND. The INA219 measures voltage relative to its own GND pin - if grounds are not shared, readings will be incorrect.
 - **Supply voltage for the INA219:** The INA219 IC operates from 3.0 V to 5.5 V on VCC. The module can measure bus voltages up to 26 V regardless of VCC (the bus voltage is divided internally). This means you can monitor a 12 V battery while powering the INA219 from the Arduino's 3.3 V or 5 V pin.
 - **Inductive loads:** The INA219 is designed for DC measurements. Measuring current through inductive loads (motors, solenoids, relays) may produce noisy readings due to PWM switching or back-EMF. Add a 10 µF capacitor across VIN+ and VIN- near the module to filter noise.
 - **Reverse polarity:** Applying reverse voltage across VIN+ and VIN- (VIN- > VIN+ by more than 320 mV) will damage the IC. The INA219 is not reverse-polarity protected. Add a Schottky diode in series with the supply if reverse polarity is possible.

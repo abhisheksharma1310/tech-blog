@@ -222,13 +222,13 @@ void keypadEvent(KeypadEvent key)
 
 ### Code breakdown
 
-- `#include <Keypad.h>` — includes the Keypad library for matrix scanning and debouncing.
-- `makeKeymap(keys)` — converts the 2D char array into a format the library can scan.
-- `Keypad keypad(map, rowPins, colPins, rows, cols)` — creates a Keypad object with the key layout, row pins, column pins, and dimensions.
-- `keypad.getKey()` — returns the character of the key currently pressed, or `NO_KEY` (null character) if no key is pressed. This is non-blocking.
-- `keypad.addEventListener(function)` — registers a callback that fires on `PRESSED`, `HOLD`, and `RELEASED` events.
-- `keypad.getState()` — returns the current event state (`PRESSED`, `HOLD`, `RELEASED`) when called inside an event listener.
-- `keypad.setHoldTime(ms)` — sets how long a key must be held before a `HOLD` event fires (default 500 ms).
+- `#include <Keypad.h>` - includes the Keypad library for matrix scanning and debouncing.
+- `makeKeymap(keys)` - converts the 2D char array into a format the library can scan.
+- `Keypad keypad(map, rowPins, colPins, rows, cols)` - creates a Keypad object with the key layout, row pins, column pins, and dimensions.
+- `keypad.getKey()` - returns the character of the key currently pressed, or `NO_KEY` (null character) if no key is pressed. This is non-blocking.
+- `keypad.addEventListener(function)` - registers a callback that fires on `PRESSED`, `HOLD`, and `RELEASED` events.
+- `keypad.getState()` - returns the current event state (`PRESSED`, `HOLD`, `RELEASED`) when called inside an event listener.
+- `keypad.setHoldTime(ms)` - sets how long a key must be held before a `HOLD` event fires (default 500 ms).
 
 ### Reading multiple simultaneous keys
 
@@ -281,8 +281,8 @@ void loop()
 6. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 7. Upload the sketch to the Arduino.
 8. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-9. Press keys on the keypad — observe the key character and event type printed.
-10. Test the password feature: enter `1234A` then `#` — you should see "ACCESS GRANTED".
+9. Press keys on the keypad - observe the key character and event type printed.
+10. Test the password feature: enter `1234A` then `#` - you should see "ACCESS GRANTED".
 
 ### Determining the pinout
 
@@ -297,8 +297,8 @@ If you are unsure of your keypad's pinout, use a multimeter in continuity mode:
 ## Caution
 
 - **Pinout varies by manufacturer:** There is no universal standard for membrane keypad pinouts. Pins 1–8 may map to rows then columns, columns then rows, or an interleaved pattern. Always verify with a multimeter or the datasheet before concluding your wiring is correct.
-- **Ghosting:** When three or more keys are pressed simultaneously in a certain pattern, the matrix can report a false key press (ghosting). The Keypad library includes basic ghost detection — if you encounter ghosting, use `keypad.setDebounceTime()` and add series diodes on each row or column for hardware-based n-key rollover.
+- **Ghosting:** When three or more keys are pressed simultaneously in a certain pattern, the matrix can report a false key press (ghosting). The Keypad library includes basic ghost detection - if you encounter ghosting, use `keypad.setDebounceTime()` and add series diodes on each row or column for hardware-based n-key rollover.
 - **Debouncing:** Mechanical switches in membrane keypads bounce for 5–20 ms after contact. The Keypad library handles debouncing internally with a default debounce time of 10 ms. Increase it with `keypad.setDebounceTime(ms)` if you see double-triggers.
 - **Pull-up resistors:** The Keypad library uses `INPUT_PULLUP` internally on column pins by default, so no external pull-up resistors are needed. If you wire the keypad with columns as outputs and rows as inputs, configure the library accordingly.
 - **Moisture and dust:** Membrane keypads are not sealed against liquids. Spills can cause short circuits between layers. If used outdoors or in a kitchen, place the keypad behind a protective acrylic or polycarbonate panel.
-- **Ribbon cable strain:** The thin ribbon cable is fragile. Avoid bending it sharply at the header junction — repeated flexing will break the traces. Use a right-angle header or strain relief if the keypad is frequently disconnected.
+- **Ribbon cable strain:** The thin ribbon cable is fragile. Avoid bending it sharply at the header junction - repeated flexing will break the traces. Use a right-angle header or strain relief if the keypad is frequently disconnected.

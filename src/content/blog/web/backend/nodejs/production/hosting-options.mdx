@@ -1,6 +1,6 @@
 ---
-title: "Hosting Options — VPS, Cloud, Serverless, PaaS"
-description: "Compare Node.js hosting options — VPS, cloud platforms, serverless, and PaaS — with cost, scaling, and use-case guidance"
+title: "Hosting Options - VPS, Cloud, Serverless, PaaS"
+description: "Compare Node.js hosting options - VPS, cloud platforms, serverless, and PaaS - with cost, scaling, and use-case guidance"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Production"]
 tags: ["Node.js", "Production", "Hosting", "DevOps"]
@@ -28,7 +28,7 @@ Linode     GCP Compute  Render    Fly.io     Vercel   GCP Functions Workers
 
 ## 1. VPS (Virtual Private Server)
 
-You get a virtual machine with root access. You manage everything — OS, Node.js, reverse proxy, SSL.
+You get a virtual machine with root access. You manage everything - OS, Node.js, reverse proxy, SSL.
 
 | Provider | Starting Price | Specs |
 |----------|---------------|-------|
@@ -94,7 +94,7 @@ certbot --nginx -d your-domain.com
 - You need **full control** over the environment
 - Traffic is **predictable** and consistently moderate-to-high
 - You have **DevOps experience** or want to learn
-- Budget is tight — VPS offers the best performance per dollar
+- Budget is tight - VPS offers the best performance per dollar
 - You need specific **OS-level packages** or configurations
 
 ### VPS Pros & Cons
@@ -207,10 +207,10 @@ exports.handler = async (event) => {
 
 ### When to Use Serverless
 
-- **Sporadic traffic** — a few requests per hour, or bursty
-- **Background jobs** — image processing, email sending, webhooks
-- **Prototyping** — no cost when idle
-- **Microservices** — each function is a small, independent unit
+- **Sporadic traffic** - a few requests per hour, or bursty
+- **Background jobs** - image processing, email sending, webhooks
+- **Prototyping** - no cost when idle
+- **Microservices** - each function is a small, independent unit
 
 ### Serverless Pros & Cons
 
@@ -218,7 +218,7 @@ exports.handler = async (event) => {
 |------|------|
 | Pay per request (cheap at low volume) | Cold starts (100ms–1s delay) |
 | Auto-scales infinitely | 15-minute timeout (AWS Lambda) |
-| No server management | Stateless — no local filesystem |
+| No server management | Stateless - no local filesystem |
 | Built-in fault tolerance | Debugging is harder (no SSH) |
 
 ## 4. Comparison Matrix
@@ -276,10 +276,10 @@ Ask these questions to decide:
 
 ## Key Takeaways
 
-- **VPS** (DigitalOcean, Linode) — best performance per dollar, full control, highest ops overhead
-- **PaaS** (Railway, Render, Heroku) — easiest deployment, managed infrastructure, moderate cost
-- **Serverless** (AWS Lambda, Vercel) — pay per request, scales to zero, cold starts are the trade-off
-- **No perfect choice** — it depends on traffic patterns, team skills, budget, and operational needs
-- **Start simple** — deploy to PaaS first (minutes), migrate to VPS if cost becomes an issue
-- **Use Docker** to avoid vendor lock-in — a Docker image runs on any platform
-- **Vendor lock-in is real** — PaaS-specific features (queues, databases) are hard to migrate away from
+- **VPS** (DigitalOcean, Linode) - best performance per dollar, full control, highest ops overhead
+- **PaaS** (Railway, Render, Heroku) - easiest deployment, managed infrastructure, moderate cost
+- **Serverless** (AWS Lambda, Vercel) - pay per request, scales to zero, cold starts are the trade-off
+- **No perfect choice** - it depends on traffic patterns, team skills, budget, and operational needs
+- **Start simple** - deploy to PaaS first (minutes), migrate to VPS if cost becomes an issue
+- **Use Docker** to avoid vendor lock-in - a Docker image runs on any platform
+- **Vendor lock-in is real** - PaaS-specific features (queues, databases) are hard to migrate away from

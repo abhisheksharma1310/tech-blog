@@ -62,7 +62,7 @@ Most generic anemometers use a reed switch. High-end models use a hall effect se
 | Black | GND | GND |
 | Yellow/White | Signal | Digital Pin 2 (interrupt) |
 
-Some anemometers use different wire colours — check your specific model's documentation.
+Some anemometers use different wire colours - check your specific model's documentation.
 
 ## Install necessary Library
 
@@ -146,12 +146,12 @@ void countPulse()
 
 ### Code breakdown
 
-- `attachInterrupt(pin, ISR, mode)` — attaches an interrupt service routine to the specified pin. `FALLING` mode triggers on HIGH→LOW transitions (reed switch closure or hall sensor falling edge).
-- `digitalPinToInterrupt(sensorPin)` — converts a digital pin number to its interrupt number. On Uno/Nano, pin 2 = interrupt 0, pin 3 = interrupt 1.
-- `volatile unsigned long pulseCount` — the ISR increments this variable. The `volatile` keyword tells the compiler that this variable can change outside the normal program flow (inside an ISR).
-- `detachInterrupt()` / `re-attachInterrupt()` — the interrupt is briefly disabled while copying and resetting the counter to prevent race conditions.
-- `count / (SAMPLE_INTERVAL / 1000.0)` — converts the pulse count to frequency (Hz).
-- `frequency / PULSES_PER_MPS` — converts frequency to wind speed using the anemometer's calibration factor. For a typical cup anemometer, 1 Hz ≈ 0.75–2 m/s.
+- `attachInterrupt(pin, ISR, mode)` - attaches an interrupt service routine to the specified pin. `FALLING` mode triggers on HIGH→LOW transitions (reed switch closure or hall sensor falling edge).
+- `digitalPinToInterrupt(sensorPin)` - converts a digital pin number to its interrupt number. On Uno/Nano, pin 2 = interrupt 0, pin 3 = interrupt 1.
+- `volatile unsigned long pulseCount` - the ISR increments this variable. The `volatile` keyword tells the compiler that this variable can change outside the normal program flow (inside an ISR).
+- `detachInterrupt()` / `re-attachInterrupt()` - the interrupt is briefly disabled while copying and resetting the counter to prevent race conditions.
+- `count / (SAMPLE_INTERVAL / 1000.0)` - converts the pulse count to frequency (Hz).
+- `frequency / PULSES_PER_MPS` - converts frequency to wind speed using the anemometer's calibration factor. For a typical cup anemometer, 1 Hz ≈ 0.75–2 m/s.
 
 ### Calculating the calibration factor
 

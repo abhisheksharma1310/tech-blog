@@ -1,6 +1,6 @@
 ---
 title: "Environment Variables & Config Management"
-description: "Manage environment variables and configuration in Node.js — .env files, validation, dotenv, and production secrets"
+description: "Manage environment variables and configuration in Node.js - .env files, validation, dotenv, and production secrets"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Production"]
 tags: ["Node.js", "Production", "Configuration", "Environment Variables"]
@@ -11,7 +11,7 @@ order: 4
 
 ## Why Environment Variables?
 
-Environment variables separate **configuration from code**. The same codebase deploys to development, staging, and production — only the environment variables change.
+Environment variables separate **configuration from code**. The same codebase deploys to development, staging, and production - only the environment variables change.
 
 ```
 Same Codebase              Different Configs
@@ -49,7 +49,7 @@ npm install dotenv
 ```
 
 ```js
-// config.js — load at the very top of your app
+// config.js - load at the very top of your app
 require('dotenv').config();
 
 // Now process.env has values from .env (if any)
@@ -57,7 +57,7 @@ require('dotenv').config();
 ```
 
 ```bash
-# .env (gitignored — never commit!)
+# .env (gitignored - never commit!)
 NODE_ENV=development
 PORT=3000
 DATABASE_URL=postgres://localhost:5432/myapp_dev
@@ -181,7 +181,7 @@ module.exports = { validateConfig };
 ```
 
 ```js
-// app.js — validate at startup
+// app.js - validate at startup
 const config = require('./config');
 const { validateConfig } = require('./config/validate');
 
@@ -193,7 +193,7 @@ try {
   process.exit(1);
 }
 
-// Continue with confidence — all required config is present
+// Continue with confidence - all required config is present
 app.listen(config.server.port);
 ```
 
@@ -309,11 +309,11 @@ CORS_ORIGIN=*
 Use a prefix to namespace your app's variables:
 
 ```bash
-# ❌ Generic — might conflict
+# ❌ Generic - might conflict
 PORT=3000
 SECRET=abc
 
-# ✅ Namespaced — no conflicts
+# ✅ Namespaced - no conflicts
 MY_API_PORT=3000
 MY_API_JWT_SECRET=abc
 MY_API_DB_URL=postgres://...
@@ -417,13 +417,13 @@ module.exports = config;
 
 ## Key Takeaways
 
-- **`process.env`** gives access to environment variables — all values are strings
-- Use **`dotenv`** to load `.env` files in development — never commit `.env` to git
-- **Centralise config** in a `config/index.js` module — don't scatter `process.env` calls
-- **Validate config at startup** — catch missing variables before the app starts serving requests
-- **Parse and coerce types** — `parseInt` for numbers, `=== 'true'` for booleans
+- **`process.env`** gives access to environment variables - all values are strings
+- Use **`dotenv`** to load `.env` files in development - never commit `.env` to git
+- **Centralise config** in a `config/index.js` module - don't scatter `process.env` calls
+- **Validate config at startup** - catch missing variables before the app starts serving requests
+- **Parse and coerce types** - `parseInt` for numbers, `=== 'true'` for booleans
 - **Use sensible development defaults** (PORT=3000), but require explicit values for secrets
-- **In production**, use system environment variables or a secrets manager — never `.env` files
+- **In production**, use system environment variables or a secrets manager - never `.env` files
 - **Document every variable** in a `.env.example` file and a config reference table
 - **Prefix variables** with your app name to avoid namespace conflicts
-- **Fail fast** — if a required variable is missing, crash immediately at startup, not halfway through a request
+- **Fail fast** - if a required variable is missing, crash immediately at startup, not halfway through a request

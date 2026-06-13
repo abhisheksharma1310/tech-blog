@@ -54,7 +54,7 @@ GND                 -->     GND
 ANT                 -->     17.3 cm wire (¼-wave monopole)
 ```
 
-These modules use a simple serial data protocol — not SPI. Any digital pin can be used for DATA. Using separate pins on the two Arduinos helps avoid confusion during programming.
+These modules use a simple serial data protocol - not SPI. Any digital pin can be used for DATA. Using separate pins on the two Arduinos helps avoid confusion during programming.
 
 ## Pin Map
 
@@ -179,20 +179,20 @@ void loop()
 
 ### Code breakdown
 
-- `#include <RCSwitch.h>` — includes the RCSwitch library for 433 MHz OOK communication.
-- `transmitter.enableTransmit(pin)` — configures the specified pin as the transmitter data output.
-- `receiver.enableReceive(pin)` — configures the specified pin as the receiver data input (using interrupts).
-- `transmitter.send(data, length)` — sends a character array (string) with automatic Manchester encoding.
-- `transmitter.send(value, bitLength)` — sends an integer value with the specified bit length (e.g., 24 bits).
-- `transmitter.setRepeatTransmit(n)` — sets how many times each transmission is repeated (default 10). Fewer repeats = faster but less reliable.
-- `transmitter.setProtocol(protocol)` — selects a protocol (1–6 default, plus custom). Protocol 1 is the most common.
-- `transmitter.setPulseLength(us)` — sets the pulse length in microseconds (default 350 µs). Longer pulses increase range but reduce speed.
-- `receiver.available()` — returns `true` when a valid transmission has been received and decoded.
-- `receiver.getReceivedValue()` — returns the decoded value as an unsigned long.
-- `receiver.getReceivedBitlength()` — returns the number of bits in the received value.
-- `receiver.getReceivedProtocol()` — returns the protocol number detected.
-- `receiver.getReceivedDelay()` — returns the measured pulse length in microseconds.
-- `receiver.resetAvailable()` — clears the received data and prepares for the next packet.
+- `#include <RCSwitch.h>` - includes the RCSwitch library for 433 MHz OOK communication.
+- `transmitter.enableTransmit(pin)` - configures the specified pin as the transmitter data output.
+- `receiver.enableReceive(pin)` - configures the specified pin as the receiver data input (using interrupts).
+- `transmitter.send(data, length)` - sends a character array (string) with automatic Manchester encoding.
+- `transmitter.send(value, bitLength)` - sends an integer value with the specified bit length (e.g., 24 bits).
+- `transmitter.setRepeatTransmit(n)` - sets how many times each transmission is repeated (default 10). Fewer repeats = faster but less reliable.
+- `transmitter.setProtocol(protocol)` - selects a protocol (1–6 default, plus custom). Protocol 1 is the most common.
+- `transmitter.setPulseLength(us)` - sets the pulse length in microseconds (default 350 µs). Longer pulses increase range but reduce speed.
+- `receiver.available()` - returns `true` when a valid transmission has been received and decoded.
+- `receiver.getReceivedValue()` - returns the decoded value as an unsigned long.
+- `receiver.getReceivedBitlength()` - returns the number of bits in the received value.
+- `receiver.getReceivedProtocol()` - returns the protocol number detected.
+- `receiver.getReceivedDelay()` - returns the measured pulse length in microseconds.
+- `receiver.resetAvailable()` - clears the received data and prepares for the next packet.
 
 ### Sending structured data
 
@@ -283,8 +283,8 @@ transmitter.send(1234567, 24); // Replace with your remote's code
 
 - **No addressing:** These modules have no addressing or acknowledgement. Any receiver within range will pick up every transmission. If multiple transmitters are active on the same frequency, their signals will collide and corrupt each other. Include a device ID or sensor ID in your data packet to filter on the receiver side.
 - **Antenna essential:** Without a ¼-wave antenna (17.3 cm wire), range is limited to a few metres. Adding the antenna extends range to 50–200 m. For maximum range, use a tuned 433 MHz antenna (helical or dipole) and keep the antenna straight and vertical.
-- **Data encoding:** The modules transmit raw digital levels — a long string of 1s or 0s will be misinterpreted because the receiver cannot distinguish signal from silence. The RCSwitch library handles Manchester encoding automatically, which ensures a balanced number of transitions. Do not bypass the library's encoding.
-- **Power supply noise:** The transmitter draws 10–40 mA spikes during transmission. The receiver is sensitive to power supply noise — if you power it from the same rail as motors, relays, or LED strips, add a 100 µF capacitor near the receiver VCC/GND to filter noise.
+- **Data encoding:** The modules transmit raw digital levels - a long string of 1s or 0s will be misinterpreted because the receiver cannot distinguish signal from silence. The RCSwitch library handles Manchester encoding automatically, which ensures a balanced number of transitions. Do not bypass the library's encoding.
+- **Power supply noise:** The transmitter draws 10–40 mA spikes during transmission. The receiver is sensitive to power supply noise - if you power it from the same rail as motors, relays, or LED strips, add a 100 µF capacitor near the receiver VCC/GND to filter noise.
 - **Regulatory:** In most countries, 433.05–434.79 MHz is an ISM band for short-range devices (SRD) with limited duty cycle and transmit power. The FS1000A module may not be certified for use in all regions. For commercial products, use a certified module (e.g., HopeRF RFM69 or Semtech LoRa) instead.
 - **Receiver warm-up:** The super-regenerative receiver (XY-MK-5V) takes 10–50 ms to stabilize after power-up. If you send data immediately, the first few bits may be lost. Add a 100 ms delay before transmitting after power-on or include a preamble in your protocol.
 - **Range vs. data rate:** The RCSwitch default pulse length (350 µs) gives good range. Shorter pulses (higher data rate) reduce range. Longer pulses (lower data rate) increase range. At 350 µs, the effective data throughput is approximately 500–1000 bps.

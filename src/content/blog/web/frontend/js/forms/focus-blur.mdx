@@ -11,7 +11,7 @@ order: 2
 
 ## Focusing: focus/blur
 
-The `focus` and `blur` events fire when an element gains or loses focus — essential for form validation, autocomplete, and dropdown menus.
+The `focus` and `blur` events fire when an element gains or loses focus - essential for form validation, autocomplete, and dropdown menus.
 
 ## The Basics
 
@@ -41,7 +41,7 @@ input.addEventListener('focus', function() {
 
 input.addEventListener('blur', function() {
   this.style.borderColor = '#cbd5e1';
-  log.textContent += ' — blurred at ' + new Date().toLocaleTimeString();
+  log.textContent += ' - blurred at ' + new Date().toLocaleTimeString();
 });
 "
 />
@@ -70,7 +70,7 @@ input.addEventListener('blur', function() {
 const group = document.getElementById('focus-group');
 const log = document.getElementById('focusin-log');
 
-// focusin bubbles — one listener for both inputs
+// focusin bubbles - one listener for both inputs
 group.addEventListener('focusin', function(e) {
   log.textContent = 'focused: ' + e.target.placeholder + ' at ' + new Date().toLocaleTimeString();
 });
@@ -236,7 +236,7 @@ pass.addEventListener('focus', function() {
 
 ## Key Takeaways
 
-- `focus` and `blur` don't bubble — use `focusin`/`focusout` for delegation
+- `focus` and `blur` don't bubble - use `focusin`/`focusout` for delegation
 - `document.activeElement` tells you what's currently focused
 - `tabindex="0"` makes non-form elements focusable via Tab
 - `element.focus()` programmatically sets focus

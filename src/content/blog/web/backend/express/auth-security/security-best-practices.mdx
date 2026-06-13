@@ -1,0 +1,479 @@
+---
+title: "Security Best Practices (Helmet, Rate Limiting, Input Validation)"
+description: "Harden your Express app with security headers, rate limiting, input validation, and other best practices"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Auth & Security"]
+tags: ["Express", "Security", "Helmet", "Rate Limiting", "Validation", "Best Practices"]
+slug: "express-security-best-practices"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## The Security Layers
+
+A secure Express app needs defense at multiple levels:
+
+```
+Incoming Request
+    │
+    ▼
+┌────────────────┐
+│  Rate Limiter   │── Block excessive requests (DDoS/brute force)
+└────────┬───────┘
+         ▼
+┌────────────────┐
+│  Security       │── Set HTTP headers (Helmet)
+│  Headers        │── CSP, HSTS, X-Frame-Options
+└────────┬───────┘
+         ▼
+┌────────────────┐
+│  Body Parser    │── Limit body size
+└────────┬───────┘
+         ▼
+┌────────────────┐
+│  Input          │── Validate & sanitize all input
+│  Validation     │── Prevent injection/XSS
+└────────┬───────┘
+         ▼
+┌────────────────┐
+│  Auth Check     │── Verify identity & permissions
+└────────┬───────┘
+         ▼
+┌────────────────┐
+│  Route Handler  │── Process safely
+└────────┬───────┘
+         ▼
+    Response
+```
+
+## 1. Helmet - Security Headers
+
+**Helmet** sets HTTP headers that protect against common web vulnerabilities.
+
+```bash
+npm install helmet
+```
+
+```javascript
+const helmet = require('helmet');
+
+// Apply all default protections
+app.use(helmet());
+```
+
+### What Helmet Sets
+
+| Header | Protects Against | Default |
+|---|---|---|
+| `Content-Security-Policy` | XSS, data injection | Restrictive defaults |
+| `X-Content-Type-Options: nosniff` | MIME sniffing | Enabled |
+| `X-Frame-Options: SAMEORIGIN` | Clickjacking | Enabled |
+| `X-XSS-Protection: 0` | XSS (legacy) | Disabled (modern browsers) |
+| `Strict-Transport-Security` | HTTPS downgrade | Enabled (max-age 15552000) |
+| `Referrer-Policy: strict-origin-when-cross-origin` | Referrer leakage | Enabled |
+| `Permissions-Policy` | Feature restriction | Enabled |
+
+### Custom CSP
+
+```javascript
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.example.com"],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", "https://images.unsplash.com", "data:"],
+    fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    connectSrc: ["'self'", "https://api.example.com"],
+    frameSrc: ["'none'"],
+    objectSrc: ["'none'"],
+    upgradeInsecureRequests: []
+  }
+}));
+```
+
+### Per-Environment Helmet
+
+```javascript
+if (process.env.NODE_ENV === 'production') {
+  app.use(helmet());
+  app.use(helmet.contentSecurityPolicy({
+    directives: { defaultSrc: ["'self'"] }
+  }));
+} else {
+  // Development - looser CSP for hot reload
+  app.use(helmet({ contentSecurityPolicy: false }));
+}
+```
+
+## 2. Rate Limiting
+
+Prevents brute-force attacks, DDoS, and API abuse.
+
+```bash
+npm install express-rate-limit
+```
+
+### Global Rate Limiter
+
+```javascript
+const rateLimit = require('express-rate-limit');
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 100,                    // 100 requests per window
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,       // Return rate limit info in headers
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.ip || req.connection.remoteAddress;
+  }
+});
+
+app.use(globalLimiter);
+```
+
+### Endpoint-Specific Limiters
+
+```javascript
+// Strict limiter for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5, // 5 attempts per 15 minutes
+  message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+  skipSuccessfulRequests: true // Only count failures
+});
+
+app.use('/api/login', authLimiter);
+app.use('/api/register', authLimiter);
+
+// Loose limiter for public API
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Rate limit exceeded' }
+});
+
+app.use('/api/public', apiLimiter);
+```
+
+### Rate Limit Headers
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 87
+X-RateLimit-Reset: 1689000000
+Retry-After: 360
+```
+
+## 3. Input Validation & Sanitization
+
+Never trust user input - validate and sanitize everything.
+
+```bash
+npm install express-validator
+```
+
+### Using express-validator
+
+```javascript
+const { body, validationResult, query, param } = require('express-validator');
+
+app.post('/api/users',
+  [
+    body('name')
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Name must be 2-50 characters')
+      .escape(),
+
+    body('email')
+      .trim()
+      .isEmail()
+      .withMessage('Valid email required')
+      .normalizeEmail(),
+
+    body('age')
+      .optional()
+      .isInt({ min: 13, max: 120 })
+      .withMessage('Age must be 13-120'),
+
+    body('role')
+      .isIn(['user', 'admin', 'moderator'])
+      .withMessage('Invalid role'),
+
+    body('bio')
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Bio cannot exceed 500 characters')
+      .escape()
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        error: 'Validation failed',
+        details: errors.array().map(e => ({ field: e.path, message: e.msg }))
+      });
+    }
+
+    // Data is validated and safe to use
+    res.json({ message: 'User created', data: req.body });
+  }
+);
+```
+
+### Validating Query Parameters
+
+```javascript
+const { query, validationResult } = require('express-validator');
+
+app.get('/api/search',
+  [
+    query('q')
+      .trim()
+      .isLength({ min: 1, max: 100 })
+      .withMessage('Search query required'),
+
+    query('page')
+      .optional()
+      .isInt({ min: 1 })
+      .toInt(),
+
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .toInt()
+  ],
+  (req, res) => { /* ... */ }
+);
+```
+
+### Custom Validators
+
+```javascript
+const { body } = require('express-validator');
+
+app.post('/api/register',
+  body('password')
+    .isLength({ min: 8 })
+    .custom((value, { req }) => {
+      if (!/[A-Z]/.test(value)) {
+        throw new Error('Password must contain an uppercase letter');
+      }
+      if (!/[a-z]/.test(value)) {
+        throw new Error('Password must contain a lowercase letter');
+      }
+      if (!/[0-9]/.test(value)) {
+        throw new Error('Password must contain a number');
+      }
+      return true;
+    }),
+
+  body('confirmPassword')
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    }),
+
+  (req, res) => { /* ... */ }
+);
+```
+
+## 4. Body Size Limiting
+
+Prevent large payload attacks:
+
+```javascript
+// Limit JSON body to 100kb
+app.use(express.json({ limit: '100kb' }));
+
+// Limit URL-encoded body to 100kb
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+
+// Handle payload too large error
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Request body too large' });
+  }
+  next(err);
+});
+```
+
+## 5. SQL/NoSQL Injection Prevention
+
+```javascript
+// ❌ Vulnerable - string interpolation
+const user = await User.findOne({ name: `'${req.query.name}'` });
+const result = await sequelize.query(`SELECT * FROM users WHERE id = ${req.params.id}`);
+
+// ✅ Safe - parameterized queries (Mongoose)
+const user = await User.findOne({ name: req.query.name });
+
+// ✅ Safe - parameterized queries (Sequelize)
+const user = await User.findOne({ where: { name: req.query.name } });
+
+// ✅ Safe - parameterized queries (raw SQL)
+const result = await sequelize.query(
+  'SELECT * FROM users WHERE id = ?',
+  { replacements: [req.params.id] }
+);
+
+// ✅ Safe - Prisma
+const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+```
+
+## 6. HTTP Parameter Pollution Protection
+
+```bash
+npm install hpp
+```
+
+```javascript
+const hpp = require('hpp');
+
+app.use(hpp({
+  whitelist: ['sort', 'page', 'limit'] // Allow duplicate for these
+}));
+// Prevents: /api/users?role=admin&role=user
+// Keeps only the last value or combines arrays
+```
+
+## 7. CSRF Protection
+
+For session-based auth (not needed for stateless JWT APIs):
+
+```bash
+npm install csurf
+```
+
+```javascript
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: true });
+
+app.get('/form', csrfProtection, (req, res) => {
+  res.render('form', { csrfToken: req.csrfToken() });
+});
+
+app.post('/form', csrfProtection, (req, res) => {
+  res.send('Form submitted');
+});
+```
+
+## 8. Secure HTTP Methods
+
+```javascript
+const methods = require('methods');
+
+// Only allow specific HTTP methods
+app.use((req, res, next) => {
+  const allowed = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+  if (!allowed.includes(req.method)) {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  next();
+});
+```
+
+## 9. Environment Variables & Secrets
+
+```javascript
+// ❌ Hard-coded secrets
+const JWT_SECRET = 'my-super-secret-key-12345';
+const DB_PASSWORD = 'password123';
+
+// ✅ Environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+
+if (!JWT_SECRET || !DB_PASSWORD) {
+  console.error('Missing required environment variables');
+  process.exit(1);
+}
+```
+
+**.env** (never commit this):
+```
+JWT_SECRET=a3f8b2c1d4e5...
+DB_PASSWORD=s3cur3p@ss
+MONGO_URI=mongodb+srv://admin:...
+SESSION_SECRET=supersecret
+```
+
+## 10. Production Checklist
+
+```javascript
+const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const hpp = require('hpp');
+
+const app = express();
+
+// 1. Trust proxy (if behind a reverse proxy)
+app.set('trust proxy', 1);
+
+// 2. Security headers
+app.use(helmet());
+
+// 3. Rate limiting
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+
+// 4. Body parsing with size limits
+app.use(express.json({ limit: '100kb' }));
+
+// 5. Prevent parameter pollution
+app.use(hpp());
+
+// 6. Remove X-Powered-By
+app.disable('x-powered-by');
+
+// 7. Routes
+app.use('/api', require('./routes'));
+
+// 8. 404 handler
+app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+
+// 9. Global error handler (security-aware)
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  // Don't leak stack traces in production
+  const message = process.env.NODE_ENV === 'production'
+    ? 'Internal server error'
+    : err.message;
+
+  res.status(err.statusCode || 500).json({ error: message });
+});
+
+app.listen(process.env.PORT || 3000);
+```
+
+## Common Vulnerabilities & Fixes
+
+| Vulnerability | Risk | Fix |
+|---|---|---|
+| **XSS** | Inject malicious scripts | CSP headers, input sanitization, `escape()` |
+| **CSRF** | Unauthorized actions from authenticated users | CSRF tokens, `sameSite: 'strict'` cookies |
+| **SQL Injection** | Database compromise | Parameterized queries, ORM |
+| **DDoS** | Service unavailable | Rate limiting, reverse proxy |
+| **Brute Force** | Account takeover | Rate limit auth endpoints |
+| **Clickjacking** | UI redressing | `X-Frame-Options` header |
+| **MIME Sniffing** | Drive-by download | `X-Content-Type-Options: nosniff` |
+| **MITM** | Intercepted communication | HTTPS, HSTS header |
+| **Information Disclosure** | Leaked secrets | Environment variables, `.env` in `.gitignore` |
+
+## Key Takeaways
+
+- **Helmet** sets 15+ security headers - always use it in production
+- **Rate limit** auth endpoints aggressively (5 attempts / 15 min)
+- **Validate and sanitize** every input with `express-validator`
+- Limit body sizes with `express.json({ limit: '100kb' })`
+- Use **parameterized queries** or an ORM to prevent injection
+- Store all secrets in **environment variables**
+- Set `trust proxy` when behind a reverse proxy (nginx, Cloudflare)
+- Disable `x-powered-by` header
+- Never **leak stack traces** in production error responses
+- Use **HTTPS** everywhere - enforce with HSTS via Helmet

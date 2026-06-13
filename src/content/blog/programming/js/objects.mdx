@@ -56,7 +56,7 @@ let user = { name: "Alice", age: 30 };
 // Dot notation
 console.log(user.name); // → "Alice"
 
-// Bracket notation — for dynamic keys or invalid identifiers
+// Bracket notation - for dynamic keys or invalid identifiers
 console.log(user["name"]); // → "Alice"
 
 let key = "age";
@@ -108,7 +108,7 @@ console.log("email" in user); // → false
 // Using undefined check
 console.log(user.email === undefined); // → true
 
-// But careful — the property might exist with value undefined
+// But careful - the property might exist with value undefined
 user.email = undefined;
 console.log("email" in user); // → true (property exists!)
 console.log(user.email); // → undefined
@@ -253,8 +253,8 @@ let deepClone2 = structuredClone(user);
 
 ```js
 const user = { name: "Alice" };
-user.name = "Bob"; // ✅ Allowed — modifying the object
-// user = { name: "Charlie" }; // ❌ Error — reassigning
+user.name = "Bob"; // ✅ Allowed - modifying the object
+// user = { name: "Charlie" }; // ❌ Error - reassigning
 ```
 
 ## Garbage Collection
@@ -380,7 +380,7 @@ let user = {
 };
 
 let fn = user.greet;
-fn(); // → "Hello, undefined" — this is lost!
+fn(); // → "Hello, undefined" - this is lost!
 // In non-strict mode: this → global object
 // In strict mode: this → undefined
 ```
@@ -394,7 +394,7 @@ let user = {
   name: "Alice",
   greet() {
     let arrow = () => console.log("Hello, " + this.name);
-    arrow(); // "Hello, Alice" — inherits this from greet()
+    arrow(); // "Hello, Alice" - inherits this from greet()
   }
 };
 
@@ -451,7 +451,7 @@ console.log(user2.name); // → "Bob"
 // Correct
 let date = new Date();
 
-// Constructors vs regular functions — constructors use new
+// Constructors vs regular functions - constructors use new
 function Car(brand) {
   if (!new.target) {
     // If called without new, we can still make it work
@@ -481,10 +481,10 @@ Safely access nested properties without throwing if something is `null`/`undefin
 ```js
 let user = null;
 
-// Without optional chaining — error!
+// Without optional chaining - error!
 // console.log(user.address.city); // TypeError!
 
-// With optional chaining — safe
+// With optional chaining - safe
 console.log(user?.address?.city); // → undefined (no error)
 
 // For methods
@@ -509,7 +509,7 @@ Symbols are **unique identifiers** introduced in ES6:
 let id1 = Symbol("id");
 let id2 = Symbol("id");
 
-console.log(id1 === id2); // → false — each Symbol is unique!
+console.log(id1 === id2); // → false - each Symbol is unique!
 console.log(id1); // → Symbol(id)
 console.log(id1.description); // → "id"
 ```
@@ -557,9 +557,9 @@ JavaScript automatically calls conversion methods when needed:
 
 ### Hints
 
-- **string** — when an object is used as a string (e.g., template literal)
-- **number** — when doing math
-- **default** — when the operator is unsure (e.g., `+`)
+- **string** - when an object is used as a string (e.g., template literal)
+- **number** - when doing math
+- **default** - when the operator is unsure (e.g., `+`)
 
 ```js
 let user = {

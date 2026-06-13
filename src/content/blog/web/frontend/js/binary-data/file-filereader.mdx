@@ -11,7 +11,7 @@ order: 4
 
 ## File and FileReader
 
-The `File` API lets users select files from their device. `FileReader` reads the contents — as text, data URL, or ArrayBuffer.
+The `File` API lets users select files from their device. `FileReader` reads the contents - as text, data URL, or ArrayBuffer.
 
 ## The `File` Object
 
@@ -220,10 +220,10 @@ reader.readAsDataURL(file);
 
 ## Key Takeaways
 
-- `File` extends `Blob` — has `name`, `size`, `type`, `lastModified`
+- `File` extends `Blob` - has `name`, `size`, `type`, `lastModified`
 - Get files from `<input type="file">` or drag-and-drop
 - `FileReader` reads files as **text**, **data URL**, or **ArrayBuffer**
-- FileReader is **async** — use `onload` / `onerror` callbacks
+- FileReader is **async** - use `onload` / `onerror` callbacks
 - For images, use `readAsDataURL()` and set as `img.src`
 - Modern alternative: `file.text()`, `file.arrayBuffer()`, `file.stream()`
-- Always handle `onerror` — files can fail to read (corrupted, permissions)
+- Always handle `onerror` - files can fail to read (corrupted, permissions)

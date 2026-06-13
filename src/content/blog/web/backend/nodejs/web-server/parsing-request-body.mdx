@@ -1,6 +1,6 @@
 ---
 title: "Parsing Request Body Data"
-description: "Master HTTP request body parsing — JSON, URL-encoded, multipart/form-data, file uploads, streaming parsers, and validation"
+description: "Master HTTP request body parsing - JSON, URL-encoded, multipart/form-data, file uploads, streaming parsers, and validation"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Web Server"]
 tags: ["Node.js", "Web Server", "HTTP", "Body Parsing", "JSON"]
@@ -120,13 +120,13 @@ function parseJSON(req, maxSize = 1024 * 100) {
 ### Why String Concatenation Is Suboptimal
 
 ```js
-// ❌ BAD — toString on every chunk is wasteful
+// ❌ BAD - toString on every chunk is wasteful
 let body = '';
 req.on('data', (chunk) => {
   body += chunk.toString(); // Creates a new string + buffer conversion each time
 });
 
-// ✅ GOOD — buffer chunks, concat once
+// ✅ GOOD - buffer chunks, concat once
 const chunks = [];
 req.on('data', (chunk) => chunks.push(chunk));
 req.on('end', () => {
@@ -347,7 +347,7 @@ const server = http.createServer((req, res) => {
       }
     });
 
-    // Process chunks as they arrive — no buffering
+    // Process chunks as they arrive - no buffering
     req.on('data', (chunk) => {
       p.parse(chunk);
     });
@@ -499,7 +499,7 @@ async function parseBody(req, options = {}) {
     return raw;
   }
 
-  // Binary or unknown — return Buffer
+  // Binary or unknown - return Buffer
   return Buffer.concat(chunks);
 }
 
@@ -520,13 +520,13 @@ const server = http.createServer(async (req, res) => {
 
 ## Key Takeaways
 
-- **Request bodies are streams** — you must collect chunks manually with `req.on('data')` / `req.on('end')`
-- **Always buffer with arrays** (`chunks.push(chunk)`) and `Buffer.concat()` — not string concatenation
+- **Request bodies are streams** - you must collect chunks manually with `req.on('data')` / `req.on('end')`
+- **Always buffer with arrays** (`chunks.push(chunk)`) and `Buffer.concat()` - not string concatenation
 - **Check `Content-Type`** to determine how to parse the body
-- **JSON** — most common for APIs — parse with `JSON.parse()`, catch syntax errors
-- **URL-encoded** — HTML forms — parse with `querystring.parse()` or the `qs` package
-- **Multipart** — file uploads — use `busboy` for production, don't write your own parser
-- **Always validate** parsed bodies — check types, required fields, string lengths, allowed values
-- **Always enforce size limits** — prevent memory exhaustion from large bodies
+- **JSON** - most common for APIs - parse with `JSON.parse()`, catch syntax errors
+- **URL-encoded** - HTML forms - parse with `querystring.parse()` or the `qs` package
+- **Multipart** - file uploads - use `busboy` for production, don't write your own parser
+- **Always validate** parsed bodies - check types, required fields, string lengths, allowed values
+- **Always enforce size limits** - prevent memory exhaustion from large bodies
 - **`for await (const chunk of req)`** is a clean way to iterate over request chunks
 - For **very large JSON payloads**, use a streaming parser instead of buffering the entire body

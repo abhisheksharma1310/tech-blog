@@ -146,15 +146,15 @@ void loop()
 
 ### Code breakdown
 
-- `#include <BH1750.h>` — includes the BH1750 library for I2C communication.
-- `BH1750 lightMeter` — creates a BH1750 object.
-- `Wire.begin()` — initializes the I2C bus.
-- `lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)` — initializes the sensor in continuous high-resolution mode (1 lx resolution, 120 ms measurement time). Returns `false` if the sensor is not detected.
-- `lightMeter.readLightLevel()` — returns the current illuminance in lux as a float.
-- `BH1750::CONTINUOUS_HIGH_RES_MODE` — high resolution (1 lx), 120 ms measurement time, continuous readings.
-- `BH1750::CONTINUOUS_HIGH_RES_MODE_2` — high resolution (0.5 lx), 120 ms, continuous.
-- `BH1750::CONTINUOUS_LOW_RES_MODE` — low resolution (4 lx), 16 ms, continuous.
-- `BH1750::ONCE_HIGH_RES_MODE` — high resolution, single measurement (lowest power).
+- `#include <BH1750.h>` - includes the BH1750 library for I2C communication.
+- `BH1750 lightMeter` - creates a BH1750 object.
+- `Wire.begin()` - initializes the I2C bus.
+- `lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)` - initializes the sensor in continuous high-resolution mode (1 lx resolution, 120 ms measurement time). Returns `false` if the sensor is not detected.
+- `lightMeter.readLightLevel()` - returns the current illuminance in lux as a float.
+- `BH1750::CONTINUOUS_HIGH_RES_MODE` - high resolution (1 lx), 120 ms measurement time, continuous readings.
+- `BH1750::CONTINUOUS_HIGH_RES_MODE_2` - high resolution (0.5 lx), 120 ms, continuous.
+- `BH1750::CONTINUOUS_LOW_RES_MODE` - low resolution (4 lx), 16 ms, continuous.
+- `BH1750::ONCE_HIGH_RES_MODE` - high resolution, single measurement (lowest power).
 
 ### Measurement modes
 
@@ -206,7 +206,7 @@ void loop()
 5. Upload the sketch to the Arduino.
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
 7. Observe the light level in lux printed every 500 ms.
-8. Cover the sensor with your hand — the lux value should drop to near zero. Point it at a bright light source — the value should rise significantly.
+8. Cover the sensor with your hand - the lux value should drop to near zero. Point it at a bright light source - the value should rise significantly.
 
 ## Caution
 

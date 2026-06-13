@@ -11,7 +11,7 @@ order: 4
 
 # Text in HTML
 
-Text is the foundation of most web pages. HTML provides a rich set of elements for structuring and marking up text semantically — meaning the tags describe the **purpose** of the text, not just its appearance.
+Text is the foundation of most web pages. HTML provides a rich set of elements for structuring and marking up text semantically - meaning the tags describe the **purpose** of the text, not just its appearance.
 
 ## Headings
 
@@ -29,7 +29,7 @@ Headings create a hierarchy for your content. There are six levels:
 ' />
 
 **Rules:**
-- Use `<h1>` once per page — it describes the main topic.
+- Use `<h1>` once per page - it describes the main topic.
 - Do not skip levels (e.g., don't jump from `<h2>` to `<h4>`).
 - Headings help search engines and screen readers understand page structure.
 
@@ -59,11 +59,11 @@ Second line<br>
 Third line</p>
 ' />
 
-`<br>` is a **void element** (self-closing). Do not use it to create spacing between paragraphs — use CSS `margin` instead.
+`<br>` is a **void element** (self-closing). Do not use it to create spacing between paragraphs - use CSS `margin` instead.
 
 ## Horizontal Rules
 
-The `<hr>` element creates a thematic break — a horizontal line across the page:
+The `<hr>` element creates a thematic break - a horizontal line across the page:
 
 <CodePlayground
   title=""
@@ -98,7 +98,7 @@ The `<blockquote>` element indicates a quoted passage from another source:
   html='
 <blockquote cite="https://example.com/source">
   <p>The only way to do great work is to love what you do.</p>
-  <footer>—Steve Jobs</footer>
+  <footer>-Steve Jobs</footer>
 </blockquote>
 ' />
 
@@ -182,15 +182,15 @@ Customise numbering with attributes:
   html='
 <dl>
   <dt>HTML</dt>
-  <dd>HyperText Markup Language — the standard for web pages.</dd>
+  <dd>HyperText Markup Language - the standard for web pages.</dd>
 
   <dt>CSS</dt>
-  <dd>Cascading Style Sheets — controls the visual presentation.</dd>
+  <dd>Cascading Style Sheets - controls the visual presentation.</dd>
 </dl>
 ' />
 
-- `<dt>` — definition term
-- `<dd>` — definition description
+- `<dt>` - definition term
+- `<dd>` - definition description
 
 ## Abbreviations
 
@@ -206,7 +206,7 @@ Screen readers announce the title attribute, and browsers may show a dotted unde
 
 ## Acronyms
 
-In HTML5, `<acronym>` is **deprecated** — use `<abbr>` for all abbreviations and acronyms.
+In HTML5, `<acronym>` is **deprecated** - use `<abbr>` for all abbreviations and acronyms.
 
 ## Emphasis and Strong Importance
 
@@ -234,10 +234,10 @@ Use `<em>` and `<strong>` instead of `<i>` and `<b>` for better accessibility.
 |---|---|---|
 | `<strong>` | `<b>` | Strong importance |
 | `<em>` | `<i>` | Emphasis |
-| `<blockquote>` | — | Long quotation |
-| `<q>` | — | Inline quotation |
-| `<code>` | — | Code snippet |
-| `<pre>` | — | Preformatted text |
+| `<blockquote>` | - | Long quotation |
+| `<q>` | - | Inline quotation |
+| `<code>` | - | Code snippet |
+| `<pre>` | - | Preformatted text |
 | `<mark>` | `<font>` | Highlighted text |
 
 **Golden rule:** Use semantic tags that describe the **meaning** of the content, not its appearance. Let CSS handle the appearance.
@@ -257,8 +257,8 @@ The `<small>` element represents side comments or fine print:
 <CodePlayground
   title=""
   html='
-<p>H<sub>2</sub>O — water (subscript)</p>
-<p>E = mc<sup>2</sup> — squared (superscript)</p>
+<p>H<sub>2</sub>O - water (subscript)</p>
+<p>E = mc<sup>2</sup> - squared (superscript)</p>
 ' />
 
 ## Marked Text
@@ -279,8 +279,8 @@ The `<mark>` element highlights text for reference:
 <p>Original price: <del>$29.99</del> <ins>$19.99</ins></p>
 ' />
 
-- `<del>` — deleted text (strikethrough)
-- `<ins>` — inserted text (underline)
+- `<del>` - deleted text (strikethrough)
+- `<ins>` - inserted text (underline)
 
 ## Bidirectional Text
 
@@ -292,8 +292,8 @@ The `<bdo>` element overrides text direction:
 <p><bdo dir="rtl">This text reads right-to-left</bdo></p>
 ' />
 
-- `dir="ltr"` — left-to-right (default)
-- `dir="rtl"` — right-to-left (Arabic, Hebrew)
+- `dir="ltr"` - left-to-right (default)
+- `dir="rtl"` - right-to-left (Arabic, Hebrew)
 
 ## Special Characters and Entities
 
@@ -330,18 +330,18 @@ Character encoding tells the browser how to interpret the bytes of the file. Alw
 
 ## Accessibility Considerations for Text in HTML
 
-- Use **semantic heading levels** (`<h1>`–`<h6>`) — screen reader users navigate by headings.
-- Do not skip heading levels — going from `<h2>` to `<h4>` confuses navigation.
-- Use `<strong>` and `<em>` instead of `<b>` and `<i>` — screen readers announce the semantic meaning.
+- Use **semantic heading levels** (`<h1>`–`<h6>`) - screen reader users navigate by headings.
+- Do not skip heading levels - going from `<h2>` to `<h4>` confuses navigation.
+- Use `<strong>` and `<em>` instead of `<b>` and `<i>` - screen readers announce the semantic meaning.
 - Ensure **colour is not the only way** information is conveyed (e.g., don't use red text alone to indicate an error).
-- Provide meaningful link text — "Click here" is bad for accessibility.
+- Provide meaningful link text - "Click here" is bad for accessibility.
 - Use `aria-label` when the visual text is ambiguous.
 
 ## SEO Best Practices for Text in HTML
 
-- Use exactly **one `<h1>`** per page — it tells search engines what the page is about.
-- Keep paragraphs concise and well-structured — search engines analyse content density.
-- Use **descriptive link text** — "Learn more about HTML" is better than "Click here".
-- Avoid hiding text with `display: none` — search engines may penalise keyword stuffing.
-- Use `<abbr>` with `title` for abbreviations — adds context for search engines.
-- The `<title>` element (in `<head>`) is the **most important SEO tag** — include primary keywords.
+- Use exactly **one `<h1>`** per page - it tells search engines what the page is about.
+- Keep paragraphs concise and well-structured - search engines analyse content density.
+- Use **descriptive link text** - "Learn more about HTML" is better than "Click here".
+- Avoid hiding text with `display: none` - search engines may penalise keyword stuffing.
+- Use `<abbr>` with `title` for abbreviations - adds context for search engines.
+- The `<title>` element (in `<head>`) is the **most important SEO tag** - include primary keywords.

@@ -11,7 +11,7 @@ order: 12
 
 # Classes
 
-ES6 introduced the `class` syntax — a cleaner way to work with prototypal inheritance.
+ES6 introduced the `class` syntax - a cleaner way to work with prototypal inheritance.
 
 ## Class Basic Syntax
 
@@ -38,7 +38,7 @@ console.log(alice.isAdult()); // → true
 
 ### What a Class Really Is
 
-A class is "syntactic sugar" over prototypes — it's still a function:
+A class is "syntactic sugar" over prototypes - it's still a function:
 
 ```js
 console.log(typeof User); // → "function"
@@ -136,7 +136,7 @@ Class fields are properties set on individual instances (not the prototype):
 
 ```js
 class User {
-  name = "Anonymous"; // Class field — default value
+  name = "Anonymous"; // Class field - default value
   age;
 
   constructor(name, age) {
@@ -371,7 +371,7 @@ console.log(User.isValidRole("super")); // → false
 
 ### Protected (convention)
 
-By convention, properties starting with `_` are considered "protected" — not meant to be accessed outside:
+By convention, properties starting with `_` are considered "protected" - not meant to be accessed outside:
 
 ```js
 class User {
@@ -394,7 +394,7 @@ console.log(user.getBalance()); // → 100
 
 ### Private (genuine)
 
-Using `#` prefix (ES2022) — truly private, can't be accessed outside:
+Using `#` prefix (ES2022) - truly private, can't be accessed outside:
 
 ```js
 class BankAccount {

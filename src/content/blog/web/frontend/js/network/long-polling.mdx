@@ -22,7 +22,7 @@ Client              Server
   │                    ├── waits for new data...
   │                    │   (connection stays open)
   │                    │
-  │◀── response ──────┤  (data available — response sent)
+  │◀── response ──────┤  (data available - response sent)
   │                    │
   ├── GET /updates ──▶│  (immediately re-connect)
   │                    ├── waits...
@@ -42,7 +42,7 @@ async function longPoll(url) {
     // Process the update
     onData(data);
   } catch (err) {
-    // Connection error — wait and retry
+    // Connection error - wait and retry
     await wait(1000);
   } finally {
     // Immediately reconnect
@@ -121,7 +121,7 @@ async function longPoll() {
     const div = document.createElement('div');
     div.textContent = '📩 ' + data.message;
     messages.insertBefore(div, messages.firstChild);
-    status.textContent = '✅ Received update #' + data.id + ' — reconnecting...';
+    status.textContent = '✅ Received update #' + data.id + ' - reconnecting...';
 
   } catch (err) {
     if (err.name === 'AbortError') return;
@@ -176,7 +176,7 @@ app.get('/updates', async (req, res) => {
   if (data) {
     res.json(data);
   } else {
-    res.status(204).end(); // no content — client will reconnect
+    res.status(204).end(); // no content - client will reconnect
   }
 });
 
@@ -210,7 +210,7 @@ function waitForNewData(timeout) {
 ## Connection Management
 
 - Always set a **timeout** (30-60s) on the server side
-- Handle **network errors** gracefully — reconnect with backoff
+- Handle **network errors** gracefully - reconnect with backoff
 - Use a **unique request ID** to prevent duplicate processing
 - Consider **multiple parallel polls** for reliability
 
@@ -219,7 +219,7 @@ function waitForNewData(timeout) {
 - Long polling keeps a connection open until **data is available**
 - The client immediately **reconnects** after receiving a response
 - Good for **low-frequency** real-time updates (notifications, chat)
-- Works with any HTTP server — no special protocol needed
+- Works with any HTTP server - no special protocol needed
 - Handle errors with **retry and backoff**
 - For high-frequency updates, prefer **WebSockets** or **Server-Sent Events**
 - Always implement a **timeout** to prevent hanging connections

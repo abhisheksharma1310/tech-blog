@@ -31,7 +31,7 @@ The `<template>` element holds HTML that is **not rendered** until you clone and
 ```javascript
 const template = document.getElementById('card-template');
 const clone = template.content.cloneNode(true);
-// clone is now a DocumentFragment — use it!
+// clone is now a DocumentFragment - use it!
 ```
 
 <CodePlayground
@@ -56,7 +56,7 @@ let count = 0;
 document.getElementById('add-from-template').onclick = function() {
   count++;
   const clone = template.content.cloneNode(true);
-  clone.querySelector('.text').textContent = 'Item #' + count + ' — cloned from template';
+  clone.querySelector('.text').textContent = 'Item #' + count + ' - cloned from template';
 
   // Customize the clone
   if (count % 2 === 0) {
@@ -81,14 +81,14 @@ template.innerHTML     // HTML string of the content
 
 ## DocumentFragment
 
-`template.content` is a `DocumentFragment` — a lightweight document that exists in memory:
+`template.content` is a `DocumentFragment` - a lightweight document that exists in memory:
 
 ```javascript
 const fragment = template.content.cloneNode(true);
 // fragment is NOT in the DOM yet
 
 container.appendChild(fragment);
-// Now it's in the DOM — no reflow until append!
+// Now it's in the DOM - no reflow until append!
 ```
 
 Key benefit: **Better performance** for batch insertions (single reflow instead of per-element).
@@ -109,7 +109,7 @@ Templates can include `<slot>` elements for composition:
 
 ## Templates in Custom Elements
 
-The most common pattern — use a template inside a custom element:
+The most common pattern - use a template inside a custom element:
 
 ```javascript
 class ListItem extends HTMLElement {
@@ -189,9 +189,9 @@ document.getElementById('add-card').onclick = function() {
 
 ## Key Takeaways
 
-- `<template>` holds **inert HTML** — not rendered until cloned
+- `<template>` holds **inert HTML** - not rendered until cloned
 - `template.content.cloneNode(true)` creates a reusable DocumentFragment
-- Templates are **efficient** — parse once, clone many times
+- Templates are **efficient** - parse once, clone many times
 - Combine with **Shadow DOM** for fully encapsulated components
 - Template styles affect only the cloned content (not the main page)
 - Use `<slot>` elements inside templates for composable content

@@ -58,7 +58,7 @@ For small projects with 1–8 LEDs, the strip can be powered directly from the A
 | White | GND | Ground (common with Arduino) |
 | Green | DATA | Digital Pin 6 via 330–470 Ω resistor |
 
-Some strips use different wire colors — verify with your specific product. Common alternatives: red/VCC, white/GND, green/DATA.
+Some strips use different wire colors - verify with your specific product. Common alternatives: red/VCC, white/GND, green/DATA.
 
 ### Data line resistor
 
@@ -193,17 +193,17 @@ void twinkle(int count, int wait)
 
 ### Code breakdown
 
-- `#include <Adafruit_NeoPixel.h>` — includes the NeoPixel library for WS2812B control.
-- `Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800)` — creates a strip object. The third parameter specifies the pixel type: `NEO_GRB` for color order (WS2812B uses GRB, not RGB) and `NEO_KHZ800` for 800 kHz data rate.
-- `strip.begin()` — initializes the pin and prepares data transmission.
-- `strip.show()` — sends pixel data to the strip. Color changes only take effect after this call.
-- `strip.setBrightness(50)` — sets global brightness scaling (0–255). This is non-destructive — original color values are preserved internally.
-- `strip.setPixelColor(index, color)` — sets the color of a single LED (0-indexed). Color values use `strip.Color(red, green, blue)` for 8-bit per channel.
-- `strip.Color(hue, saturation, value)` — creates a color from HSV components (used in the rainbow effect).
-- `strip.gamma32()` — applies gamma correction for more accurate color representation on LEDs.
-- `strip.numPixels()` — returns the total number of LEDs in the strip.
-- `strip.clear()` — turns off all pixels (sets all to 0,0,0).
-- `strip.ColorHSV(pixelHue)` — generates a rainbow color from a hue value (0–65535).
+- `#include <Adafruit_NeoPixel.h>` - includes the NeoPixel library for WS2812B control.
+- `Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800)` - creates a strip object. The third parameter specifies the pixel type: `NEO_GRB` for color order (WS2812B uses GRB, not RGB) and `NEO_KHZ800` for 800 kHz data rate.
+- `strip.begin()` - initializes the pin and prepares data transmission.
+- `strip.show()` - sends pixel data to the strip. Color changes only take effect after this call.
+- `strip.setBrightness(50)` - sets global brightness scaling (0–255). This is non-destructive - original color values are preserved internally.
+- `strip.setPixelColor(index, color)` - sets the color of a single LED (0-indexed). Color values use `strip.Color(red, green, blue)` for 8-bit per channel.
+- `strip.Color(hue, saturation, value)` - creates a color from HSV components (used in the rainbow effect).
+- `strip.gamma32()` - applies gamma correction for more accurate color representation on LEDs.
+- `strip.numPixels()` - returns the total number of LEDs in the strip.
+- `strip.clear()` - turns off all pixels (sets all to 0,0,0).
+- `strip.ColorHSV(pixelHue)` - generates a rainbow color from a hue value (0–65535).
 
 ### Setting individual colors
 
@@ -256,7 +256,7 @@ void loop()
 
 ## Steps to perform this interfacing
 
-1. Connect the WS2812B strip to the Arduino as shown in the schematic — always connect the data line through a 330–470 Ω resistor.
+1. Connect the WS2812B strip to the Arduino as shown in the schematic - always connect the data line through a 330–470 Ω resistor.
 2. Place the 1000 µF capacitor across the power rails near the strip (observe polarity: longer lead = positive).
 3. Install the Adafruit NeoPixel library via the Library Manager.
 4. Set `LED_COUNT` to the number of LEDs on your strip.
@@ -271,7 +271,7 @@ void loop()
 - **Common ground:** The external PSU ground MUST be connected to the Arduino GND. Without a common ground, data transmission will be unreliable and the strip may behave erratically.
 - **Data line resistor:** Always use a 330–470 Ω resistor on the data line. Without it, the data signal may experience ringing that can damage the first LED's IC.
 - **Timing-sensitive protocol:** The WS2812B uses a strict 800 kHz timing protocol. Some Arduino libraries and functions (like `delay()`, `Serial.print()`, or interrupts) can disrupt the timing if `strip.show()` is called from within an interrupt. Use NeoPixel or FastLED with interrupts disabled during data transmission on AVR-based boards.
-- **Voltage drop:** On long strips (2+ meters), voltage drop along the strip causes noticeable color shift — LEDs farther from the power source appear dimmer and redder. Inject 5V power at multiple points along the strip (every 50–100 LEDs) to maintain uniform brightness.
+- **Voltage drop:** On long strips (2+ meters), voltage drop along the strip causes noticeable color shift - LEDs farther from the power source appear dimmer and redder. Inject 5V power at multiple points along the strip (every 50–100 LEDs) to maintain uniform brightness.
 - **Capacitor required:** Without the 1000 µF capacitor, rapid color changes cause current spikes that can reset the Arduino or introduce noise into the 5V rail.
 - **Color order:** WS2812B uses GRB (green-red-blue) order, not standard RGB. The NeoPixel library handles this when you specify `NEO_GRB`. If colors appear swapped, change to `NEO_RGB`, `NEO_BRG`, or `NEO_GRB` to match your specific chip variant.
 - **Level shifting:** If using a 3.3V Arduino board (Due, Zero), the data signal (3.3V) may be below the WS2812B input threshold. Use a 5V level shifter (e.g., 74AHCT125) on the data line for reliable operation.

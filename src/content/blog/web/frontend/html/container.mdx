@@ -15,7 +15,7 @@ Container tags (also called structural or semantic tags) group related content t
 
 ## div Element
 
-The `<div>` is the **generic container** — a block-level element with no semantic meaning. Use it when no other semantic tag fits:
+The `<div>` is the **generic container** - a block-level element with no semantic meaning. Use it when no other semantic tag fits:
 
 <CodePlayground
   title=""
@@ -30,11 +30,11 @@ The `<div>` is the **generic container** — a block-level element with no seman
 </div>
 ' />
 
-**Best practice:** Use `<div>` only as a last resort — prefer semantic tags like `<section>`, `<article>`, or `<aside>` first.
+**Best practice:** Use `<div>` only as a last resort - prefer semantic tags like `<section>`, `<article>`, or `<aside>` first.
 
 ## span Element
 
-The `<span>` is the **inline generic container** — same as `<div>` but for inline content:
+The `<span>` is the **inline generic container** - same as `<div>` but for inline content:
 
 <CodePlayground
   title=""
@@ -92,7 +92,7 @@ Good candidates: blog posts, news articles, forum posts, comments, product cards
 
 ## aside Element
 
-The `<aside>` holds content **tangentially related** to the main content — sidebars, pull quotes, related links, advertisements:
+The `<aside>` holds content **tangentially related** to the main content - sidebars, pull quotes, related links, advertisements:
 
 <CodePlayground
   title=""
@@ -138,7 +138,7 @@ A page can have **multiple `<header>` elements** (one per section/article).
 
 ## footer Element
 
-The `<footer>` contains **closing information** — copyright, contact links, sitemap, back-to-top:
+The `<footer>` contains **closing information** - copyright, contact links, sitemap, back-to-top:
 
 <CodePlayground
   title=""
@@ -171,11 +171,11 @@ The `<nav>` wraps **primary navigation links**:
 </nav>
 ' />
 
-Not every group of links needs `<nav>` — only major navigation blocks. Footer links can be inside a `<nav>` but it is not required.
+Not every group of links needs `<nav>` - only major navigation blocks. Footer links can be inside a `<nav>` but it is not required.
 
 ## main Element
 
-The `<main>` wraps the **primary content** of the page — content unique to this page that is not repeated across pages (like sidebars, navigation, site headers):
+The `<main>` wraps the **primary content** of the page - content unique to this page that is not repeated across pages (like sidebars, navigation, site headers):
 
 <CodePlayground
   title=""
@@ -299,11 +299,11 @@ A `<header>` often contains a `<nav>`, but they serve different purposes.
 
 ## Accessibility Considerations for Container Tags in HTML
 
-- Semantic tags like `<nav>`, `<main>`, `<article>` are recognised by screen readers — they provide keyboard shortcuts for jumping between sections.
-- Use `<main>` to mark the primary content — screen reader users can skip to it directly.
+- Semantic tags like `<nav>`, `<main>`, `<article>` are recognised by screen readers - they provide keyboard shortcuts for jumping between sections.
+- Use `<main>` to mark the primary content - screen reader users can skip to it directly.
 - The `<nav>` element should be used for primary navigation; avoid wrapping every small link group in `<nav>`.
-- `<aside>` content should be truly ancillary — not critical for understanding the main content.
-- The `<dialog>` element handles focus management and modal behaviour natively — prefer it over custom modal implementations.
+- `<aside>` content should be truly ancillary - not critical for understanding the main content.
+- The `<dialog>` element handles focus management and modal behaviour natively - prefer it over custom modal implementations.
 
 ## SEO Best Practices for Container Tags in HTML
 
@@ -311,4 +311,4 @@ A `<header>` often contains a `<nav>`, but they serve different purposes.
 - `<article>` is used by Google for **rich snippets** and featured content.
 - A clear heading structure inside `<section>` and `<article>` improves keyword relevance.
 - The `<main>` element helps Google identify the primary content for indexing.
-- Avoid excessive nested `<div>`s — they add no semantic value and bloat the HTML.
+- Avoid excessive nested `<div>`s - they add no semantic value and bloat the HTML.

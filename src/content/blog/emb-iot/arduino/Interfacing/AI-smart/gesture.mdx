@@ -39,11 +39,11 @@ VCC           -->     3.3V (or 5V with onboard regulator)
 GND           -->     GND
 SCL           -->     A5 (Uno/Nano) or SCL (Mega)
 SDA           -->     A4 (Uno/Nano) or SDA (Mega)
-INT           -->     Digital Pin 2 (optional — interrupt)
-LED           -->     Digital Pin 3 (optional — IR LED drive)
+INT           -->     Digital Pin 2 (optional - interrupt)
+LED           -->     Digital Pin 3 (optional - IR LED drive)
 ```
 
-The module operates at 3.3V logic but many breakouts include a voltage regulator and accept 5V on VCC. The INT pin is optional — the sensor can be polled without it.
+The module operates at 3.3V logic but many breakouts include a voltage regulator and accept 5V on VCC. The INT pin is optional - the sensor can be polled without it.
 
 ## Pin Map
 
@@ -160,13 +160,13 @@ void loop()
 
 ### Code breakdown
 
-- `#include <Adafruit_APDS9960.h>` — includes the Adafruit APDS9960 library.
-- `apds.begin()` — initialises the I²C connection and configures the sensor. Returns `false` if no APDS-9960 is detected at address 0x39.
-- `apds.enableGesture(true)` — enables the gesture detection engine. When disabled, the sensor consumes less power.
-- `apds.enableProximity(true)` — enables the proximity sensor. Proximity data is used internally by the gesture engine and can also be read directly.
-- `apds.gestureAvailable()` — returns `true` when a complete gesture has been detected and is ready to read.
-- `apds.readGesture()` — returns the detected gesture: `APDS9960_UP`, `APDS9960_DOWN`, `APDS9960_LEFT`, `APDS9960_RIGHT`, or `APDS9960_NONE`.
-- `apds.readProximity()` — returns the proximity value (0–255). Lower values indicate a closer object.
+- `#include <Adafruit_APDS9960.h>` - includes the Adafruit APDS9960 library.
+- `apds.begin()` - initialises the I²C connection and configures the sensor. Returns `false` if no APDS-9960 is detected at address 0x39.
+- `apds.enableGesture(true)` - enables the gesture detection engine. When disabled, the sensor consumes less power.
+- `apds.enableProximity(true)` - enables the proximity sensor. Proximity data is used internally by the gesture engine and can also be read directly.
+- `apds.gestureAvailable()` - returns `true` when a complete gesture has been detected and is ready to read.
+- `apds.readGesture()` - returns the detected gesture: `APDS9960_UP`, `APDS9960_DOWN`, `APDS9960_LEFT`, `APDS9960_RIGHT`, or `APDS9960_NONE`.
+- `apds.readProximity()` - returns the proximity value (0–255). Lower values indicate a closer object.
 
 ### Gesture parameter configuration
 
@@ -268,7 +268,7 @@ void onGesture()
 ### Tips for reliable gesture detection
 
 - The sensor works best with a **light-coloured hand** in **moderate ambient light**.
-- Swipe speed should be moderate — too slow or too fast may not be detected.
+- Swipe speed should be moderate - too slow or too fast may not be detected.
 - The distance should be 5–15 cm above the sensor window.
 - Dark-coloured objects absorb IR light and are harder to detect than light-coloured ones.
 - Ambient IR interference (sunlight, incandescent lamps) can reduce sensitivity.
@@ -280,5 +280,5 @@ void onGesture()
 - **Ambient IR interference:** Bright sunlight and incandescent lighting contain significant IR that can swamp the sensor's photodiodes, reducing gesture range. Fluorescent and LED lighting have minimal IR and cause less interference. If the sensor reports false gestures in bright light, shield the sensor from direct sunlight or increase the LED drive current.
 - **Gesture direction:** The sensor detects relative direction (a hand moving across the sensor's field of view), not absolute position. The UP/DOWN direction is along the long axis of the sensor package (typically aligned with the IC's pin 1 marking). Rotating the sensor rotates the detected directions accordingly.
 - **Consecutive gestures:** The sensor has a built-in debounce that prevents multiple rapid triggers. After detecting one gesture, it ignores further gestures for approximately 500 ms. This can be reduced by clearing the interrupt and re-enabling the gesture engine sooner, but doing so may cause false triggers from hand bounce.
-- **Proximity vs gesture:** Proximity sensing should be enabled for gesture detection to work (the gesture engine uses proximity data to determine when a hand is present). However, reading `proximity` in between gestures adds a slight delay — for gesture-only applications, you can disable proximity reading and rely on the gesture engine's internal proximity trigger.
+- **Proximity vs gesture:** Proximity sensing should be enabled for gesture detection to work (the gesture engine uses proximity data to determine when a hand is present). However, reading `proximity` in between gestures adds a slight delay - for gesture-only applications, you can disable proximity reading and rely on the gesture engine's internal proximity trigger.
 - **Colour sensor calibration:** The colour (RGBC) readings from the APDS-9960 are uncalibrated raw counts. The `calculateLux()` function provides a reasonable lux estimate, but for accurate lux measurements, a dedicated ambient light sensor (e.g., BH1750 or TSL2591) is preferred.

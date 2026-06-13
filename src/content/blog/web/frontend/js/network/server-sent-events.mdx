@@ -11,7 +11,7 @@ order: 12
 
 ## Server-Sent Events
 
-**Server-Sent Events (SSE)** let the server push data to the client over a single HTTP connection. Simpler than WebSocket — one-directional (server → client) over standard HTTP.
+**Server-Sent Events (SSE)** let the server push data to the client over a single HTTP connection. Simpler than WebSocket - one-directional (server → client) over standard HTTP.
 
 ## How SSE Works
 
@@ -70,7 +70,7 @@ let intervalId = null;
 document.getElementById('sse-start').onclick = function() {
   this.disabled = true;
   document.getElementById('sse-stop').disabled = false;
-  status.textContent = '🔄 SSE connected — waiting for events...';
+  status.textContent = '🔄 SSE connected - waiting for events...';
 
   // Simulate server-sent events
   intervalId = setInterval(() => {
@@ -214,10 +214,10 @@ SSE is ideal for:
 
 ## Key Takeaways
 
-- SSE is **server → client** only — simpler than WebSocket for push notifications
+- SSE is **server → client** only - simpler than WebSocket for push notifications
 - Use `new EventSource(url)` to connect
 - Listen with `onmessage` for generic events, `addEventListener` for named events
-- **Auto-reconnects** built-in — includes `Last-Event-ID` for resume
+- **Auto-reconnects** built-in - includes `Last-Event-ID` for resume
 - Server format is `text/event-stream` with `data:`, `event:`, `id:`, `retry:` fields
-- SSE works over **standard HTTP** — no special server required
+- SSE works over **standard HTTP** - no special server required
 - Use WebSocket when you need **bidirectional** communication; use SSE for server push

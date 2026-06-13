@@ -41,7 +41,7 @@ DO            -->     Digital Pin 2
 AO            -->     Analog Pin A0
 ```
 
-Connect the soil probes to the control board via the spring terminals or header pins. The control board has a potentiometer that adjusts the digital output threshold — turn it with a screwdriver to set the dryness level that triggers the digital output.
+Connect the soil probes to the control board via the spring terminals or header pins. The control board has a potentiometer that adjusts the digital output threshold - turn it with a screwdriver to set the dryness level that triggers the digital output.
 
 ## Pin Map
 
@@ -62,7 +62,7 @@ Connect the soil probes to the control board via the spring terminals or header 
 
 ## Install necessary Library
 
-No external library is required — soil moisture sensing uses standard `digitalRead()` and `analogRead()` functions built into Arduino.
+No external library is required - soil moisture sensing uses standard `digitalRead()` and `analogRead()` functions built into Arduino.
 
 ## Code with complete explanation
 
@@ -130,9 +130,9 @@ void loop()
 
 ### Code breakdown
 
-- `digitalRead(digitalPin)` — reads the DO pin. The LM393 comparator drives this pin `LOW` when moisture exceeds the threshold set by the onboard potentiometer. It is `HIGH` when the soil is dry.
-- `analogRead(analogPin)` — reads the AO pin (0–1023). A higher value means more moisture because water reduces the resistance between the probes, allowing more current to flow.
-- `map(analogValue, 0, 1023, 0, 100)` — converts the raw 10-bit analog reading to a 0–100% moisture scale. The actual range may vary depending on soil type and probe depth, so calibrating against known wet and dry samples gives more accurate results.
+- `digitalRead(digitalPin)` - reads the DO pin. The LM393 comparator drives this pin `LOW` when moisture exceeds the threshold set by the onboard potentiometer. It is `HIGH` when the soil is dry.
+- `analogRead(analogPin)` - reads the AO pin (0–1023). A higher value means more moisture because water reduces the resistance between the probes, allowing more current to flow.
+- `map(analogValue, 0, 1023, 0, 100)` - converts the raw 10-bit analog reading to a 0–100% moisture scale. The actual range may vary depending on soil type and probe depth, so calibrating against known wet and dry samples gives more accurate results.
 
 ## Steps to perform this interfacing
 
@@ -147,8 +147,8 @@ void loop()
 
 ## Caution
 
-- The probes are subject to electrolysis when powered with DC current in a moist environment. This corrodes the probes over time. To extend probe life, power the sensor only when taking a reading — connect VCC to a digital pin and set it `HIGH` for 100 ms before reading, then `LOW` afterward.
-- Do not insert the probes too close to plant roots — physical damage and root rot can occur.
+- The probes are subject to electrolysis when powered with DC current in a moist environment. This corrodes the probes over time. To extend probe life, power the sensor only when taking a reading - connect VCC to a digital pin and set it `HIGH` for 100 ms before reading, then `LOW` afterward.
+- Do not insert the probes too close to plant roots - physical damage and root rot can occur.
 - Calibration is soil-type dependent. Sandy soil, clay soil, and potting mix all have different conductivity baselines. Test with your specific soil before setting thresholds.
 - Clean the probes with a dry cloth between uses to remove residue and prevent oxidation.
 - The sensor is not suitable for submerged or water-logged environments for long periods. Use a capacitive soil moisture sensor instead for outdoor or long-term installations.

@@ -1,0 +1,434 @@
+---
+title: "Logging Requests & Errors (Winston, Morgan)"
+description: "Implement structured logging in Express using Winston for application logs and Morgan for HTTP request logging"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Error Handling & Logging"]
+tags: ["Express", "Logging", "Winston", "Morgan", "Error Logging", "Monitoring"]
+slug: "express-logging-winston-morgan"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why Logging Matters
+
+Without logging, debugging production issues is nearly impossible.
+
+```
+Without logging:                        With logging:
+  │                                       │
+  │ "App is broken!"                      │ [2026-06-13 12:00:00] ERROR:
+  │ Could be anything...                  │   User creation failed
+  │                                       │   reqId: abc-123
+  │                                       │   body: { email: "invalid" }
+  │                                       │   error: "Validation failed"
+  │                                       │   stack: ValidationError: ...
+```
+
+## Winston vs Morgan
+
+| Tool | Purpose | Format |
+|---|---|---|
+| **Morgan** | HTTP request logging (who, what, when) | `GET /api/users 200 5ms` |
+| **Winston** | Application-level logging (info, warn, error) | Full structured JSON logs |
+
+Use **both** - Morgan for HTTP access logs, Winston for everything else.
+
+## Setting Up Winston
+
+### Installation
+
+```bash
+npm install winston
+```
+
+### Basic Logger
+
+```javascript
+// config/logger.js
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'express-app' },
+  transports: [
+    // Write all logs to file
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error'
+    }),
+    new winston.transports.File({
+      filename: 'logs/combined.log'
+    })
+  ]
+});
+
+// In development, also log to console with color
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    )
+  }));
+}
+
+module.exports = logger;
+```
+
+### Creating Log Files Directory
+
+```bash
+mkdir logs
+```
+
+**Add to .gitignore:**
+```
+logs/
+*.log
+```
+
+### Using the Logger
+
+```javascript
+const logger = require('./config/logger');
+
+logger.info('Server started', { port: 3000, env: process.env.NODE_ENV });
+logger.warn('Rate limit approaching', { ip: req.ip, remaining: 5 });
+logger.error('Database connection failed', { error: err.message, stack: err.stack });
+```
+
+## Structured Logging with Winston
+
+```javascript
+// Log with context
+logger.info('User created', {
+  userId: user._id,
+  email: user.email,
+  role: user.role,
+  ip: req.ip,
+  duration: Date.now() - start
+});
+
+// Log errors with full context
+logger.error('Failed to process payment', {
+  orderId: 'ORD-123',
+  amount: 99.99,
+  userId: user._id,
+  error: err.message,
+  stack: err.stack
+});
+```
+
+### Multiple Transports
+
+```javascript
+// config/logger.js
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    // Error logs
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5
+    }),
+
+    // All logs
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+      maxsize: 5242880,
+      maxFiles: 10
+    }),
+
+    // Audit log (critical operations)
+    new winston.transports.File({
+      filename: 'logs/audit.log',
+      level: 'info',
+      format: winston.format((info) => {
+        return info.audit ? info : false;
+      })()
+    })
+  ]
+});
+```
+
+### Console Transport with Colors
+
+```javascript
+const consoleFormat = winston.format.printf(({ level, message, timestamp, ...meta }) => {
+  const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
+  return `${timestamp} [${level}]: ${message} ${metaStr}`;
+});
+
+logger.add(new winston.transports.Console({
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.timestamp({ format: 'HH:mm:ss' }),
+    consoleFormat
+  )
+}));
+```
+
+## Custom Winston Middleware for Express
+
+```javascript
+// middleware/requestLogger.js
+const logger = require('../config/logger');
+
+function requestLogger(req, res, next) {
+  const start = Date.now();
+  const requestId = crypto.randomUUID();
+
+  req.requestId = requestId;
+  res.set('X-Request-Id', requestId);
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+
+    const logData = {
+      requestId,
+      method: req.method,
+      url: req.originalUrl,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+      ip: req.ip,
+      userAgent: req.get('user-agent'),
+      userId: req.user?._id
+    };
+
+    if (res.statusCode >= 500) {
+      logger.error('Request failed', logData);
+    } else if (res.statusCode >= 400) {
+      logger.warn('Request warning', logData);
+    } else {
+      logger.info('Request completed', logData);
+    }
+  });
+
+  next();
+}
+
+module.exports = requestLogger;
+```
+
+## Integrating Morgan
+
+### Installation
+
+```bash
+npm install morgan
+```
+
+### Basic Morgan Setup
+
+```javascript
+const morgan = require('morgan');
+
+// Development: colored, concise output
+app.use(morgan('dev'));
+
+// Production: combined format with date
+app.use(morgan('combined'));
+```
+
+### Morgan + Winston Together
+
+The recommended approach - pipe Morgan output through Winston:
+
+```javascript
+const morgan = require('morgan');
+const logger = require('./config/logger');
+
+// Create a Morgan stream that writes to Winston
+const morganStream = {
+  write: (message) => {
+    logger.info(message.trim());
+  }
+};
+
+// Use the stream
+app.use(morgan('combined', { stream: morganStream }));
+
+// In development, keep the colorful console too
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev')); // Additional console output
+}
+```
+
+### Custom Morgan Token
+
+```javascript
+morgan.token('userId', (req) => req.user?._id || 'anonymous');
+morgan.token('duration-ms', (req, res) => {
+  return res.get('X-Response-Time');
+});
+
+app.use(morgan(':method :url :status :response-time ms - userId::userId', {
+  stream: morganStream
+}));
+```
+
+## Full Logging Setup
+
+```javascript
+// index.js
+const express = require('express');
+const morgan = require('morgan');
+const logger = require('./config/logger');
+const requestLogger = require('./middleware/requestLogger');
+
+const app = express();
+
+// 1. Request ID & logging middleware
+app.use(requestLogger);
+
+// 2. HTTP request logging (Morgan → Winston)
+const morganStream = { write: (msg) => logger.http(msg.trim()) };
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', {
+  stream: morganStream,
+  skip: (req) => req.url === '/health'
+}));
+
+// 3. Body parser
+app.use(express.json());
+
+// 4. Routes
+app.get('/', (req, res) => {
+  logger.info('Home page accessed');
+  res.send('Hello');
+});
+
+app.get('/error', (req, res) => {
+  logger.error('Simulated error', { simulated: true });
+  throw new Error('Something broke');
+});
+
+// 5. Error handler with logging
+app.use((err, req, res, next) => {
+  logger.error('Unhandled error', {
+    requestId: req.requestId,
+    error: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method
+  });
+
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    requestId: req.requestId
+  });
+});
+
+app.listen(3000, () => {
+  logger.info('Server started', {
+    port: 3000,
+    env: process.env.NODE_ENV,
+    nodeVersion: process.version
+  });
+});
+```
+
+## Log Rotation
+
+Prevent log files from growing indefinitely:
+
+```javascript
+// Using winston-daily-rotate-file
+const winston = require('winston');
+require('winston-daily-rotate-file');
+
+const transport = new winston.transports.DailyRotateFile({
+  filename: 'logs/app-%DATE%.log',
+  datePattern: 'YYYY-MM-DD',
+  maxSize: '20m',
+  maxFiles: '14d', // Keep 14 days
+  format: winston.format.json()
+});
+
+transport.on('rotate', (oldFile, newFile) => {
+  logger.info('Log file rotated', { oldFile, newFile });
+});
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [transport]
+});
+```
+
+## Log Levels
+
+```javascript
+// Winston log levels (RFC 5424):
+{
+  error: 0,    // Application errors
+  warn: 1,     // Warnings (high rate limit approaching)
+  info: 2,     // Normal operations (request completed)
+  http: 3,     // HTTP request logs (Morgan level)
+  verbose: 4,  // Detailed info
+  debug: 5,    // Debugging
+  silly: 6     // Everything
+}
+
+// Usage
+logger.error('...');   // Level 0
+logger.warn('...');    // Level 1
+logger.info('...');    // Level 2
+logger.debug('...');   // Level 5 - only shown if LOG_LEVEL=debug
+```
+
+## Logging Best Practices
+
+```javascript
+// ✅ Good: Structured, searchable logs
+logger.info('User registered', { userId, email, method: 'google' });
+
+// ✅ Good: Log correlation IDs
+logger.error('Payment failed', { orderId, transactionId, error: err.message });
+
+// ❌ Bad: String interpolation
+logger.info(`User ${userId} registered with email ${email}`);
+
+// ❌ Bad: Logging sensitive data
+logger.info('User created', { password: 'secret123' }); // Never!
+
+// ❌ Bad: Logging without context
+logger.error('Error');
+```
+
+## Logging in Production
+
+```javascript
+// config/logger.js (production)
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: '/var/log/app/error.log', level: 'error' }),
+    new winston.transports.File({ filename: '/var/log/app/app.log' })
+  ]
+});
+
+// Use log aggregation service (optional)
+// new winston.transports.Http({ host: 'logstash.example.com', port: 5000 })
+```
+
+## Key Takeaways
+
+- Use **Morgan** for HTTP access logs (who accessed what)
+- Use **Winston** for application-level logging with structured JSON
+- **Pipe Morgan output through Winston** for a single logging pipeline
+- Log with **structured JSON** - not string interpolation - for searchability
+- Include **correlation IDs** (`requestId`) to trace requests across services
+- Use **log levels** appropriately (error, warn, info, debug)
+- Implement **log rotation** to prevent disk overflow
+- Never log **sensitive data** (passwords, tokens, PII)
+- Log **enough context** to debug issues without reproducing them

@@ -1,0 +1,487 @@
+---
+title: "Graceful Shutdowns"
+description: "Handle process termination gracefully in Express - close connections, finish requests, and clean up resources"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Error Handling & Logging"]
+tags: ["Express", "Graceful Shutdown", "Process", "SIGTERM", "Cleanup"]
+slug: "express-graceful-shutdown"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Why Graceful Shutdown?
+
+When a server is terminated (deployment restart, system shutdown, crash), ongoing requests are abruptly cut off:
+
+```
+Without graceful shutdown:          With graceful shutdown:
+                                      │
+ Client sending data                  │ Server receives SIGTERM
+        │                             │
+        ▼                             ▼ Server stops accepting new requests
+ Server crashes/killed                │
+        │                             │ Existing requests complete normally
+        ▼                             │
+ Active requests aborted ────────────→│ New connections rejected
+ Database connections dropped         │
+ Data corruption possible             │ Database connections closed cleanly
+                                      │
+                                      ▼ Server exits
+```
+
+A graceful shutdown:
+1. Stops accepting new requests
+2. Waits for in-flight requests to finish (with a timeout)
+3. Closes database connections
+4. Releases other resources
+5. Exits the process
+
+## Basic Graceful Shutdown
+
+```javascript
+const express = require('express');
+const mongoose = require('mongoose');
+
+const app = express();
+let server;
+
+// Start server
+async function start() {
+  await mongoose.connect(process.env.MONGO_URI);
+  console.log('Database connected');
+
+  server = app.listen(3000, () => {
+    console.log('Server running on port 3000');
+  });
+}
+
+start();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  shutdown();
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  shutdown();
+});
+
+function shutdown() {
+  // 1. Stop accepting new connections
+  server.close(async () => {
+    console.log('HTTP server closed');
+
+    // 2. Close database connections
+    await mongoose.connection.close();
+    console.log('Database connection closed');
+
+    // 3. Exit
+    process.exit(0);
+  });
+}
+```
+
+## Production-Grade Graceful Shutdown
+
+```javascript
+// config/gracefulShutdown.js
+function gracefulShutdown(server, connections = []) {
+  const shutdownTimeout = 30000; // 30 second max
+
+  return async (signal) => {
+    console.log(`\n${signal} received. Starting graceful shutdown...`);
+
+    let shutdownTimer = setTimeout(() => {
+      console.error('Shutdown timed out. Forcing exit.');
+      process.exit(1);
+    }, shutdownTimeout);
+
+    try {
+      // 1. Stop accepting new requests
+      await new Promise((resolve) => server.close(resolve));
+      console.log('✓ No longer accepting new connections');
+
+      // 2. Wait for in-flight requests to complete
+      await waitForPendingRequests(server);
+      console.log('✓ All pending requests completed');
+
+      // 3. Close database connections
+      for (const conn of connections) {
+        if (typeof conn.close === 'function') {
+          await conn.close();
+          console.log(`✓ ${conn.name || 'Database'} connection closed`);
+        }
+      }
+
+      // 4. Clear shutdown timer
+      clearTimeout(shutdownTimer);
+      console.log('Graceful shutdown complete');
+
+      process.exit(0);
+    } catch (err) {
+      console.error('Error during shutdown:', err);
+      process.exit(1);
+    }
+  };
+}
+
+function waitForPendingRequests(server) {
+  return new Promise((resolve) => {
+    const pending = server._connections || 0;
+    if (pending === 0) {
+      resolve();
+    } else {
+      console.log(`Waiting for ${pending} pending requests...`);
+      server.on('close', resolve);
+    }
+  });
+}
+
+module.exports = gracefulShutdown;
+```
+
+### Using It
+
+```javascript
+// index.js
+const express = require('express');
+const mongoose = require('mongoose');
+const Redis = require('ioredis');
+const gracefulShutdown = require('./config/gracefulShutdown');
+
+const app = express();
+let server;
+const redis = new Redis(process.env.REDIS_URL);
+
+async function start() {
+  await mongoose.connect(process.env.MONGO_URI);
+  server = app.listen(3000, () => console.log('Server ready'));
+
+  // Register shutdown handlers
+  const shutdown = gracefulShutdown(server, [
+    mongoose.connection,
+    redis
+  ]);
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
+
+start();
+```
+
+## Full Production Example
+
+```javascript
+const express = require('express');
+const mongoose = require('mongoose');
+const Redis = require('ioredis');
+const winston = require('winston');
+
+const app = express();
+let server;
+let isShuttingDown = false;
+
+// Logger
+const logger = winston.createLogger({
+  level: 'info',
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error' })
+  ]
+});
+
+// Connections
+let redis;
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  if (isShuttingDown) {
+    return res.status(503).json({ status: 'shutting_down' });
+  }
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  });
+});
+
+// Reject new requests during shutdown
+app.use((req, res, next) => {
+  if (isShuttingDown) {
+    return res.status(503).json({
+      error: 'Server is shutting down',
+      retryAfter: 30
+    });
+  }
+  next();
+});
+
+// Routes
+app.get('/api/users', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+// Start server
+async function start() {
+  try {
+    // Connect to MongoDB
+    await mongoose.connect(process.env.MONGO_URI);
+    logger.info('MongoDB connected');
+
+    // Connect to Redis
+    redis = new Redis(process.env.REDIS_URL);
+    logger.info('Redis connected');
+
+    // Start HTTP server
+    server = app.listen(process.env.PORT || 3000, () => {
+      logger.info(`Server listening on port ${process.env.PORT || 3000}`);
+    });
+
+    // Register shutdown handlers
+    registerShutdownHandlers();
+  } catch (err) {
+    logger.error('Failed to start server', { error: err.message });
+    process.exit(1);
+  }
+}
+
+function registerShutdownHandlers() {
+  const shutdown = async (signal) => {
+    if (isShuttingDown) return; // Prevent multiple calls
+    isShuttingDown = true;
+
+    logger.info(`${signal} received - starting graceful shutdown`);
+
+    const forceExit = setTimeout(() => {
+      logger.error('Forced shutdown after timeout');
+      process.exit(1);
+    }, 30000); // 30 second budget
+
+    try {
+      // 1. Stop accepting new connections
+      await new Promise((resolve) => server.close(resolve));
+      logger.info('HTTP server closed - no new connections');
+
+      // 2. Wait for keep-alive connections to drain
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 3. Close MongoDB
+      if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.close();
+        logger.info('MongoDB connection closed');
+      }
+
+      // 4. Close Redis
+      if (redis && redis.status === 'ready') {
+        await redis.quit();
+        logger.info('Redis connection closed');
+      }
+
+      clearTimeout(forceExit);
+      logger.info('Graceful shutdown complete');
+      process.exit(0);
+    } catch (err) {
+      logger.error('Error during shutdown', { error: err.message });
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+
+  // Handle uncaught exceptions & unhandled rejections
+  process.on('uncaughtException', (err) => {
+    logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+    shutdown('UNCAUGHT_EXCEPTION');
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled rejection', { reason: reason?.message || reason });
+    shutdown('UNHANDLED_REJECTION');
+  });
+}
+
+start();
+```
+
+## Kubernetes-Ready Shutdown
+
+When running in Kubernetes, the platform sends SIGTERM and expects the app to shut down within a grace period:
+
+```javascript
+// config/k8s-shutdown.js
+function setupKubernetesShutdown(server, cleanupFns = []) {
+  const shutdownGracePeriod = parseInt(process.env.SHUTDOWN_GRACE_PERIOD) || 25000; // 25s
+  let isShuttingDown = false;
+
+  // Kubernetes sends SIGTERM
+  process.on('SIGTERM', async () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    console.log('Kubernetes termination signal received');
+
+    const timer = setTimeout(() => {
+      console.error('Shutdown grace period exceeded');
+      process.exit(1);
+    }, shutdownGracePeriod);
+
+    try {
+      // Stop accepting new connections
+      await new Promise((resolve) => server.close(resolve));
+
+      // Drain existing connections
+      await new Promise((resolve) => {
+        const check = () => {
+          server.getConnections((err, count) => {
+            if (count === 0) resolve();
+            else setTimeout(check, 100);
+          });
+        };
+        check();
+      });
+
+      // Run cleanup functions
+      for (const cleanup of cleanupFns) {
+        await cleanup();
+      }
+
+      clearTimeout(timer);
+      console.log('Shutdown complete');
+      process.exit(0);
+    } catch (err) {
+      console.error('Shutdown error:', err);
+      process.exit(1);
+    }
+  });
+}
+
+module.exports = setupKubernetesShutdown;
+```
+
+## Connection Draining
+
+For WebSocket or long-polling connections:
+
+```javascript
+// Track active connections
+const activeConnections = new Set();
+
+app.use((req, res, next) => {
+  // Track this connection
+  activeConnections.add(res);
+
+  res.on('close', () => {
+    activeConnections.delete(res);
+  });
+
+  next();
+});
+
+// During shutdown: drain active connections
+async function drainConnections() {
+  console.log(`Draining ${activeConnections.size} active connections...`);
+
+  // Set a deadline for all connections
+  const drainTimeout = setTimeout(() => {
+    activeConnections.forEach((res) => {
+      if (!res.writableEnded) {
+        res.status(503).json({ error: 'Server shutting down' });
+        res.end();
+      }
+    });
+  }, 15000); // 15s drain timeout
+
+  // Wait for all connections to finish naturally
+  return new Promise((resolve) => {
+    const check = () => {
+      if (activeConnections.size === 0) {
+        clearTimeout(drainTimeout);
+        resolve();
+      } else {
+        setTimeout(check, 500);
+      }
+    };
+    check();
+  });
+}
+```
+
+## Health Check for Shutdown State
+
+```javascript
+let isShuttingDown = false;
+const startTime = Date.now();
+
+app.get('/health', (req, res) => {
+  if (isShuttingDown) {
+    return res.status(503).json({
+      status: 'shutting_down',
+      uptime: Math.floor((Date.now() - startTime) / 1000)
+    });
+  }
+
+  res.json({
+    status: 'healthy',
+    uptime: Math.floor((Date.now() - startTime) / 1000),
+    connections: {
+      mongo: mongoose.connection.readyState === 1,
+      redis: redis?.status === 'ready'
+    },
+    memory: process.memoryUsage()
+  });
+});
+```
+
+## Testing Graceful Shutdown
+
+```javascript
+// test/gracefulShutdown.test.js
+const request = require('supertest');
+
+describe('Graceful Shutdown', () => {
+  it('should reject new requests during shutdown', async () => {
+    // Simulate shutdown state
+    const app = require('../index');
+    app.set('isShuttingDown', true);
+
+    const res = await request(app)
+      .get('/health')
+      .expect(503);
+
+    expect(res.body.status).toBe('shutting_down');
+  });
+
+  it('should complete in-flight requests', (done) => {
+    // Make a slow request, then trigger shutdown
+    // The slow request should still complete
+    const slowRes = request(app).get('/slow-endpoint');
+
+    // Wait a bit, then trigger shutdown
+    setTimeout(() => {
+      process.emit('SIGTERM');
+    }, 100);
+
+    slowRes.then((res) => {
+      expect(res.status).toBe(200);
+      done();
+    });
+  });
+});
+```
+
+## Key Takeaways
+
+- **Graceful shutdown** lets in-flight requests complete before the server exits
+- Catch **SIGTERM** (from orchestrators like Kubernetes) and **SIGINT** (Ctrl+C)
+- Set a **shutdown timeout** (e.g., 30s) to force exit if cleanup hangs
+- Track active connections to **drain** them during shutdown
+- Reject new requests with **503 Service Unavailable** during shutdown
+- Close database connections (MongoDB, Redis, PostgreSQL) cleanly
+- Use a **shutdown flag** (`isShuttingDown`) to prevent duplicate shutdown calls
+- Handle **uncaught exceptions** and **unhandled rejections** by triggering shutdown
+- Test the shutdown flow to ensure it works under load

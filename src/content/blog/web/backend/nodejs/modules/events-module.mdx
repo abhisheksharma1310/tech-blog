@@ -1,6 +1,6 @@
 ---
 title: "Events Module"
-description: "Deep dive into Node.js events module — EventEmitter methods, patterns, memory management, and real-world usage"
+description: "Deep dive into Node.js events module - EventEmitter methods, patterns, memory management, and real-world usage"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Modules"]
 tags: ["Node.js", "Modules", "Events", "EventEmitter"]
@@ -11,7 +11,7 @@ order: 4
 
 ## The `events` Module
 
-The `events` module provides the `EventEmitter` class — the foundation of Node.js's event-driven architecture. Many core Node.js modules (`http.Server`, `fs.ReadStream`, `net.Socket`, `stream`) either extend or use `EventEmitter` internally.
+The `events` module provides the `EventEmitter` class - the foundation of Node.js's event-driven architecture. Many core Node.js modules (`http.Server`, `fs.ReadStream`, `net.Socket`, `stream`) either extend or use `EventEmitter` internally.
 
 ```js
 const EventEmitter = require('events');
@@ -83,13 +83,13 @@ console.log('After emit');
 
 ```js
 emitter.on('data', async (data) => {
-  await processData(data);  // Fire and forget — emitter won't wait
+  await processData(data);  // Fire and forget - emitter won't wait
 });
 ```
 
 > **Important:** The emitter does not `await` async listeners. If you need the emitter to wait, use a different pattern (e.g., return promises from listeners and collect them).
 
-## `once` — One-Time Listeners
+## `once` - One-Time Listeners
 
 ```js
 const EventEmitter = require('events');
@@ -103,16 +103,16 @@ emitter.once('increment', () => {
 });
 
 emitter.emit('increment'); // Counter: 1
-emitter.emit('increment'); // (nothing — listener was removed)
+emitter.emit('increment'); // (nothing - listener was removed)
 ```
 
 **How `once` works internally:** Node.js wraps your listener in a function. The wrapper calls `removeListener(this.event, wrappedListener)` first, then calls your original listener. This ensures the listener is removed even if it throws.
 
 ### Use Cases for `once`
 
-- **Initialisation events** — "ready", "connected", "open"
-- **One-shot operations** — first request, first error
-- **Promise wrapping** — convert event-based API to promise
+- **Initialisation events** - "ready", "connected", "open"
+- **One-shot operations** - first request, first error
+- **Promise wrapping** - convert event-based API to promise
 
 ```js
 function connectToDatabase(config) {
@@ -174,7 +174,7 @@ emitter.emit('error', new Error('Something went wrong'));
 // Caught: Something went wrong
 ```
 
-> **Rule:** Always register an `error` listener on any long-lived EventEmitter. An unhandled `error` event is equivalent to a synchronous throw — the process terminates.
+> **Rule:** Always register an `error` listener on any long-lived EventEmitter. An unhandled `error` event is equivalent to a synchronous throw - the process terminates.
 
 ## Memory Management
 
@@ -223,7 +223,7 @@ class RequestHandler {
   }
 }
 
-// Every request creates a new handler — listeners accumulate forever
+// Every request creates a new handler - listeners accumulate forever
 server.on('request', (req) => {
   new RequestHandler(server);
 });
@@ -274,7 +274,7 @@ function onData(data) {
 const emitter = new EventEmitter();
 emitter.on('data', onData);
 
-// Later — stop listening
+// Later - stop listening
 emitter.off('data', onData);
 // or
 emitter.removeListener('data', onData);
@@ -321,7 +321,7 @@ class EventBus extends EventEmitter {
   }
 }
 
-// Singleton bus — used across the application
+// Singleton bus - used across the application
 const bus = new EventBus();
 
 // Module A: publishes
@@ -439,17 +439,17 @@ const fs = require('fs');
 const net = require('net');
 const stream = require('stream');
 
-// HTTP server — events: request, connection, close, error
+// HTTP server - events: request, connection, close, error
 const server = http.createServer();
 server.on('request', (req, res) => { /* ... */ });
 server.on('close', () => { /* ... */ });
 
-// Readable stream — events: data, end, error, close
+// Readable stream - events: data, end, error, close
 const readStream = fs.createReadStream('file.txt');
 readStream.on('data', (chunk) => { /* ... */ });
 readStream.on('end', () => { /* ... */ });
 
-// TCP socket — events: connect, data, close, error, drain, timeout
+// TCP socket - events: connect, data, close, error, drain, timeout
 const socket = new net.Socket();
 socket.on('connect', () => { /* ... */ });
 socket.on('data', (data) => { /* ... */ });
@@ -457,13 +457,13 @@ socket.on('data', (data) => { /* ... */ });
 
 ## Key Takeaways
 
-- **`EventEmitter`** is the foundation of Node.js's event-driven architecture — understand it to understand Node.js
-- **`on()`** to subscribe, **`emit()`** to publish — listeners run **synchronously** in registration order
-- **`once()`** auto-removes after first fire — perfect for initialisation events and promise wrappers
-- **Always handle `error` events** — unhandled `error` events crash the process
-- **Listener memory leaks** happen when you add listeners to a long-lived emitter (server) from short-lived objects (request handlers) — remove them with `off()`
+- **`EventEmitter`** is the foundation of Node.js's event-driven architecture - understand it to understand Node.js
+- **`on()`** to subscribe, **`emit()`** to publish - listeners run **synchronously** in registration order
+- **`once()`** auto-removes after first fire - perfect for initialisation events and promise wrappers
+- **Always handle `error` events** - unhandled `error` events crash the process
+- **Listener memory leaks** happen when you add listeners to a long-lived emitter (server) from short-lived objects (request handlers) - remove them with `off()`
 - **`setMaxListeners()`** controls the warning threshold for many listeners
 - Use **`prependListener()`** to insert at the front of the listener queue
-- **`rawListeners()`** differs from `listeners()` for `once` — the latter strips the wrapper
-- The **`'error'` event behaviour** (crash if unhandled) is unique — no other event has this property
-- Node.js core modules (`http`, `fs`, `net`, `stream`) all use EventEmitter — these patterns apply everywhere
+- **`rawListeners()`** differs from `listeners()` for `once` - the latter strips the wrapper
+- The **`'error'` event behaviour** (crash if unhandled) is unique - no other event has this property
+- Node.js core modules (`http`, `fs`, `net`, `stream`) all use EventEmitter - these patterns apply everywhere

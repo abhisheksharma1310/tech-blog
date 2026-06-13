@@ -11,7 +11,7 @@ order: 3
 
 # Comparison Operators
 
-Comparison operators compare two values and return a Boolean result — `true` (1) or `false` (0). They are the building blocks of decision-making in Arduino, used inside `if`, `while`, and `for` conditions to control program flow based on sensor readings, timing, or user input.
+Comparison operators compare two values and return a Boolean result - `true` (1) or `false` (0). They are the building blocks of decision-making in Arduino, used inside `if`, `while`, and `for` conditions to control program flow based on sensor readings, timing, or user input.
 
 ## == (equal to)
 
@@ -27,7 +27,7 @@ void setup() {
     Serial.println("a equals b");  // this prints
   }
 
-  // Common mistake — using = instead of ==
+  // Common mistake - using = instead of ==
   if (a = 5) {  // assigns 5 to a, always true!
     Serial.println("This always runs!");
   }
@@ -38,7 +38,7 @@ void loop() {
 }
 ```
 
-In this example, `a == b` correctly compares the two values. The second `if` uses `=` instead of `==`, which assigns 5 to `a` and then evaluates to `true` (non-zero). This is a common bug — always double-check your equality comparisons.
+In this example, `a == b` correctly compares the two values. The second `if` uses `=` instead of `==`, which assigns 5 to `a` and then evaluates to `true` (non-zero). This is a common bug - always double-check your equality comparisons.
 
 ## != (not equal to)
 

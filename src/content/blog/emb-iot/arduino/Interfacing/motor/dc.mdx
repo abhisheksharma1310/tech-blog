@@ -13,7 +13,7 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
 
 # DC Motor (Transistor Drive)
 
-A DC motor cannot be driven directly from an Arduino digital pin — the pin can only source ≈ 40 mA at 5V, while a small DC motor draws 100–500 mA under load and generates voltage spikes during commutation. The solution is a **transistor switch** (BJT or MOSFET) that uses the Arduino's low-current signal to control a separate high-current supply. This tutorial covers one-direction speed control via PWM with a flyback diode for back-EMF protection.
+A DC motor cannot be driven directly from an Arduino digital pin - the pin can only source ≈ 40 mA at 5V, while a small DC motor draws 100–500 mA under load and generates voltage spikes during commutation. The solution is a **transistor switch** (BJT or MOSFET) that uses the Arduino's low-current signal to control a separate high-current supply. This tutorial covers one-direction speed control via PWM with a flyback diode for back-EMF protection.
 
 <CloudinaryImage 
    publicId="DC-Motor-Pinout-Wiring_ad38pm.png" 
@@ -34,7 +34,7 @@ A DC motor cannot be driven directly from an Arduino digital pin — the pin can
 
 ## Schematic
 
-### BJT (2N2222) — one-direction speed control
+### BJT (2N2222) - one-direction speed control
 
 ```
              +Motor VCC (3–9V)
@@ -60,7 +60,7 @@ Arduino Pin 9 ---/\/\/\--- Base
 
 When the Arduino pin goes HIGH, the transistor saturates and the motor runs. PWM on pin 9 controls speed.
 
-### MOSFET (IRLZ44N logic-level) — more efficient for larger motors
+### MOSFET (IRLZ44N logic-level) - more efficient for larger motors
 
 ```
              +Motor VCC
@@ -136,13 +136,13 @@ void loop()
   {
     speed = 255;
     step  = -step;  // Reverse ramp
-    Serial.println("Full speed — slowing down");
+    Serial.println("Full speed - slowing down");
   }
   else if (speed <= 0)
   {
     speed = 0;
     step  = -step;  // Reverse ramp
-    Serial.println("Stopped — speeding up");
+    Serial.println("Stopped - speeding up");
   }
 
   analogWrite(MOTOR_PIN, speed);
@@ -173,14 +173,14 @@ void loop()
 
 ### Code breakdown
 
-- `analogWrite(pin, value)` — outputs a PWM signal (0–255) on pin 9 (or pins 3, 5, 6, 10, 11 on Uno). A 0% duty cycle = motor off, 100% = full speed.
+- `analogWrite(pin, value)` - outputs a PWM signal (0–255) on pin 9 (or pins 3, 5, 6, 10, 11 on Uno). A 0% duty cycle = motor off, 100% = full speed.
 - The transistor acts as a switch: PWM HIGH → transistor saturated → motor connected to GND → current flows.
 - The flyback diode (1N4007) is connected **reverse-biased** across the motor terminals. When the transistor switches off, the motor's inductive kickback current circulates through the diode instead of arcing across the transistor.
 - The base resistor (1 kΩ for BJT) limits the base current to ≈ 4 mA when the Arduino pin is HIGH (5V), keeping the transistor in saturation without overloading the pin.
 
 ### Bidirectional control (H-bridge required)
 
-For forward/reverse control, a single transistor is insufficient — an H-bridge (L293D, L298N, or discrete transistors) is needed:
+For forward/reverse control, a single transistor is insufficient - an H-bridge (L293D, L298N, or discrete transistors) is needed:
 
 ```cpp
 // H-bridge pins
@@ -215,7 +215,7 @@ void setMotor(int speed)  // -255..+255
 
 1. Build the transistor circuit on a breadboard as shown.
 2. Connect a common GND between the Arduino and the external motor power supply.
-3. Do NOT connect the motor to the Arduino's 5V pin — use an external supply.
+3. Do NOT connect the motor to the Arduino's 5V pin - use an external supply.
 4. Copy the code into the Arduino IDE.
 5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 6. Upload the sketch to the Arduino.
@@ -226,9 +226,9 @@ void setMotor(int speed)  // -255..+255
 
 ## Caution
 
-- **Flyback diode is mandatory:** Without the 1N4007 (or Schottky) diode across the motor terminals, the inductive voltage spike when the transistor turns off can exceed 50V — destroying the transistor instantly. The diode must be connected **reverse-biased** (cathode to motor +V, anode to motor GND side). If the motor runs but the transistor gets hot or fails immediately, the diode is likely missing or connected backwards.
-- **Transistor current rating:** A 2N2222 is rated for 600 mA collector current (800 mA peak) — adequate for small toy motors. For motors drawing > 500 mA, use a TIP120 Darlington pair (5A rated) or a logic-level MOSFET like IRLZ44N (30+A). The TIP120 has a higher saturation voltage (≈ 1V) than a MOSFET, causing more heat dissipation at high currents.
-- **Base resistor calculation:** For a BJT with a gain of ≈ 100, the base current should be ≈ 1/10 of the collector current (forced beta). For a 200 mA motor: I_b = 20 mA, R_b = (5V - 0.7V) / 0.02A ≈ 220 Ω. For the 2N2222 with a 1 kΩ resistor: I_b ≈ 4.3 mA, max collector current ≈ 430 mA — within limits for most small motors.
+- **Flyback diode is mandatory:** Without the 1N4007 (or Schottky) diode across the motor terminals, the inductive voltage spike when the transistor turns off can exceed 50V - destroying the transistor instantly. The diode must be connected **reverse-biased** (cathode to motor +V, anode to motor GND side). If the motor runs but the transistor gets hot or fails immediately, the diode is likely missing or connected backwards.
+- **Transistor current rating:** A 2N2222 is rated for 600 mA collector current (800 mA peak) - adequate for small toy motors. For motors drawing > 500 mA, use a TIP120 Darlington pair (5A rated) or a logic-level MOSFET like IRLZ44N (30+A). The TIP120 has a higher saturation voltage (≈ 1V) than a MOSFET, causing more heat dissipation at high currents.
+- **Base resistor calculation:** For a BJT with a gain of ≈ 100, the base current should be ≈ 1/10 of the collector current (forced beta). For a 200 mA motor: I_b = 20 mA, R_b = (5V - 0.7V) / 0.02A ≈ 220 Ω. For the 2N2222 with a 1 kΩ resistor: I_b ≈ 4.3 mA, max collector current ≈ 430 mA - within limits for most small motors.
 - **Common ground required:** The transistor switches the motor's current path to GND. If the Arduino and the motor power supply do not share a common GND, the base-to-emitter circuit is incomplete and the transistor will not turn on. Always connect Arduino GND to the motor power supply's negative terminal.
 - **PWM frequency:** The Arduino's default PWM frequency on pin 9 is ≈ 490 Hz (pins 5 and 6 are ≈ 980 Hz). At low PWM values, the motor may audibly whine at this frequency if the mechanical load is light. Changing `TCCR1B` prescaler can shift the frequency to ≈ 31 kHz (inaudible) but affects `millis()` timing.
 - **Stall current:** When the motor shaft is mechanically prevented from turning (stall), the current can increase 5–10× the running current. A 200 mA motor may draw 1.5–2A when stalled. Ensure your transistor, power supply, and wiring can handle stall current for at least a few seconds. For protection, add a PTC resettable fuse or a current-sense resistor with software shutdown.

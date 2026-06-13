@@ -11,7 +11,7 @@ order: 8
 
 # Forms in HTML
 
-Forms collect user input and send it to a server for processing. They are the foundation of user interaction on the web — login pages, search bars, registration forms, checkout pages, and surveys all use forms.
+Forms collect user input and send it to a server for processing. They are the foundation of user interaction on the web - login pages, search bars, registration forms, checkout pages, and surveys all use forms.
 
 ## Basic Structure
 
@@ -49,13 +49,13 @@ When a form is submitted:
 <CodePlayground
   title=""
   html='
-<!-- GET method — data in URL (search forms) -->
+<!-- GET method - data in URL (search forms) -->
 <form action="/search" method="get">
   <input type="search" name="q">
   <button>Search</button>
 </form>
 
-<!-- POST method — data in body (login, registration) -->
+<!-- POST method - data in body (login, registration) -->
 <form action="/login" method="post">
   <input type="text" name="username">
   <input type="password" name="password">
@@ -71,7 +71,7 @@ When a form is submitted:
 
 ## What Data Gets Sent?
 
-Form data comes from all **named form controls** — elements with a `name` attribute:
+Form data comes from all **named form controls** - elements with a `name` attribute:
 
 <CodePlayground
   title=""
@@ -212,8 +212,8 @@ The submit button triggers form submission:
 <input type="file" name="avatar" accept="image/*" multiple>
 ' />
 
-- `accept` — restricts file types (`image/*`, `.pdf`, `.doc`)
-- `multiple` — allows selecting multiple files
+- `accept` - restricts file types (`image/*`, `.pdf`, `.doc`)
+- `multiple` - allows selecting multiple files
 
 ### Buttons
 
@@ -226,7 +226,7 @@ The submit button triggers form submission:
 <!-- Reset all fields to their default values -->
 <button type="reset">Clear</button>
 
-<!-- Regular button — does nothing by default -->
+<!-- Regular button - does nothing by default -->
 <button type="button" onclick="alert("Clicked!")">Click Me</button>
 ' />
 
@@ -327,7 +327,7 @@ Multi-line text input. Use `rows` and `cols` for size:
           maxlength="500"></textarea>
 ' />
 
-**Important:** `<textarea>` is NOT a void element — it needs a closing tag. Any whitespace between the tags appears in the textarea.
+**Important:** `<textarea>` is NOT a void element - it needs a closing tag. Any whitespace between the tags appears in the textarea.
 
 ## Select Tag
 
@@ -338,7 +338,7 @@ Creates a dropdown menu:
   html='
 <label for="country">Country:</label>
 <select id="country" name="country">
-  <option value="">— Select —</option>
+  <option value="">- Select -</option>
   <option value="us">United States</option>
   <option value="uk">United Kingdom</option>
   <option value="jp" selected>Japan</option>

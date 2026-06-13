@@ -1,6 +1,6 @@
 ---
 title: "Security Best Practices"
-description: "Secure your Node.js production app — Helmet, rate limiting, input validation, CORS, CSRF, and dependency auditing"
+description: "Secure your Node.js production app - Helmet, rate limiting, input validation, CORS, CSRF, and dependency auditing"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Production"]
 tags: ["Node.js", "Production", "Security", "Best Practices"]
@@ -11,7 +11,7 @@ order: 5
 
 ## The Security Mindset
 
-Security is not a feature — it's a practice. Every request that reaches your server is a potential attack vector.
+Security is not a feature - it's a practice. Every request that reaches your server is a potential attack vector.
 
 ```
 Attacker                      Your Server
@@ -61,7 +61,7 @@ app.use(helmet({
 
 | Header | Purpose |
 |--------|---------|
-| `Content-Security-Policy` | Prevents XSS — controls allowed sources for scripts, styles, images |
+| `Content-Security-Policy` | Prevents XSS - controls allowed sources for scripts, styles, images |
 | `X-Content-Type-Options: nosniff` | Prevents MIME type sniffing |
 | `X-Frame-Options: DENY` | Prevents clickjacking (page in iframe) |
 | `X-XSS-Protection: 0` | Disables legacy XSS filter (modern CSP replaces it) |
@@ -79,7 +79,7 @@ npm install express-rate-limit
 ```js
 const rateLimit = require('express-rate-limit');
 
-// Global rate limiter — 100 requests per minute per IP
+// Global rate limiter - 100 requests per minute per IP
 const globalLimiter = rateLimit({
   windowMs: 60 * 1000,       // 1 minute window
   max: 100,                   // 100 requests per window
@@ -147,7 +147,7 @@ function validateUserInput(body) {
     errors.email = 'Invalid email format';
   }
 
-  // Age — must be integer between 0 and 150
+  // Age - must be integer between 0 and 150
   if (body.age !== undefined) {
     const age = parseInt(body.age, 10);
     if (isNaN(age) || age < 0 || age > 150) {
@@ -155,7 +155,7 @@ function validateUserInput(body) {
     }
   }
 
-  // URL — must be valid and use HTTPS
+  // URL - must be valid and use HTTPS
   if (body.website) {
     try {
       const url = new URL(body.website);
@@ -218,14 +218,14 @@ app.post('/api/users', (req, res) => {
 ### SQL Injection Protection
 
 ```js
-// ❌ BAD — string interpolation
+// ❌ BAD - string interpolation
 const query = `SELECT * FROM users WHERE id = ${req.params.id}`;
 
-// ✅ GOOD — parameterised query
+// ✅ GOOD - parameterised query
 const query = 'SELECT * FROM users WHERE id = $1';
 db.query(query, [req.params.id]);
 
-// ✅ GOOD — ORM abstraction
+// ✅ GOOD - ORM abstraction
 const user = await User.findByPk(req.params.id);
 ```
 
@@ -240,12 +240,12 @@ npm install cors
 ```js
 const cors = require('cors');
 
-// Development — allow all origins
+// Development - allow all origins
 if (process.env.NODE_ENV === 'development') {
   app.use(cors());
 }
 
-// Production — restrict to specific origins
+// Production - restrict to specific origins
 if (process.env.NODE_ENV === 'production') {
   const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [];
 
@@ -320,13 +320,13 @@ When serving files, never trust user-supplied paths:
 const path = require('path');
 const fs = require('fs');
 
-// ❌ BAD — path traversal
+// ❌ BAD - path traversal
 app.get('/files/:name', (req, res) => {
   const filePath = path.join('/var/www/files', req.params.name);
   // Attacker: GET /files/../../../etc/passwd → /var/www/files/../../../etc/passwd
 });
 
-// ✅ GOOD — restrict to allowed directory
+// ✅ GOOD - restrict to allowed directory
 const ALLOWED_DIR = path.resolve('/var/www/files');
 
 app.get('/files/:name', (req, res) => {
@@ -401,18 +401,18 @@ jobs:
 ## 9. Secrets and Config Security
 
 ```js
-// ❌ BAD — hardcoded secrets
+// ❌ BAD - hardcoded secrets
 const jwtSecret = 'my-super-secret';
 const dbPassword = 'password123';
 
-// ✅ GOOD — environment variables
+// ✅ GOOD - environment variables
 const jwtSecret = process.env.JWT_SECRET;  // Required
 const dbPassword = process.env.DB_PASSWORD; // Required
 
-// ❌ BAD — committing .env
+// ❌ BAD - committing .env
 // .env should be in .gitignore!
 
-// ✅ GOOD — .env.example documents the structure
+// ✅ GOOD - .env.example documents the structure
 ```
 
 ## 10. HTTPS Redirect
@@ -450,12 +450,12 @@ if (process.env.NODE_ENV === 'production') {
 ## Key Takeaways
 
 - **Helmet** adds critical HTTP security headers (CSP, HSTS, X-Frame-Options)
-- **Rate limiting** prevents brute-force and DoS — use different limits for auth vs general API
-- **Validate all input** at the boundary with `zod` or manual validation — never trust user data
-- **Use parameterised queries** — never interpolate values into SQL strings
-- **Restrict CORS** to specific origins in production — never use `*` for credentialed requests
-- **Limit body sizes** — a 100KB JSON limit prevents memory exhaustion attacks
-- **Prevent path traversal** — use `path.basename()` and check that the resolved path is within the allowed directory
-- **Audit dependencies regularly** — `npm audit` weekly, consider Snyk for continuous monitoring
-- **Never hardcode secrets** — all configuration and secrets come from environment variables
-- **Hide error details in production** — log stack traces internally, return safe messages to clients
+- **Rate limiting** prevents brute-force and DoS - use different limits for auth vs general API
+- **Validate all input** at the boundary with `zod` or manual validation - never trust user data
+- **Use parameterised queries** - never interpolate values into SQL strings
+- **Restrict CORS** to specific origins in production - never use `*` for credentialed requests
+- **Limit body sizes** - a 100KB JSON limit prevents memory exhaustion attacks
+- **Prevent path traversal** - use `path.basename()` and check that the resolved path is within the allowed directory
+- **Audit dependencies regularly** - `npm audit` weekly, consider Snyk for continuous monitoring
+- **Never hardcode secrets** - all configuration and secrets come from environment variables
+- **Hide error details in production** - log stack traces internally, return safe messages to clients

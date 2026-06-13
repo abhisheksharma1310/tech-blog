@@ -1,0 +1,459 @@
+---
+title: "Handling Async DB Queries & Errors"
+description: "Master async error handling in Express with database operations - try/catch, middleware patterns, and error normalization"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Database"]
+tags: ["Express", "Async", "Error Handling", "Database", "Async Middleware", "Error Middleware"]
+slug: "express-async-db-errors"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## The Async Challenge
+
+Database operations are asynchronous. Express 4 does **not** catch rejected promises automatically - if an async route handler throws, the error crashes the server or hangs the request.
+
+```javascript
+// ❌ This error is unhandled - request hangs forever
+app.get('/api/users', async (req, res) => {
+  const users = await User.find(); // If this throws...
+  res.json(users);                 // Never reached
+});
+
+// ❌ Even worse - unhandled promise rejection crashes the process
+app.get('/api/users', async (req, res) => {
+  throw new Error('Boom!'); // Unhandled!
+});
+```
+
+```
+Client                    Express
+  │                         │
+  │── GET /api/users ──────→│ async handler starts
+  │                         │   │
+  │                         │   ▼ User.find() rejects
+  │                         │   │
+  │                         │   ▼ Promise rejected (unhandled)
+  │                         │   Error logged, but no response sent
+  │                         │
+  │    ←── (hangs) ──────→│ Client waits until timeout
+  │                         │
+```
+
+## Solution 1: try/catch in Every Route
+
+The explicit approach - wrap every async route in try/catch:
+
+```javascript
+app.get('/api/users', async (req, res, next) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    next(err); // Pass to error-handling middleware
+  }
+});
+
+app.get('/api/users/:id', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+```
+
+**Pros:** Explicit, no dependencies. **Cons:** Repetitive, easy to forget.
+
+## Solution 2: Async Handler Wrapper
+
+A reusable wrapper function:
+
+```javascript
+function asyncHandler(fn) {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
+
+// Usage - clean and DRY
+app.get('/api/users', asyncHandler(async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+}));
+
+app.get('/api/users/:id', asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Not found' });
+  res.json(user);
+}));
+
+app.post('/api/users', asyncHandler(async (req, res) => {
+  const user = await User.create(req.body);
+  res.status(201).json(user);
+}));
+```
+
+### Module-Level Wrapper
+
+```javascript
+// middleware/asyncHandler.js
+const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+module.exports = asyncHandler;
+```
+
+### Router-Level Wrapper
+
+```javascript
+const asyncHandler = require('../middleware/asyncHandler');
+const router = express.Router();
+
+router.get('/', asyncHandler(async (req, res) => { /* ... */ }));
+router.post('/', asyncHandler(async (req, res) => { /* ... */ }));
+router.put('/:id', asyncHandler(async (req, res) => { /* ... */ }));
+router.delete('/:id', asyncHandler(async (req, res) => { /* ... */ }));
+```
+
+## Solution 3: express-async-errors
+
+The simplest approach - patch Express to catch async errors globally:
+
+```bash
+npm install express-async-errors
+```
+
+```javascript
+require('express-async-errors'); // Must be before any routes
+
+const express = require('express');
+const app = express();
+
+// Now async errors are caught automatically!
+app.get('/api/users', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+app.get('/api/error', async (req, res) => {
+  throw new Error('This is caught automatically');
+});
+
+// Your error handler still catches them
+app.use((err, req, res, next) => {
+  res.status(500).json({ error: err.message });
+});
+```
+
+## Common Database Errors
+
+```javascript
+// MongoDB/Mongoose errors
+asyncHandler(async (req, res) => {
+  const user = await User.create(req.body);
+  res.status(201).json(user);
+});
+```
+
+### ValidationError (Mongoose)
+
+```javascript
+// When schema validation fails
+// err.name === 'ValidationError'
+// err.errors contains field-level errors
+
+if (err.name === 'ValidationError') {
+  const messages = Object.values(err.errors).map(e => ({
+    field: e.path,
+    message: e.message
+  }));
+  return res.status(422).json({ error: 'Validation failed', details: messages });
+}
+```
+
+### CastError (Mongoose)
+
+```javascript
+// When an invalid ID format is used (e.g., 'abc' instead of ObjectId)
+// err.name === 'CastError'
+
+if (err.name === 'CastError' && err.kind === 'ObjectId') {
+  return res.status(400).json({ error: 'Invalid ID format' });
+}
+```
+
+### Duplicate Key Error
+
+```javascript
+// MongoDB error code 11000
+// err.code === 11000
+
+if (err.code === 11000) {
+  const field = Object.keys(err.keyValue)[0];
+  return res.status(409).json({
+    error: 'Duplicate value',
+    field,
+    message: `${field} already exists`
+  });
+}
+```
+
+### Prisma Errors
+
+```javascript
+// Prisma error codes
+if (err.code === 'P2002') {
+  // Unique constraint violation
+  return res.status(409).json({ error: 'Record already exists' });
+}
+
+if (err.code === 'P2025') {
+  // Record not found
+  return res.status(404).json({ error: 'Record not found' });
+}
+
+if (err.code === 'P2003') {
+  // Foreign key constraint failed
+  return res.status(400).json({ error: 'Referenced record does not exist' });
+}
+
+if (err.code === 'P2014') {
+  // Required relation violation
+  return res.status(400).json({ error: 'Required relation is missing' });
+}
+```
+
+### Sequelize Errors
+
+```javascript
+if (err.name === 'SequelizeValidationError') {
+  const messages = err.errors.map(e => ({
+    field: e.path,
+    message: e.message
+  }));
+  return res.status(422).json({ error: 'Validation failed', details: messages });
+}
+
+if (err.name === 'SequelizeUniqueConstraintError') {
+  return res.status(409).json({ error: 'Record already exists' });
+}
+
+if (err.name === 'SequelizeForeignKeyConstraintError') {
+  return res.status(400).json({ error: 'Invalid reference' });
+}
+```
+
+## Database Connection Errors
+
+```javascript
+// Handle initial connection failure
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('Connected to MongoDB');
+    app.listen(3000);
+  } catch (err) {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);
+  }
+}
+
+startServer();
+
+// Handle connection loss during operation
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB runtime error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('MongoDB disconnected, attempting reconnect...');
+});
+```
+
+## Retry Logic for Transient Failures
+
+```javascript
+async function connectWithRetry(maxRetries = 5, delay = 5000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log('Connected to MongoDB');
+      return;
+    } catch (err) {
+      console.error(`Connection attempt ${attempt}/${maxRetries} failed:`, err.message);
+
+      if (attempt === maxRetries) {
+        console.error('All connection attempts failed');
+        process.exit(1);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+```
+
+## Centralized Error Handler for DB Errors
+
+```javascript
+// middleware/errorHandler.js
+function errorHandler(err, req, res, next) {
+  console.error(`[${new Date().toISOString()}]`, err);
+
+  // Default
+  let statusCode = err.statusCode || 500;
+  let error = err.message || 'Internal server error';
+  let details = null;
+
+  // Mongoose Validation
+  if (err.name === 'ValidationError') {
+    statusCode = 422;
+    error = 'Validation failed';
+    details = Object.values(err.errors).map(e => ({
+      field: e.path,
+      message: e.message
+    }));
+  }
+
+  // Mongoose CastError (invalid ObjectId, etc.)
+  if (err.name === 'CastError') {
+    statusCode = 400;
+    error = `Invalid ${err.path}: ${err.value}`;
+  }
+
+  // MongoDB Duplicate Key
+  if (err.code === 11000) {
+    statusCode = 409;
+    const field = Object.keys(err.keyPattern).join(', ');
+    error = `Duplicate value for: ${field}`;
+  }
+
+  // Prisma Unique Constraint
+  if (err.code === 'P2002') {
+    statusCode = 409;
+    error = 'Record already exists';
+  }
+
+  // Prisma Not Found
+  if (err.code === 'P2025') {
+    statusCode = 404;
+    error = 'Record not found';
+  }
+
+  // Sequelize Validation
+  if (err.name === 'SequelizeValidationError') {
+    statusCode = 422;
+    error = 'Validation failed';
+    details = err.errors.map(e => ({ field: e.path, message: e.message }));
+  }
+
+  // Sequelize Unique Constraint
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    statusCode = 409;
+    error = 'Record already exists';
+  }
+
+  // Response
+  const response = { error };
+  if (details) response.details = details;
+  if (process.env.NODE_ENV === 'development') {
+    response.stack = err.stack;
+  }
+
+  res.status(statusCode).json(response);
+}
+
+module.exports = errorHandler;
+```
+
+## Timeout Handling
+
+```javascript
+// Middleware to timeout slow database queries
+function dbTimeout(ms = 10000) {
+  return (req, res, next) => {
+    const timer = setTimeout(() => {
+      const err = new Error('Database query timed out');
+      err.statusCode = 504;
+      next(err);
+    }, ms);
+
+    res.on('finish', () => clearTimeout(timer));
+    next();
+  };
+}
+
+app.use('/api', dbTimeout(5000));
+```
+
+## Graceful Shutdown
+
+```javascript
+async function gracefulShutdown(signal) {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+
+  try {
+    await mongoose.connection.close();
+    console.log('Database connection closed');
+    process.exit(0);
+  } catch (err) {
+    console.error('Error during shutdown:', err);
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+```
+
+## Full Production Setup
+
+```javascript
+require('express-async-errors');
+
+const express = require('express');
+const mongoose = require('mongoose');
+const errorHandler = require('./middleware/errorHandler');
+
+const app = express();
+
+app.use(express.json());
+
+app.use('/api/users', require('./routes/users'));
+app.use('/api/products', require('./routes/products'));
+
+app.all('*', (req, res) => {
+  res.status(404).json({ error: `Route ${req.originalUrl} not found` });
+});
+
+app.use(errorHandler);
+
+async function start() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    app.listen(process.env.PORT || 3000);
+    console.log('Server ready');
+  } catch (err) {
+    console.error('Startup failed:', err);
+    process.exit(1);
+  }
+}
+
+start();
+```
+
+## Key Takeaways
+
+- Express 4 does **not** catch async errors - always handle them explicitly
+- Use **asyncHandler wrapper** or `express-async-errors` to avoid try/catch repetition
+- **Normalize database errors** (Mongoose, Prisma, Sequelize) into consistent API responses
+- Always have a **centralized error handler** middleware
+- Handle **connection failures** with retry logic and graceful startup
+- Implement **graceful shutdown** to close database connections
+- Set **timeouts** for long-running database queries
+- Log errors with context (timestamp, stack, request info)

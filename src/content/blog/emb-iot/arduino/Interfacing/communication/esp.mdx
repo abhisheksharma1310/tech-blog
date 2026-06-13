@@ -25,7 +25,7 @@ The ESP8266 and ESP32 are powerful Wi-Fi SoCs from Espressif that can be used as
 
 - Arduino board (Uno, Nano, Mega, etc.)
 - ESP8266 module (ESP-01, NodeMCU, or Wemos D1) or ESP32 module
-- 3.3V voltage regulator (if using an ESP-01 with 5V Arduino) — ESP modules are 3.3V
+- 3.3V voltage regulator (if using an ESP-01 with 5V Arduino) - ESP modules are 3.3V
 - Breadboard and jumper wires
 - USB cable to connect Arduino to your computer
 
@@ -68,7 +68,7 @@ TX            -->     Digital Pin 3 (Arduino RX)
 RX            -->     via voltage divider  -->  Digital Pin 2 (Arduino TX)
 CH_PD (EN)    -->     3.3V (enable chip)
 GPIO0         -->     HIGH (or leave floating for normal run mode)
-RST           -->     3.3V (via 10 kΩ pull-up — optional)
+RST           -->     3.3V (via 10 kΩ pull-up - optional)
 
 Voltage divider on RX:
   Arduino pin 2 --/\/\-- ESP-01 RX
@@ -78,7 +78,7 @@ Voltage divider on RX:
                   2.2 kΩ
 ```
 
-The ESP8266 operates at 3.3V and its RX pin is **not** 5V tolerant. A voltage divider is essential. Many ESP-01 modules draw more current than the Arduino 3.3V regulator can supply (~300 mA vs 150 mA max) — use an external 3.3V regulator (e.g., AMS1117-3.3).
+The ESP8266 operates at 3.3V and its RX pin is **not** 5V tolerant. A voltage divider is essential. Many ESP-01 modules draw more current than the Arduino 3.3V regulator can supply (~300 mA vs 150 mA max) - use an external 3.3V regulator (e.g., AMS1117-3.3).
 
 ### NodeMCU / Wemos D1 wiring
 
@@ -120,7 +120,7 @@ NodeMCU/Wemos boards accept 5V on the VU/VIN pin and regulate it down internally
 
 ## Install necessary Library
 
-The ESP8266 communicates via standard AT commands over serial. No external Arduino library is strictly required — use `SoftwareSerial` for basic communication.
+The ESP8266 communicates via standard AT commands over serial. No external Arduino library is strictly required - use `SoftwareSerial` for basic communication.
 
 However, the **ESP8266WiFi** library by Espressif (used when programming the ESP directly) is not usable here. Instead, use the **WiFiEsp** library by bportaluri or **AT command** strings directly:
 
@@ -281,18 +281,18 @@ void checkClient()
 
 ### Code breakdown
 
-- `SoftwareSerial esp(3, 2)` — creates a software serial connection to the ESP module. Pin 3 (RX) gets ESP TX, pin 2 (TX) sends to ESP RX.
-- `esp.begin(115200)` — sets the baud rate for ESP communication. ESP8266 defaults to 115200. Some modules use 9600 — if AT commands get no response, try 9600.
-- `AT` — basic attention command, expects `OK`.
-- `AT+CWMODE=1` — sets Wi-Fi mode to station (client). Mode 2 = soft AP, Mode 3 = both.
-- `AT+CWJAP="SSID","PASS"` — connects to a Wi-Fi network. Takes 5–15 seconds.
-- `AT+CIFSR` — queries the IP address.
-- `AT+CIPSTART="TCP","host",port` — establishes a TCP connection.
-- `AT+CIPSEND=<length>` — prepares to send data of the specified length.
-- `AT+CIPCLOSE` — closes the TCP connection.
-- `AT+CIPSERVER=1,80` — starts a TCP server on port 80.
-- `AT+CIPMUX=1` — enables multiple connections (required for server mode).
-- `+IPD,<id>,<len>:<data>` — unsolicited message when data arrives on a server connection.
+- `SoftwareSerial esp(3, 2)` - creates a software serial connection to the ESP module. Pin 3 (RX) gets ESP TX, pin 2 (TX) sends to ESP RX.
+- `esp.begin(115200)` - sets the baud rate for ESP communication. ESP8266 defaults to 115200. Some modules use 9600 - if AT commands get no response, try 9600.
+- `AT` - basic attention command, expects `OK`.
+- `AT+CWMODE=1` - sets Wi-Fi mode to station (client). Mode 2 = soft AP, Mode 3 = both.
+- `AT+CWJAP="SSID","PASS"` - connects to a Wi-Fi network. Takes 5–15 seconds.
+- `AT+CIFSR` - queries the IP address.
+- `AT+CIPSTART="TCP","host",port` - establishes a TCP connection.
+- `AT+CIPSEND=<length>` - prepares to send data of the specified length.
+- `AT+CIPCLOSE` - closes the TCP connection.
+- `AT+CIPSERVER=1,80` - starts a TCP server on port 80.
+- `AT+CIPMUX=1` - enables multiple connections (required for server mode).
+- `+IPD,<id>,<len>:<data>` - unsolicited message when data arrives on a server connection.
 
 ### Common AT commands
 
@@ -329,13 +329,13 @@ void checkClient()
 
 1. Check that ESP VCC is 3.3V (measured with a multimeter).
 2. Check that CH_PD (EN) is pulled HIGH to 3.3V.
-3. Check the voltage divider on RX — measure voltage at ESP RX, it should be ~3.3V when Arduino TX is HIGH.
+3. Check the voltage divider on RX - measure voltage at ESP RX, it should be ~3.3V when Arduino TX is HIGH.
 4. Try swapping TX and RX connections.
-5. Test the ESP alone: connect it to a USB-TTL converter at 3.3V and open a serial terminal at 115200 baud. Send `AT` — it should respond `OK`.
+5. Test the ESP alone: connect it to a USB-TTL converter at 3.3V and open a serial terminal at 115200 baud. Send `AT` - it should respond `OK`.
 
 ## Caution
 
-- **3.3V power:** ESP8266/ESP32 modules require a 3.3V supply capable of delivering 300–500 mA (ESP8266) or up to 500 mA (ESP32). The Arduino 3.3V pin can only supply ~150 mA — enough for the module to power on but not enough for reliable Wi-Fi transmission. **Always use an external 3.3V regulator** (AMS1117-3.3 or similar) when using an ESP-01 with an Arduino Uno/Nano. NodeMCU and Wemos D1 boards include their own regulators and can be powered from 5V.
+- **3.3V power:** ESP8266/ESP32 modules require a 3.3V supply capable of delivering 300–500 mA (ESP8266) or up to 500 mA (ESP32). The Arduino 3.3V pin can only supply ~150 mA - enough for the module to power on but not enough for reliable Wi-Fi transmission. **Always use an external 3.3V regulator** (AMS1117-3.3 or similar) when using an ESP-01 with an Arduino Uno/Nano. NodeMCU and Wemos D1 boards include their own regulators and can be powered from 5V.
 - **RX voltage divider:** The ESP8266 RX pin is 3.3V only and will be damaged by direct connection to a 5V Arduino TX pin. Always use a voltage divider (1 kΩ / 2.2 kΩ) or a logic level shifter. The ESP TX pin outputs 3.3V and is safe for Arduino inputs.
 - **Baud rate:** ESP8266 modules typically ship with a default baud rate of 115200 (or 9600 for some variants). If `AT` gets no response, cycle through common baud rates: 9600, 19200, 38400, 57600, 115200. You can change the baud rate permanently with `AT+UART_DEF=9600,8,1,0,0` and then reset.
 - **Firmware version:** Older ESP-01 modules may have outdated AT firmware that lacks modern commands. Update the firmware using the ESP8266 Flash Download Tool or Espressif's `esptool.py`. The current AT firmware version should be 1.7+ for ESP8266 and 2.1+ for ESP32.

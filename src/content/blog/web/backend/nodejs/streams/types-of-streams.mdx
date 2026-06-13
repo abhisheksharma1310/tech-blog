@@ -1,6 +1,6 @@
 ---
-title: "Types of Streams — Readable, Writable, Duplex, Transform"
-description: "Deep dive into Node.js stream types — Readable, Writable, Duplex, and Transform with practical examples"
+title: "Types of Streams - Readable, Writable, Duplex, Transform"
+description: "Deep dive into Node.js stream types - Readable, Writable, Duplex, and Transform with practical examples"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Streams"]
 tags: ["Node.js", "Streams", "Readable", "Writable"]
@@ -11,7 +11,7 @@ order: 2
 
 ## The Four Stream Types
 
-Node.js has exactly four base stream classes. Every stream in Node.js — from files to HTTP to compression — extends one of these:
+Node.js has exactly four base stream classes. Every stream in Node.js - from files to HTTP to compression - extends one of these:
 
 ```
 Stream (base)
@@ -100,7 +100,7 @@ readStream.on('readable', () => {
 
 ### The `highWaterMark` Option
 
-This controls the **internal buffer size** — how much data the stream buffers before triggering backpressure:
+This controls the **internal buffer size** - how much data the stream buffers before triggering backpressure:
 
 ```js
 // For a file stream, default is 64KB
@@ -171,7 +171,7 @@ function writeData(data, callback) {
     }
 
     if (index < data.length) {
-      // Buffer is full — wait for drain
+      // Buffer is full - wait for drain
       writeStream.once('drain', writeNext);
     } else {
       writeStream.end(callback);
@@ -197,7 +197,7 @@ writeData(array, () => console.log('Done writing 100K lines'));
 
 ## 3. Duplex Streams
 
-A Duplex stream is **both** Readable and Writable, but the two sides are **independent**. Data written to the writable side does NOT flow to the readable side — they're separate channels.
+A Duplex stream is **both** Readable and Writable, but the two sides are **independent**. Data written to the writable side does NOT flow to the readable side - they're separate channels.
 
 ```
 Duplex Stream:
@@ -222,11 +222,11 @@ const duplex = new Duplex({
   },
 });
 
-// Writable side — data goes in
+// Writable side - data goes in
 duplex.write('Hello from writable side');
 duplex.end();
 
-// Readable side — data comes out
+// Readable side - data comes out
 duplex.on('data', (chunk) => console.log('Read:', chunk.toString()));
 ```
 
@@ -237,8 +237,8 @@ const net = require('net');
 
 const server = net.createServer((socket) => {
   // socket is a Duplex stream!
-  // socket.write() — send data to client
-  // socket.on('data') — receive data from client
+  // socket.write() - send data to client
+  // socket.on('data') - receive data from client
 
   socket.write('Welcome to the echo server!\n');
 
@@ -271,7 +271,7 @@ Input ──► [write] ──► [transform] ──► [read] ──► Output
 const zlib = require('zlib');
 const fs = require('fs');
 
-// Gzip transform — compresses data as it flows through
+// Gzip transform - compresses data as it flows through
 const gzip = zlib.createGzip();
 const source = fs.createReadStream('input.txt');
 const dest = fs.createWriteStream('input.txt.gz');
@@ -314,13 +314,13 @@ const { Readable, Writable, Duplex, Transform, PassThrough } = require('stream')
 const fs = require('fs');
 const zlib = require('zlib');
 
-// 1. READABLE — reads from a file
+// 1. READABLE - reads from a file
 const readSource = fs.createReadStream('large-file.txt', { encoding: 'utf8' });
 
-// 2. TRANSFORM — compresses data
+// 2. TRANSFORM - compresses data
 const gzip = zlib.createGzip();
 
-// 3. TRANSFORM — tracks progress (custom, but uses Transform pattern)
+// 3. TRANSFORM - tracks progress (custom, but uses Transform pattern)
 const progress = new Transform({
   transform(chunk, encoding, callback) {
     console.log(`Processing ${chunk.length} bytes`);
@@ -329,7 +329,7 @@ const progress = new Transform({
   },
 });
 
-// 4. WRITABLE — writes to a file
+// 4. WRITABLE - writes to a file
 const writeDest = fs.createWriteStream('large-file.txt.gz');
 
 // Chain them together
@@ -341,7 +341,7 @@ readSource
 writeDest.on('finish', () => console.log('Compression complete'));
 ```
 
-## Duplex vs Transform — The Critical Difference
+## Duplex vs Transform - The Critical Difference
 
 ```
 Duplex:                        Transform:
@@ -357,19 +357,19 @@ Duplex:                        Transform:
                                │  (output)         │
                                └──────────────────┘
 
-// Duplex: write "A", read "B" — no relationship
+// Duplex: write "A", read "B" - no relationship
 // Transform: write "A", read "A" or "modified(A)"
 ```
 
 ## Key Takeaways
 
-- **Readable** — data source (`fs.createReadStream`, `http.IncomingMessage`)
-- **Writable** — data destination (`fs.createWriteStream`, `http.ServerResponse`)
-- **Duplex** — both, but independent (TCP socket, SSH)
-- **Transform** — both, but linked (compression, encryption, parsing)
+- **Readable** - data source (`fs.createReadStream`, `http.IncomingMessage`)
+- **Writable** - data destination (`fs.createWriteStream`, `http.ServerResponse`)
+- **Duplex** - both, but independent (TCP socket, SSH)
+- **Transform** - both, but linked (compression, encryption, parsing)
 - **`highWaterMark`** controls internal buffer size (default 16KB for file streams, 64KB for others)
-- **`'drain'`** event signals backpressure has cleared — safe to write again
-- **`'data'`** event on Readable means flowing mode — data arrives automatically
-- **`'readable'`** event means paused mode — you must call `read()` explicitly
-- Always prefer `pipe()` for connecting streams — it handles backpressure and errors
-- Transform extends Duplex — the difference is that Transform links input to output
+- **`'drain'`** event signals backpressure has cleared - safe to write again
+- **`'data'`** event on Readable means flowing mode - data arrives automatically
+- **`'readable'`** event means paused mode - you must call `read()` explicitly
+- Always prefer `pipe()` for connecting streams - it handles backpressure and errors
+- Transform extends Duplex - the difference is that Transform links input to output

@@ -1,6 +1,6 @@
 ---
 title: "Creating Custom Streams"
-description: "Build custom Readable, Writable, Duplex, and Transform streams — implement _read, _write, _transform, and _flush"
+description: "Build custom Readable, Writable, Duplex, and Transform streams - implement _read, _write, _transform, and _flush"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Streams"]
 tags: ["Node.js", "Streams", "Custom Streams"]
@@ -186,7 +186,7 @@ The `callback` is **critical**. It tells the writable stream that you've finishe
 _write(chunk, encoding, callback) {
   doSomethingAsync(chunk, (err) => {
     if (err) {
-      callback(err);  // Propagate error — stream will emit 'error'
+      callback(err);  // Propagate error - stream will emit 'error'
     } else {
       callback();     // Signal: ready for next chunk
     }
@@ -255,7 +255,7 @@ pipeline(
 );
 ```
 
-Wait — we need a Writable at the end. Let's create a JSON array writer:
+Wait - we need a Writable at the end. Let's create a JSON array writer:
 
 ```js
 class ConcatJsonTransform extends Transform {
@@ -366,7 +366,7 @@ class QueueStream extends Duplex {
     this.queue = [];
   }
 
-  // Writable side — called when data is written
+  // Writable side - called when data is written
   _write(chunk, encoding, callback) {
     this.queue.push(chunk);
     callback();
@@ -375,7 +375,7 @@ class QueueStream extends Duplex {
     this._maybePush();
   }
 
-  // Readable side — called when consumer wants data
+  // Readable side - called when consumer wants data
   _read(size) {
     this._maybePush();
   }
@@ -448,7 +448,7 @@ class LineSplitter extends Transform {
 
     const lines = this.buffer.split('\n');
 
-    // The last element might be incomplete — keep it
+    // The last element might be incomplete - keep it
     this.buffer = lines.pop();
 
     for (const line of lines) {
@@ -488,13 +488,13 @@ pipeline(
 
 ## Key Takeaways
 
-- Implement **`_read()`** for Readable — push data with `this.push(data)`, signal end with `this.push(null)`
-- Implement **`_write(chunk, enc, callback)`** for Writable — **always call `callback()`** when done
-- Implement **`_transform(chunk, enc, callback)`** for Transform — push transformed data, call callback
-- Implement **`_flush(callback)`** (optional) for Transform — called just before the stream ends
+- Implement **`_read()`** for Readable - push data with `this.push(data)`, signal end with `this.push(null)`
+- Implement **`_write(chunk, enc, callback)`** for Writable - **always call `callback()`** when done
+- Implement **`_transform(chunk, enc, callback)`** for Transform - push transformed data, call callback
+- Implement **`_flush(callback)`** (optional) for Transform - called just before the stream ends
 - **`objectMode: true`** lets you push JavaScript objects instead of Buffers
-- **`callback()`** is the stream's flow control mechanism — never forget to call it
+- **`callback()`** is the stream's flow control mechanism - never forget to call it
 - Always use **`pipeline()`** instead of `pipe()` when working with custom streams
 - Custom streams are created by extending `Readable`, `Writable`, `Duplex`, or `Transform`
-- **`_final(callback)`** is the Writable equivalent of `_flush` — called before `'finish'`
+- **`_final(callback)`** is the Writable equivalent of `_flush` - called before `'finish'`
 - Test custom streams by piping to/from known streams (`process.stdout`, `fs.createWriteStream`)

@@ -48,14 +48,14 @@ Y             -->     A1 (analog)
 Z             -->     A2 (analog)
 ```
 
-The ADXL335 outputs 0–5V signals proportional to ±3 g. At rest on a flat surface: X ≈ 1.65V (ADC 338), Y ≈ 1.65V (338), Z ≈ 2.45V (ADC 500) — Z shows 1 g downward.
+The ADXL335 outputs 0–5V signals proportional to ±3 g. At rest on a flat surface: X ≈ 1.65V (ADC 338), Y ≈ 1.65V (338), Z ≈ 2.45V (ADC 500) - Z shows 1 g downward.
 
 ### ADXL345 (I²C)
 
 ```
 GY-291 Module         Arduino
 -------------         -------
-VCC           -->     3.3V (check module — some accept 5V)
+VCC           -->     3.3V (check module - some accept 5V)
 GND           -->     GND
 SCL           -->     A5 (Uno) / SCL (Mega)
 SDA           -->     A4 (Uno) / SDA (Mega)
@@ -101,7 +101,7 @@ GND           -->     GND
 
 ### ADXL335
 
-No library needed — use `analogRead()`.
+No library needed - use `analogRead()`.
 
 ### ADXL345
 
@@ -115,7 +115,7 @@ Dependency: **Adafruit Unified Sensor**.
 
 ## Code with complete explanation
 
-### ADXL335 (analog) — tilt angle and motion
+### ADXL335 (analog) - tilt angle and motion
 
 ```cpp
 #define X_PIN A0
@@ -160,7 +160,7 @@ void loop()
 }
 ```
 
-### ADXL345 (digital) — I²C
+### ADXL345 (digital) - I²C
 
 ```cpp
 #include <Wire.h>
@@ -223,8 +223,8 @@ void setup()
   accel.setRange(ADXL345_RANGE_2_G);
 
   // Configure tap detection
-  accel.setTapThreshold(80);    // Threshold (mg) — trigger level
-  accel.setTapDuration(15);     // Duration (ms) — window for tap
+  accel.setTapThreshold(80);    // Threshold (mg) - trigger level
+  accel.setTapDuration(15);     // Duration (ms) - window for tap
   accel.setDoubleTapLatency(40);  // Latency between taps (ms)
   accel.setDoubleTapWindow(200);  // Window for double-tap (ms)
 
@@ -251,15 +251,15 @@ void loop()
 
 ### Code breakdown (ADXL335)
 
-- `zeroX/zeroY/zeroZ` — calibration offsets: the ADC reading when the sensor is at rest on a flat, level surface. These account for sensor manufacturing tolerances and should be calibrated per unit.
-- `sens` — sensitivity in ADC counts per g. For ±3 g range: 1023 ADC / (2 × 3 g) ≈ 170.5 counts/g. However, the sensor outputs 0.5V at 0 g and 3.5V at full scale, so the effective range of the ADC for the accelerometer output is approx 0.5–3.5V → ADC 102–716 → 614 counts / 6 g = 102.3 counts/g.
-- `atan2(y, sqrt(x² + z²))` — calculates roll angle from the gravity vector.
-- `atan2(-x, sqrt(y² + z²))` — calculates pitch angle.
+- `zeroX/zeroY/zeroZ` - calibration offsets: the ADC reading when the sensor is at rest on a flat, level surface. These account for sensor manufacturing tolerances and should be calibrated per unit.
+- `sens` - sensitivity in ADC counts per g. For ±3 g range: 1023 ADC / (2 × 3 g) ≈ 170.5 counts/g. However, the sensor outputs 0.5V at 0 g and 3.5V at full scale, so the effective range of the ADC for the accelerometer output is approx 0.5–3.5V → ADC 102–716 → 614 counts / 6 g = 102.3 counts/g.
+- `atan2(y, sqrt(x² + z²))` - calculates roll angle from the gravity vector.
+- `atan2(-x, sqrt(y² + z²))` - calculates pitch angle.
 
 ### Code breakdown (ADXL345)
 
-- `accel.getEvent(&event)` — fills `event.acceleration.x/y/z` with acceleration in **m/s²**. (1 g ≈ 9.81 m/s².)
-- `accel.setRange(range)` — selects the full-scale range. ±2 g is best for tilt sensing (highest resolution).
+- `accel.getEvent(&event)` - fills `event.acceleration.x/y/z` with acceleration in **m/s²**. (1 g ≈ 9.81 m/s².)
+- `accel.setRange(range)` - selects the full-scale range. ±2 g is best for tilt sensing (highest resolution).
 - Tap detection configures thresholds and duration for the on-chip tap recognition. The FIFO buffer can store up to 32 events.
 - The `Adafruit_ADXL345_Unified` class uses the **Adafruit Unified Sensor** abstraction providing standardised `sensors_event_t` structures.
 
@@ -271,16 +271,16 @@ void loop()
 4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 5. Upload the sketch to the Arduino.
 6. Open the Serial Monitor (baud 9600).
-7. Tilt the sensor — observe how X, Y, Z values change and the roll/pitch angles respond.
-8. Rest the sensor flat — Z should show ≈ 1 g (ADXL345: 9.81 m/s²), X and Y near 0.
-9. For ADXL345 tap detection: tap the sensor firmly twice — observe "Double tap detected".
+7. Tilt the sensor - observe how X, Y, Z values change and the roll/pitch angles respond.
+8. Rest the sensor flat - Z should show ≈ 1 g (ADXL345: 9.81 m/s²), X and Y near 0.
+9. For ADXL345 tap detection: tap the sensor firmly twice - observe "Double tap detected".
 
 ## Caution
 
-- **ADXL335 voltage output range:** The ADXL335 outputs 0.5V at 0 g (no acceleration) and 3.5V at full scale (±3 g). This is within the Arduino's 0–5V ADC range. At rest on a flat surface, Z ≈ 2.45V (1 g), corresponding to ADC ≈ 500. The minimum output (0.5V) means the ADC never reads below ∼102 — subtract this offset when calibrating.
+- **ADXL335 voltage output range:** The ADXL335 outputs 0.5V at 0 g (no acceleration) and 3.5V at full scale (±3 g). This is within the Arduino's 0–5V ADC range. At rest on a flat surface, Z ≈ 2.45V (1 g), corresponding to ADC ≈ 500. The minimum output (0.5V) means the ADC never reads below ∼102 - subtract this offset when calibrating.
 - **ADXL345 3.3V logic:** The ADXL345 is a **3.3V device**. Its I²C/SPI logic levels must not exceed 3.6V. Most breakout boards include a 3.3V regulator and level shifters, but verify before connecting VCC to 5V. If no level shifters exist, power from 3.3V and add a voltage divider on the Arduino's 5V I²C/SPI lines.
 - **Calibration offsets:** Both sensors have offset errors of ±50–100 mg (milli-g) that vary per axis. For accurate tilt sensing (< 5° error), calibrate by recording 100 samples in each of 6 orientations (each axis up/down) and average the offsets. The code above uses nominal values that work for demonstration but introduce 5–10° errors on individual units.
 - **Vibration vs tilt:** An accelerometer cannot distinguish between acceleration due to tilt (gravity) and acceleration due to motion (vibration). When the sensor is in motion, the tilt angle calculation becomes inaccurate because the measured vector is the sum of gravity + linear acceleration. For tilt-compensated orientation with motion, fuse with a gyroscope (see MPU6050 tutorial).
-- **Soldering the ADXL335:** The ADXL335 is available as a surface-mount IC on the GY-61 breakout. The breakout's pins are 2.54 mm pitch and breadboard-friendly. Handle by the edges — the sensor is an MEMS structure that can be damaged by mechanical shock during soldering.
+- **Soldering the ADXL335:** The ADXL335 is available as a surface-mount IC on the GY-61 breakout. The breakout's pins are 2.54 mm pitch and breadboard-friendly. Handle by the edges - the sensor is an MEMS structure that can be damaged by mechanical shock during soldering.
 - **ADXL345 FIFO:** The 32-level FIFO buffer can be configured to store acceleration data in stream mode, triggered mode, or FIFO mode. This is useful for logging motion events without continuous CPU polling. Refer to the datasheet for FIFO configuration registers.
 - **I²C address conflict:** The ADXL345's default I²C address (0x53) may conflict with some other I²C sensors. If you need to change it, solder the ADDR pin to VCC for address 0x1D.

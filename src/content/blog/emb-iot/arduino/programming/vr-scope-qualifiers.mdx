@@ -18,11 +18,11 @@ Variable scope determines where a variable can be accessed in your program, whil
 Scope refers to the region of a program where a variable is visible and can be used. In Arduino, there are two main levels of scope: global (declared outside any function, accessible everywhere) and local (declared inside a function or block, accessible only within that block).
 
 ```cpp
-int globalCount = 0;  // global — accessible everywhere
+int globalCount = 0;  // global - accessible everywhere
 
 void setup() {
   Serial.begin(9600);
-  int localCount = 0;  // local — only inside setup()
+  int localCount = 0;  // local - only inside setup()
   globalCount++;
   localCount++;
   Serial.println(globalCount);  // prints 1
@@ -62,7 +62,7 @@ void loop() {
 }
 ```
 
-By declaring `ledPin` as `const`, the compiler will flag any attempt to change it, preventing bugs. Constants also make your code more readable and maintainable — if the LED pin changes, you update it in one place instead of searching through the entire program.
+By declaring `ledPin` as `const`, the compiler will flag any attempt to change it, preventing bugs. Constants also make your code more readable and maintainable - if the LED pin changes, you update it in one place instead of searching through the entire program.
 
 ## static
 

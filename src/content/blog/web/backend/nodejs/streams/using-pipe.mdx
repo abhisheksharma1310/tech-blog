@@ -1,6 +1,6 @@
 ---
-title: "Using pipe() — Connecting Streams"
-description: "Master stream piping — pipe chaining, error handling, backpressure, and when not to use pipe"
+title: "Using pipe() - Connecting Streams"
+description: "Master stream piping - pipe chaining, error handling, backpressure, and when not to use pipe"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Streams"]
 tags: ["Node.js", "Streams", "pipe"]
@@ -15,7 +15,7 @@ order: 3
 
 1. Reads data from the readable stream
 2. Writes it to the writable stream
-3. **Manages backpressure** automatically — pauses the source when the sink is full
+3. **Manages backpressure** automatically - pauses the source when the sink is full
 4. Calls `end()` on the writable when the readable ends
 
 ```js
@@ -34,7 +34,7 @@ readable.on('end', () => writable.end());
 ```js
 const fs = require('fs');
 
-// Copy a file using pipe — uses ~64KB of RAM regardless of file size
+// Copy a file using pipe - uses ~64KB of RAM regardless of file size
 const source = fs.createReadStream('source.zip');
 const dest = fs.createWriteStream('dest.zip');
 
@@ -79,12 +79,12 @@ Data flow:
 └────────┘   └──────────┘   └────────┘   └────────┘
 ```
 
-## The Problem with `pipe()` — Unhandled Errors
+## The Problem with `pipe()` - Unhandled Errors
 
 The biggest gotcha with `pipe()`: errors on any stream in the chain will **not** propagate automatically. A single error can cause a memory leak or a hanging process:
 
 ```js
-// ❌ BAD — unhandled errors
+// ❌ BAD - unhandled errors
 const source = fs.createReadStream('input.txt');
 const gzip = zlib.createGzip();
 const dest = fs.createWriteStream('output.txt.gz');
@@ -99,7 +99,7 @@ source.pipe(gzip).pipe(dest);
 ### The Fix: Destroy All Streams on Error
 
 ```js
-// ✅ GOOD — handle errors on each stream
+// ✅ GOOD - handle errors on each stream
 const source = fs.createReadStream('input.txt');
 const gzip = zlib.createGzip();
 const dest = fs.createWriteStream('output.txt.gz');
@@ -120,7 +120,7 @@ source.pipe(gzip).pipe(dest);
 dest.on('finish', () => console.log('Success'));
 ```
 
-## `pipeline()` — The Modern Alternative
+## `pipeline()` - The Modern Alternative
 
 Node.js 10+ introduced `stream.pipeline()` which handles error propagation and cleanup automatically:
 
@@ -144,7 +144,7 @@ pipeline(
 );
 ```
 
-### `pipeline` — Promise Version
+### `pipeline` - Promise Version
 
 ```js
 const { pipeline } = require('stream/promises');
@@ -339,8 +339,8 @@ class LogArchiver {
 
 - **`pipe()`** connects readable → writable with automatic backpressure management
 - **Pipe chaining** lets you compose: source → transform → transform → dest
-- **`pipe()` does NOT propagate errors** — an error on one stream can leak memory
-- **Always use `pipeline()`** instead of `pipe()` — it handles errors and cleanup correctly
+- **`pipe()` does NOT propagate errors** - an error on one stream can leak memory
+- **Always use `pipeline()`** instead of `pipe()` - it handles errors and cleanup correctly
 - `pipeline()` has a **callback** (Node 10+) and a **promise** version (Node 15+ via `stream/promises`)
 - **`unpipe()`** removes a pipe connection from a stream
 - For HTTP, pipe the response into a file write stream to download, or pipe a file read stream into the response to upload

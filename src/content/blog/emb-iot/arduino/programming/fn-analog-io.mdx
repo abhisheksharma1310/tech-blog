@@ -79,10 +79,10 @@ void loop()
 ```
 
 Common options:
-- `DEFAULT` — the default reference (5V or 3.3V)
-- `INTERNAL` — built-in reference, typically 1.1V on Uno/Mega, 2.56V on Mega
-- `INTERNAL1V1`, `INTERNAL2V56` — specific internal references on some boards
-- `EXTERNAL` — voltage applied to the AREF pin (0–5V only)
+- `DEFAULT` - the default reference (5V or 3.3V)
+- `INTERNAL` - built-in reference, typically 1.1V on Uno/Mega, 2.56V on Mega
+- `INTERNAL1V1`, `INTERNAL2V56` - specific internal references on some boards
+- `EXTERNAL` - voltage applied to the AREF pin (0–5V only)
 
 Using `INTERNAL` allows more precise readings for sensors with small voltage swings.
 
@@ -116,7 +116,7 @@ void loop()
 }
 ```
 
-`analogWrite()` does not produce a true analog voltage — it rapidly switches the pin between HIGH and LOW. The percentage of time the signal is HIGH (the duty cycle) determines the apparent brightness of an LED or the speed of a motor. A capacitor and resistor (RC filter) can be added to smooth the PWM output into a true analog voltage.
+`analogWrite()` does not produce a true analog voltage - it rapidly switches the pin between HIGH and LOW. The percentage of time the signal is HIGH (the duty cycle) determines the apparent brightness of an LED or the speed of a motor. A capacitor and resistor (RC filter) can be added to smooth the PWM output into a true analog voltage.
 
 ## analogWriteResolution()
 

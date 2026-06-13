@@ -47,14 +47,14 @@ document.getElementById('prevented-link').addEventListener('click', function(e) 
 });
 
 document.getElementById('normal-link').addEventListener('click', function() {
-  document.getElementById('link-output').textContent = 'Normal link — navigated away (in real browser)';
+  document.getElementById('link-output').textContent = 'Normal link - navigated away (in real browser)';
 });
 "
 />
 
 ## Form Submission
 
-One of the most common uses — intercept form submission for AJAX:
+One of the most common uses - intercept form submission for AJAX:
 
 <CodePlayground
   title="Form Submission"
@@ -69,7 +69,7 @@ document.getElementById('demo-form').addEventListener('submit', function(e) {
   e.preventDefault();
   const name = this.querySelector('input').value;
   document.getElementById('form-output').textContent =
-    'Form prevented! You entered: ' + (name || '(empty)') + ' — (page would have reloaded)';
+    'Form prevented! You entered: ' + (name || '(empty)') + ' - (page would have reloaded)';
 });
 "
 />
@@ -179,4 +179,4 @@ element.addEventListener('click', function(e) {
 - Right-click is `contextmenu` event
 - `passive: true` tells the browser you won't call `preventDefault` (performance)
 - Check `event.defaultPrevented` to see if default was already prevented
-- Default actions are **not events** — cancelling the event cancels the action
+- Default actions are **not events** - cancelling the event cancels the action

@@ -11,7 +11,7 @@ order: 42
 
 ## Error Handling
 
-CSS is designed to be **fault-tolerant** — errors do not break the page. The browser simply ignores invalid rules and continues parsing.
+CSS is designed to be **fault-tolerant** - errors do not break the page. The browser simply ignores invalid rules and continues parsing.
 
 <CodePlayground
   title="Error Handling Demo"
@@ -23,7 +23,7 @@ CSS is designed to be **fault-tolerant** — errors do not break the page. The b
     font-size: 1.125rem;
     font-weight: bold;
 
-    /* This is invalid — the browser ignores it */
+    /* This is invalid - the browser ignores it */
     colr: #ff0000;
 
     /* This is also invalid */
@@ -40,13 +40,13 @@ CSS is designed to be **fault-tolerant** — errors do not break the page. The b
 /* Valid declaration */
 color: #333;
 
-/* Invalid property name — whole line ignored */
+/* Invalid property name - whole line ignored */
 colr: #333;
 
-/* Invalid value — declaration ignored */
+/* Invalid value - declaration ignored */
 color: burple;
 
-/* Invalid selector — entire rule ignored */
+/* Invalid selector - entire rule ignored */
 @unknown-rule { }
 ```
 
@@ -74,4 +74,4 @@ Provide fallback values for newer properties:
 | Invalid selector | `@unknown {}` | Entire rule ignored |
 | Wrong unit | `width: 100%px;` | Ignored |
 
-Because of this fault tolerance, CSS is safe to use with progressive enhancement — newer features degrade gracefully in older browsers.
+Because of this fault tolerance, CSS is safe to use with progressive enhancement - newer features degrade gracefully in older browsers.

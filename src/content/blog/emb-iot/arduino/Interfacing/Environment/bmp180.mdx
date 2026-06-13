@@ -132,14 +132,14 @@ void loop()
 
 ### Code breakdown
 
-- `#include <Adafruit_BMP085.h>` — includes the library for BMP085 and BMP180 sensors.
-- `Adafruit_BMP085 bmp` — creates a BMP085/BMP180 object.
-- `bmp.begin()` — initializes the I2C connection and returns `true` if the sensor is found. The `while (1)` loop halts execution if the sensor is missing.
-- `bmp.readTemperature()` — returns temperature in degrees Celsius.
-- `bmp.readPressure()` — returns absolute pressure in Pascals (1 hPa = 100 Pa).
-- `bmp.readAltitude()` — estimates altitude in meters assuming standard sea-level pressure (101325 Pa).
-- `bmp.readSealevelPressure()` — calculates what the pressure would be at sea level given the current altitude measurement. This is useful for weather station use.
-- `bmp.readAltitude(sealevelPressure)` — a more accurate altitude estimate when you provide the current sea-level pressure (e.g., from a local weather report).
+- `#include <Adafruit_BMP085.h>` - includes the library for BMP085 and BMP180 sensors.
+- `Adafruit_BMP085 bmp` - creates a BMP085/BMP180 object.
+- `bmp.begin()` - initializes the I2C connection and returns `true` if the sensor is found. The `while (1)` loop halts execution if the sensor is missing.
+- `bmp.readTemperature()` - returns temperature in degrees Celsius.
+- `bmp.readPressure()` - returns absolute pressure in Pascals (1 hPa = 100 Pa).
+- `bmp.readAltitude()` - estimates altitude in meters assuming standard sea-level pressure (101325 Pa).
+- `bmp.readSealevelPressure()` - calculates what the pressure would be at sea level given the current altitude measurement. This is useful for weather station use.
+- `bmp.readAltitude(sealevelPressure)` - a more accurate altitude estimate when you provide the current sea-level pressure (e.g., from a local weather report).
 
 ## Steps to perform this interfacing
 
@@ -158,4 +158,4 @@ void loop()
 - Altitude readings are estimates based on pressure. They are affected by weather changes and require calibration with a known reference pressure for accuracy.
 - The BMP180's pressure range is 300–1100 hPa. It will not function correctly at very high altitudes (above about 9000 m / 30000 ft).
 - Allow the sensor to stabilize for a few seconds after power-up before relying on readings.
-- Avoid exposing the sensor to water or condensing humidity — the BMP180 is not waterproof and the measurement diaphragm can be damaged by liquid ingress.
+- Avoid exposing the sensor to water or condensing humidity - the BMP180 is not waterproof and the measurement diaphragm can be damaged by liquid ingress.

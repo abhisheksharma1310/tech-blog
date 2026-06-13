@@ -23,7 +23,7 @@ The SIM900 is a quad-band GSM/GPRS module from SIMCom that enables Arduino proje
 
 ## For this interfacing you need the following components:
 
-- Arduino board (Uno, Mega — shield fits directly)
+- Arduino board (Uno, Mega - shield fits directly)
 - SIM900 GSM/GPRS shield
 - Active micro-SIM card with a valid GSM plan (data + SMS)
 - External 5V / 2A DC power supply (barrel jack)
@@ -227,16 +227,16 @@ void waitForResponse(const char *expected)
 
 ### Code breakdown
 
-- `SoftwareSerial sim900(2, 3)` — creates a software serial port on pins 2 (RX) and 3 (TX). The SIM900 shield is configured to use D2/D3 via its serial jumpers.
-- `sim900.begin(19200)` — sets the baud rate. The SIM900 defaults to 19200 baud (some modules use 9600 or 115200 — check your module).
-- `sim900.println("AT")` — the basic attention command. The module should respond with `OK` if communication is working.
-- `AT+CSQ` — queries signal quality. Returns `+CSQ: <rssi>,<ber>` where RSSI is 0–31 (higher = better).
-- `AT+CREG?` — checks network registration. Returns `+CREG: <n>,<stat>` where stat = 1 (registered, home network) or 5 (registered, roaming).
-- `AT+CMGF=1` — sets SMS mode to text mode (instead of PDU mode).
-- `AT+CMGS="<number>"` — sends an SMS. Followed by the message body and terminated with Ctrl+Z (0x1A).
-- `ATD<number>;` — dials a voice call. The semicolon specifies voice call (without it, the module tries data mode).
-- `ATH` — hangs up the current call.
-- `AT+CMGL="REC UNREAD",1` — lists all unread SMS messages in text mode.
+- `SoftwareSerial sim900(2, 3)` - creates a software serial port on pins 2 (RX) and 3 (TX). The SIM900 shield is configured to use D2/D3 via its serial jumpers.
+- `sim900.begin(19200)` - sets the baud rate. The SIM900 defaults to 19200 baud (some modules use 9600 or 115200 - check your module).
+- `sim900.println("AT")` - the basic attention command. The module should respond with `OK` if communication is working.
+- `AT+CSQ` - queries signal quality. Returns `+CSQ: <rssi>,<ber>` where RSSI is 0–31 (higher = better).
+- `AT+CREG?` - checks network registration. Returns `+CREG: <n>,<stat>` where stat = 1 (registered, home network) or 5 (registered, roaming).
+- `AT+CMGF=1` - sets SMS mode to text mode (instead of PDU mode).
+- `AT+CMGS="<number>"` - sends an SMS. Followed by the message body and terminated with Ctrl+Z (0x1A).
+- `ATD<number>;` - dials a voice call. The semicolon specifies voice call (without it, the module tries data mode).
+- `ATH` - hangs up the current call.
+- `AT+CMGL="REC UNREAD",1` - lists all unread SMS messages in text mode.
 
 ### Network status LED
 
@@ -279,7 +279,7 @@ void setupGPRS()
 2. Screw the antenna onto the SMA connector on the shield.
 3. Configure the serial jumpers on the shield for Software Serial (D2/D3).
 4. Stack the shield onto the Arduino Uno.
-5. Connect the external 5V / 2A power supply to the shield's barrel jack. **Do not rely on USB power alone** — the SIM900 can draw up to 2 A during GSM bursts, which exceeds USB power limits.
+5. Connect the external 5V / 2A power supply to the shield's barrel jack. **Do not rely on USB power alone** - the SIM900 can draw up to 2 A during GSM bursts, which exceeds USB power limits.
 6. Connect the Arduino to your computer via USB.
 7. Upload the sketch. If using Software Serial, you can leave the USB connected during upload.
 8. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
@@ -309,7 +309,7 @@ void powerOnSIM900()
 
 - **Power supply:** The SIM900 draws peak currents of up to 2 A during GSM burst transmission (every 4.6 ms when transmitting). This far exceeds the USB 500 mA limit and the Arduino onboard 5V regulator's 800 mA limit. **Always use an external 5V / 2A (or higher) power supply** connected to the shield's barrel jack. Without adequate power, the module will reset or fail to register on the network.
 - **Antenna required:** The SIM900 must have an antenna connected at all times when powered. Operating without an antenna can damage the RF power amplifier.
-- **SIM card:** Use an active micro-SIM card with a valid GSM plan. The SIM900 does NOT support 3G, 4G, or LTE — it is 2G only. In many countries, 2G networks are being phased out. Check that 2G (GSM 850/900/1800/1900) is still active in your area. For 3G/4G projects, use a SIM800, SIM5320, or SIM76xx module instead.
+- **SIM card:** Use an active micro-SIM card with a valid GSM plan. The SIM900 does NOT support 3G, 4G, or LTE - it is 2G only. In many countries, 2G networks are being phased out. Check that 2G (GSM 850/900/1800/1900) is still active in your area. For 3G/4G projects, use a SIM800, SIM5320, or SIM76xx module instead.
 - **Serial conflicts:** The SIM900 shield uses the Arduino's hardware UART by default (D0/D1). When using hardware serial, you must disconnect the RX and TX jumpers on the shield before uploading code (otherwise the SIM900 interferes with the USB-Serial converter). Software Serial on D2/D3 avoids this issue and allows simultaneous USB debugging.
 - **Baud rate mismatch:** The SIM900 default baud rate varies between modules (19200 is most common, but some use 9600 or 115200). If `AT` returns nothing, try different baud rates in `sim900.begin()`. You can change the baud rate permanently with `AT+IPR=9600`.
 - **Network registration time:** The SIM900 takes 10–60 seconds (sometimes longer) to register on the GSM network after power-on. Do not send commands that require network access (SMS, calls, GPRS) before the module is registered. Check registration status with `AT+CREG?` before proceeding.

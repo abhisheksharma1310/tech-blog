@@ -11,7 +11,7 @@ order: 9
 
 ## The Heart of Every Node.js Project
 
-Every Node.js project has a `package.json` file. It's the **manifest** that describes your project — its name, version, dependencies, scripts, and more.
+Every Node.js project has a `package.json` file. It's the **manifest** that describes your project - its name, version, dependencies, scripts, and more.
 
 ```
 package.json         ───► Human-readable manifest
@@ -19,7 +19,7 @@ package-lock.json   ───► Machine-generated lock file
 node_modules/       ───► Installed packages (gitignored)
 ```
 
-## package.json — Key Fields
+## package.json - Key Fields
 
 ### 1. Metadata
 
@@ -58,10 +58,10 @@ node_modules/       ───► Installed packages (gitignored)
 }
 ```
 
-- **`main`** — CommonJS entry point (used by `require()`)
-- **`module`** — ES Module entry point (used by bundlers)
-- **`exports`** — Modern field for conditional exports (Node.js 12+)
-- **`types`** — TypeScript type definitions
+- **`main`** - CommonJS entry point (used by `require()`)
+- **`module`** - ES Module entry point (used by bundlers)
+- **`exports`** - Modern field for conditional exports (Node.js 12+)
+- **`types`** - TypeScript type definitions
 
 ### 3. Dependencies
 
@@ -198,7 +198,7 @@ npm ls
 npm outdated
 ```
 
-## `npm ci` — Clean Install
+## `npm ci` - Clean Install
 
 ```bash
 # Deletes node_modules and installs exact versions from lock file
@@ -240,9 +240,9 @@ npm ci
 
 ## Key Takeaways
 
-- **package.json** is the project manifest — name, version, dependencies, scripts, and metadata
-- **package-lock.json** locks exact dependency versions — **always commit it**
-- **`npm ci`** is the correct way to install in CI/CD — it's faster and deterministic
+- **package.json** is the project manifest - name, version, dependencies, scripts, and metadata
+- **package-lock.json** locks exact dependency versions - **always commit it**
+- **`npm ci`** is the correct way to install in CI/CD - it's faster and deterministic
 - Use **`"type": "module"`** to opt into ES Modules across your project
 - **`"private": true`** prevents accidental publishing
 - The **`exports`** field is the modern way to define package entry points

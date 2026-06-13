@@ -11,7 +11,7 @@ order: 5
 
 # Links in HTML
 
-Links are what make the web a "web" — they connect pages, documents, and resources together. The `<a>` (anchor) element creates a hyperlink that users can click or tap to navigate.
+Links are what make the web a "web" - they connect pages, documents, and resources together. The `<a>` (anchor) element creates a hyperlink that users can click or tap to navigate.
 
 ## Anchor Element
 
@@ -28,10 +28,10 @@ The **anchor element** wraps the link text (or content) and the `href` attribute
 The `href` attribute defines the **destination URL**. It can point to:
 
 ```html
-<!-- Absolute URL — full web address -->
+<!-- Absolute URL - full web address -->
 <a href="https://www.google.com">Google</a>
 
-<!-- Relative URL — path within the same website -->
+<!-- Relative URL - path within the same website -->
 <a href="/about.html">About Us</a>
 <a href="contact.html">Contact</a>
 
@@ -56,13 +56,13 @@ The `href` attribute defines the **destination URL**. It can point to:
 The **visible text** of a link should describe where the link goes:
 
 ```html
-<!-- Good — descriptive -->
+<!-- Good - descriptive -->
 <a href="/tutorials/html">Learn HTML Tutorials</a>
 
-<!-- Bad — vague -->
+<!-- Bad - vague -->
 <a href="/tutorials/html">Click here</a>
 
-<!-- Even worse — just a URL -->
+<!-- Even worse - just a URL -->
 <a href="/tutorials/html">https://example.com/tutorials/html</a>
 ```
 
@@ -109,7 +109,7 @@ The `rel` attribute describes the **relationship** between the current page and 
 | `noopener` | Prevents `window.opener` access |
 | `noreferrer` | Hides the referrer header from the target |
 | `external` | Indicates an external link |
-| `next` / `prev` | Pagination — previous/next page |
+| `next` / `prev` | Pagination - previous/next page |
 | `license` | Link to the license of the current page |
 | `author` | Link to the author's page |
 | `help` | Link to a help page |
@@ -127,13 +127,13 @@ The `rel` attribute describes the **relationship** between the current page and 
 https://example.com/images/photo.jpg
 ```
 
-**Relative URLs** are paths without the domain — they resolve relative to the current page:
+**Relative URLs** are paths without the domain - they resolve relative to the current page:
 
 ```
-images/photo.jpg                     — same directory
-/images/photo.jpg                    — root of the site
-../images/photo.jpg                  — parent directory
-../../assets/images/photo.jpg        — two levels up
+images/photo.jpg                     - same directory
+/images/photo.jpg                    - root of the site
+../images/photo.jpg                  - parent directory
+../../assets/images/photo.jpg        - two levels up
 ```
 
 | Current page | Relative URL | Resolves to |
@@ -146,7 +146,7 @@ Use **relative URLs** within your own site (easier to move your site to a new do
 
 ## Link Accessibility
 
-- Use **descriptive link text** — never just "click here" or "read more".
+- Use **descriptive link text** - never just "click here" or "read more".
 - If opening in a new tab, warn users:
 
 ```html
@@ -169,10 +169,10 @@ Use **relative URLs** within your own site (easier to move your site to a new do
 
 ## SEO Best Practices for Links in HTML
 
-- Use **descriptive, keyword-rich link text** — search engines use link text to understand the target page.
+- Use **descriptive, keyword-rich link text** - search engines use link text to understand the target page.
 - Internal links help search engines discover and index your pages.
 - Use `rel="nofollow"` for paid or untrusted links to avoid SEO penalties.
-- Check for **broken links** (404 errors) — they harm user experience and SEO.
+- Check for **broken links** (404 errors) - they harm user experience and SEO.
 - A logical **link structure** (breadcrumbs, navigation, related articles) improves site crawlability.
 
 ## Detailed Table with Tag, attributes and attribute values

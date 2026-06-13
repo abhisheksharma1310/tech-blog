@@ -40,7 +40,7 @@ VRy (Y)       -->     A1 (analog)
 SW  (Z)       -->     Digital Pin 2
 ```
 
-The module uses 5V power and outputs 0–5V on the analog axes. The switch is active LOW (LOW = pressed) with no external pull-up — use `INPUT_PULLUP`.
+The module uses 5V power and outputs 0–5V on the analog axes. The switch is active LOW (LOW = pressed) with no external pull-up - use `INPUT_PULLUP`.
 
 ## Pin Map
 
@@ -67,7 +67,7 @@ Looking at the joystick with the connector at the bottom:
 
 ## Install necessary Library
 
-No library is required — the analog axes are read with `analogRead()` and the switch with `digitalRead()`. For applications requiring direction detection (NSEW) or dead-zone configuration, simple threshold logic suffices.
+No library is required - the analog axes are read with `analogRead()` and the switch with `digitalRead()`. For applications requiring direction detection (NSEW) or dead-zone configuration, simple threshold logic suffices.
 
 ## Code with complete explanation
 
@@ -180,12 +180,12 @@ void loop()
 
 ### Code breakdown
 
-- `analogRead(A0)` — returns 0–1023 (10-bit ADC) proportional to the joystick position on the X axis.
+- `analogRead(A0)` - returns 0–1023 (10-bit ADC) proportional to the joystick position on the X axis.
 - Centre value is approximately 512 (2.5 V). Actual centre may drift by ±20–50 counts due to mechanical tolerance.
-- `deadZone` — a threshold around centre (e.g., ±50) to prevent jitter when the joystick is released. Values within the dead zone are treated as 0.
-- `digitalRead(SW)` — with `INPUT_PULLUP`, returns `LOW` when the joystick shaft is pressed.
-- `map(value, fromLow, fromHigh, toLow, toHigh)` — re-scales the ADC reading to any output range (e.g., -100 to +100).
-- `constrain(value, min, max)` — clamps the output to the valid range.
+- `deadZone` - a threshold around centre (e.g., ±50) to prevent jitter when the joystick is released. Values within the dead zone are treated as 0.
+- `digitalRead(SW)` - with `INPUT_PULLUP`, returns `LOW` when the joystick shaft is pressed.
+- `map(value, fromLow, fromHigh, toLow, toHigh)` - re-scales the ADC reading to any output range (e.g., -100 to +100).
+- `constrain(value, min, max)` - clamps the output to the valid range.
 
 ### Direction enum (8-way)
 
@@ -213,8 +213,8 @@ int getDirection()
 5. Upload the sketch to the Arduino.
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
 7. Move the joystick in each direction and observe the X/Y values and direction labels.
-8. Press the shaft down — the SW label changes to "PRESSED".
-9. Note the centre ADC value — adjust the dead zone constant if the neutral reading drifts.
+8. Press the shaft down - the SW label changes to "PRESSED".
+9. Note the centre ADC value - adjust the dead zone constant if the neutral reading drifts.
 
 ### Calibration
 

@@ -11,11 +11,11 @@ order: 2
 
 # Arithmetic Operators
 
-Arithmetic operators allow you to perform mathematical calculations in your Arduino programs. They work with integer and floating-point types and follow standard mathematical precedence rules. Understanding how these operators behave — especially with mixed types — is essential for correct calculations.
+Arithmetic operators allow you to perform mathematical calculations in your Arduino programs. They work with integer and floating-point types and follow standard mathematical precedence rules. Understanding how these operators behave - especially with mixed types - is essential for correct calculations.
 
 ## = (assignment)
 
-The `=` operator assigns the value on the right to the variable on the left. It is not the same as mathematical equality — it stores a value into memory.
+The `=` operator assigns the value on the right to the variable on the left. It is not the same as mathematical equality - it stores a value into memory.
 
 ```cpp
 void setup() {
@@ -33,7 +33,7 @@ void loop() {
 }
 ```
 
-In this example, `x = 42` stores the value 42 in the variable `x`. Assignment is a fundamental operation — without it, variables would always hold their default (zero or garbage) values. Unlike in math, you can chain assignments: `a = b = c = 0;` sets all three to 0.
+In this example, `x = 42` stores the value 42 in the variable `x`. Assignment is a fundamental operation - without it, variables would always hold their default (zero or garbage) values. Unlike in math, you can chain assignments: `a = b = c = 0;` sets all three to 0.
 
 ## + (addition)
 
@@ -81,7 +81,7 @@ void loop() {
 }
 ```
 
-Subtraction with integers can produce negative results. Be careful with `unsigned` types — subtracting a larger value from a smaller one causes wrap-around rather than producing a negative result.
+Subtraction with integers can produce negative results. Be careful with `unsigned` types - subtracting a larger value from a smaller one causes wrap-around rather than producing a negative result.
 
 ## * (multiplication)
 
@@ -131,7 +131,7 @@ void loop() {
 }
 ```
 
-Integer division truncates toward zero — `10 / 3` gives 3, not 3.33. To get a fractional result, convert one operand to `float` before dividing. Division by zero causes undefined behavior and should always be avoided.
+Integer division truncates toward zero - `10 / 3` gives 3, not 3.33. To get a fractional result, convert one operand to `float` before dividing. Division by zero causes undefined behavior and should always be avoided.
 
 ## % (remainder)
 

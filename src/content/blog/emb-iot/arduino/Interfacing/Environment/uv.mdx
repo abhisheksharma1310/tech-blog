@@ -21,8 +21,8 @@ Ultraviolet (UV) sensors measure the intensity of UV radiation in the 200–400 
    className="my-6 rounded"
 />
 
-- **ML8511** — analog output (1–3.2 V) proportional to UV intensity, requires 3.3V power.
-- **GUVA-S12D** — analog output (0–5 V) proportional to UV index, operates at 5V.
+- **ML8511** - analog output (1–3.2 V) proportional to UV intensity, requires 3.3V power.
+- **GUVA-S12D** - analog output (0–5 V) proportional to UV index, operates at 5V.
 
 Both sensors output a voltage that can be read with `analogRead()` and converted to a UV index value (0–11+), making them suitable for sun exposure monitoring, UV index meters, and environmental sensing.
 
@@ -47,7 +47,7 @@ Both sensors output a voltage that can be read with `analogRead()` and converted
 ```
 ML8511 Module         Arduino
 -------------         -------
-VCC           -->     3.3V (NOT 5V — ML8511 is 3.3V only)
+VCC           -->     3.3V (NOT 5V - ML8511 is 3.3V only)
 GND           -->     GND
 OUT           -->     Analog Pin A0
 EN            -->     3.3V (enable pin, active HIGH)
@@ -92,7 +92,7 @@ No external library is required. The UV sensor uses standard `analogRead()` buil
 
 ## Code with complete explanation
 
-This sketch reads the UV sensor output voltage and calculates the UV index. It includes both the ML8511 and GUVA-S12D conversion methods — uncomment the appropriate section.
+This sketch reads the UV sensor output voltage and calculates the UV index. It includes both the ML8511 and GUVA-S12D conversion methods - uncomment the appropriate section.
 
 ```cpp
 const int sensorPin = A0;
@@ -166,8 +166,8 @@ void loop()
 
 ### Code breakdown
 
-- `analogRead(sensorPin)` — reads the analog voltage (0–1023) from the UV sensor output.
-- `raw * (5.0 / 1023.0)` — converts the raw ADC value to voltage. For the ML8511, the actual VCC is 3.3V, but since `analogReference(DEFAULT)` is 5V, the formula uses 5.0/1023. The voltage reading is relative to the 5V reference, so outputs must be scaled accordingly.
+- `analogRead(sensorPin)` - reads the analog voltage (0–1023) from the UV sensor output.
+- `raw * (5.0 / 1023.0)` - converts the raw ADC value to voltage. For the ML8511, the actual VCC is 3.3V, but since `analogReference(DEFAULT)` is 5V, the formula uses 5.0/1023. The voltage reading is relative to the 5V reference, so outputs must be scaled accordingly.
 - **ML8511 formula:** `(voltage - 0.99) * 6.79`. The offset voltage (0.99 V) is subtracted, then the remainder is scaled to the UV index range (0–15 for 1.0–3.2 V).
 - **GUVA-S12D formula:** `voltage / 0.4545`. The sensor outputs approximately 0.4545 V per UV index unit.
 
@@ -203,7 +203,7 @@ float uvIndex = (voltage - 0.99) * 6.79 * (6.0 / 5.2);
 
 ## Steps to perform this interfacing
 
-1. Connect the UV sensor to the Arduino as shown in the schematic — ensure the ML8511 uses 3.3V and not 5V.
+1. Connect the UV sensor to the Arduino as shown in the schematic - ensure the ML8511 uses 3.3V and not 5V.
 2. Uncomment the appropriate sensor definition (`#define ML8511` or `#define GUVA_S12D`) in the code.
 3. Copy the code into the Arduino IDE.
 4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
@@ -215,9 +215,9 @@ float uvIndex = (voltage - 0.99) * 6.79 * (6.0 / 5.2);
 ## Caution
 
 - **ML8511 voltage requirement:** The ML8511 is a **3.3V only** device. Connecting VCC to 5V will permanently damage it. The output voltage also scales with VCC, so powering it from 5V would produce incorrect readings even if the IC survives.
-- **Sensor response time:** The UV sensor responds slowly to changes — allow 1–3 seconds for the reading to stabilize after moving from shade to sunlight or vice versa. The photodiode has a settling time of approximately 1 second.
+- **Sensor response time:** The UV sensor responds slowly to changes - allow 1–3 seconds for the reading to stabilize after moving from shade to sunlight or vice versa. The photodiode has a settling time of approximately 1 second.
 - **Spectral range:** The ML8511 and GUVA-S12D are sensitive to UVA (315–400 nm) and UVB (280–315 nm). They do not measure UVC (100–280 nm), which is blocked by the ozone layer. The output is weighted to approximate the erythemal (sunburn) action spectrum, so the UV index reading is most relevant for human skin exposure.
 - **Temperature dependence:** UV sensor output has a small temperature coefficient (approximately −0.1% per °C). For outdoor use in extreme temperatures (−20°C to +50°C), the reading may shift by ±5%. The ML8511 includes a temperature compensation circuit, but the GUVA-S12D does not.
 - **Diffuser needed:** For accurate UV index measurements, the sensor should have a diffuser (white PTFE tape or an optical diffuser cap) over the photodiode to achieve a cosine-corrected response. Without a diffuser, the reading depends heavily on the angle of the incident UV light.
 - **Window glass blocks UV:** The sensor will read near-zero UV indoors behind standard window glass because glass blocks most UVB. If you need to measure UV through glass, use an explicitly UV-transparent material (quartz or special acrylic).
-- **EN pin (ML8511):** The ML8511 has an enable pin that must be pulled HIGH for normal operation. If left floating or driven LOW, the output goes to 0 V. On some modules, the EN pin is already pulled HIGH with a resistor — if not, connect it to 3.3V.
+- **EN pin (ML8511):** The ML8511 has an enable pin that must be pulled HIGH for normal operation. If left floating or driven LOW, the output goes to 0 V. On some modules, the EN pin is already pulled HIGH with a resistor - if not, connect it to 3.3V.

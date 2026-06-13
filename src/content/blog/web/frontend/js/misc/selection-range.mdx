@@ -104,7 +104,7 @@ const log = document.getElementById('range-log');
 function getRange() {
   const sel = window.getSelection();
   if (!sel.rangeCount) {
-    log.textContent = 'No text selected — select some text first!';
+    log.textContent = 'No text selected - select some text first!';
     return null;
   }
   return sel.getRangeAt(0);
@@ -138,7 +138,7 @@ document.getElementById('wrap-range').onclick = function() {
 
 ## Creating Ranges Programmatically
 
-You don't need a user selection — create ranges from code:
+You don't need a user selection - create ranges from code:
 
 ```javascript
 const p = document.querySelector('p');

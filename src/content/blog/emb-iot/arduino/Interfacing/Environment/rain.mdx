@@ -41,7 +41,7 @@ DO            -->     Digital Pin 2
 AO            -->     Analog Pin A0
 ```
 
-Connect the sensing pad to the control board using the female-to-female jumper wires. The control board has a potentiometer that adjusts the digital output threshold — rotate it with a screwdriver to set the sensitivity.
+Connect the sensing pad to the control board using the female-to-female jumper wires. The control board has a potentiometer that adjusts the digital output threshold - rotate it with a screwdriver to set the sensitivity.
 
 ## Pin Map
 
@@ -62,7 +62,7 @@ Connect the sensing pad to the control board using the female-to-female jumper w
 
 ## Install necessary Library
 
-No external library is required — rain detection uses standard `digitalRead()` and `analogRead()` functions built into Arduino.
+No external library is required - rain detection uses standard `digitalRead()` and `analogRead()` functions built into Arduino.
 
 ## Code with complete explanation
 
@@ -125,8 +125,8 @@ void loop()
 
 ### Code breakdown
 
-- `digitalRead(digitalPin)` — reads the DO pin. The LM393 comparator drives this pin `LOW` when water is detected above the threshold set by the potentiometer. It is `HIGH` when dry.
-- `analogRead(analogPin)` — reads the AO pin (0–1023). A lower value means more water on the pad, as water creates a conductive path that reduces resistance.
+- `digitalRead(digitalPin)` - reads the DO pin. The LM393 comparator drives this pin `LOW` when water is detected above the threshold set by the potentiometer. It is `HIGH` when dry.
+- `analogRead(analogPin)` - reads the AO pin (0–1023). A lower value means more water on the pad, as water creates a conductive path that reduces resistance.
 - The digital output provides a simple rain/no-rain boolean. The analog output provides granular intensity data, useful for differentiating between mist, light rain, and heavy rain.
 
 ## Steps to perform this interfacing
@@ -145,5 +145,5 @@ void loop()
 - The sensing pad is NOT corrosion-proof. Prolonged exposure to moisture and DC current causes electrolysis that degrades the copper traces over time. Consider applying a conformal coating or using the sensor only for short measurement bursts (power it through a MOSFET or transistor when not actively reading).
 - Do not power the sensing pad continuously. Turn on VCC only when taking a reading (via a digital pin controlling a transistor) to extend the pad's lifespan.
 - The sensor does not differentiate between rain and other conductive liquids (tap water, salt water, condensation). False triggers can occur in high-humidity environments.
-- Keep the control board dry — only the sensing pad should be exposed to the elements.
+- Keep the control board dry - only the sensing pad should be exposed to the elements.
 - Clean the sensing pad periodically with isopropyl alcohol to remove oxidation and residue.

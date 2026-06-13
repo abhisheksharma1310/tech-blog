@@ -13,7 +13,7 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
 
 # TCS3200 Color Sensor
 
-The TCS3200 is a programmable color light-to-frequency converter. It contains a 4x4 array of photodiodes with red, green, blue, and clear (no filter) filters — 16 of each type. By selecting a filter group via two control pins, the sensor outputs a square wave whose frequency is proportional to the intensity of that color component. This makes it ideal for color recognition, sorting, and calibration applications.
+The TCS3200 is a programmable color light-to-frequency converter. It contains a 4x4 array of photodiodes with red, green, blue, and clear (no filter) filters - 16 of each type. By selecting a filter group via two control pins, the sensor outputs a square wave whose frequency is proportional to the intensity of that color component. This makes it ideal for color recognition, sorting, and calibration applications.
 
 <CloudinaryImage 
    publicId="Color_Sensor_TCS3200_q1qsq2.webp" 
@@ -277,11 +277,11 @@ String detectColor()
 
 ### Code breakdown
 
-- `pulseIn(sensorOut, LOW)` — measures the pulse width of the output signal when held LOW. The frequency is `1 / pulseWidth`. Using `LOW` instead of `HIGH` often gives more stable readings on the TCS3200.
-- `map(freq, min, max, 255, 0)` — converts the raw frequency to an 0–255 RGB value. The arguments are reversed (255, 0) because higher frequency = more light = lower mapped value for non-dominant colors.
-- `constrain(value, 0, 255)` — clamps the mapped value to the valid 0–255 range.
-- `calibrate()` — reads white and black references to set the min/max range for each channel. This is essential because ambient light, sensor distance, and component tolerances vary between setups.
-- `detectColor()` — simple threshold-based color classification. For more accuracy, use a lookup table or machine learning approach with multiple samples.
+- `pulseIn(sensorOut, LOW)` - measures the pulse width of the output signal when held LOW. The frequency is `1 / pulseWidth`. Using `LOW` instead of `HIGH` often gives more stable readings on the TCS3200.
+- `map(freq, min, max, 255, 0)` - converts the raw frequency to an 0–255 RGB value. The arguments are reversed (255, 0) because higher frequency = more light = lower mapped value for non-dominant colors.
+- `constrain(value, 0, 255)` - clamps the mapped value to the valid 0–255 range.
+- `calibrate()` - reads white and black references to set the min/max range for each channel. This is essential because ambient light, sensor distance, and component tolerances vary between setups.
+- `detectColor()` - simple threshold-based color classification. For more accuracy, use a lookup table or machine learning approach with multiple samples.
 
 ### Reading with HIGH pulse (alternative)
 
@@ -339,7 +339,7 @@ void loop()
 3. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 4. Upload the sketch to the Arduino.
 5. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-6. When prompted, place a white object (e.g., a white paper) in front of the sensor — the sketch calibrates against white first.
+6. When prompted, place a white object (e.g., a white paper) in front of the sensor - the sketch calibrates against white first.
 7. When prompted, completely cover the sensor with something black (e.g., your hand or black cloth) for black calibration.
 8. After calibration, place colored objects in front of the sensor and observe the RGB values and detected color name.
 
@@ -356,7 +356,7 @@ If auto-calibration doesn't work well, set the min/max values manually. Observe 
 
 ## Caution
 
-- **Consistent lighting:** The TCS3200 reads reflected light, so readings are highly dependent on ambient lighting conditions. For consistent results, use the sensor in a controlled environment with a white LED pointing at the target. Avoid fluorescent or incandescent lights — they flicker at 50/60 Hz and introduce noise into the readings.
+- **Consistent lighting:** The TCS3200 reads reflected light, so readings are highly dependent on ambient lighting conditions. For consistent results, use the sensor in a controlled environment with a white LED pointing at the target. Avoid fluorescent or incandescent lights - they flicker at 50/60 Hz and introduce noise into the readings.
 - **Distance matters:** The sensor-to-object distance dramatically affects readings. Maintain a consistent distance (typically 5–15 mm) between the sensor and the colored surface. Even a 1 mm difference can change frequency values significantly.
 - **Calibration is required:** The sensor must be calibrated for each setup. Ambient light, object distance, and even the sensor's warm-up state affect readings. Always run the calibration routine before taking measurements.
 - **Frequency scaling:** On 16 MHz Arduino boards, the 100% frequency scaling (S0=HIGH, S1=HIGH) can produce frequencies above 500 kHz, which `pulseIn()` cannot measure reliably. Use 20% scaling (S0=HIGH, S1=LOW) for best results.

@@ -1,0 +1,441 @@
+---
+title: "Pagination & Filtering"
+description: "Implement efficient pagination, filtering, and sorting for Express API endpoints"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "APIs"]
+tags: ["Express", "Pagination", "Filtering", "Sorting", "API Design"]
+slug: "express-pagination-filtering"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why Pagination?
+
+Without pagination, a single request could return thousands of records, overwhelming both the server and the client.
+
+```
+GET /api/posts
+├── Without pagination → 10,000 posts → 5MB response → Timeout
+└── With pagination    → page 1 of 10, 100 posts → 50KB → Fast
+```
+
+## Pagination Strategies
+
+| Strategy | How it works | Pros | Cons |
+|---|---|---|---|
+| **Offset-based** | `?page=2&limit=10` | Simple, skip to any page | Slow for large offsets |
+| **Cursor-based** | `?cursor=507f1f&limit=10` | Fast, consistent | Cannot skip pages |
+
+## 1. Offset-Based Pagination
+
+### Basic Implementation
+
+```javascript
+app.get('/api/posts', async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+    const skip = (page - 1) * limit;
+
+    const [posts, total] = await Promise.all([
+      Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Post.countDocuments()
+    ]);
+
+    res.json({
+      success: true,
+      count: posts.length,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1
+      },
+      data: posts
+    });
+  } catch (err) { next(err); }
+});
+```
+
+### Reusable Pagination Middleware
+
+```javascript
+// middleware/pagination.js
+function paginate(model, options = {}) {
+  return async (req, res, next) => {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(
+      options.maxLimit || 100,
+      Math.max(1, parseInt(req.query.limit) || options.defaultLimit || 10)
+    );
+    const skip = (page - 1) * limit;
+    const sort = req.query.sort || options.defaultSort || '-createdAt';
+
+    try {
+      const filter = {}; // Will be built by filtering middleware
+
+      const [data, total] = await Promise.all([
+        model.find(filter)
+          .sort(sort)
+          .skip(skip)
+          .limit(limit)
+          .select(options.select || '-__v'),
+        model.countDocuments(filter)
+      ]);
+
+      req.pagination = {
+        success: true,
+        count: data.length,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        },
+        data
+      };
+
+      next();
+    } catch (err) { next(err); }
+  };
+}
+
+// Usage
+app.get('/api/posts', paginate(Post, { defaultLimit: 20 }), (req, res) => {
+  res.json(req.pagination);
+});
+
+app.get('/api/users', paginate(User, { defaultSort: 'name' }), (req, res) => {
+  res.json(req.pagination);
+});
+```
+
+## 2. Cursor-Based Pagination
+
+More efficient for large datasets - uses a unique field as a bookmark.
+
+```javascript
+app.get('/api/posts', async (req, res, next) => {
+  try {
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+    const cursor = req.query.cursor; // Last _id from previous page
+
+    const query = cursor
+      ? { _id: { $lt: cursor } }
+      : {};
+
+    const posts = await Post.find(query)
+      .sort({ _id: -1 })
+      .limit(limit + 1); // Fetch one extra to check for next page
+
+    const hasNext = posts.length > limit;
+    if (hasNext) posts.pop(); // Remove the extra item
+
+    const nextCursor = hasNext ? posts[posts.length - 1]._id : null;
+
+    res.json({
+      success: true,
+      count: posts.length,
+      pagination: {
+        limit,
+        hasNext,
+        nextCursor,
+        prevCursor: req.query.cursor || null
+      },
+      data: posts
+    });
+  } catch (err) { next(err); }
+});
+```
+
+### Client Usage
+
+```javascript
+// Page 1 - no cursor
+fetch('/api/posts?limit=10')
+  .then(r => r.json())
+  .then(data => {
+    // data.pagination.nextCursor → use for next page
+    return fetch(`/api/posts?limit=10&cursor=${data.pagination.nextCursor}`);
+  });
+
+// Pros: Stable even if new items are added
+// Cons: Cannot skip to arbitrary pages
+```
+
+## Filtering
+
+### Basic Filtering
+
+```javascript
+app.get('/api/posts', async (req, res, next) => {
+  try {
+    const filter = {};
+
+    // Exact match filters
+    if (req.query.status) filter.status = req.query.status;
+    if (req.query.author) filter.author = req.query.author;
+    if (req.query.category) filter.category = req.query.category;
+
+    // Boolean filter
+    if (req.query.published !== undefined) {
+      filter.published = req.query.published === 'true';
+    }
+
+    const posts = await Post.find(filter).sort({ createdAt: -1 }).limit(20);
+    res.json({ success: true, count: posts.length, data: posts });
+  } catch (err) { next(err); }
+});
+```
+
+### Advanced Filtering with Operators
+
+```javascript
+app.get('/api/products', async (req, res, next) => {
+  try {
+    const filter = {};
+
+    // Range filters
+    if (req.query.minPrice || req.query.maxPrice) {
+      filter.price = {};
+      if (req.query.minPrice) filter.price.$gte = parseFloat(req.query.minPrice);
+      if (req.query.maxPrice) filter.price.$lte = parseFloat(req.query.maxPrice);
+    }
+
+    // Date range
+    if (req.query.fromDate || req.query.toDate) {
+      filter.createdAt = {};
+      if (req.query.fromDate) filter.createdAt.$gte = new Date(req.query.fromDate);
+      if (req.query.toDate) filter.createdAt.$lte = new Date(req.query.toDate);
+    }
+
+    // In-array filter
+    if (req.query.tags) {
+      filter.tags = { $in: req.query.tags.split(',') };
+    }
+
+    // Text search
+    if (req.query.search) {
+      filter.$text = { $search: req.query.search };
+    }
+
+    // Existence check
+    if (req.query.hasImage === 'true') filter.imageUrl = { $exists: true };
+    if (req.query.hasImage === 'false') filter.imageUrl = { $exists: false };
+
+    const products = await Product.find(filter)
+      .sort(req.query.sort || '-createdAt')
+      .limit(parseInt(req.query.limit) || 20);
+
+    res.json({ success: true, count: products.length, data: products });
+  } catch (err) { next(err); }
+});
+```
+
+### Filtering Middleware (Generic)
+
+```javascript
+// middleware/filter.js
+function filterable(model, allowedFields) {
+  return (req, res, next) => {
+    const filter = {};
+
+    for (const [key, value] of Object.entries(req.query)) {
+      if (!allowedFields.includes(key)) continue;
+
+      // Skip pagination/sort params
+      if (['page', 'limit', 'sort', 'cursor'].includes(key)) continue;
+
+      // Handle operators
+      if (key.endsWith('_min') || key.endsWith('_max')) {
+        const field = key.replace(/_(min|max)$/, '');
+        if (!allowedFields.includes(field)) continue;
+
+        if (!filter[field]) filter[field] = {};
+        const operator = key.endsWith('_min') ? '$gte' : '$lte';
+        filter[field][operator] = isNaN(value) ? value : Number(value);
+        continue;
+      }
+
+      // Handle comma-separated values (OR)
+      if (value.includes(',')) {
+        filter[key] = { $in: value.split(',') };
+      } else {
+        filter[key] = value;
+      }
+    }
+
+    req.filter = filter;
+    next();
+  };
+}
+
+// Usage
+const productFields = ['category', 'price', 'status', 'tags', 'createdAt'];
+app.get('/api/products',
+  filterable(Product, productFields),
+  paginate(Product),
+  (req, res) => {
+    // req.filter is built, req.pagination has the data
+    res.json(req.pagination);
+  }
+);
+
+// GET /api/products?category=electronics&price_min=10&price_max=100&tags=wireless,bluetooth
+// → filter = { category: 'electronics', price: { $gte: 10, $max: 100 }, tags: { $in: ['wireless', 'bluetooth'] } }
+```
+
+## Sorting
+
+```javascript
+app.get('/api/products', async (req, res, next) => {
+  try {
+    // Whitelist allowed sort fields
+    const allowedSorts = ['price', '-price', 'name', '-name', 'createdAt', '-createdAt', 'rating', '-rating'];
+    const sortParam = req.query.sort || '-createdAt';
+
+    const sort = allowedSorts.includes(sortParam) ? sortParam : '-createdAt';
+
+    const products = await Product.find().sort(sort).limit(20);
+    res.json({ success: true, count: products.length, data: products });
+  } catch (err) { next(err); }
+});
+
+// Multi-field sort
+// ?sort=-rating,price
+app.get('/api/products', async (req, res, next) => {
+  try {
+    let sort = {};
+    if (req.query.sort) {
+      req.query.sort.split(',').forEach(field => {
+        if (field.startsWith('-')) {
+          sort[field.slice(1)] = -1;
+        } else {
+          sort[field] = 1;
+        }
+      });
+    } else {
+      sort = { createdAt: -1 };
+    }
+
+    const products = await Product.find().sort(sort).limit(20);
+    res.json({ success: true, count: products.length, data: products });
+  } catch (err) { next(err); }
+});
+```
+
+## Combining Pagination, Filtering & Sorting
+
+```javascript
+// Full-featured endpoint
+app.get('/api/products', async (req, res, next) => {
+  try {
+    // Pagination
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 20);
+    const skip = (page - 1) * limit;
+
+    // Filtering
+    const filter = {};
+    if (req.query.category) filter.category = req.query.category;
+    if (req.query.minPrice || req.query.maxPrice) {
+      filter.price = {};
+      if (req.query.minPrice) filter.price.$gte = parseFloat(req.query.minPrice);
+      if (req.query.maxPrice) filter.price.$lte = parseFloat(req.query.maxPrice);
+    }
+    if (req.query.inStock !== undefined) filter.inStock = req.query.inStock === 'true';
+
+    // Text search
+    if (req.query.search) {
+      filter.$or = [
+        { name: { $regex: req.query.search, $options: 'i' } },
+        { description: { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+
+    // Sorting
+    const sortField = req.query.sort || 'createdAt';
+    const sortOrder = req.query.order === 'asc' ? 1 : -1;
+    const allowedFields = ['price', 'name', 'createdAt', 'rating'];
+    const sort = allowedFields.includes(sortField)
+      ? { [sortField]: sortOrder }
+      : { createdAt: -1 };
+
+    // Execute
+    const [products, total] = await Promise.all([
+      Product.find(filter).sort(sort).skip(skip).limit(limit).select('-__v'),
+      Product.countDocuments(filter)
+    ]);
+
+    // Response with HATEOAS links
+    const baseUrl = `${req.protocol}://${req.get('host')}${req.path}`;
+    const queryParams = new URLSearchParams(req.query);
+
+    res.json({
+      success: true,
+      count: products.length,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+        links: {
+          first: `${baseUrl}?${new URLSearchParams({ ...Object.fromEntries(queryParams), page: 1 })}`,
+          prev: page > 1
+            ? `${baseUrl}?${new URLSearchParams({ ...Object.fromEntries(queryParams), page: page - 1 })}`
+            : null,
+          next: page * limit < total
+            ? `${baseUrl}?${new URLSearchParams({ ...Object.fromEntries(queryParams), page: page + 1 })}`
+            : null,
+          last: `${baseUrl}?${new URLSearchParams({ ...Object.fromEntries(queryParams), page: Math.ceil(total / limit) })}`
+        }
+      },
+      data: products
+    });
+  } catch (err) { next(err); }
+});
+```
+
+## API Query Parameter Convention
+
+```javascript
+// Standard query parameters for collection endpoints
+GET /api/resource
+
+// Pagination
+?page=2                    // Page number (default: 1)
+?limit=20                  // Items per page (default: 10, max: 100)
+?cursor=507f1f77bcf86...   // Cursor for cursor-based pagination
+
+// Filtering
+?status=active             // Exact match
+?category=electronics      // Exact match
+?minPrice=10               // Greater than or equal
+?maxPrice=100              // Less than or equal
+?tags=node,express         // Comma-separated (OR)
+?search=keyword            // Text search
+?fromDate=2026-01-01       // Date range start
+?toDate=2026-06-13         // Date range end
+
+// Sorting
+?sort=-createdAt           // Sort by field (prefix - for descending)
+?order=asc                 // Explicit sort order
+?sort=price,rating         // Multi-field sort
+```
+
+## Key Takeaways
+
+- **Offset pagination** (`?page=&limit=`) is simple and allows page skipping
+- **Cursor pagination** (`?cursor=&limit=`) is more efficient for large datasets
+- Always set **minimum and maximum limits** to prevent abuse
+- Return **pagination metadata** (page, limit, total, totalPages, hasNext, hasPrev)
+- **Whitelist allowed filter fields** and sort fields for security
+- Combine pagination, filtering, and sorting into a **single middleware** for reuse
+- Provide **pagination links** (first, prev, next, last) for discoverability
+- Validate and sanitize all query parameters

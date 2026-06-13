@@ -51,11 +51,11 @@ void loop() {
 }
 ```
 
-Here, `a | b` combines the bits — all 8 bits are set because each position has a 1 in at least one operand. Use `|` with a mask to set specific bits to 1 without altering other bits.
+Here, `a | b` combines the bits - all 8 bits are set because each position has a 1 in at least one operand. Use `|` with a mask to set specific bits to 1 without altering other bits.
 
 ## ^ (bitwise XOR)
 
-The `^` operator compares each bit of two values. A result bit is 1 if the corresponding bits are different. XOR is useful for toggling bits — applying the same mask twice restores the original value.
+The `^` operator compares each bit of two values. A result bit is 1 if the corresponding bits are different. XOR is useful for toggling bits - applying the same mask twice restores the original value.
 
 ```cpp
 void setup() {
@@ -79,7 +79,7 @@ In this example, XOR with `0b11111111` flips all bits, inverting the value. XORi
 
 ## ~ (bitwise NOT)
 
-The `~` operator inverts all bits of a value — 1s become 0s and 0s become 1s. It is a unary operator that acts on a single operand.
+The `~` operator inverts all bits of a value - 1s become 0s and 0s become 1s. It is a unary operator that acts on a single operand.
 
 ```cpp
 void setup() {

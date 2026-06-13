@@ -1,0 +1,246 @@
+---
+title: "Route Methods (GET, POST, PUT, DELETE)"
+description: "Master HTTP route methods in Express - GET, POST, PUT, PATCH, DELETE, and beyond"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Routing"]
+tags: ["Express", "Routing", "HTTP", "GET", "POST", "PUT", "DELETE"]
+slug: "express-route-methods"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## HTTP Methods & CRUD
+
+Every HTTP request has a **method** (or verb) that tells the server what action to perform. Express maps these methods to CRUD operations:
+
+| HTTP Method | CRUD | Description |
+|---|---|---|
+| `GET` | Read | Retrieve a resource |
+| `POST` | Create | Create a new resource |
+| `PUT` | Update/Replace | Replace an entire resource |
+| `PATCH` | Update/Modify | Partially modify a resource |
+| `DELETE` | Delete | Remove a resource |
+
+```
+Client                          Server
+  │                                │
+  │──── GET /api/posts ──────────→│ Read all posts
+  │←─── 200 [post1, post2, ...] ──│
+  │                                │
+  │──── POST /api/posts ─────────→│ Create post
+  │←─── 201 { id: 3, ... } ──────│
+  │                                │
+  │──── PUT /api/posts/3 ────────→│ Replace post (full)
+  │←─── 200 { id: 3, ... } ──────│
+  │                                │
+  │──── PATCH /api/posts/3 ──────→│ Modify post (partial)
+  │←─── 200 { id: 3, ... } ──────│
+  │                                │
+  │──── DELETE /api/posts/3 ─────→│ Delete post
+  │←─── 204 (no body) ───────────│
+  │                                │
+```
+
+## Defining Route Methods
+
+Express provides a method for every HTTP verb on the `app` object:
+
+```javascript
+const express = require('express');
+const app = express();
+
+// Parse JSON bodies (needed for POST/PUT/PATCH)
+app.use(express.json());
+
+// In-memory data store
+let posts = [
+  { id: 1, title: 'First Post', body: 'Hello world' },
+  { id: 2, title: 'Second Post', body: 'Another post' }
+];
+let nextId = 3;
+
+// GET - retrieve all posts
+app.get('/api/posts', (req, res) => {
+  res.json(posts);
+});
+
+// GET - retrieve a single post
+app.get('/api/posts/:id', (req, res) => {
+  const post = posts.find(p => p.id === parseInt(req.params.id));
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+  res.json(post);
+});
+
+// POST - create a new post
+app.post('/api/posts', (req, res) => {
+  const { title, body } = req.body;
+  if (!title || !body) {
+    return res.status(400).json({ error: 'Title and body are required' });
+  }
+  const post = { id: nextId++, title, body };
+  posts.push(post);
+  res.status(201).json(post);
+});
+
+// PUT - replace an entire post
+app.put('/api/posts/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const { title, body } = req.body;
+  const index = posts.findIndex(p => p.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+  if (!title || !body) {
+    return res.status(400).json({ error: 'Title and body are required' });
+  }
+
+  posts[index] = { id, title, body };
+  res.json(posts[index]);
+});
+
+// PATCH - partially update a post
+app.patch('/api/posts/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const post = posts.find(p => p.id === id);
+
+  if (!post) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+
+  if (req.body.title !== undefined) post.title = req.body.title;
+  if (req.body.body !== undefined) post.body = req.body.body;
+
+  res.json(post);
+});
+
+// DELETE - remove a post
+app.delete('/api/posts/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = posts.findIndex(p => p.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+
+  posts.splice(index, 1);
+  res.status(204).send();
+});
+
+app.listen(3000);
+```
+
+## Responding to Different Methods on the Same Path
+
+Use `app.route()` to chain multiple methods on the same path:
+
+```javascript
+app.route('/api/posts')
+  .get((req, res) => {
+    res.json(posts);
+  })
+  .post((req, res) => {
+    const post = { id: nextId++, ...req.body };
+    posts.push(post);
+    res.status(201).json(post);
+  });
+
+app.route('/api/posts/:id')
+  .get((req, res) => {
+    const post = posts.find(p => p.id === parseInt(req.params.id));
+    if (!post) return res.status(404).json({ error: 'Not found' });
+    res.json(post);
+  })
+  .put((req, res) => {
+    // replace logic
+  })
+  .patch((req, res) => {
+    // partial update logic
+  })
+  .delete((req, res) => {
+    // delete logic
+  });
+```
+
+## HEAD and OPTIONS
+
+Express automatically handles `HEAD` (same as GET but no body) and `OPTIONS` (returns allowed methods) for routes you define:
+
+```javascript
+// Explicit OPTIONS for custom behavior
+app.options('/api/posts', (req, res) => {
+  res.set('Allow', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.status(204).send();
+});
+```
+
+## Method Override (for clients that only support GET/POST)
+
+Some clients (older HTML forms) only support GET and POST. Use the `method-override` package:
+
+```bash
+npm install method-override
+```
+
+```javascript
+const methodOverride = require('method-override');
+
+app.use(methodOverride('_method'));
+
+// HTML form:
+// <form action="/api/posts/1?_method=DELETE" method="POST">
+//   <button>Delete</button>
+// </form>
+```
+
+## Useful HTTP Status Codes
+
+| Code | Meaning | When to use |
+|---|---|---|
+| `200 OK` | Success | GET, PUT, PATCH |
+| `201 Created` | Created | POST (new resource) |
+| `204 No Content` | Success, no body | DELETE |
+| `400 Bad Request` | Client error | Invalid input |
+| `401 Unauthorized` | Not authenticated | Missing/invalid auth |
+| `403 Forbidden` | No permission | Authenticated but not allowed |
+| `404 Not Found` | Resource not found | Invalid ID |
+| `409 Conflict` | Duplicate/conflict | Unique constraint violation |
+| `422 Unprocessable` | Validation error | Invalid data format |
+| `500 Server Error` | Internal error | Unexpected server failure |
+
+## Testing Routes with cURL
+
+```bash
+# GET all posts
+curl http://localhost:3000/api/posts
+
+# GET a single post
+curl http://localhost:3000/api/posts/1
+
+# POST a new post
+curl -X POST http://localhost:3000/api/posts \
+  -H "Content-Type: application/json" \
+  -d '{"title":"New Post","body":"Content here"}'
+
+# PUT (replace)
+curl -X PUT http://localhost:3000/api/posts/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Updated","body":"Updated content"}'
+
+# PATCH (partial update)
+curl -X PATCH http://localhost:3000/api/posts/1 \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Only title changed"}'
+
+# DELETE
+curl -X DELETE http://localhost:3000/api/posts/1
+```
+
+## Key Takeaways
+
+- `app.get()`, `app.post()`, `app.put()`, `app.patch()`, `app.delete()` map to HTTP verbs
+- `res.status(201).json(...)` sets status and returns JSON
+- `res.status(204).send()` returns no content (common for DELETE)
+- `app.route()` chains multiple methods on the same path
+- Always validate input in POST/PUT/PATCH handlers
+- Use appropriate **HTTP status codes** for each response

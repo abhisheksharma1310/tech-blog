@@ -1020,6 +1020,300 @@ declare module 'astro:content' {
   collection: "blog";
   data: any
 } & { render(): Render[".mdx"] };
+"web/backend/express/advance/api-testing.mdx": {
+	id: "web/backend/express/advance/api-testing.mdx";
+  slug: "express-api-testing";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/advance/file-uploads-multer.mdx": {
+	id: "web/backend/express/advance/file-uploads-multer.mdx";
+  slug: "express-file-uploads-multer";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/advance/rate-limiting-throttling.mdx": {
+	id: "web/backend/express/advance/rate-limiting-throttling.mdx";
+  slug: "express-rate-limiting-throttling";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/advance/realtime-socketio.mdx": {
+	id: "web/backend/express/advance/realtime-socketio.mdx";
+  slug: "express-realtime-socketio";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/apis/api-versioning.mdx": {
+	id: "web/backend/express/apis/api-versioning.mdx";
+  slug: "express-api-versioning";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/apis/graphql-express.mdx": {
+	id: "web/backend/express/apis/graphql-express.mdx";
+  slug: "express-graphql";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/apis/pagination-filtering.mdx": {
+	id: "web/backend/express/apis/pagination-filtering.mdx";
+  slug: "express-pagination-filtering";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/apis/restful-apis.mdx": {
+	id: "web/backend/express/apis/restful-apis.mdx";
+  slug: "express-restful-apis";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/auth-security/jwt-authentication.mdx": {
+	id: "web/backend/express/auth-security/jwt-authentication.mdx";
+  slug: "express-jwt-authentication";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/auth-security/oauth-passport.mdx": {
+	id: "web/backend/express/auth-security/oauth-passport.mdx";
+  slug: "express-oauth-passport";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/auth-security/security-best-practices.mdx": {
+	id: "web/backend/express/auth-security/security-best-practices.mdx";
+  slug: "express-security-best-practices";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/auth-security/sessions-cookies.mdx": {
+	id: "web/backend/express/auth-security/sessions-cookies.mdx";
+  slug: "express-sessions-cookies";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/basics/first-app.mdx": {
+	id: "web/backend/express/basics/first-app.mdx";
+  slug: "express-first-app";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/basics/introduction.mdx": {
+	id: "web/backend/express/basics/introduction.mdx";
+  slug: "express-introduction";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/basics/middleware-basics.mdx": {
+	id: "web/backend/express/basics/middleware-basics.mdx";
+  slug: "express-middleware-basics";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/basics/serving-static-files.mdx": {
+	id: "web/backend/express/basics/serving-static-files.mdx";
+  slug: "express-static-files";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/basics/setup.mdx": {
+	id: "web/backend/express/basics/setup.mdx";
+  slug: "express-setup";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/error-logs/async-error-handling.mdx": {
+	id: "web/backend/express/error-logs/async-error-handling.mdx";
+  slug: "express-async-error-handling";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/error-logs/centralized-error-handler.mdx": {
+	id: "web/backend/express/error-logs/centralized-error-handler.mdx";
+  slug: "express-centralized-error-handler";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/error-logs/graceful-shutdown.mdx": {
+	id: "web/backend/express/error-logs/graceful-shutdown.mdx";
+  slug: "express-graceful-shutdown";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/error-logs/logging-winston-morgan.mdx": {
+	id: "web/backend/express/error-logs/logging-winston-morgan.mdx";
+  slug: "express-logging-winston-morgan";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/espress-with-db/async-db-errors.mdx": {
+	id: "web/backend/express/espress-with-db/async-db-errors.mdx";
+  slug: "express-async-db-errors";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/espress-with-db/crud-operations.mdx": {
+	id: "web/backend/express/espress-with-db/crud-operations.mdx";
+  slug: "express-crud-operations";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/espress-with-db/mongodb-mongoose.mdx": {
+	id: "web/backend/express/espress-with-db/mongodb-mongoose.mdx";
+  slug: "express-mongodb-mongoose";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/espress-with-db/sql-orms.mdx": {
+	id: "web/backend/express/espress-with-db/sql-orms.mdx";
+  slug: "express-sql-orms";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/middleware/built-in-middleware.mdx": {
+	id: "web/backend/express/middleware/built-in-middleware.mdx";
+  slug: "express-built-in-middleware";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/middleware/custom-middleware.mdx": {
+	id: "web/backend/express/middleware/custom-middleware.mdx";
+  slug: "express-custom-middleware";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/middleware/request-lifecycle.mdx": {
+	id: "web/backend/express/middleware/request-lifecycle.mdx";
+  slug: "express-request-lifecycle";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/middleware/third-party-middleware.mdx": {
+	id: "web/backend/express/middleware/third-party-middleware.mdx";
+  slug: "express-third-party-middleware";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/production/cicd.mdx": {
+	id: "web/backend/express/production/cicd.mdx";
+  slug: "express-cicd";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/production/deployment.mdx": {
+	id: "web/backend/express/production/deployment.mdx";
+  slug: "express-deployment";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/production/env-config.mdx": {
+	id: "web/backend/express/production/env-config.mdx";
+  slug: "express-env-config";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/production/performance-caching.mdx": {
+	id: "web/backend/express/production/performance-caching.mdx";
+  slug: "express-performance-caching";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/production/reverse-proxy-nginx.mdx": {
+	id: "web/backend/express/production/reverse-proxy-nginx.mdx";
+  slug: "express-reverse-proxy-nginx";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/routing/error-handling-routes.mdx": {
+	id: "web/backend/express/routing/error-handling-routes.mdx";
+  slug: "express-error-handling-routes";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/routing/nested-routes-router.mdx": {
+	id: "web/backend/express/routing/nested-routes-router.mdx";
+  slug: "express-nested-routes-router";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/routing/route-methods.mdx": {
+	id: "web/backend/express/routing/route-methods.mdx";
+  slug: "express-route-methods";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/routing/route-params-query.mdx": {
+	id: "web/backend/express/routing/route-params-query.mdx";
+  slug: "express-route-params-query";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/templating-views/layouts-partials.mdx": {
+	id: "web/backend/express/templating-views/layouts-partials.mdx";
+  slug: "express-layouts-partials";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/templating-views/passing-data.mdx": {
+	id: "web/backend/express/templating-views/passing-data.mdx";
+  slug: "express-passing-data-views";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/templating-views/rendering-dynamic-content.mdx": {
+	id: "web/backend/express/templating-views/rendering-dynamic-content.mdx";
+  slug: "express-rendering-dynamic-content";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
+"web/backend/express/templating-views/using-template-engines.mdx": {
+	id: "web/backend/express/templating-views/using-template-engines.mdx";
+  slug: "express-template-engines";
+  body: string;
+  collection: "blog";
+  data: any
+} & { render(): Render[".mdx"] };
 "web/backend/nodejs/advance/debugging-monitoring.mdx": {
 	id: "web/backend/nodejs/advance/debugging-monitoring.mdx";
   slug: "nodejs-debugging-monitoring";

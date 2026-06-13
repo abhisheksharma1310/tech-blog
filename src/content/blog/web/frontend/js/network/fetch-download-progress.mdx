@@ -24,7 +24,7 @@ xhr.onprogress = function(e) {
 };
 ```
 
-`fetch` returns the full response at once — no progress. But we can use `response.body.getReader()` to read chunks as they arrive.
+`fetch` returns the full response at once - no progress. But we can use `response.body.getReader()` to read chunks as they arrive.
 
 ## Tracking Download Progress
 
@@ -183,8 +183,8 @@ xhr.send(formData);
 ## Key Takeaways
 
 - Use `response.body.getReader()` for **streaming fetch** progress
-- Read chunks in a `while` loop — accumulate, update UI, repeat
+- Read chunks in a `while` loop - accumulate, update UI, repeat
 - Compute percentage from `Content-Length` header when available
 - Reassemble chunks with `TextDecoder` or by concatenating `Uint8Array`
 - For **upload progress**, use `XMLHttpRequest` instead of fetch
-- Streaming is also useful for large JSON responses — process data as it arrives
+- Streaming is also useful for large JSON responses - process data as it arrives

@@ -1,6 +1,6 @@
 ---
 title: "Bubbling and Capturing"
-description: "Understand event propagation — bubbling, capturing, and stopPropagation"
+description: "Understand event propagation - bubbling, capturing, and stopPropagation"
 date: "2026-06-10"
 category: ["Web Development", "Frontend", "JavaScript DOM", "Events"]
 tags: ["JavaScript", "DOM", "Events", "Propagation"]
@@ -13,9 +13,9 @@ order: 2
 
 When an event fires on an element, it doesn't just stay there. It travels through the DOM tree in three phases:
 
-1. **Capturing** — travels from `document` down to the target
-2. **Target** — reaches the target element
-3. **Bubbling** — travels back up from target to `document`
+1. **Capturing** - travels from `document` down to the target
+2. **Target** - reaches the target element
+3. **Bubbling** - travels back up from target to `document`
 
 ```
 Capturing (trickle down)         Bubbling (bubble up)
@@ -56,7 +56,7 @@ Clicking the button fires: `button` → `p` → `div`
   <div class='bubble-box level-2' id='level2'>
     DIV (middle)
     <div class='bubble-box level-3' id='level3'>
-      DIV (inner) — click me!
+      DIV (inner) - click me!
     </div>
   </div>
 </div>
@@ -71,8 +71,8 @@ document.getElementById('level2').addEventListener('click', function() {
   log.textContent += 'bubbled to: DIV (middle)' + '\\n';
 });
 document.getElementById('level3').addEventListener('click', function(e) {
-  log.textContent = 'clicked: DIV (inner) — event.target is the innermost element' + '\\n';
-  // Don't stop propagation — let it bubble!
+  log.textContent = 'clicked: DIV (inner) - event.target is the innermost element' + '\\n';
+  // Don't stop propagation - let it bubble!
 });
 "
 />
@@ -101,7 +101,7 @@ element.addEventListener('click', handler, true);
   <div class='cap-box l2' id='cap2'>
     MIDDLE
     <div class='cap-box l3' id='cap3'>
-      INNER — click me
+      INNER - click me
     </div>
   </div>
 </div>
@@ -171,7 +171,7 @@ Call `e.stopPropagation()` to **stop** the event from bubbling further:
   <div class='stop-box l2' id='stop2'>
     MIDDLE (stops propagation)
     <div class='stop-box l3' id='stop3'>
-      INNER — click me
+      INNER - click me
     </div>
   </div>
 </div>
@@ -183,7 +183,7 @@ document.getElementById('stop1').addEventListener('click', function() {
   log.textContent += 'OUTER handler (never reached)' + '\\n';
 });
 document.getElementById('stop2').addEventListener('click', function(e) {
-  log.textContent += 'MIDDLE handler — stopping propagation!' + '\\n';
+  log.textContent += 'MIDDLE handler - stopping propagation!' + '\\n';
   e.stopPropagation();
 });
 document.getElementById('stop3').addEventListener('click', function() {
@@ -216,4 +216,4 @@ Some events don't bubble:
 - `event.target` is the **originating element**; `event.currentTarget` is the **listener element**
 - `e.stopPropagation()` stops the event from bubbling further
 - Use `{ capture: true }` to intercept events during the capture phase
-- Not all events bubble — check before relying on delegation
+- Not all events bubble - check before relying on delegation

@@ -47,7 +47,7 @@ A photoresistor (or light-dependent resistor, LDR) is a passive component whose 
 
 When light is bright, LDR resistance is low (≈ 5–10 kΩ), dividing more voltage to GND, so A0 reads lower. When dark, LDR resistance is high (≥ 1 MΩ), so A0 reads near 5V.
 
-### Inverted configuration (optional — higher reading = brighter)
+### Inverted configuration (optional - higher reading = brighter)
 
 Swap the LDR and the fixed resistor:
 
@@ -142,8 +142,8 @@ void loop()
 ### Hysteresis (avoid flickering at threshold)
 
 ```cpp
-const float THRESHOLD_ON  = 8.0;   // lux — turn on below this
-const float THRESHOLD_OFF = 15.0;  // lux — turn off above this
+const float THRESHOLD_ON  = 8.0;   // lux - turn on below this
+const float THRESHOLD_OFF = 15.0;  // lux - turn off above this
 
 bool ledState = false;
 
@@ -183,7 +183,7 @@ int readLDR(int samples)
 
 ### Code breakdown
 
-- `analogRead(A0)` — returns 0–1023. For the voltage divider circuit shown, higher ADC = darker (LDR resistance is higher, so less voltage drop across the fixed resistor).
+- `analogRead(A0)` - returns 0–1023. For the voltage divider circuit shown, higher ADC = darker (LDR resistance is higher, so less voltage drop across the fixed resistor).
 - LDR resistance calculation uses the voltage divider formula rearranged. For the second circuit (current-limiting resistor on top), the formula becomes `rLdr = R_FIXED / (VCC / vOut - 1)`.
 - Lux conversion is an approximation. Real LDRs have a non-linear R vs lux relationship (log-log slope ≈ 0.7–1.0). The formula `lux = 100 * (10000 / R_ldr)^1.4` is an approximation for a typical CdS cell. For accurate lux, calibrate with a known light source and a reference lux meter.
 - Hysteresis prevents the LED from rapidly flickering when the light level hovers at the threshold.
@@ -204,11 +204,11 @@ void loop()
 {
   if (digitalRead(LDR_DO) == LOW)
   {
-    Serial.println("Dark — below threshold");
+    Serial.println("Dark - below threshold");
   }
   else
   {
-    Serial.println("Light — above threshold");
+    Serial.println("Light - above threshold");
   }
 
   delay(200);

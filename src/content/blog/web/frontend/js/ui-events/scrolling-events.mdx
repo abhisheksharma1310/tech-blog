@@ -11,7 +11,7 @@ order: 6
 
 ## Scrolling Events
 
-Scroll events let you respond when the user scrolls — useful for lazy loading, infinite scroll, parallax effects, and scroll-based animations.
+Scroll events let you respond when the user scrolls - useful for lazy loading, infinite scroll, parallax effects, and scroll-based animations.
 
 ## The Scroll Event
 
@@ -23,7 +23,7 @@ window.addEventListener('scroll', function() {
 
 The `scroll` event fires on:
 
-- `window` — page scrolling
+- `window` - page scrolling
 - Any element with `overflow: auto/scroll`
 
 ## Scroll Position
@@ -142,10 +142,10 @@ const out = document.getElementById('threshold-log');
 container.addEventListener('scroll', function() {
   if (this.scrollTop > 100) {
     btn.style.display = 'block';
-    out.textContent = 'Scrolled past 100px — showing button';
+    out.textContent = 'Scrolled past 100px - showing button';
   } else {
     btn.style.display = 'none';
-    out.textContent = 'At top — button hidden';
+    out.textContent = 'At top - button hidden';
   }
 });
 
@@ -237,9 +237,9 @@ Modern browsers support CSS `scroll-snap`:
 
 ## Key Takeaways
 
-- Scroll events fire **rapidly** — always throttle with `requestAnimationFrame` or time gates
+- Scroll events fire **rapidly** - always throttle with `requestAnimationFrame` or time gates
 - Track `scrollY`/`scrollTop` for position, compare values for direction
 - Use `scrollHeight - scrollTop - clientHeight < threshold` for **infinite scroll** detection
-- Consider `IntersectionObserver` instead — no throttling needed, better performance
+- Consider `IntersectionObserver` instead - no throttling needed, better performance
 - `{ passive: true }` on scroll listeners enables browser optimizations
 - Smooth scrolling: `element.scrollTo({ top: 0, behavior: 'smooth' })`

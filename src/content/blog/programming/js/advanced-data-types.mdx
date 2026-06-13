@@ -171,8 +171,8 @@ let set = new Set();
 set.add(1);
 set.add(2);
 set.add(3);
-set.add(2); // Duplicate — ignored!
-set.add(1); // Duplicate — ignored!
+set.add(2); // Duplicate - ignored!
+set.add(1); // Duplicate - ignored!
 
 set.size; // → 3
 set.has(2); // → true
@@ -229,7 +229,7 @@ visits.set(user2, new Date());
 document.write('Visits count: ' + visits.size + '<br>');
 document.write('Alice visited: ' + visits.get(user1) + '<br>');
 
-// Set — remove duplicates
+// Set - remove duplicates
 let numbers = [1, 2, 2, 3, 3, 3, 4, 5, 5];
 let unique = [...new Set(numbers)];
 document.write('Unique: ' + unique.join(', ') + '<br>');
@@ -244,7 +244,7 @@ document.write('Total words: ' + words.length + '<br>');"
 
 ## WeakMap and WeakSet
 
-`WeakMap` and `WeakSet` are special collections where keys/values are **weakly referenced** — if an object has no other references, it gets garbage collected.
+`WeakMap` and `WeakSet` are special collections where keys/values are **weakly referenced** - if an object has no other references, it gets garbage collected.
 
 ### WeakMap
 
@@ -268,7 +268,7 @@ function countVisit(user) {
 
 ### WeakSet
 
-Similar — objects only, no iteration:
+Similar - objects only, no iteration:
 
 ```js
 let weakSet = new WeakSet();
@@ -320,7 +320,7 @@ let doubled = Object.fromEntries(
 );
 // → { apple: 3, banana: 1.6, orange: 2.4 }
 
-// Filter — only items under $1
+// Filter - only items under $1
 let cheap = Object.fromEntries(
   Object.entries(prices).filter(([key, value]) => value < 1)
 );
@@ -536,7 +536,7 @@ date.toLocaleDateString("en-US", {
 ### Date.now()
 
 ```js
-let timestamp = Date.now(); // Current time in ms — faster than new Date().getTime()
+let timestamp = Date.now(); // Current time in ms - faster than new Date().getTime()
 ```
 
 ## JSON Methods, toJSON
@@ -588,7 +588,7 @@ let obj = {
 // → "{\"a\":1}"
 ```
 
-### Replacer — custom filtering
+### Replacer - custom filtering
 
 ```js
 let user = { name: "Alice", age: 30, password: "secret" };
@@ -615,7 +615,7 @@ let user = JSON.parse(str);
 console.log(user.name); // → "Alice"
 ```
 
-### Reviver — transform values during parse
+### Reviver - transform values during parse
 
 ```js
 let data = '{"name":"Alice","birth":"2026-06-09T10:30:00.000Z"}';

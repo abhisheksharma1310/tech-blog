@@ -1,6 +1,6 @@
 ---
 title: "Performance Optimization"
-description: "Profile, cache, and scale Node.js applications — flamegraphs, memoisation, load balancing, and monitoring"
+description: "Profile, cache, and scale Node.js applications - flamegraphs, memoisation, load balancing, and monitoring"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Advanced"]
 tags: ["Node.js", "Advanced", "Performance", "Profiling", "Caching"]
@@ -11,7 +11,7 @@ order: 5
 
 ## The Performance Pyramid
 
-Before you touch a single line of code, understand this: **premature optimisation is the root of all evil**. Always measure first, optimise second. Optimise in this order — most impact first:
+Before you touch a single line of code, understand this: **premature optimisation is the root of all evil**. Always measure first, optimise second. Optimise in this order - most impact first:
 
 ```
 1. Identify bottlenecks (profile)
@@ -28,7 +28,7 @@ Before you touch a single line of code, understand this: **premature optimisatio
 
 **Rule of thumb:** A cache hit saves 100x more time than any micro-optimisation. Always start at the top of the pyramid.
 
-## 1. Profiling — Finding the Bottleneck
+## 1. Profiling - Finding the Bottleneck
 
 Before you can optimise, you need to know what's slow. Guessing is almost always wrong.
 
@@ -48,7 +48,7 @@ The output shows you which C++ and JavaScript functions consume the most CPU tim
 
 ### Chrome DevTools Integration
 
-The most visual approach — connect Node.js to Chrome's DevTools:
+The most visual approach - connect Node.js to Chrome's DevTools:
 
 ```bash
 node --inspect-brk app.js
@@ -56,10 +56,10 @@ node --inspect-brk app.js
 
 Then open `chrome://inspect` in Chrome → click "Open dedicated DevTools for Node". You get:
 
-- **CPU Profiler** — record a profile, see a flamechart
-- **Memory Heap** — take snapshots, compare for leaks
-- **Performance** — record activity timeline
-- **Sources** — set breakpoints, step through code
+- **CPU Profiler** - record a profile, see a flamechart
+- **Memory Heap** - take snapshots, compare for leaks
+- **Performance** - record activity timeline
+- **Sources** - set breakpoints, step through code
 
 ### Programmatic Profiling
 
@@ -94,7 +94,7 @@ Flamegraphs visualise **where CPU time is spent**: wider bars mean more time:
 npx 0x app.js
 # Opens a flamegraph in the browser
 # Each bar is a function call; wider = more CPU time
-# Look for "plateaus" — wide functions that indicate bottlenecks
+# Look for "plateaus" - wide functions that indicate bottlenecks
 ```
 
 ## 2. Caching Strategies
@@ -115,7 +115,7 @@ class MemoryCache {
     const entry = this.cache.get(key);
     if (!entry) return null;
 
-    // Expired — remove and return null
+    // Expired - remove and return null
     if (Date.now() > entry.expiry) {
       this.cache.delete(key);
       return null;
@@ -220,13 +220,13 @@ In production, cache at multiple levels:
 ```
 Client (Browser)
     │
-    ├── CDN Cache (CloudFlare, CloudFront) — 10ms
+    ├── CDN Cache (CloudFlare, CloudFront) - 10ms
     │
-    ├── Reverse Proxy (Nginx, Varnish) — 1ms
+    ├── Reverse Proxy (Nginx, Varnish) - 1ms
     │
-    ├── Application Cache (Redis, in-memory) — 0.1ms
+    ├── Application Cache (Redis, in-memory) - 0.1ms
     │
-    └── Database — 10-100ms
+    └── Database - 10-100ms
 ```
 
 ## 3. Database Query Optimisation
@@ -236,7 +236,7 @@ Client (Browser)
 Creating a new database connection per request is **the single worst performance mistake**. Always pool:
 
 ```js
-// pool.js — never create connections per request
+// pool.js - never create connections per request
 const { Pool } = require('pg');
 
 const pool = new Pool({
@@ -261,14 +261,14 @@ async function query(text, params) {
 ### The N+1 Problem
 
 ```js
-// ❌ BAD — N+1 queries
+// ❌ BAD - N+1 queries
 const posts = await db.getRecentPosts();        // 1 query
 for (const post of posts) {                     // N queries
   const author = await db.findUser(post.authorId);
   post.author = author;
 }
 
-// ✅ GOOD — single batch query
+// ✅ GOOD - single batch query
 const posts = await db.getRecentPosts();
 const authorIds = [...new Set(posts.map(p => p.authorId))];
 const authors = await db.findUsersByIds(authorIds); // 1 query
@@ -282,13 +282,13 @@ for (const post of posts) {
 ### Pagination (Never Return Everything)
 
 ```js
-// ❌ BAD — returns everything
+// ❌ BAD - returns everything
 app.get('/api/users', async (req, res) => {
   const users = await db.findUsers(); // Could be millions
   res.json(users);
 });
 
-// ✅ GOOD — cursor-based pagination
+// ✅ GOOD - cursor-based pagination
 app.get('/api/users', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const cursor = req.query.cursor; // Last ID from previous page
@@ -334,21 +334,21 @@ Compare before and after each optimisation to see what actually helped.
 
 ## 5. Code-Level Optimisations
 
-These are at the bottom of the pyramid for a reason — they typically yield 5-10% improvement, while caching can yield 1000%+. But when all else is equal, these matter.
+These are at the bottom of the pyramid for a reason - they typically yield 5-10% improvement, while caching can yield 1000%+. But when all else is equal, these matter.
 
 ### Avoid Blocking the Event Loop
 
-Heavy synchronous work blocks everything — no requests, no timers, no I/O:
+Heavy synchronous work blocks everything - no requests, no timers, no I/O:
 
 ```js
-// ❌ BAD — blocks event loop for the entire array
+// ❌ BAD - blocks event loop for the entire array
 function processLargeArray(arr) {
   for (const item of arr) {
     heavyComputation(item);
   }
 }
 
-// ✅ BETTER — chunk the work, yield between chunks
+// ✅ BETTER - chunk the work, yield between chunks
 function processInChunks(arr, chunkSize = 1000) {
   let index = 0;
 
@@ -369,7 +369,7 @@ function processInChunks(arr, chunkSize = 1000) {
   nextChunk();
 }
 
-// ✅ BEST — offload to worker thread
+// ✅ BEST - offload to worker thread
 const { Worker } = require('worker_threads');
 // Worker threads run CPU work on a separate core
 ```
@@ -379,7 +379,7 @@ const { Worker } = require('worker_threads');
 V8 heavily optimises built-in methods. Hand-written loops are often slower:
 
 ```js
-// ❌ Manual loop (slower — V8 can't inline as well)
+// ❌ Manual loop (slower - V8 can't inline as well)
 let sum = 0;
 for (const val of numbers) sum += val;
 
@@ -398,16 +398,16 @@ const merged = arr1.concat(arr2);
 Strings are immutable in JavaScript. Every `+=` creates a new string:
 
 ```js
-// ❌ Bad — quadratic time, reallocates on every iteration
+// ❌ Bad - quadratic time, reallocates on every iteration
 let html = '';
 for (const item of items) {
   html += `<li>${item}</li>`;
 }
 
-// ✅ Good — array join (single allocation)
+// ✅ Good - array join (single allocation)
 const html = `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
 
-// ✅ Best for huge strings — use a StringBuilder pattern
+// ✅ Best for huge strings - use a StringBuilder pattern
 const chunks = [];
 for (const item of items) {
   chunks.push(`<li>${item}</li>`);
@@ -425,7 +425,7 @@ const compression = require('compression');
 
 const app = express();
 app.use(compression({
-  level: 6,              // Default — good balance
+  level: 6,              // Default - good balance
   threshold: 1024,       // Only compress responses > 1KB
   filter: (req, res) => {
     if (req.headers['x-no-compression']) return false;
@@ -500,14 +500,14 @@ app.get('/health', async (req, res) => {
 
 ## Key Takeaways
 
-- **Profile before optimising** — measure, don't guess
-- **Caching is the highest-impact optimisation** — every miss saved is pure win
+- **Profile before optimising** - measure, don't guess
+- **Caching is the highest-impact optimisation** - every miss saved is pure win
 - Use **LRU caches** (with size limits) for memory-safe caching
-- **Pool database connections** — never create them per request
-- **Batch database queries** — avoid the N+1 problem at all costs
+- **Pool database connections** - never create them per request
+- **Batch database queries** - avoid the N+1 problem at all costs
 - **Chunk heavy work** using `setImmediate` to yield to the event loop
-- **Compress HTTP responses** (gzip/brotli) — easy 70-90% size reduction
-- **Load test** every change — `autocannon` or `wrk` for reproducible benchmarks
-- **Monitor event loop lag** — it's the first indicator that your app is struggling
+- **Compress HTTP responses** (gzip/brotli) - easy 70-90% size reduction
+- **Load test** every change - `autocannon` or `wrk` for reproducible benchmarks
+- **Monitor event loop lag** - it's the first indicator that your app is struggling
 - **Use native methods** over hand-written loops when possible
 - Always start at the **top of the pyramid** (bottlenecks → caching → clustering → micro-optimisations)

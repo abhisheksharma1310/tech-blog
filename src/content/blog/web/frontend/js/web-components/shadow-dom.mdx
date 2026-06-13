@@ -72,7 +72,7 @@ class ShadowDemo extends HTMLElement {
         p { color: #334155; background: #f1f5f9; padding: 8px; border-radius: 4px; }
       </style>
       <h3>Shadow DOM</h3>
-      <p>Styled inside shadow — the page's CSS can't reach me!</p>
+      <p>Styled inside shadow - the page's CSS can't reach me!</p>
       <p>The red italic style in the global CSS has no effect here.</p>
     `;
   }
@@ -90,8 +90,8 @@ document.getElementById('shadow-out').textContent =
 
 | Mode | Accessible from outside? |
 |---|---|
-| `open` | ✅ Yes — `element.shadowRoot` returns the shadow root |
-| `closed` | ❌ No — `element.shadowRoot` returns `null` |
+| `open` | ✅ Yes - `element.shadowRoot` returns the shadow root |
+| `closed` | ❌ No - `element.shadowRoot` returns `null` |
 
 Use `open` unless you have a specific reason to close it (closed mode also breaks some DevTools features).
 
@@ -102,7 +102,7 @@ Use `open` unless you have a specific reason to close it (closed mode also break
 | Style scope | Global | Encapsulated |
 | CSS selectors | Can target anywhere | Limited to shadow tree |
 | `element.querySelector` | Finds anywhere | Finds in light DOM only |
-| `shadowRoot.querySelector` | — | Finds in shadow DOM only |
+| `shadowRoot.querySelector` | - | Finds in shadow DOM only |
 | IDs | Global scope | Scoped to shadow |
 
 ## Querying Inside Shadow DOM
@@ -216,5 +216,5 @@ document.getElementById('toggle-theme').onclick = function() {
 - Shadow DOM styles don't leak out
 - Use `shadowRoot.querySelector()` to find elements inside shadow
 - Slots project **light DOM content** into the shadow tree
-- CSS custom properties **cross the shadow boundary** — use them for theming
+- CSS custom properties **cross the shadow boundary** - use them for theming
 - An element can have **only one** shadow root

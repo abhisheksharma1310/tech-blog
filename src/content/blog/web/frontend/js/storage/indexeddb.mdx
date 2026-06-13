@@ -1,6 +1,6 @@
 ---
 title: "IndexedDB"
-description: "Client-side database with IndexedDB — store structured data in the browser"
+description: "Client-side database with IndexedDB - store structured data in the browser"
 date: "2026-06-10"
 category: ["Web Development", "Frontend", "JavaScript DOM", "Storage"]
 tags: ["JavaScript", "Storage", "IndexedDB", "Database"]
@@ -18,8 +18,8 @@ order: 3
 | Concept | Description |
 |---|---|
 | **Database** | One per origin (e.g., `myApp`) |
-| **Object Store** | Like a table — holds records |
-| **Index** | Like a SQL index — fast lookups by a property |
+| **Object Store** | Like a table - holds records |
+| **Index** | Like a SQL index - fast lookups by a property |
 | **Key** | Unique identifier for each record |
 | **Transaction** | Atomic read/write operations |
 | **Cursor** | Iterate over multiple records |
@@ -184,7 +184,7 @@ request.onsuccess = function() {
 const index = store.index('title');
 const request = index.get('My Note');
 
-// Cursor — iterate all records
+// Cursor - iterate all records
 const cursor = store.openCursor();
 cursor.onsuccess = function(event) {
   const cursor = event.target.result;
@@ -249,4 +249,4 @@ IndexedDB is ideal for offline-first apps, draft saving, and client-side caches.
 - Indexes enable **fast lookups** by non-key properties
 - Cursors **iterate** over matching records
 - Much more powerful than localStorage for complex data
-- Async API — uses `onsuccess`/`onerror` callbacks (or wrap in Promises)
+- Async API - uses `onsuccess`/`onerror` callbacks (or wrap in Promises)

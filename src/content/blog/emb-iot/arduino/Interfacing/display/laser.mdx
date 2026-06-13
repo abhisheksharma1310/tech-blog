@@ -39,7 +39,7 @@ VCC           -->     5V
 GND           -->     GND
 ```
 
-The module is active HIGH — applying a HIGH signal (5V) to the S pin turns on the laser. A LOW signal turns it off.
+The module is active HIGH - applying a HIGH signal (5V) to the S pin turns on the laser. A LOW signal turns it off.
 
 ## Pin Map
 
@@ -68,11 +68,11 @@ void setup()
 
   Serial.println("Laser Emitter Control");
   Serial.println("Commands:");
-  Serial.println("  O — Laser ON");
-  Serial.println("  F — Laser OFF");
-  Serial.println("  B — Blink 3x");
-  Serial.println("  M — Send Morse (SOS)");
-  Serial.println("  P — Pulse mode");
+  Serial.println("  O - Laser ON");
+  Serial.println("  F - Laser OFF");
+  Serial.println("  B - Blink 3x");
+  Serial.println("  M - Send Morse (SOS)");
+  Serial.println("  P - Pulse mode");
 }
 
 void loop()
@@ -203,10 +203,10 @@ void loop()
 
 ### Code breakdown
 
-- `digitalWrite(LASER_PIN, HIGH)` — turns the laser on by applying 5V to the module's signal pin. The module's onboard transistor switches the laser diode.
-- `analogWrite(LASER_PIN, value)` — applies a PWM signal to modulate the laser intensity. At low duty cycles (< 30), the laser may not emit visible light (the diode has a threshold current below which no lasing occurs).
-- `blinkLaser(times, ms)` — flashes the laser at a fixed interval.
-- Morse SOS: three short (dot = 200 ms), three long (dash = 600 ms), three short — a standard distress signal.
+- `digitalWrite(LASER_PIN, HIGH)` - turns the laser on by applying 5V to the module's signal pin. The module's onboard transistor switches the laser diode.
+- `analogWrite(LASER_PIN, value)` - applies a PWM signal to modulate the laser intensity. At low duty cycles (< 30), the laser may not emit visible light (the diode has a threshold current below which no lasing occurs).
+- `blinkLaser(times, ms)` - flashes the laser at a fixed interval.
+- Morse SOS: three short (dot = 200 ms), three long (dash = 600 ms), three short - a standard distress signal.
 - The tripwire uses an LDR (light-dependent resistor) in a voltage divider. When the laser beam is pointed directly at the LDR, the resistance is low and the analog reading is high. When the beam is broken, ambient light is much dimmer and the ADC reading drops.
 
 ### PWM modulation for optical communication
@@ -242,7 +242,7 @@ void sendByte(uint8_t data)
 4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 5. Upload the sketch to the Arduino.
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-7. Type **O** to turn the laser on — a red dot appears.
+7. Type **O** to turn the laser on - a red dot appears.
 8. Type **F** to turn the laser off.
 9. Type **B** to blink the laser three times.
 10. Type **M** to send SOS in Morse code.
@@ -251,11 +251,11 @@ void sendByte(uint8_t data)
 
 ## Caution
 
-- **⚠️ EYE SAFETY — LASER RADIATION:** The KY-008 is a Class 2 laser (< 1 mW, 650 nm) which is generally considered safe for accidental exposure (blink reflex protects the eye). However, **direct exposure to the beam can cause temporary flash blindness** and staring into the beam may cause retinal damage. **Never aim the laser at a person's eyes, animals, or reflective surfaces (mirrors, glass, polished metal)** that could redirect the beam. The risk is cumulative — even brief exposure should be avoided. For classroom or public use, use a Class 1 laser module with < 0.4 mW output.
+- **⚠️ EYE SAFETY - LASER RADIATION:** The KY-008 is a Class 2 laser (< 1 mW, 650 nm) which is generally considered safe for accidental exposure (blink reflex protects the eye). However, **direct exposure to the beam can cause temporary flash blindness** and staring into the beam may cause retinal damage. **Never aim the laser at a person's eyes, animals, or reflective surfaces (mirrors, glass, polished metal)** that could redirect the beam. The risk is cumulative - even brief exposure should be avoided. For classroom or public use, use a Class 1 laser module with < 0.4 mW output.
 - **Current draw:** The KY-008 draws approximately 25–35 mA when active. The module includes a current-limiting resistor for the laser diode, so no additional resistor is needed. The Arduino 5V pin can supply this comfortably. However, if the laser is left on continuously for extended periods, the module's surface-mount transistor may warm up. Limit continuous ON time to < 5 minutes and allow a cool-down period.
 - **Laser diode lifetime:** The KY-008 uses a cheap laser diode with a typical lifetime of 2,000–5,000 hours. Continuous operation reduces lifetime; the diode's light output gradually decreases. PWM dimming (lower duty cycles) extends the diode's life. Do not exceed the rated supply voltage (5V).
 - **Heat dissipation:** The module has no heatsink. In a sealed enclosure without airflow, the transistor and laser diode can overheat if the laser is on continuously. Use PWM to reduce average power, or pulse the laser (duty cycle < 50%) for long-running applications.
-- **Class 1 vs Class 2 classification:** A **Class 1** laser is safe under all conditions (enclosed devices like DVD players). **Class 2** (< 1 mW visible) is safe for accidental exposure due to the blink reflex. The KY-008 is typically Class 2, but some modules labelled "5 mW" may exceed 1 mW and be Class 3A — which is hazardous. If unsure, measure the power output with a calibrated laser power meter.
+- **Class 1 vs Class 2 classification:** A **Class 1** laser is safe under all conditions (enclosed devices like DVD players). **Class 2** (< 1 mW visible) is safe for accidental exposure due to the blink reflex. The KY-008 is typically Class 2, but some modules labelled "5 mW" may exceed 1 mW and be Class 3A - which is hazardous. If unsure, measure the power output with a calibrated laser power meter.
 - **Optical tripwire limitations:** The LDR-based receiver is affected by ambient light. Direct sunlight or bright indoor lighting can saturate the LDR, making it impossible to detect the laser beam. Use a modulated laser (PWM at a specific frequency, e.g., 1 kHz) with a bandpass photodiode receiver circuit for sunlight immunity. A simple LDR works reliably only in dim-to-moderate indoor light.
 - **Laser divergence:** The KY-008's beam has a divergence angle of approximately 1–2 milliradians. At 10 m, the spot diameter is ≈ 2 cm. At 50 m, it is ≈ 10 cm. For long-distance tripwires, use a collimating lens to reduce divergence, or increase the LDR's collection area with a lens or reflector.
 - **Legal restrictions:** In many jurisdictions, laser pointers above 5 mW are restricted or require a licence. The KY-008 is generally below this threshold, but check local regulations (FDA 21 CFR 1040 in the US, EN 60825 in the EU). Never use a laser module to deliberately shine at aircraft, vehicles, or people.

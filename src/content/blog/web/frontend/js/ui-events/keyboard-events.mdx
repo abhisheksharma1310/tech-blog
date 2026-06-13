@@ -11,7 +11,7 @@ order: 5
 
 ## Keyboard Events
 
-Keyboard events let you respond when a user presses a key — essential for shortcuts, games, forms, and accessibility.
+Keyboard events let you respond when a user presses a key - essential for shortcuts, games, forms, and accessibility.
 
 ## Keyboard Event Types
 
@@ -19,7 +19,7 @@ Keyboard events let you respond when a user presses a key — essential for shor
 |---|---|
 | `keydown` | Key is pressed (repeats while held) |
 | `keyup` | Key is released |
-| `keypress` | Deprecated — don't use |
+| `keypress` | Deprecated - don't use |
 
 The sequence is: `keydown` → (repeat) → `keyup`
 
@@ -85,24 +85,24 @@ document.addEventListener('keydown', function(e) {
   // Ctrl+S
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
-    log.textContent = 'Ctrl+S — Save action';
+    log.textContent = 'Ctrl+S - Save action';
     return;
   }
   // Ctrl+Z
   if (e.ctrlKey && e.key === 'z') {
     e.preventDefault();
-    log.textContent = 'Ctrl+Z — Undo action';
+    log.textContent = 'Ctrl+Z - Undo action';
     return;
   }
   // Escape
   if (e.key === 'Escape') {
-    log.textContent = 'Escape — Close/Cancel';
+    log.textContent = 'Escape - Close/Cancel';
     return;
   }
   // Ctrl+Shift+F
   if (e.ctrlKey && e.shiftKey && e.key === 'F') {
     e.preventDefault();
-    log.textContent = 'Ctrl+Shift+F — Advanced search';
+    log.textContent = 'Ctrl+Shift+F - Advanced search';
     return;
   }
 });
@@ -164,7 +164,7 @@ function movePlayer() {
 
 ## Tab Trapping
 
-For modals, you often want to **trap focus** — prevent Tab from leaving the modal:
+For modals, you often want to **trap focus** - prevent Tab from leaving the modal:
 
 ```javascript
 modal.addEventListener('keydown', function(e) {

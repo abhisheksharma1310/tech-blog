@@ -49,14 +49,14 @@ alert("Hello");
 alert("World");
 ```
 
-Semicolons are **optional** in most cases — JavaScript automatically inserts them (ASI — Automatic Semicolon Insertion):
+Semicolons are **optional** in most cases - JavaScript automatically inserts them (ASI - Automatic Semicolon Insertion):
 
 ```js
 alert("Hello")
 alert("World")
 ```
 
-But be careful — ASI doesn't always work as expected:
+But be careful - ASI doesn't always work as expected:
 
 ```js
 // This works fine
@@ -83,7 +83,7 @@ Comments are ignored by the engine. Use them to explain your code:
 */
 
 /**
- * JSDoc comment — describes functions
+ * JSDoc comment - describes functions
  * @param {string} name
  */
 function greet(name) {
@@ -136,7 +136,7 @@ let z = 010; // Error!
 Place `"use strict"` at the top of your script or function:
 
 ```js
-"use strict"; // Top of file — applies to all code
+"use strict"; // Top of file - applies to all code
 
 function myFunc() {
   "use strict"; // Or just inside a function
@@ -161,19 +161,19 @@ console.log(message); // → World
 
 ### `const`
 
-Declares a constant — cannot be reassigned:
+Declares a constant - cannot be reassigned:
 
 ```js
 const PI = 3.14159;
 PI = 3; // TypeError: Assignment to constant variable
 ```
 
-> `const` does NOT make the value immutable — only the binding. For objects:
+> `const` does NOT make the value immutable - only the binding. For objects:
 
 ```js
 const user = { name: "Alice" };
-user.name = "Bob"; // This is fine — the object itself changed
-// user = { name: "Charlie" }; // Error — can't reassign
+user.name = "Bob"; // This is fine - the object itself changed
+// user = { name: "Charlie" }; // Error - can't reassign
 ```
 
 ### `var`
@@ -205,12 +205,12 @@ console.log(x); // → 10 (no error!)
 - Cannot use reserved words (`if`, `for`, `class`, etc.)
 
 ```js
-let userName = "Alice";    // camelCase — standard convention
+let userName = "Alice";    // camelCase - standard convention
 let _private = "secret";   // Leading underscore for "private"
 let $element = "button";   // jQuery-like convention
 let myVariable123 = "ok";  // Digits allowed (not at start)
-// let 123abc = "no";      // Error — starts with digit
-// let let = "no";         // Error — reserved word
+// let 123abc = "no";      // Error - starts with digit
+// let let = "no";         // Error - reserved word
 ```
 
 ## Data Types
@@ -235,17 +235,17 @@ let template = `Hi, ${name}!`; // Template literal
 let isActive = true;
 let isComplete = false;
 
-// 4. Undefined — variable declared but no value assigned
+// 4. Undefined - variable declared but no value assigned
 let nothing;
 console.log(nothing); // → undefined
 
-// 5. Null — intentional absence of value
+// 5. Null - intentional absence of value
 let empty = null;
 
-// 6. Symbol — unique identifier (ES6)
+// 6. Symbol - unique identifier (ES6)
 let id = Symbol("id");
 
-// 7. BigInt — for very large integers (ES2020)
+// 7. BigInt - for very large integers (ES2020)
 let bigNumber = 9007199254740991n;
 ```
 
@@ -300,7 +300,7 @@ String(true);      // → "true"
 String(null);      // → "null"
 String(undefined); // → "undefined"
 
-// Implicit — happens with + when a string is involved
+// Implicit - happens with + when a string is involved
 let value = 123 + ""; // → "123"
 ```
 
@@ -320,7 +320,7 @@ Number(undefined);  // → NaN
 let str = "42";
 let num = +str;     // → 42
 
-// parseInt / parseFloat — more forgiving
+// parseInt / parseFloat - more forgiving
 parseInt("100px");  // → 100
 parseFloat("3.14em"); // → 3.14
 ```

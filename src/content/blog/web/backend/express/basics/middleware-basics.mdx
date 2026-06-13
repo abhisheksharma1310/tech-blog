@@ -1,0 +1,334 @@
+---
+title: "Understanding Middleware Basics"
+description: "Learn what middleware is, how it works, and how to build your own middleware in Express"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Basics"]
+tags: ["Express", "Middleware", "Pipeline", "Request-Response"]
+slug: "express-middleware-basics"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## What is Middleware?
+
+**Middleware** is a function that sits between the incoming request and the route handler. It has access to the **request** (`req`), **response** (`res`), and the **next** middleware function (`next`) in the pipeline.
+
+```
+Incoming Request
+       │
+       ▼
+┌───────────────┐
+│  Middleware 1  │──→ (could send response here)
+└───────┬───────┘
+        │ next()
+        ▼
+┌───────────────┐
+│  Middleware 2  │──→ (could send response here)
+└───────┬───────┘
+        │ next()
+        ▼
+┌───────────────┐
+│ Route Handler │──→ Response
+└───────────────┘
+```
+
+## Middleware Function Signature
+
+Every middleware function follows this pattern:
+
+```javascript
+function myMiddleware(req, res, next) {
+  // Do something with req or res
+  console.log('Request received:', req.method, req.path);
+
+  // Call the next middleware in the pipeline
+  next();
+}
+```
+
+The three arguments:
+- `req` - the request object
+- `res` - the response object
+- `next` - a function that passes control to the next middleware
+
+## Using Middleware: app.use()
+
+The `app.use()` method registers middleware functions:
+
+```javascript
+const express = require('express');
+const app = express();
+
+// Middleware 1: Logger
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} | ${req.method} ${req.path}`);
+  next();
+});
+
+// Middleware 2: Timing
+app.use((req, res, next) => {
+  req.startTime = Date.now();
+  next();
+});
+
+// Route handler
+app.get('/', (req, res) => {
+  const duration = Date.now() - req.startTime;
+  res.send(`Home page (processed in ${duration}ms)`);
+});
+
+app.listen(3000);
+```
+
+## Middleware Execution Flow
+
+Middleware runs in the order it is registered:
+
+```javascript
+app.use((req, res, next) => {
+  console.log('A');
+  next();
+  console.log('A - after next()');
+});
+
+app.use((req, res, next) => {
+  console.log('B');
+  next();
+  console.log('B - after next()');
+});
+
+app.get('/', (req, res) => {
+  console.log('C');
+  res.send('Done');
+});
+
+// Output for one request:
+// A
+// B
+// C
+// B - after next()
+// A - after next()
+```
+
+This demonstrates the **onion pattern** - code before `next()` runs on the way in, code after `next()` runs on the way out.
+
+```
+         ┌───────────────────────────┐
+         │     Middleware 1 (A)      │
+         │  ┌─────────────────────┐  │
+         │  │   Middleware 2 (B)  │  │
+         │  │  ┌───────────────┐  │  │
+         │  │  │ Route (C)     │  │  │
+         │  │  └───────────────┘  │  │
+         │  │       Response      │  │
+         │  └─────────────────────┘  │
+         └───────────────────────────┘
+```
+
+## Types of Middleware
+
+### 1. Application-level middleware
+
+Bound to `app` with `app.use()` or `app.METHOD()`:
+
+```javascript
+// Runs on every request
+app.use(logger);
+
+// Runs only on /api routes
+app.use('/api', apiLogger);
+```
+
+### 2. Router-level middleware
+
+Bound to an `express.Router()` instance:
+
+```javascript
+const router = express.Router();
+
+router.use((req, res, next) => {
+  console.log('Router-specific middleware');
+  next();
+});
+```
+
+### 3. Error-handling middleware
+
+Has **four parameters** - Express identifies it by the arity:
+
+```javascript
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+```
+
+### 4. Built-in middleware
+
+Express ships with several middleware functions:
+
+```javascript
+// Parse JSON request bodies
+app.use(express.json());
+
+// Parse URL-encoded bodies
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files
+app.use(express.static('public'));
+```
+
+### 5. Third-party middleware
+
+```javascript
+const morgan = require('morgan');
+const cors = require('cors');
+const helmet = require('helmet');
+
+app.use(morgan('dev'));    // HTTP request logger
+app.use(cors());           // Cross-Origin Resource Sharing
+app.use(helmet());         // Security headers
+```
+
+## Building Custom Middleware
+
+### Logger Middleware
+
+```javascript
+function logger(format = 'short') {
+  return (req, res, next) => {
+    const start = Date.now();
+
+    // Listen for response finish
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      const log = {
+        short: `${req.method} ${req.path} ${res.statusCode}`,
+        full: `${new Date().toISOString()} | ${req.method} ${req.path} | ${res.statusCode} | ${duration}ms`
+      };
+
+      console.log(log[format] || log.short);
+    });
+
+    next();
+  };
+}
+
+app.use(logger());
+```
+
+### Auth Middleware
+
+```javascript
+function requireAuth(req, res, next) {
+  const token = req.headers['authorization'];
+
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  // Verify token (simplified)
+  if (token === 'secret-token') {
+    req.user = { id: 1, name: 'Admin' };
+    return next();
+  }
+
+  res.status(403).json({ error: 'Invalid token' });
+}
+
+app.get('/admin', requireAuth, (req, res) => {
+  res.json({ message: 'Welcome admin!', user: req.user });
+});
+```
+
+### Request Validation Middleware
+
+```javascript
+function validateUser(req, res, next) {
+  const { name, email } = req.body;
+  const errors = [];
+
+  if (!name || name.length < 2) {
+    errors.push('Name must be at least 2 characters');
+  }
+
+  if (!email || !email.includes('@')) {
+    errors.push('Valid email is required');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({ errors });
+  }
+
+  next();
+}
+
+app.post('/users', express.json(), validateUser, (req, res) => {
+  res.status(201).json({ message: 'User created' });
+});
+```
+
+## Middleware and Route Ordering
+
+Order matters. Middleware registered after a route won't run for that route:
+
+```javascript
+// ❌ Wrong order
+app.get('/', (req, res) => res.send('Home'));
+
+app.use(logger); // Never runs for GET /
+```
+
+```javascript
+// ✅ Correct order
+app.use(logger);
+
+app.get('/', (req, res) => res.send('Home'));
+```
+
+## Skipping Middleware
+
+If you need to skip the remaining middleware and go to the route handler, you can call `next('route')` in route-level middleware:
+
+```javascript
+app.get('/user/:id',
+  (req, res, next) => {
+    if (req.params.id === '0') {
+      next('route'); // Skip to next route handler
+    } else {
+      next();
+    }
+  },
+  (req, res, next) => {
+    res.send('Regular user');
+  }
+);
+
+app.get('/user/:id', (req, res) => {
+  res.send('Special user (ID: 0)');
+});
+```
+
+## Common Middleware Use Cases
+
+| Middleware | Purpose |
+|---|---|
+| Logger | Log requests for debugging/monitoring |
+| Authentication | Verify user identity |
+| Authorization | Check user permissions |
+| Body parser | Parse JSON/form data |
+| CORS | Handle cross-origin requests |
+| Rate limiter | Prevent abuse |
+| Compression | Gzip responses |
+| Security headers | Helmet.js for HTTP headers |
+| Error handler | Catch and format errors |
+
+## Key Takeaways
+
+- Middleware functions have access to `req`, `res`, and `next`
+- Always call `next()` unless you're ending the response
+- Middleware runs in the **order it's registered**
+- Use `app.use()` for global middleware, `router.use()` for scoped middleware
+- Error-handling middleware has **4 parameters** (`err, req, res, next`)
+- Express has built-in middleware (`express.json()`, `express.static()`)
+- Middleware enables composable, reusable request processing

@@ -1,6 +1,6 @@
 ---
 title: "Fetch API"
-description: "Advanced fetch patterns — Headers, Request, Response objects and interceptors"
+description: "Advanced fetch patterns - Headers, Request, Response objects and interceptors"
 date: "2026-06-10"
 category: ["Web Development", "Frontend", "JavaScript DOM", "Network"]
 tags: ["JavaScript", "Network", "Fetch", "API"]
@@ -181,7 +181,7 @@ async function myFetch(url, options = {}) {
 
     // Response interceptor
     const duration = performance.now() - start;
-    console.log(`${url} — ${response.status} (${duration.toFixed(0)}ms)`);
+    console.log(`${url} - ${response.status} (${duration.toFixed(0)}ms)`);
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -210,6 +210,6 @@ async function myFetch(url, options = {}) {
 - `Headers` is a **case-insensitive** multi-map for HTTP headers
 - `Request` objects bundle URL + options for reuse
 - `Response` objects can be **constructed manually** (useful in service workers)
-- Bodies can only be read **once** — clone if you need multiple reads
+- Bodies can only be read **once** - clone if you need multiple reads
 - Wrap fetch in a custom function for **interceptor patterns**
 - Both `Request` and `Response` implement the `Body` interface (`.json()`, `.text()`, `.blob()`)

@@ -39,8 +39,8 @@ Every element has several measurement properties:
 | `offsetWidth` / `offsetHeight` | Full visible size | borders, padding |
 | `clientWidth` / `clientHeight` | Content + padding | padding only (no borders, no scrollbar) |
 | `scrollWidth` / `scrollHeight` | Full content size | padding + overflow content |
-| `offsetLeft` / `offsetTop` | Position relative to `offsetParent` | — |
-| `scrollLeft` / `scrollTop` | Scrolled amount | — |
+| `offsetLeft` / `offsetTop` | Position relative to `offsetParent` | - |
+| `scrollLeft` / `scrollTop` | Scrolled amount | - |
 
 <CodePlayground
   title="Element Dimensions"
@@ -115,7 +115,7 @@ box.addEventListener('scroll', function() {
   const canScroll = box.scrollHeight > box.clientHeight;
 
   let msg = '';
-  if (!canScroll) msg = 'Content fits — no scrolling needed';
+  if (!canScroll) msg = 'Content fits - no scrolling needed';
   else if (atTop) msg = 'At top';
   else if (atBottom) msg = 'At bottom!';
   else msg = 'Scrolled ' + box.scrollTop + 'px';

@@ -1,0 +1,191 @@
+---
+title: "Installing Express & Project Setup"
+description: "Step-by-step guide to setting up a Node.js project with Express from scratch"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Basics"]
+tags: ["Express", "Node.js", "npm", "Setup", "Installation"]
+slug: "express-setup"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Prerequisites
+
+Before installing Express, make sure you have **Node.js** installed on your system:
+
+```bash
+node --version   # v18 or higher recommended
+npm --version    # Comes with Node.js
+```
+
+If you don't have Node.js, download it from [nodejs.org](https://nodejs.org).
+
+## Step 1: Create a Project Directory
+
+```bash
+mkdir my-express-app
+cd my-express-app
+```
+
+## Step 2: Initialize package.json
+
+```bash
+npm init -y
+```
+
+The `-y` flag accepts all defaults. This creates a `package.json` file:
+
+```json
+{
+  "name": "my-express-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
+```
+
+## Step 3: Install Express
+
+```bash
+npm install express
+```
+
+This does three things:
+
+1. Downloads Express and its dependencies into `node_modules/`
+2. Adds `express` to the `dependencies` field in `package.json`
+3. Creates `package-lock.json` (locks exact versions)
+
+```json
+"dependencies": {
+  "express": "^4.21.0"
+}
+```
+
+The caret `^` means npm will auto-update to minor/patch versions.
+
+## Step 4: Create the Entry File
+
+Create `index.js` (or `app.js` / `server.js`) as your main application file:
+
+```bash
+touch index.js
+```
+
+## Step 5: Project Structure
+
+Your folder should now look like this:
+
+```
+my-express-app/
+├── node_modules/       # Installed packages (auto-generated)
+├── index.js            # Main application file
+├── package.json        # Project metadata and dependencies
+└── package-lock.json   # Locked dependency versions
+```
+
+## Installing Nodemon (Development Tool)
+
+**Nodemon** automatically restarts your server when file changes are detected:
+
+```bash
+npm install --save-dev nodemon
+```
+
+Update `package.json` scripts:
+
+```json
+"scripts": {
+  "start": "node index.js",
+  "dev": "nodemon index.js"
+}
+```
+
+Now you can run `npm run dev` during development for auto-restart.
+
+## Understanding node_modules
+
+- `node_modules/` contains all installed packages
+- Never commit it to version control - add it to `.gitignore`
+- It can be reinstalled anytime with `npm install`
+- Always commit `package.json` and `package-lock.json`
+
+**.gitignore:**
+```
+node_modules/
+.env
+```
+
+## Express Dependencies
+
+When you install Express, npm also installs its dependencies:
+
+```
+express
+├── accepts              # Content negotiation
+├── array-flatten        # Array flattening
+├── body-parser          # Request body parsing (built-in)
+├── content-disposition  # Content-Disposition header
+├── cookie-signature     # Cookie signing
+├── debug                # Debug logging
+├── depd                 # Deprecation warnings
+├── encodeurl            # URL encoding
+├── escape-html          # HTML escaping
+├── finalhandler         # Final request handler
+├── fresh                # HTTP freshness check
+├── merge-descriptors    # Merge property descriptors
+├── methods              # HTTP methods list
+├── on-finished          # Request completion listener
+├── parseurl             # URL parsing
+├── path-to-regexp       # Path pattern matching
+├── proxy-addr           # Proxy address detection
+├── qs                   # Query string parser
+├── range-parser         # Range header parser
+├── safe-buffer          # Buffer safety
+├── send                 # File streaming
+├── serve-static         # Static file serving
+├── setprototypeof       # Prototype assignment
+├── statuses             # HTTP status codes
+├── type-is              # Content-type checking
+├── utils-merge          # Object merging
+└── vary                 # Vary header handling
+```
+
+## Version Checking
+
+To verify your Express installation:
+
+```bash
+npm list express
+# my-express-app@1.0.0 /path/to/my-express-app
+# └── express@4.21.0
+```
+
+Or in Node.js code:
+
+```javascript
+console.log(require('express/package.json').version);
+```
+
+## Common Setup Issues
+
+| Issue | Fix |
+|---|---|
+| `command not found: node` | Install Node.js from nodejs.org |
+| `EACCES` permission error | Use `nvm` to manage Node versions |
+| `npm ERR!` network error | Check internet/proxy settings |
+| Module not found | Run `npm install` in the project root |
+
+## Key Takeaways
+
+- Initialize a project with `npm init -y`
+- Install Express with `npm install express`
+- Use `nodemon` for development with `npm install --save-dev nodemon`
+- Add `node_modules/` to `.gitignore`
+- Verify installation with `node -e "require('express')"`

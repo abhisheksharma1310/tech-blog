@@ -205,14 +205,14 @@ void bouncePixel()
 
 ### Code breakdown
 
-- `#include <LedControl.h>` — includes the LedControl library for MAX7219 communication.
-- `LedControl lc(11, 10, 13, 1)` — creates a LedControl instance. Parameters: DIN pin, CS pin, CLK pin, number of daisy-chained modules (1 in this example).
-- `lc.shutdown(0, false)` — wakes the MAX7219 from its default power-saving mode. The first argument (0) is the module index.
-- `lc.setIntensity(0, 8)` — sets brightness to a medium level (0–15).
-- `lc.clearDisplay(0)` — turns off all LEDs on module 0.
-- `lc.setLed(0, row, col, state)` — turns a single LED at (row, col) on (true) or off (false).
-- `lc.setRow(0, row, value)` — writes an entire row at once using an 8-bit byte value (each bit corresponds to a column).
-- `B01100110` — binary literal used to define row patterns for custom bitmaps. A `1` bit turns the LED on, `0` turns it off.
+- `#include <LedControl.h>` - includes the LedControl library for MAX7219 communication.
+- `LedControl lc(11, 10, 13, 1)` - creates a LedControl instance. Parameters: DIN pin, CS pin, CLK pin, number of daisy-chained modules (1 in this example).
+- `lc.shutdown(0, false)` - wakes the MAX7219 from its default power-saving mode. The first argument (0) is the module index.
+- `lc.setIntensity(0, 8)` - sets brightness to a medium level (0–15).
+- `lc.clearDisplay(0)` - turns off all LEDs on module 0.
+- `lc.setLed(0, row, col, state)` - turns a single LED at (row, col) on (true) or off (false).
+- `lc.setRow(0, row, value)` - writes an entire row at once using an 8-bit byte value (each bit corresponds to a column).
+- `B01100110` - binary literal used to define row patterns for custom bitmaps. A `1` bit turns the LED on, `0` turns it off.
 
 ### Displaying characters and numbers
 
@@ -266,15 +266,15 @@ void loop()
 4. If using multiple modules, change the fourth argument in `LedControl(11, 10, 13, 1)` to match your module count.
 5. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 6. Upload the sketch to the Arduino.
-7. Observe the display — it will fill all LEDs, display a heart then a smiley, and finally animate a bouncing pixel.
+7. Observe the display - it will fill all LEDs, display a heart then a smiley, and finally animate a bouncing pixel.
 8. Adjust brightness by changing the value in `setIntensity()` (0–15).
 
 ## Caution
 
 - The MAX7219 operates at 5V. Connecting it to 3.3V logic may result in unreliable operation. Use a level shifter if using a 3.3V Arduino board.
-- Do not connect or disconnect the module while the circuit is powered on — this can damage the MAX7219 driver IC.
+- Do not connect or disconnect the module while the circuit is powered on - this can damage the MAX7219 driver IC.
 - The module's current-setting resistor (typically R1, 10kΩ) limits LED brightness. Using a lower value increases brightness but also increases current draw. The MAX7219 can source up to 500 mA total for all 64 LEDs.
-- If the display flickers or shows garbled patterns, check wiring length — long wires (over 30 cm) on the SPI lines can cause signal integrity issues. Use shorter wires or add 100Ω series resistors on DIN, CS, and CLK.
+- If the display flickers or shows garbled patterns, check wiring length - long wires (over 30 cm) on the SPI lines can cause signal integrity issues. Use shorter wires or add 100Ω series resistors on DIN, CS, and CLK.
 - When daisy-chaining modules, ensure the DOUT of each module connects to the DIN of the next. The CS and CLK lines must be shared in parallel.
 - The MAX7219 enters shutdown mode (all LEDs off, minimal power draw) by default on power-up. The `lc.shutdown(0, false)` call is required to activate the display.
 - Each module draws approximately 30–50 mA when displaying a typical pattern and up to 500 mA at full brightness. For 4+ daisy-chained modules, use an external 5V power supply rather than powering through the Arduino 5V pin.

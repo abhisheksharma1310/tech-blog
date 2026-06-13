@@ -1,6 +1,6 @@
 ---
-title: "Stream-Powered APIs — fs & http"
-description: "Master streams in fs and http modules — streaming file reads/writes, HTTP uploads/downloads, compression, and real-world patterns"
+title: "Stream-Powered APIs - fs & http"
+description: "Master streams in fs and http modules - streaming file reads/writes, HTTP uploads/downloads, compression, and real-world patterns"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Streams"]
 tags: ["Node.js", "Streams", "File System", "HTTP"]
@@ -13,8 +13,8 @@ order: 5
 
 The two most common places you encounter streams in Node.js are:
 
-- **`fs`** — reading and writing files
-- **`http`** — sending and receiving HTTP requests
+- **`fs`** - reading and writing files
+- **`http`** - sending and receiving HTTP requests
 
 Once you understand streams in these modules, you understand streams everywhere.
 
@@ -72,7 +72,7 @@ const writeStream = fs.createWriteStream('output.txt', {
 
 ### Streaming File Copy
 
-The classic use case — copy a file without buffering it entirely in memory:
+The classic use case - copy a file without buffering it entirely in memory:
 
 ```js
 const fs = require('fs');
@@ -102,7 +102,7 @@ async function getFileHash(filePath) {
 
   await pipeline(
     fs.createReadStream(filePath),
-    hash,        // Transform stream — writes hash as data flows
+    hash,        // Transform stream - writes hash as data flows
   );
 
   // Set the encoding on the hash AFTER the pipeline
@@ -155,7 +155,7 @@ await download('http://example.com/large-file.zip', './download.zip');
 
 ### Streaming a File as an HTTP Response (Server)
 
-The reverse — send a file from disk over HTTP:
+The reverse - send a file from disk over HTTP:
 
 ```js
 const http = require('http');
@@ -182,7 +182,7 @@ const server = http.createServer((req, res) => {
         'Content-Disposition': `attachment; filename="${require('path').basename(filePath)}"`,
       });
 
-      // Stream the file — never buffers in RAM
+      // Stream the file - never buffers in RAM
       pipeline(
         fs.createReadStream(filePath),
         res,
@@ -240,7 +240,7 @@ const server = http.createServer((req, res) => {
 
 ### Gzip an HTTP Response on the Fly
 
-Compress large responses before sending — dramatically reduces bandwidth:
+Compress large responses before sending - dramatically reduces bandwidth:
 
 ```js
 const http = require('http');
@@ -366,7 +366,7 @@ async function decryptFile(inputPath, outputPath) {
 
 ## Practical: Streaming HTTP Proxy
 
-A proxy that streams data without buffering — memory usage stays low regardless of file size:
+A proxy that streams data without buffering - memory usage stays low regardless of file size:
 
 ```js
 const http = require('http');
@@ -387,7 +387,7 @@ const server = http.createServer((clientReq, clientRes) => {
     // Forward the response headers
     clientRes.writeHead(proxyRes.statusCode, proxyRes.headers);
 
-    // Stream the response body — no buffering
+    // Stream the response body - no buffering
     pipeline(proxyRes, clientRes, (err) => {
       if (err) console.error('Proxy response error:', err.message);
     });
@@ -526,11 +526,11 @@ console.log('Conversion complete');
 
 - **`fs.createReadStream`** and **`fs.createWriteStream`** are the primary stream APIs for file I/O
 - Use **`start`/`end`** options to read specific byte ranges from a file
-- **HTTP `req` (IncomingMessage)** is a Readable stream — pipe incoming uploads directly to disk
-- **HTTP `res` (ServerResponse)** is a Writable stream — pipe files directly to the response
+- **HTTP `req` (IncomingMessage)** is a Readable stream - pipe incoming uploads directly to disk
+- **HTTP `res` (ServerResponse)** is a Writable stream - pipe files directly to the response
 - **`Content-Length`** should be set when streaming known-sized files
-- **`Content-Encoding: gzip`** enables on-the-fly compression — pair with `zlib.createGzip()`
-- **Always use `pipeline()`** instead of `pipe()` — error handling is critical in production
+- **`Content-Encoding: gzip`** enables on-the-fly compression - pair with `zlib.createGzip()`
+- **Always use `pipeline()`** instead of `pipe()` - error handling is critical in production
 - Streaming a file through `crypto` and `zlib` transforms encrypts/compresses without buffering
 - A **proxy** with `pipeline(clientReq, proxyReq)` and `pipeline(proxyRes, clientRes)` forwards data with zero buffering
 - **Log rotators** using streams can compress, archive, and truncate without holding the file in memory

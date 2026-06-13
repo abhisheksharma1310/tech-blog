@@ -88,7 +88,7 @@ Here, `data.temperature` and `data.humidity` access the members of the `SensorDa
 
 ## -> (arrow / pointer member access)
 
-The `->` operator accesses a member of a structure or class through a pointer. It combines dereferencing and member access in one step — `ptr->member` is equivalent to `(*ptr).member`.
+The `->` operator accesses a member of a structure or class through a pointer. It combines dereferencing and member access in one step - `ptr->member` is equivalent to `(*ptr).member`.
 
 ```cpp
 struct SensorData {
@@ -145,4 +145,4 @@ void loop() {
 }
 ```
 
-This example stores five sensor readings in an array and accesses them with the subscript operator. The subscript operator works on any pointer — not just arrays — so `int *p = readings; p[2]` also gives element 30.
+This example stores five sensor readings in an array and accesses them with the subscript operator. The subscript operator works on any pointer - not just arrays - so `int *p = readings; p[2]` also gives element 30.

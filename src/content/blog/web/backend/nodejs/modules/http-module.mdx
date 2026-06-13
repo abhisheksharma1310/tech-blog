@@ -1,6 +1,6 @@
 ---
 title: "HTTP Module"
-description: "Master Node.js HTTP module — create servers, handle requests and responses, parse URLs, and build REST APIs"
+description: "Master Node.js HTTP module - create servers, handle requests and responses, parse URLs, and build REST APIs"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Modules"]
 tags: ["Node.js", "Modules", "HTTP", "Server"]
@@ -118,7 +118,7 @@ const server = http.createServer((req, res) => {
   res.getHeader('Content-Type');          // Read header
   res.hasHeader('Content-Type');          // Check header exists
   res.removeHeader('X-Custom-Header');    // Remove header
-  res.headersSent;                        // Boolean — have headers been sent?
+  res.headersSent;                        // Boolean - have headers been sent?
 
   // --- Send Body ---
   // write() sends chunks, end() signals completion
@@ -385,7 +385,7 @@ req.on('aborted', () => {
 ```js
 res.on('close', () => {
   // Called when the underlying connection is closed
-  // Could be before or after end() — check finished
+  // Could be before or after end() - check finished
 });
 
 res.on('finish', () => {
@@ -413,7 +413,7 @@ const server = http.createServer((req, res) => {
       'Content-Disposition': 'attachment; filename="data.zip"',
     });
 
-    // Stream directly from disk to response — never buffers in RAM
+    // Stream directly from disk to response - never buffers in RAM
     const readStream = fs.createReadStream('./large-file.zip');
     readStream.pipe(res);
 
@@ -492,7 +492,7 @@ req.end();  // Must call end() to send
 Node.js now has a built-in `fetch` (based on `undici`):
 
 ```js
-// GET — no import needed, it's global
+// GET - no import needed, it's global
 const response = await fetch('http://api.example.com/users');
 const users = await response.json();
 
@@ -527,14 +527,14 @@ https.createServer(options, (req, res) => {
 ## Key Takeaways
 
 - **`http.createServer(handler)`** creates a server; the handler receives `req` and `res`
-- **`req`** is an `IncomingMessage` (Readable stream) — has `method`, `url`, `headers`
-- **`res`** is a `ServerResponse` (Writable stream) — use `writeHead()`, `write()`, `end()`
-- **Always call `res.end()`** — otherwise the client hangs forever
-- **Read the body manually** via `req.on('data')` and `req.on('end')` — it's a stream
+- **`req`** is an `IncomingMessage` (Readable stream) - has `method`, `url`, `headers`
+- **`res`** is a `ServerResponse` (Writable stream) - use `writeHead()`, `write()`, `end()`
+- **Always call `res.end()`** - otherwise the client hangs forever
+- **Read the body manually** via `req.on('data')` and `req.on('end')` - it's a stream
 - **Set a body size limit** when reading request bodies to prevent memory exhaustion
 - **Stream large responses** with `.pipe()` instead of buffering everything in RAM
 - **Use `URL` class** to parse `req.url` into pathname and query parameters
-- **Handle errors** on both request and response streams — aborted connections are common
+- **Handle errors** on both request and response streams - aborted connections are common
 - **`http.request()`** makes outgoing HTTP requests; Node.js 18+ also has built-in `fetch`
-- **`http.Server` extends `EventEmitter`** — events: `request`, `connection`, `close`, `error`, `upgrade`
-- Raw http module is powerful but verbose — for complex apps, consider Express or Fastify on top
+- **`http.Server` extends `EventEmitter`** - events: `request`, `connection`, `close`, `error`, `upgrade`
+- Raw http module is powerful but verbose - for complex apps, consider Express or Fastify on top

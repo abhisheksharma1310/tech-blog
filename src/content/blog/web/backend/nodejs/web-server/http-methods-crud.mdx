@@ -1,6 +1,6 @@
 ---
 title: "Handling GET, POST, PUT, DELETE Requests"
-description: "Implement full CRUD with Node.js HTTP server — GET, POST, PUT, DELETE methods, status codes, and RESTful conventions"
+description: "Implement full CRUD with Node.js HTTP server - GET, POST, PUT, DELETE methods, status codes, and RESTful conventions"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Web Server"]
 tags: ["Node.js", "Web Server", "HTTP", "REST", "CRUD"]
@@ -119,7 +119,7 @@ async function handleRequest(req, res) {
 }
 ```
 
-## GET — Listing Resources
+## GET - Listing Resources
 
 ```js
 async function listTasks(req, res) {
@@ -175,7 +175,7 @@ curl http://localhost:3000/tasks?q=learn
 curl "http://localhost:3000/tasks?page=1&limit=5"
 ```
 
-## GET — Single Resource
+## GET - Single Resource
 
 ```js
 async function getTask(req, res) {
@@ -208,7 +208,7 @@ curl http://localhost:3000/tasks/999
 | Resource not found | 404 Not Found |
 | Invalid ID format | 400 Bad Request |
 
-## POST — Creating Resources
+## POST - Creating Resources
 
 ```js
 async function createTask(req, res) {
@@ -243,7 +243,7 @@ async function createTask(req, res) {
 
   tasks.push(task);
 
-  // 201 Created — include Location header
+  // 201 Created - include Location header
   res.writeHead(201, {
     'Content-Type': 'application/json',
     'Location': `/tasks/${task.id}`,
@@ -311,9 +311,9 @@ curl -X POST http://localhost:3000/tasks \
 
 > **Why 201 and not 200?** 201 specifically means "Created". It tells the client that a new resource was created as a result of this request. Include a `Location` header pointing to the new resource.
 
-## PUT — Replacing/Updating Resources
+## PUT - Replacing/Updating Resources
 
-PUT is **idempotent** — calling it multiple times should have the same effect as calling it once. It typically replaces the entire resource:
+PUT is **idempotent** - calling it multiple times should have the same effect as calling it once. It typically replaces the entire resource:
 
 ```js
 async function updateTask(req, res) {
@@ -326,7 +326,7 @@ async function updateTask(req, res) {
     return res.json({ error: 'Task not found' }, 404);
   }
 
-  // PUT replaces the resource — require all fields
+  // PUT replaces the resource - require all fields
   if (!body.title || typeof body.title !== 'string') {
     return res.json({
       error: 'Validation failed',
@@ -374,7 +374,7 @@ curl -X PUT http://localhost:3000/tasks/1 \
 | Resource not found | 404 Not Found |
 | Invalid data | 400 Bad Request |
 
-## DELETE — Removing Resources
+## DELETE - Removing Resources
 
 ```js
 async function deleteTask(req, res) {
@@ -412,7 +412,7 @@ curl -X DELETE http://localhost:3000/tasks/999
 | Resource not found | 404 Not Found |
 | Resource exists but can't be deleted | 409 Conflict |
 
-> **204 vs 200 for DELETE:** Some APIs return 204 No Content (no body) because the resource is gone and there's nothing to return. Others return 200 with a confirmation body. Both are valid — choose one and be consistent.
+> **204 vs 200 for DELETE:** Some APIs return 204 No Content (no body) because the resource is gone and there's nothing to return. Others return 200 with a confirmation body. Both are valid - choose one and be consistent.
 
 ## Handling Edge Cases
 
@@ -456,7 +456,7 @@ curl -X DELETE http://localhost:3000/tasks
 // First call: 200 OK
 DELETE /tasks/1  → 200
 
-// Second call: 404 (already gone) — still idempotent
+// Second call: 404 (already gone) - still idempotent
 DELETE /tasks/1  → 404
 
 // The server state after both calls is the same
@@ -527,12 +527,12 @@ server.listen(3000);
 
 ## Key Takeaways
 
-- **GET** — read resources (safe, idempotent). Never modify state. Support filtering, pagination.
-- **POST** — create resources (not idempotent). Return 201 Created with a Location header. Always validate input.
-- **PUT** — replace entire resources (idempotent). Require all fields. Missing fields = removed data.
-- **DELETE** — remove resources (idempotent). Return 200 or 204. Second call returns 404.
-- Always return proper **HTTP status codes** — 200, 201, 204, 400, 404, 405, 422, 500
+- **GET** - read resources (safe, idempotent). Never modify state. Support filtering, pagination.
+- **POST** - create resources (not idempotent). Return 201 Created with a Location header. Always validate input.
+- **PUT** - replace entire resources (idempotent). Require all fields. Missing fields = removed data.
+- **DELETE** - remove resources (idempotent). Return 200 or 204. Second call returns 404.
+- Always return proper **HTTP status codes** - 200, 201, 204, 400, 404, 405, 422, 500
 - Send **Location headers** on creation so clients know the new resource URL
-- **Validate input** — check types, lengths, required fields before processing
+- **Validate input** - check types, lengths, required fields before processing
 - **Handle OPTIONS** for CORS preflight when serving browser clients
 - Return 405 Method Not Allowed with an `Allow` header when the method is wrong but the path exists

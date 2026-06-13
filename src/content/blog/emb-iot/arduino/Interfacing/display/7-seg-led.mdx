@@ -13,7 +13,7 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
  
 # 7-Segment LED Display (Single Digit)
 
-A 7-segment display contains eight LEDs — seven segments (a–g) forming the digit and one optional decimal point (DP). Segments are arranged as a common cathode (CC, all cathodes tied to GND) or common anode (CA, all anodes tied to VCC). Each segment requires a current-limiting resistor. By turning on the correct combination of segments, digits 0–9 and some letters (A, b, C, d, E, F) can be displayed.
+A 7-segment display contains eight LEDs - seven segments (a–g) forming the digit and one optional decimal point (DP). Segments are arranged as a common cathode (CC, all cathodes tied to GND) or common anode (CA, all anodes tied to VCC). Each segment requires a current-limiting resistor. By turning on the correct combination of segments, digits 0–9 and some letters (A, b, C, d, E, F) can be displayed.
 
 <CloudinaryImage 
    publicId="7-segemnt-pinout_thc4pk.png" 
@@ -211,9 +211,9 @@ void loop()
 
 ### Code breakdown
 
-- `digitPatterns[10][8]` — lookup table mapping each digit (0–9) to the 8 segment states. For common cathode: 1 = segment ON, 0 = OFF. For common anode: invert all bits (1 → OFF, 0 → ON).
-- `showDigit(digit)` — writes the segment pattern for a single digit to the output pins, skipping the decimal point.
-- `showNumber(num, showDp)` — same but includes DP control.
+- `digitPatterns[10][8]` - lookup table mapping each digit (0–9) to the 8 segment states. For common cathode: 1 = segment ON, 0 = OFF. For common anode: invert all bits (1 → OFF, 0 → ON).
+- `showDigit(digit)` - writes the segment pattern for a single digit to the output pins, skipping the decimal point.
+- `showNumber(num, showDp)` - same but includes DP control.
 - `SevSeg` library handles multiplexing and refresh automatically for single and multi-digit displays.
 - Each segment LED is lit by driving its anode HIGH and cathode LOW (common cathode). The 220 Ω resistor limits current to ≈ 10–15 mA per segment.
 
@@ -244,13 +244,13 @@ void showDigitCA(int digit)
 
 ### Identifying pin 1
 
-Most 7-segment displays have pins numbered counterclockwise from pin 1, which is located to the left of the decimal point when the display faces you and the decimal point is at the bottom-right. Pin 1 is typically at the bottom-left. Use a multimeter: put it in diode test mode, touch the negative probe (black) to the common cathode pin, and the positive probe (red) to each segment pin — the corresponding segment lights up when you find it.
+Most 7-segment displays have pins numbered counterclockwise from pin 1, which is located to the left of the decimal point when the display faces you and the decimal point is at the bottom-right. Pin 1 is typically at the bottom-left. Use a multimeter: put it in diode test mode, touch the negative probe (black) to the common cathode pin, and the positive probe (red) to each segment pin - the corresponding segment lights up when you find it.
 
 ## Caution
 
-- **Current-limiting resistor required:** Each segment LED must have its own current-limiting resistor. Running a segment without a resistor will draw excessive current (potentially 50–100 mA), destroying both the segment and the Arduino pin in seconds. **Do not use a single resistor on the common pin** — this causes uneven brightness (digits with more segments on will be dimmer) and exceeds the pin's current rating when all 8 segments are lit.
-- **Common cathode vs common anode wiring:** Connecting a common cathode display to 5V (instead of GND) will keep all segments permanently off regardless of the pin states — the LEDs are reverse-biased. Conversely, a common anode display connected to GND will leave segments always faintly lit. Check before powering on.
-- **Maximum pin current:** If all 7 segments plus DP are lit simultaneously at 15 mA each, the total current per common pin is 8 × 15 mA = 120 mA. For a common cathode display, this 120 mA flows through the common GND pin. The Arduino's GND pin can handle this, but the common pin on the display is a single thin lead — ensure it is solidly connected and the solder joint is not stressed. For high brightness, consider a transistor driver on the common pin.
+- **Current-limiting resistor required:** Each segment LED must have its own current-limiting resistor. Running a segment without a resistor will draw excessive current (potentially 50–100 mA), destroying both the segment and the Arduino pin in seconds. **Do not use a single resistor on the common pin** - this causes uneven brightness (digits with more segments on will be dimmer) and exceeds the pin's current rating when all 8 segments are lit.
+- **Common cathode vs common anode wiring:** Connecting a common cathode display to 5V (instead of GND) will keep all segments permanently off regardless of the pin states - the LEDs are reverse-biased. Conversely, a common anode display connected to GND will leave segments always faintly lit. Check before powering on.
+- **Maximum pin current:** If all 7 segments plus DP are lit simultaneously at 15 mA each, the total current per common pin is 8 × 15 mA = 120 mA. For a common cathode display, this 120 mA flows through the common GND pin. The Arduino's GND pin can handle this, but the common pin on the display is a single thin lead - ensure it is solidly connected and the solder joint is not stressed. For high brightness, consider a transistor driver on the common pin.
 - **Forward voltage per segment:** Red segments have V_f ≈ 1.8V, green ≈ 2.1V. With a 5V supply and 220 Ω resistor: I = (5 - 1.8) / 220 ≈ 14.5 mA. This is within the Arduino pin's 40 mA limit and the display's typical 20 mA max rating. For 3.3V Arduinos, reduce resistors to 100 Ω (I ≈ (3.3 - 1.8) / 100 ≈ 15 mA) or use a boost converter.
 - **Static damage:** 7-segment displays are LED-based and not particularly ESD-sensitive, but the driver IC in some multi-digit modules (MAX7219) can be damaged by static. Handle with normal ESD precautions.
 

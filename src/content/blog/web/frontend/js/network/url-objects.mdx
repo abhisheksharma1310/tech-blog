@@ -137,7 +137,7 @@ const obj = Object.fromEntries(params);
 
 ## Modifying URL Components
 
-URL properties are **settable** — modify any part:
+URL properties are **settable** - modify any part:
 
 ```javascript
 const url = new URL('https://example.com/page');
@@ -225,8 +225,8 @@ url.href // "https://example.com/search?q=hello+world+%26+more"
 
 - `new URL(href)` parses a URL into **editable components**
 - `URLSearchParams` handles query strings with **encoding built-in**
-- URL properties are **settable** — `url.pathname = '/new'`, `url.hash = '#top'`
+- URL properties are **settable** - `url.pathname = '/new'`, `url.hash = '#top'`
 - Iterate params with `for (const [k, v] of params)`
 - Use the **base URL** form to resolve relative URLs
-- Never concatenate strings for query params — always use `URLSearchParams`
+- Never concatenate strings for query params - always use `URLSearchParams`
 - `Object.fromEntries(searchParams)` converts to a plain object

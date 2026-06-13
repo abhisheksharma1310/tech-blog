@@ -16,8 +16,8 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
 A stepper motor moves in discrete steps, allowing precise position and speed control without feedback. Each full rotation is divided into an equal number of steps (e.g., 200 steps/rev for a NEMA 17, or 64 steps/rev for a 28BYJ-48 before gearing). Steppers are used in 3D printers, CNC machines, camera sliders, and any application requiring accurate rotary or linear positioning.
 
 This tutorial covers two common setups:
-- **28BYJ-48** (unipolar, 5V) with ULN2003 driver board — low cost, low torque
-- **NEMA 17** (bipolar, 12–24V) with A4988 driver — higher torque, microstepping
+- **28BYJ-48** (unipolar, 5V) with ULN2003 driver board - low cost, low torque
+- **NEMA 17** (bipolar, 12–24V) with A4988 driver - higher torque, microstepping
 
 <CloudinaryImage 
    publicId="28BYJ-48-stepper-motor_iije6k.webp" 
@@ -120,7 +120,7 @@ Higher microstep resolution gives smoother motion at the cost of lower torque pe
 
 ## Install necessary Library
 
-For basic control, the **Stepper** library is built into the Arduino IDE — no installation required:
+For basic control, the **Stepper** library is built into the Arduino IDE - no installation required:
 
 ```cpp
 #include <Stepper.h>
@@ -147,7 +147,7 @@ const int stepsPerRev = 2048; // 28BYJ-48: 64 steps × 64:1 gear ratio / 2 (half
 
 Stepper stepper(stepsPerRev, 8, 10, 9, 11);
 // Order: stepsPerRev, IN1, IN3, IN2, IN4
-// (not sequential — this matches the ULN2003 coil sequence)
+// (not sequential - this matches the ULN2003 coil sequence)
 
 void setup()
 {
@@ -227,20 +227,20 @@ void loop()
 
 ### Code breakdown
 
-- `#include <Stepper.h>` — built-in library. Simple, blocking `step()` calls.
-- `Stepper(stepsPerRev, pin1, pin3, pin2, pin4)` — creates a stepper object. The pin order is specific to the ULN2003 coil sequence (not sequential).
-- `stepper.setSpeed(rpm)` — sets the motor speed in RPM (max ~15–20 for 28BYJ-48).
-- `stepper.step(count)` — moves the motor by the specified number of steps (positive = forward, negative = backward). **This is blocking** — the function does not return until the move completes.
-- `#include <AccelStepper.h>` — advanced library supporting acceleration, non-blocking moves, and multiple motors.
-- `AccelStepper(driverType, step, dir)` — for A4988/DRV8825: `AccelStepper::DRIVER` with STEP and DIR pins.
-- `AccelStepper(driverType, pin1, pin3, pin2, pin4)` — for ULN2003: `AccelStepper::HALF4WIRE` or `FULL4WIRE`.
-- `stepper.setMaxSpeed(sps)` — sets the maximum speed in steps per second.
-- `stepper.setAcceleration(sps²)` — sets acceleration in steps per second².
-- `stepper.moveTo(position)` — sets the target absolute position in steps. Non-blocking.
-- `stepper.distanceToGo()` — returns the remaining steps to the target.
-- `stepper.run()` — called repeatedly in `loop()`. Advances one step when needed. Returns `true` while moving.
-- `stepper.setSpeed(sps)` — sets a constant speed for `runSpeed()` (no acceleration).
-- `stepper.currentPosition()` — returns the current absolute position in steps.
+- `#include <Stepper.h>` - built-in library. Simple, blocking `step()` calls.
+- `Stepper(stepsPerRev, pin1, pin3, pin2, pin4)` - creates a stepper object. The pin order is specific to the ULN2003 coil sequence (not sequential).
+- `stepper.setSpeed(rpm)` - sets the motor speed in RPM (max ~15–20 for 28BYJ-48).
+- `stepper.step(count)` - moves the motor by the specified number of steps (positive = forward, negative = backward). **This is blocking** - the function does not return until the move completes.
+- `#include <AccelStepper.h>` - advanced library supporting acceleration, non-blocking moves, and multiple motors.
+- `AccelStepper(driverType, step, dir)` - for A4988/DRV8825: `AccelStepper::DRIVER` with STEP and DIR pins.
+- `AccelStepper(driverType, pin1, pin3, pin2, pin4)` - for ULN2003: `AccelStepper::HALF4WIRE` or `FULL4WIRE`.
+- `stepper.setMaxSpeed(sps)` - sets the maximum speed in steps per second.
+- `stepper.setAcceleration(sps²)` - sets acceleration in steps per second².
+- `stepper.moveTo(position)` - sets the target absolute position in steps. Non-blocking.
+- `stepper.distanceToGo()` - returns the remaining steps to the target.
+- `stepper.run()` - called repeatedly in `loop()`. Advances one step when needed. Returns `true` while moving.
+- `stepper.setSpeed(sps)` - sets a constant speed for `runSpeed()` (no acceleration).
+- `stepper.currentPosition()` - returns the current absolute position in steps.
 
 ### Setting the A4988 current limit
 
@@ -249,7 +249,7 @@ Before using a NEMA 17 with an A4988, set the current limit to match your motor:
 1. Power the A4988 VDD (5V) but **do not connect VMOT yet**.
 2. Turn the trimpot fully counter-clockwise (minimum current).
 3. Measure the voltage between the trimpot and GND.
-4. Adjust until the voltage equals: `Vref = Imax × 8 × Rsense` where Rsense is the value of the sense resistors (typically 0.1 Ω or 0.05 Ω — check your board).
+4. Adjust until the voltage equals: `Vref = Imax × 8 × Rsense` where Rsense is the value of the sense resistors (typically 0.1 Ω or 0.05 Ω - check your board).
    - For 0.1 Ω sense resistors: Vref = Imax × 0.8
    - For a 1.2 A motor: Vref ≈ 0.96 V
 5. Power off, connect VMOT and the motor, then test.
@@ -278,10 +278,10 @@ Before using a NEMA 17 with an A4988, set the current limit to match your motor:
 ## Caution
 
 - **28BYJ-48 power draw:** The 28BYJ-48 draws 200–400 mA under load. Powering it from the Arduino 5V pin is acceptable for short tests, but for extended use, power the ULN2003 board from an external 5–12V supply while keeping the Arduino connected via USB or its own power supply.
-- **28BYJ-48 gearbox:** The internal plastic gears are delicate. Avoid forcing the output shaft manually — the gears strip easily. The gear ratio is 64:1, so the output shaft rotates very slowly compared to the internal rotor. Do not exceed 15–20 RPM on the output shaft.
-- **A4988 current limit:** The A4988 does not have current-limiting resistors — you must set the current limit via the trimpot. Leaving the limit at the factory maximum will overheat and damage both the driver and the motor. Always adjust the limit for your specific motor before operation.
+- **28BYJ-48 gearbox:** The internal plastic gears are delicate. Avoid forcing the output shaft manually - the gears strip easily. The gear ratio is 64:1, so the output shaft rotates very slowly compared to the internal rotor. Do not exceed 15–20 RPM on the output shaft.
+- **A4988 current limit:** The A4988 does not have current-limiting resistors - you must set the current limit via the trimpot. Leaving the limit at the factory maximum will overheat and damage both the driver and the motor. Always adjust the limit for your specific motor before operation.
 - **A4988 minimum load:** The A4988 must have a motor connected when powered. Running the driver without a motor on VMOT can damage the output stage. If testing without a motor, keep VMOT disconnected.
-- **A4988 reverse voltage:** Do not connect VMOT in reverse polarity — the driver will be destroyed instantly. Use a polarity-protected supply or add a Schottky diode on the VMOT input.
+- **A4988 reverse voltage:** Do not connect VMOT in reverse polarity - the driver will be destroyed instantly. Use a polarity-protected supply or add a Schottky diode on the VMOT input.
 - **A4988 heat:** The A4988 driver IC can become very hot (>80 °C) during operation at 1–2 A. Ensure adequate airflow or attach a small heatsink. If the driver enters thermal shutdown, it will stop until it cools.
 - **Common ground:** For both setups, the motor power supply ground must be connected to the Arduino GND. Without a common ground, step signals will not return and the motor will not move.
 - **Step pulse timing:** The A4988 requires a minimum STEP pulse width of 1 µs. The AccelStepper library handles this automatically. If writing your own stepping code, ensure the pulse is at least 2 µs HIGH and 2 µs LOW.

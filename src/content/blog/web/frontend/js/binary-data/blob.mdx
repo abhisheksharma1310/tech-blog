@@ -11,7 +11,7 @@ order: 3
 
 ## Blob
 
-A **Blob** (Binary Large Object) represents immutable raw data — images, text, audio, or any binary content. It's the foundation for files, downloads, and object URLs.
+A **Blob** (Binary Large Object) represents immutable raw data - images, text, audio, or any binary content. It's the foundation for files, downloads, and object URLs.
 
 ## Creating a Blob
 
@@ -19,8 +19,8 @@ A **Blob** (Binary Large Object) represents immutable raw data — images, text,
 const blob = new Blob(parts, options);
 ```
 
-- `parts` — array of strings, ArrayBuffer, TypedArrays, or other Blobs
-- `options` — `{ type: 'mime/type' }`
+- `parts` - array of strings, ArrayBuffer, TypedArrays, or other Blobs
+- `options` - `{ type: 'mime/type' }`
 
 <CodePlayground
   title="Creating Blobs"
@@ -254,6 +254,6 @@ document.getElementById('slice-btn').onclick = async function() {
 - `URL.createObjectURL(blob)` creates a temporary URL for downloads/previews
 - Always call `URL.revokeObjectURL()` to free memory
 - Blobs convert easily: `await blob.text()`, `await blob.arrayBuffer()`
-- `blob.slice()` extracts a portion — great for chunked uploads
-- Blobs are **immutable** — you can't modify them in place
+- `blob.slice()` extracts a portion - great for chunked uploads
+- Blobs are **immutable** - you can't modify them in place
 - Blobs are the foundation of **File**, **FileReader**, and **downloads**

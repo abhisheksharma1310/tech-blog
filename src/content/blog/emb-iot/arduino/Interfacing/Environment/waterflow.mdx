@@ -44,7 +44,7 @@ Yellow wire   -->     Digital Pin 2 (interrupt-capable)
 10 kΩ resistor between Yellow and VCC (pull-up, if not built-in)
 ```
 
-Pin 2 is an interrupt-capable pin on the Uno/Nano, necessary for accurate pulse counting without losing edges. The yellow signal wire is an open-collector output that requires a pull-up resistor — most YF-S201 modules include one, but add an external 10 kΩ resistor if the signal is not reaching 5V.
+Pin 2 is an interrupt-capable pin on the Uno/Nano, necessary for accurate pulse counting without losing edges. The yellow signal wire is an open-collector output that requires a pull-up resistor - most YF-S201 modules include one, but add an external 10 kΩ resistor if the signal is not reaching 5V.
 
 ## Pin Map
 
@@ -70,7 +70,7 @@ const int sensorPin = 2;
 volatile unsigned long pulseCount = 0;
 
 // Calibration factor: pulses per litre
-// YF-S201 typical: 450 pulses/L (varies by model — check datasheet)
+// YF-S201 typical: 450 pulses/L (varies by model - check datasheet)
 const float PULSES_PER_LITRE = 450.0;
 
 unsigned long lastSampleTime = 0;
@@ -138,12 +138,12 @@ void countPulse()
 
 ### Code breakdown
 
-- `attachInterrupt(pin, ISR, RISING)` — triggers on LOW→HIGH transitions of the hall effect sensor output.
-- `volatile unsigned long pulseCount` — counter incremented by the ISR. Declared `volatile` because it is modified inside an interrupt context.
-- `count / (SAMPLE_INTERVAL / 1000.0)` — converts pulse count to frequency (Hz). With a 2-second window, divide by 2.
-- `(frequency / PULSES_PER_LITRE) * 60` — converts Hz to L/min. If the sensor gives 450 pulses per litre, then 450 Hz = 1 L/s = 60 L/min, so 1 Hz = 0.133 L/min.
-- `count / PULSES_PER_LITRE` — calculates the volume of water that passed during the sample interval.
-- `totalLitres` — running total of all water that has flowed since power-on (or last reset).
+- `attachInterrupt(pin, ISR, RISING)` - triggers on LOW→HIGH transitions of the hall effect sensor output.
+- `volatile unsigned long pulseCount` - counter incremented by the ISR. Declared `volatile` because it is modified inside an interrupt context.
+- `count / (SAMPLE_INTERVAL / 1000.0)` - converts pulse count to frequency (Hz). With a 2-second window, divide by 2.
+- `(frequency / PULSES_PER_LITRE) * 60` - converts Hz to L/min. If the sensor gives 450 pulses per litre, then 450 Hz = 1 L/s = 60 L/min, so 1 Hz = 0.133 L/min.
+- `count / PULSES_PER_LITRE` - calculates the volume of water that passed during the sample interval.
+- `totalLitres` - running total of all water that has flowed since power-on (or last reset).
 
 ### Calibration factor reference
 
@@ -176,16 +176,16 @@ To calibrate the sensor for your specific unit:
 6. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 7. Upload the sketch to the Arduino.
 8. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-9. Open the water valve slightly — observe the pulse count, flow rate, and accumulated volume printed every 2 seconds.
-10. Close the valve — the flow rate should drop to zero and pulse counting should stop.
+9. Open the water valve slightly - observe the pulse count, flow rate, and accumulated volume printed every 2 seconds.
+10. Close the valve - the flow rate should drop to zero and pulse counting should stop.
 
 ## Caution
 
 - **Interrupt pin required:** The YF-S201 signal must be on an interrupt-capable pin. On Uno/Nano, only pins 2 and 3 support interrupts. Using a non-interrupt pin with `digitalRead()` in a loop will miss pulses at moderate flow rates (above ~2 L/min).
 - **Maximum pressure and temperature:** The YF-S201 is rated for water pressures up to 2.0 MPa (≈20 bar / 290 psi) and temperatures from −25°C to +80°C. Do not use with hot water above 80°C or with corrosive fluids. The plastic housing (POM / nylon) may degrade in prolonged contact with strong acids, alkalis, or organic solvents.
-- **Flow direction:** The sensor has a marked flow direction arrow. Installing it backwards will prevent the impeller from spinning correctly. The sensor must also be mounted with the impeller axis horizontal or slightly tilted downward to ensure water fills the chamber — air pockets cause erratic readings.
+- **Flow direction:** The sensor has a marked flow direction arrow. Installing it backwards will prevent the impeller from spinning correctly. The sensor must also be mounted with the impeller axis horizontal or slightly tilted downward to ensure water fills the chamber - air pockets cause erratic readings.
 - **Minimum flow rate:** The YF-S201 requires a minimum flow rate of approximately 0.3–0.5 L/min to start the impeller turning. Below this rate, pulses may stop and the sensor will report zero flow even though a small amount of water is passing.
 - **Particle filtration:** The small impeller can be jammed by debris in the water. Install a 100-micron or finer filter upstream of the sensor to prevent clogging or damage. Even clean municipal water can contain small particles that accumulate over time.
 - **Impeller wear:** The impeller spins on a metal shaft. Over extended use (years), the shaft and bearing can wear, changing the calibration factor. Regular calibration checks are recommended for long-term monitoring installations.
 - **Cavitation:** Do not install the sensor immediately downstream of a pump outlet or a sharp reduction in pipe diameter. Turbulence and cavitation cause the impeller to spin erratically, producing inaccurate readings. Allow at least 10 pipe diameters of straight pipe before and after the sensor.
-- **Electrical isolation:** The sensor's electronics are not isolated from the water path — the hall effect sensor is potted but uses the same housing as the water channel. Do not use the YF-S201 in applications where electrical continuity with the water is a safety concern (e.g., medical or drinking water monitoring where galvanic isolation is required).
+- **Electrical isolation:** The sensor's electronics are not isolated from the water path - the hall effect sensor is potted but uses the same housing as the water channel. Do not use the YF-S201 in applications where electrical continuity with the water is a safety concern (e.g., medical or drinking water monitoring where galvanic isolation is required).

@@ -66,9 +66,9 @@ This sketch reads the water level, maps it to a percentage, and controls LEDs fo
 ```cpp
 #define AO_PIN  A0
 #define DO_PIN  2
-#define LED_DRY    12  // Green — dry
-#define LED_MOIST  11  // Yellow — moist
-#define LED_WET    10  // Red — wet
+#define LED_DRY    12  // Green - dry
+#define LED_MOIST  11  // Yellow - moist
+#define LED_WET    10  // Red - wet
 
 void setup()
 {
@@ -134,7 +134,7 @@ void loop()
 {
   if (digitalRead(DO_PIN) == LOW)
   {
-    // Rain detected — sound alarm
+    // Rain detected - sound alarm
     for (int i = 0; i < 5; i++)
     {
       tone(BUZZER_PIN, 2000, 100);
@@ -175,11 +175,11 @@ void loop()
 
   if (low && !high)
   {
-    digitalWrite(PUMP_RELAY, HIGH);  // Pump on — tank empty
+    digitalWrite(PUMP_RELAY, HIGH);  // Pump on - tank empty
   }
   else if (high)
   {
-    digitalWrite(PUMP_RELAY, LOW);   // Pump off — tank full
+    digitalWrite(PUMP_RELAY, LOW);   // Pump off - tank full
   }
 
   // If between low and high, maintain current state
@@ -188,22 +188,22 @@ void loop()
 
 ### Code breakdown
 
-- `analogRead(AO_PIN)` — returns the analog voltage from the sensor (0–1023). The ADC reading increases as water covers more traces because the water's conductivity reduces the probe's resistance.
-- `map(value, 0, 750, 0, 100)` — maps the raw ADC to a percentage. The maximum ADC with the probe fully submerged is typically 600–800 (not 1023) because the sensor's output does not reach 5V. Calibrate this range for your specific module.
-- `digitalRead(DO_PIN)` — returns `LOW` when the water level exceeds the threshold set by the onboard potentiometer.
+- `analogRead(AO_PIN)` - returns the analog voltage from the sensor (0–1023). The ADC reading increases as water covers more traces because the water's conductivity reduces the probe's resistance.
+- `map(value, 0, 750, 0, 100)` - maps the raw ADC to a percentage. The maximum ADC with the probe fully submerged is typically 600–800 (not 1023) because the sensor's output does not reach 5V. Calibrate this range for your specific module.
+- `digitalRead(DO_PIN)` - returns `LOW` when the water level exceeds the threshold set by the onboard potentiometer.
 - The LED indication uses three discrete levels (dry < 30%, moist 30–70%, wet ≥ 70%) with hysteresis implicitly avoided by non-overlapping thresholds.
 - The rain detector triggers a buzzer alarm when the digital pin goes LOW (wet). The 5-second delay prevents repeated triggering in light rain.
-- The float switch approach uses `INPUT_PULLUP` — the switch connects the pin to GND when activated (LOW = water present).
+- The float switch approach uses `INPUT_PULLUP` - the switch connects the pin to GND when activated (LOW = water present).
 
 ### Calibration
 
 ```cpp
 void calibrate()
 {
-  // Dry sensor — record baseline
+  // Dry sensor - record baseline
   int dryVal = analogRead(AO_PIN);
 
-  // Fully submerged — record maximum
+  // Fully submerged - record maximum
   int wetVal = analogRead(AO_PIN);
 
   // Map raw values to 0–100 %
@@ -222,7 +222,7 @@ void calibrate()
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
 7. With the sensor dry, observe the ADC reading (typically 0–50).
 8. Dip the sensor into a container of water (do not submerge the LM393 board).
-9. Observe the ADC value increase — the green LED turns off, yellow then red turn on.
+9. Observe the ADC value increase - the green LED turns off, yellow then red turn on.
 10. Adjust the potentiometer on the module to change the digital threshold.
 
 ## Caution

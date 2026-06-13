@@ -1,0 +1,261 @@
+---
+title: "First Express App (app.get, app.listen)"
+description: "Build your first Express server with route handling and HTTP methods"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Basics"]
+tags: ["Express", "Routing", "HTTP", "Server"]
+slug: "express-first-app"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## The Minimal Express Server
+
+The simplest Express server requires just a few lines:
+
+```javascript
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.get('/', (req, res) => {
+  res.send('Hello World!');
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+```
+
+Run it with `node index.js` and visit `http://localhost:3000` in your browser.
+
+```
+          Request                Response
+Browser ────────→ Express ──────────────→ Browser
+  │                 │                       │
+  │  GET /          │   200 OK              │
+  │  Host: local... │   "Hello World!"      │
+  └─────────────────┘   Content-Type:       │
+                        text/html           │
+                          └──────────────────┘
+```
+
+## Breaking Down app.listen
+
+`app.listen(port, callback)` binds the server to a port:
+
+```javascript
+app.listen(3000, () => {
+  console.log('Server started on port 3000');
+});
+```
+
+It returns an `http.Server` instance. You can also store the reference:
+
+```javascript
+const server = app.listen(3000);
+
+server.on('listening', () => {
+  console.log('Server is listening');
+});
+```
+
+To gracefully shut down:
+
+```javascript
+server.close(() => {
+  console.log('Server closed');
+});
+```
+
+## Route Methods
+
+Express supports all HTTP verbs as methods on `app`:
+
+```javascript
+// GET - retrieve data
+app.get('/users', (req, res) => {
+  res.send('List of users');
+});
+
+// POST - create data
+app.post('/users', (req, res) => {
+  res.send('User created');
+});
+
+// PUT - update data (full replacement)
+app.put('/users/:id', (req, res) => {
+  res.send(`User ${req.params.id} updated`);
+});
+
+// PATCH - partial update
+app.patch('/users/:id', (req, res) => {
+  res.send(`User ${req.params.id} partially updated`);
+});
+
+// DELETE - remove data
+app.delete('/users/:id', (req, res) => {
+  res.send(`User ${req.params.id} deleted`);
+});
+```
+
+## Route Paths
+
+Route paths can be strings, string patterns, or regular expressions:
+
+**Exact strings:**
+```javascript
+app.get('/about', handler);         // matches /about only
+app.get('/contact', handler);       // matches /contact only
+```
+
+**Route parameters (dynamic segments):**
+```javascript
+app.get('/users/:userId', handler);
+// Matches /users/42, /users/john, etc.
+// Access with req.params.userId
+
+app.get('/users/:userId/posts/:postId', handler);
+// Matches /users/42/posts/101
+// req.params → { userId: '42', postId: '101' }
+```
+
+**Query parameters:**
+```javascript
+app.get('/search', (req, res) => {
+  // URL: /search?q=express&page=2
+  const { q, page } = req.query;
+  res.send(`Searching for "${q}" on page ${page}`);
+});
+```
+
+## The Request Object (req)
+
+Express extends the Node.js `req` object with many useful properties:
+
+| Property | Description | Example |
+|---|---|---|
+| `req.params` | Route parameters | `{ id: '42' }` |
+| `req.query` | Query string | `{ name: 'john' }` |
+| `req.body` | Request body (requires middleware) | `{ name: 'John' }` |
+| `req.headers` | HTTP headers | `{ 'content-type': 'application/json' }` |
+| `req.method` | HTTP method | `'GET'` |
+| `req.path` | URL path | `'/users'` |
+| `req.ip` | Client IP address | `'::1'` |
+| `req.hostname` | Hostname | `'localhost'` |
+
+```javascript
+app.get('/info', (req, res) => {
+  console.log('Method:', req.method);
+  console.log('Path:', req.path);
+  console.log('Headers:', req.headers);
+  console.log('IP:', req.ip);
+  res.json({
+    method: req.method,
+    path: req.path,
+    hostname: req.hostname,
+    timestamp: Date.now()
+  });
+});
+```
+
+## The Response Object (res)
+
+Express provides powerful methods on the response object:
+
+```javascript
+app.get('/response-demo', (req, res) => {
+  // Send plain text
+  res.send('Hello World');
+
+  // Send JSON
+  res.json({ message: 'Hello World' });
+
+  // Send HTML
+  res.send('<h1>Hello</h1>');
+
+  // Send a file
+  res.sendFile('/path/to/file.pdf');
+
+  // Redirect
+  res.redirect('/new-location');
+
+  // Set status code
+  res.status(404).send('Not Found');
+});
+```
+
+**Note:** You can only call one send method per request - they end the response.
+
+## Common Status Codes
+
+```javascript
+res.status(200).send('OK');              // 200 OK
+res.status(201).json({ created: true }); // 201 Created
+res.status(400).send('Bad Request');     // 400 Bad Request
+res.status(401).send('Unauthorized');    // 401 Unauthorized
+res.status(403).send('Forbidden');       // 403 Forbidden
+res.status(404).send('Not Found');       // 404 Not Found
+res.status(500).send('Server Error');    // 500 Internal Server Error
+```
+
+## Chaining Methods
+
+Express response methods support chaining:
+
+```javascript
+res
+  .status(201)
+  .set('X-Custom-Header', 'value')
+  .json({ success: true });
+```
+
+## Full Example: Simple User API
+
+```javascript
+const express = require('express');
+const app = express();
+const port = 3000;
+
+// Sample data
+const users = [
+  { id: 1, name: 'Alice' },
+  { id: 2, name: 'Bob' },
+  { id: 3, name: 'Charlie' }
+];
+
+// GET all users
+app.get('/api/users', (req, res) => {
+  res.json(users);
+});
+
+// GET a single user by ID
+app.get('/api/users/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const user = users.find(u => u.id === id);
+
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  res.json(user);
+});
+
+// 404 handler for unknown routes
+app.use((req, res) => {
+  res.status(404).send('Route not found');
+});
+
+app.listen(port, () => {
+  console.log(`API server at http://localhost:${port}`);
+});
+```
+
+## Key Takeaways
+
+- `express()` creates an application object
+- `app.listen(port, callback)` starts the server
+- Route methods (`app.get`, `app.post`, etc.) define endpoints
+- Route parameters (`:param`) capture dynamic URL segments
+- `res.send()`, `res.json()`, and `res.status()` control the response
+- Only one response method per request

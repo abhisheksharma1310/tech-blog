@@ -179,7 +179,7 @@ let greet = function(name) {
 console.log(greet("Alice")); // → "Hello, Alice"
 ```
 
-This is a **function expression** — the function is created and assigned to `greet`.
+This is a **function expression** - the function is created and assigned to `greet`.
 
 ### Function Declarations vs Expressions
 
@@ -190,13 +190,13 @@ This is a **function expression** — the function is created and assigned to `g
 | Block scope | No (function-scoped) | Yes (variable-scoped) |
 
 ```js
-// Declaration — works before definition
+// Declaration - works before definition
 sayHello(); // → "Hello!"
 function sayHello() {
   console.log("Hello!");
 }
 
-// Expression — does NOT work before definition
+// Expression - does NOT work before definition
 sayHi(); // TypeError: sayHi is not a function
 let sayHi = function() {
   console.log("Hi!");
@@ -219,7 +219,7 @@ function showCancel() { console.log("You canceled"); }
 ask("Do you agree?", showOk, showCancel);
 ```
 
-This is the foundation of **callbacks** — a core pattern in JavaScript.
+This is the foundation of **callbacks** - a core pattern in JavaScript.
 
 ## Arrow Functions, the Basics
 
@@ -231,12 +231,12 @@ let sum = function(a, b) {
   return a + b;
 };
 
-// Arrow function — same thing
+// Arrow function - same thing
 let sum = (a, b) => {
   return a + b;
 };
 
-// Even shorter — single expression, implicit return
+// Even shorter - single expression, implicit return
 let sum = (a, b) => a + b;
 ```
 
@@ -258,7 +258,7 @@ let process = (a, b) => {
   return result;
 };
 
-// Returning an object literal — wrap in parentheses
+// Returning an object literal - wrap in parentheses
 let createUser = (name, age) => ({ name: name, age: age });
 ```
 
@@ -311,7 +311,7 @@ var x = 5;
 // x = 5;
 ```
 
-`let` and `const` are hoisted but in a "Temporal Dead Zone" (TDZ) — accessing them before declaration throws:
+`let` and `const` are hoisted but in a "Temporal Dead Zone" (TDZ) - accessing them before declaration throws:
 
 ```js
 console.log(y); // ReferenceError!
@@ -339,7 +339,7 @@ Used for creating private scopes (before modules existed).
 ### typeof quirks
 
 ```js
-typeof null;  // → "object" — this is a known JS bug since 1995
+typeof null;  // → "object" - this is a known JS bug since 1995
 typeof function(){} // → "function" (not "object")
 ```
 
@@ -352,7 +352,7 @@ let y = 10
 
 // But this fails:
 let a = 5
-[1, 2].forEach(console.log) // Treated as a[1,2] — error!
+[1, 2].forEach(console.log) // Treated as a[1,2] - error!
 
 // Best practice: always use semicolons
 ```

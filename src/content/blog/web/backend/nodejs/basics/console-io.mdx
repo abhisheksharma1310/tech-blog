@@ -1,6 +1,6 @@
 ---
 title: "Console I/O in Node.js"
-description: "Master Node.js console — stdout, stderr, timers, progress bars, colouring, and formatting output"
+description: "Master Node.js console - stdout, stderr, timers, progress bars, colouring, and formatting output"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Basics"]
 tags: ["Node.js", "Basics", "Console", "CLI"]
@@ -57,7 +57,7 @@ node redirect.js > output.txt 2>&1
 
 ## Console Methods
 
-### `console.table` — Tabular Data
+### `console.table` - Tabular Data
 
 ```js
 const users = [
@@ -79,7 +79,7 @@ console.table(users);
 └─────────┴─────────┴─────┴────────────┘
 ```
 
-### `console.group` — Indented Output
+### `console.group` - Indented Output
 
 ```js
 console.group('User details');
@@ -92,7 +92,7 @@ console.groupEnd();
 console.groupEnd();
 ```
 
-### `console.count` — Counting
+### `console.count` - Counting
 
 ```js
 function processUser(name) {
@@ -230,9 +230,9 @@ foo();
 
 ## Key Takeaways
 
-- `console.log` → **stdout**, `console.error` → **stderr** — use them intentionally
+- `console.log` → **stdout**, `console.error` → **stderr** - use them intentionally
 - `console.table`, `console.group`, `console.count` for structured output
 - `console.time` / `console.timeEnd` for simple performance measurement
 - **ANSI escape codes** or **chalk** for coloured terminal output
 - `process.stdout.write('\r...')` for progress bars and live-updating output
-- `console.trace()` prints the call stack — invaluable for debugging
+- `console.trace()` prints the call stack - invaluable for debugging

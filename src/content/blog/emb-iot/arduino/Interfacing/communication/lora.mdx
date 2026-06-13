@@ -55,7 +55,7 @@ DIO0          -->     Digital Pin 2 (interrupt)
 DIO1          -->     Not connected (optional)
 ```
 
-The SX1278 operates at 3.3V only. Logic pins are also 3.3V — on 5V Arduino boards, use a voltage divider on MOSI and SCK or rely on the module being 5V-tolerant (check your module).
+The SX1278 operates at 3.3V only. Logic pins are also 3.3V - on 5V Arduino boards, use a voltage divider on MOSI and SCK or rely on the module being 5V-tolerant (check your module).
 
 ## Pin Map
 
@@ -107,7 +107,7 @@ This pair of sketches implements a two-way LoRa link. The transmitter sends a co
 #define RST_PIN  9
 #define DIO0_PIN 2
 
-// Frequency (Hz) — set to your region
+// Frequency (Hz) - set to your region
 // 433E6 for 433 MHz, 868E6 for 868 MHz, 915E6 for 915 MHz
 #define FREQUENCY 433E6
 
@@ -210,21 +210,21 @@ void loop()
 
 ### Code breakdown
 
-- `#include <LoRa.h>` — includes the LoRa library by Sandeep Mistry.
-- `LoRa.setPins(NSS, RST, DIO0)` — configures the SPI chip select, reset, and interrupt pins.
-- `LoRa.begin(frequency)` — initialises the LoRa modem. Returns `false` if the module is not detected.
-- `LoRa.setSpreadingFactor(sf)` — sets the spreading factor (6–12). Higher values increase range but reduce data rate. SF12 gives the longest range (~15 km) at ~300 bps.
-- `LoRa.setSignalBandwidth(bw)` — sets the bandwidth in Hz. Narrower bandwidth = better sensitivity = longer range, but more susceptible to frequency drift.
-- `LoRa.setCodingRate4(denominator)` — sets the forward error correction rate (5–8). Higher values are more robust but increase overhead.
-- `LoRa.setTxPower(dbm)` — sets the transmit power in dBm (2–20). Check local regulations for maximum allowed power.
-- `LoRa.beginPacket()` — starts a new LoRa packet.
-- `LoRa.print()` / `LoRa.write()` — adds data to the packet (same API as `Serial.print`).
-- `LoRa.endPacket()` — finalises and transmits the packet. Blocks until transmission completes.
-- `LoRa.parsePacket()` — returns the size of a received packet, or 0 if none is available. Non-blocking.
-- `LoRa.available()` — returns the number of bytes available to read from the received packet.
-- `LoRa.read()` — reads one byte from the received packet.
-- `LoRa.packetRssi()` — returns the RSSI (received signal strength) of the last packet in dBm.
-- `LoRa.packetSnr()` — returns the signal-to-noise ratio of the last packet in dB.
+- `#include <LoRa.h>` - includes the LoRa library by Sandeep Mistry.
+- `LoRa.setPins(NSS, RST, DIO0)` - configures the SPI chip select, reset, and interrupt pins.
+- `LoRa.begin(frequency)` - initialises the LoRa modem. Returns `false` if the module is not detected.
+- `LoRa.setSpreadingFactor(sf)` - sets the spreading factor (6–12). Higher values increase range but reduce data rate. SF12 gives the longest range (~15 km) at ~300 bps.
+- `LoRa.setSignalBandwidth(bw)` - sets the bandwidth in Hz. Narrower bandwidth = better sensitivity = longer range, but more susceptible to frequency drift.
+- `LoRa.setCodingRate4(denominator)` - sets the forward error correction rate (5–8). Higher values are more robust but increase overhead.
+- `LoRa.setTxPower(dbm)` - sets the transmit power in dBm (2–20). Check local regulations for maximum allowed power.
+- `LoRa.beginPacket()` - starts a new LoRa packet.
+- `LoRa.print()` / `LoRa.write()` - adds data to the packet (same API as `Serial.print`).
+- `LoRa.endPacket()` - finalises and transmits the packet. Blocks until transmission completes.
+- `LoRa.parsePacket()` - returns the size of a received packet, or 0 if none is available. Non-blocking.
+- `LoRa.available()` - returns the number of bytes available to read from the received packet.
+- `LoRa.read()` - reads one byte from the received packet.
+- `LoRa.packetRssi()` - returns the RSSI (received signal strength) of the last packet in dBm.
+- `LoRa.packetSnr()` - returns the signal-to-noise ratio of the last packet in dB.
 
 ### LoRa parameter trade-offs
 
@@ -279,16 +279,16 @@ void loop()
 4. Upload the transmitter sketch to the first Arduino.
 5. Upload the receiver sketch to the second Arduino.
 6. Open the Serial Monitor on the receiver (9600 baud).
-7. Power both Arduinos — the receiver should print received packets every 5 seconds, with RSSI and SNR values.
+7. Power both Arduinos - the receiver should print received packets every 5 seconds, with RSSI and SNR values.
 8. Test range by moving the transmitter farther away. The RSSI should decrease as distance increases.
 
 ## Caution
 
 - **3.3V only:** The SX1278 is a 3.3V device. Connecting VCC to 5V will destroy the module. The logic pins (NSS, MOSI, SCK, RST) are also 3.3V-only. On 5V Arduino boards, add 1 kΩ / 2.2 kΩ voltage dividers on MOSI and SCK, or use a logic level shifter. Many cheap modules are marginally 5V-tolerant but this is not guaranteed.
-- **Antenna required:** Never transmit without an antenna connected — the RF power amplifier can be damaged by the reflected power. Always connect a 50 Ω antenna matched to your operating frequency.
+- **Antenna required:** Never transmit without an antenna connected - the RF power amplifier can be damaged by the reflected power. Always connect a 50 Ω antenna matched to your operating frequency.
 - **Duty cycle and power limits:** LoRa operates in license-free ISM bands that have regulatory limits on duty cycle and transmit power. In the EU (868 MHz): max 1% duty cycle for most channels, max 25 mW ERP for some channels. In the US (915 MHz): max 1 W ERP with frequency hopping or limited transmit time. Check your local regulations before deploying.
 - **Frequency selection:** Set the frequency to match your LoRa module and local regulations. Common values: 433E6 (433 MHz, Asia/EU), 868E6 (868 MHz, EU), 915E6 (915 MHz, US/Australia). Both transmitter and receiver must use the same frequency.
-- **Spreading factor vs. data rate:** A higher spreading factor (SF12) gives up to 10 dB more link budget (longer range) but reduces the data rate to ~300 bps. A packet of 64 bytes takes approximately 1.7 seconds at SF12 / 125 kHz — plan your packet size and retry timing accordingly.
+- **Spreading factor vs. data rate:** A higher spreading factor (SF12) gives up to 10 dB more link budget (longer range) but reduces the data rate to ~300 bps. A packet of 64 bytes takes approximately 1.7 seconds at SF12 / 125 kHz - plan your packet size and retry timing accordingly.
 - **Interference:** LoRa is resistant to narrowband interference due to its spread-spectrum nature, but co-located LoRa transmitters on the same frequency will collide. Use different spreading factors or frequencies for different networks in the same area. LoRaWAN networks use adaptive data rate (ADR) and channel hopping to mitigate this.
 - **Power consumption:** The SX1278 draws approximately 1.6 µA in sleep mode, 10–20 mA in receive mode, and up to 120 mA at 20 dBm transmit power. For battery-powered nodes, use duty-cycled operation: wake, transmit, sleep.
 

@@ -1,0 +1,386 @@
+---
+title: "OAuth2 & Passport.js Integration"
+description: "Add social login and OAuth2 authentication to Express using Passport.js strategies"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Auth & Security"]
+tags: ["Express", "OAuth2", "Passport.js", "Google Login", "GitHub Login", "Social Auth"]
+slug: "express-oauth-passport"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## What is Passport.js?
+
+**Passport.js** is authentication middleware for Node.js. It supports 500+ strategies (Google, GitHub, Facebook, Twitter, etc.) through a modular plugin system.
+
+```
+Browser                    Express                    OAuth Provider
+  │                          │                             │
+  │── "Login with Google" ──→│                             │
+  │                          │── Redirect to Google ──────→│
+  │←──── Redirect ───────────│                             │
+  │                          │                             │
+  │── Follow redirect ───────┼────────────────────────────→│
+  │                          │                             │ User consents
+  │                          │                             │
+  │←── Auth code callback ───┼─────────────────────────────│
+  │                          │                             │
+  │                          │── Exchange code for token ──→│
+  │                          │←── Access token + profile ──│
+  │                          │                             │
+  │                          │ Find or create user         │
+  │←── Set session cookie ───│                             │
+```
+
+## Installation
+
+```bash
+npm install passport passport-local passport-google-oauth20 passport-github2
+```
+
+## Passport.js Setup
+
+```javascript
+const passport = require('passport');
+
+app.use(passport.initialize());  // Initialize Passport
+app.use(passport.session());     // Enable sessions (if using session auth)
+
+// Serialize user to store in session
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+// Deserialize user from session
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
+});
+```
+
+## Local Strategy (Username/Password)
+
+```javascript
+const LocalStrategy = require('passport-local').Strategy;
+
+passport.use(new LocalStrategy(
+  { usernameField: 'email' },
+  async (email, password, done) => {
+    try {
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        return done(null, false, { message: 'Incorrect email' });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return done(null, false, { message: 'Incorrect password' });
+      }
+
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }
+));
+
+// Routes
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/dashboard',
+  failureRedirect: '/login',
+  failureFlash: true
+}));
+```
+
+## Google OAuth2 Strategy
+
+### Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create a project → OAuth consent screen → Credentials
+3. Add `http://localhost:3000/auth/google/callback` as redirect URI
+4. Get Client ID and Client Secret
+
+### Strategy Configuration
+
+```javascript
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/auth/google/callback'
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Check if user exists
+    let user = await User.findOne({ googleId: profile.id });
+
+    if (!user) {
+      // Create new user
+      user = await User.create({
+        googleId: profile.id,
+        username: profile.displayName,
+        email: profile.emails?.[0]?.value,
+        avatar: profile.photos?.[0]?.value,
+        provider: 'google'
+      });
+    }
+
+    return done(null, user);
+  } catch (err) {
+    return done(err);
+  }
+}));
+
+// Routes
+app.get('/auth/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email']
+  })
+);
+
+app.get('/auth/google/callback',
+  passport.authenticate('google', {
+    successRedirect: '/dashboard',
+    failureRedirect: '/login'
+  })
+);
+```
+
+## GitHub OAuth2 Strategy
+
+### Setup
+
+1. Go to GitHub Settings → Developer settings → OAuth Apps
+2. Register a new app with callback URL `http://localhost:3000/auth/github/callback`
+3. Get Client ID and Client Secret
+
+### Strategy Configuration
+
+```javascript
+const GitHubStrategy = require('passport-github2').Strategy;
+
+passport.use(new GitHubStrategy({
+  clientID: process.env.GITHUB_CLIENT_ID,
+  clientSecret: process.env.GITHUB_CLIENT_SECRET,
+  callbackURL: '/auth/github/callback',
+  scope: ['user:email']
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    let user = await User.findOne({ githubId: profile.id });
+
+    if (!user) {
+      const email = profile.emails?.[0]?.value ||
+        `${profile.username}@github.com`;
+
+      user = await User.create({
+        githubId: profile.id,
+        username: profile.username,
+        email,
+        avatar: profile.photos?.[0]?.value,
+        provider: 'github'
+      });
+    }
+
+    return done(null, user);
+  } catch (err) {
+    return done(err);
+  }
+}));
+
+// Routes
+app.get('/auth/github',
+  passport.authenticate('github', { scope: ['user:email'] })
+);
+
+app.get('/auth/github/callback',
+  passport.authenticate('github', {
+    successRedirect: '/dashboard',
+    failureRedirect: '/login'
+  })
+);
+```
+
+## User Model for Multiple Providers
+
+```javascript
+// models/User.js
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  username: String,
+  email: {
+    type: String,
+    unique: true,
+    sparse: true // Allows null for social-only users
+  },
+  password: String, // Null for OAuth users
+  avatar: String,
+  provider: {
+    type: String,
+    enum: ['local', 'google', 'github', 'facebook'],
+    default: 'local'
+  },
+  googleId: { type: String, unique: true, sparse: true },
+  githubId: { type: String, unique: true, sparse: true },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+```
+
+## Combined Auth Routes
+
+```javascript
+const express = require('express');
+const passport = require('passport');
+const session = require('express-session');
+
+const app = express();
+
+// Session setup
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.json());
+
+// Home - shows login options
+app.get('/', (req, res) => {
+  if (req.isAuthenticated()) {
+    return res.json({
+      message: `Welcome, ${req.user.username}!`,
+      user: req.user
+    });
+  }
+  res.json({
+    message: 'Please login',
+    providers: ['/auth/local', '/auth/google', '/auth/github']
+  });
+});
+
+// Local login
+app.post('/auth/local',
+  passport.authenticate('local'),
+  (req, res) => {
+    res.json({ message: 'Login successful', user: req.user });
+  }
+);
+
+// Google
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    res.json({ message: 'Google login successful', user: req.user });
+  }
+);
+
+// GitHub
+app.get('/auth/github',
+  passport.authenticate('github', { scope: ['user:email'] })
+);
+
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  (req, res) => {
+    res.json({ message: 'GitHub login successful', user: req.user });
+  }
+);
+
+// Profile (protected)
+app.get('/profile', ensureAuth, (req, res) => {
+  res.json({ user: req.user });
+});
+
+// Logout
+app.post('/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) return res.status(500).json({ error: 'Logout failed' });
+    res.json({ message: 'Logged out' });
+  });
+});
+
+function ensureAuth(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.status(401).json({ error: 'Not authenticated' });
+}
+
+app.listen(3000);
+```
+
+## JWT + Passport (Token-Based OAuth)
+
+For APIs using JWTs instead of sessions:
+
+```javascript
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/auth/google/callback'
+}, async (accessToken, refreshToken, profile, done) => {
+  let user = await User.findOne({ googleId: profile.id });
+  if (!user) {
+    user = await User.create({ googleId: profile.id, username: profile.displayName, email: profile.emails[0].value });
+  }
+
+  // Create JWT instead of session
+  const jwtToken = jwt.sign(
+    { sub: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+
+  return done(null, { user, token: jwtToken });
+}));
+
+// Callback with token response
+app.get('/auth/google/callback',
+  passport.authenticate('google', { session: false }),
+  (req, res) => {
+    // Send JWT to client
+    res.json({ token: req.user.token });
+  }
+);
+```
+
+## Common Passport Strategies
+
+| Strategy | Package | Use Case |
+|---|---|---|
+| **Local** | `passport-local` | Username/password login |
+| **Google** | `passport-google-oauth20` | Google social login |
+| **GitHub** | `passport-github2` | GitHub social login |
+| **Facebook** | `passport-facebook` | Facebook login |
+| **Twitter** | `passport-twitter` | Twitter/X login |
+| **JWT** | `passport-jwt` | JWT token auth |
+| **OAuth2** | `passport-oauth2` | Generic OAuth2 |
+| **Azure AD** | `passport-azure-ad` | Microsoft login |
+
+## Key Takeaways
+
+- Passport.js provides **500+ authentication strategies** via plugins
+- Use `passport.initialize()` and `passport.session()` for session-based auth
+- Each strategy requires a `Strategy` constructor and `passport.use()`
+- `serializeUser` / `deserializeUser` manage session data
+- OAuth2 flows: redirect to provider → user consents → callback → user created
+- Store provider IDs (`googleId`, `githubId`) on your user model
+- Use `req.isAuthenticated()` to check auth status
+- For APIs, set `{ session: false }` and return a JWT instead

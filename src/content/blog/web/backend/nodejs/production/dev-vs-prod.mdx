@@ -1,6 +1,6 @@
 ---
 title: "Development vs Production Differences"
-description: "Understand the critical differences between development and production Node.js environments — logging, errors, performance, and configuration"
+description: "Understand the critical differences between development and production Node.js environments - logging, errors, performance, and configuration"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Production"]
 tags: ["Node.js", "Production", "DevOps"]
@@ -55,7 +55,7 @@ NODE_ENV=production node app.js
 
 ## 2. Error Handling Differences
 
-### Development — Show Everything
+### Development - Show Everything
 
 ```js
 if (!isProduction) {
@@ -70,7 +70,7 @@ if (!isProduction) {
 }
 ```
 
-### Production — Hide Internals
+### Production - Hide Internals
 
 ```js
 if (isProduction) {
@@ -95,10 +95,10 @@ if (isProduction) {
 
 ## 3. Logging Differences
 
-### Development — Pretty, Verbose
+### Development - Pretty, Verbose
 
 ```js
-// Development logger — human-readable
+// Development logger - human-readable
 const devLogger = {
   info(msg, meta) { console.log(`ℹ️ ${msg}`, meta || ''); },
   warn(msg, meta) { console.warn(`⚠️ ${msg}`, meta || ''); },
@@ -107,10 +107,10 @@ const devLogger = {
 };
 ```
 
-### Production — Structured, Filtered
+### Production - Structured, Filtered
 
 ```js
-// Production logger — JSON, level-filtered
+// Production logger - JSON, level-filtered
 const prodLogger = {
   info(msg, meta) {
     if (process.env.LOG_LEVEL === 'debug') {
@@ -129,10 +129,10 @@ const prodLogger = {
 ## 4. Dependency Management
 
 ```bash
-# Development — install everything
+# Development - install everything
 npm install
 
-# Production — only runtime dependencies
+# Production - only runtime dependencies
 npm ci --production
 # Or: NODE_ENV=production npm ci
 ```
@@ -146,17 +146,17 @@ npm ci --production
     "pg": "^8.11.0"
   },
   "devDependencies": {
-    "jest": "^29.0.0",       // Testing — not needed in prod
-    "eslint": "^8.0.0",      // Linting — not needed in prod
-    "nodemon": "^3.0.0",     // Auto-restart — not needed in prod
-    "supertest": "^6.0.0"    // Testing — not needed in prod
+    "jest": "^29.0.0",       // Testing - not needed in prod
+    "eslint": "^8.0.0",      // Linting - not needed in prod
+    "nodemon": "^3.0.0",     // Auto-restart - not needed in prod
+    "supertest": "^6.0.0"    // Testing - not needed in prod
   }
 }
 ```
 
 ## 5. Startup Differences
 
-### Development — Watch Mode
+### Development - Watch Mode
 
 ```bash
 # Auto-restart on file changes
@@ -166,10 +166,10 @@ node --watch app.js
 npx nodemon app.js
 ```
 
-### Production — Process Manager
+### Production - Process Manager
 
 ```bash
-# PM2 — production process manager
+# PM2 - production process manager
 pm2 start app.js -i max --name my-api
 pm2 save
 pm2 startup
@@ -177,7 +177,7 @@ pm2 startup
 
 ## 6. Environment Variables
 
-### Development — `.env` File
+### Development - `.env` File
 
 ```bash
 # .env (gitignored)
@@ -186,7 +186,7 @@ DATABASE_URL=postgres://localhost:5432/myapp_dev
 DEBUG=true
 ```
 
-### Production — System Environment
+### Production - System Environment
 
 ```bash
 # Set by deployment platform (Heroku, Railway, Docker, etc.)
@@ -238,7 +238,7 @@ module.exports = dbConfig[process.env.NODE_ENV || 'development'];
 
 ## 9. Graceful Shutdown
 
-Production requires clean shutdown — finish in-flight requests, close connections:
+Production requires clean shutdown - finish in-flight requests, close connections:
 
 ```js
 function shutdown(signal) {
@@ -289,11 +289,11 @@ module.exports = {
 
 ## Key Takeaways
 
-- **`NODE_ENV=production`** changes behaviour in Express, React, and many libraries — always set it
-- **Never leak stack traces** in production — log them internally, send safe messages to clients
-- Use **structured JSON logging** in production — it's parseable by log aggregators
+- **`NODE_ENV=production`** changes behaviour in Express, React, and many libraries - always set it
+- **Never leak stack traces** in production - log them internally, send safe messages to clients
+- Use **structured JSON logging** in production - it's parseable by log aggregators
 - Install **only `dependencies`** in production (`npm ci --production`)
-- Use **`.env` files only in development** — use system environment variables in production
+- Use **`.env` files only in development** - use system environment variables in production
 - **Graceful shutdown** (`SIGTERM` → close server → close DB → exit) prevents data loss
 - **Rate limiting, CORS restrictions, HTTPS, and security headers** are production-only concerns
 - **Connection pool sizes** should be larger in production (more concurrent users)

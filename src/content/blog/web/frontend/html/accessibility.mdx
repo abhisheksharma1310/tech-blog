@@ -11,7 +11,7 @@ order: 12
 
 # Accessibility
 
-Web accessibility (a11y) means designing web pages that can be used by **everyone**, including people with disabilities — visual, auditory, motor, or cognitive. Accessible HTML benefits all users, improves SEO, and is required by law in many countries (WCAG / Section 508).
+Web accessibility (a11y) means designing web pages that can be used by **everyone**, including people with disabilities - visual, auditory, motor, or cognitive. Accessible HTML benefits all users, improves SEO, and is required by law in many countries (WCAG / Section 508).
 
 ## Use Semantic HTML
 
@@ -20,7 +20,7 @@ Semantic HTML is the **foundation of accessibility**. Screen readers and other a
 <CodePlayground
   title=""
   html='
-<!-- ❌ Bad — all divs, no meaning -->
+<!-- ❌ Bad - all divs, no meaning -->
 <div class="header">
   <div class="nav">...</div>
 </div>
@@ -28,7 +28,7 @@ Semantic HTML is the **foundation of accessibility**. Screen readers and other a
   <div class="article">...</div>
 </div>
 
-<!-- ✅ Good — semantic elements convey meaning -->
+<!-- ✅ Good - semantic elements convey meaning -->
 <header>
   <nav>...</nav>
 </header>
@@ -41,7 +41,7 @@ Semantic HTML is the **foundation of accessibility**. Screen readers and other a
 
 ### Heading hierarchy
 
-Use headings in order — `<h1>` → `<h2>` → `<h3>` — and do not skip levels:
+Use headings in order - `<h1>` → `<h2>` → `<h3>` - and do not skip levels:
 
 <CodePlayground
   title=""
@@ -78,18 +78,18 @@ The `alt` attribute provides **text alternatives** for images:
 <CodePlayground
   title=""
   html='
-<!-- Informative image — describe what it shows -->
+<!-- Informative image - describe what it shows -->
 <img src="chart.png" alt="Bar chart showing 25% revenue growth in Q1 2026">
 
-<!-- Decorative image — empty alt tells screen readers to skip it -->
+<!-- Decorative image - empty alt tells screen readers to skip it -->
 <img src="decorative-border.png" alt="">
 
-<!-- Functional image (link) — describe the destination -->
+<!-- Functional image (link) - describe the destination -->
 <a href="/portfolio">
   <img src="thumb.jpg" alt="View my portfolio project">
 </a>
 
-<!-- Icon with text — redundant, use empty alt -->
+<!-- Icon with text - redundant, use empty alt -->
 <button>
   <img src="search-icon.png" alt=""> Search
 </button>
@@ -97,7 +97,7 @@ The `alt` attribute provides **text alternatives** for images:
 
 **Rules for alt text:**
 - Be **descriptive** but **concise** (under 125 characters).
-- If the image is **decorative**, use `alt=""` (empty) — never omit the `alt` attribute.
+- If the image is **decorative**, use `alt=""` (empty) - never omit the `alt` attribute.
 - If the image is a **link**, describe the link destination.
 - If the image contains **text**, include that text in the `alt`.
 
@@ -124,7 +124,7 @@ The `role` attribute explicitly defines an element's **purpose** for assistive t
 </button>
 ' />
 
-**Important:** Prefer native semantic elements over `role`. A `<button>` already has `role="button"` built in — do not add it.
+**Important:** Prefer native semantic elements over `role`. A `<button>` already has `role="button"` built in - do not add it.
 
 ### Common roles
 
@@ -169,7 +169,7 @@ The `tabindex` attribute controls keyboard focus order:
 | `0` | Focusable via Tab in the natural document order |
 | `1`+ | Custom tab order (tabindex="1" comes before tabindex="2") |
 
-**Best practice:** Avoid positive `tabindex` values (`1`, `2`, etc.) — they override the natural DOM order and confuse keyboard users. Use `tabindex="0"` to make an element focusable, and rely on the DOM order for the tab sequence.
+**Best practice:** Avoid positive `tabindex` values (`1`, `2`, etc.) - they override the natural DOM order and confuse keyboard users. Use `tabindex="0"` to make an element focusable, and rely on the DOM order for the tab sequence.
 
 ## Use ARIA Attributes
 
@@ -210,12 +210,12 @@ Announce dynamic content changes to screen readers without moving focus:
 <CodePlayground
   title=""
   html='
-<!-- Polite — waits for current speech to finish -->
+<!-- Polite - waits for current speech to finish -->
 <div aria-live="polite" id="status">
   Loading complete.
 </div>
 
-<!-- Assertive — interrupts current speech (use sparingly) -->
+<!-- Assertive - interrupts current speech (use sparingly) -->
 <div aria-live="assertive" id="error">
   Error: Connection lost.
 </div>

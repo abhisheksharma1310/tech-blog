@@ -1,0 +1,457 @@
+---
+title: "API Testing with Postman & Supertest"
+description: "Test your Express APIs with Postman for manual testing and Supertest for automated integration tests"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Advanced"]
+tags: ["Express", "Testing", "Postman", "Supertest", "Jest", "Integration Testing"]
+slug: "express-api-testing"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Testing Strategy
+
+| Tool | Purpose | When |
+|---|---|---|
+| **Postman** | Manual API exploration & debugging | Development, ad-hoc testing |
+| **Supertest** | Automated integration tests | CI/CD, regression testing |
+| **Jest** | Test runner & assertions | Runs Supertest tests |
+
+```
+Development                           CI/CD Pipeline
+    │                                      │
+    │ Postman: Manual testing              │ Jest + Supertest: Automated
+    │   ├── Explore endpoints              │   ├── npm test
+    │   ├── Debug responses                │   ├── Every commit
+    │   └── Export collections             │   └── Block on failures
+    │                                      │
+```
+
+## 1. Testing with Postman
+
+### Setting Up a Request
+
+1. Open Postman → New → HTTP Request
+2. Set method: `GET`, `POST`, `PUT`, `DELETE`, etc.
+3. Enter URL: `http://localhost:3000/api/users`
+4. Add headers: `Authorization: Bearer <token>`, `Content-Type: application/json`
+5. For POST/PUT: Body → raw → JSON
+
+### Postman Collection
+
+```json
+{
+  "info": {
+    "name": "Express API",
+    "schema": "https://schema.getpostman.com/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/users",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Alice\",\"email\":\"alice@test.com\"}"
+        }
+      }
+    },
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:3000/api/users"
+      }
+    }
+  ]
+}
+```
+
+### Postman Variables & Environments
+
+```javascript
+// Environment: Development
+{
+  "baseUrl": "http://localhost:3000",
+  "token": ""
+}
+
+// Pre-request Script (auto-login)
+pm.sendRequest({
+  url: `${pm.environment.get('baseUrl')}/api/login`,
+  method: 'POST',
+  header: { 'Content-Type': 'application/json' },
+  body: { mode: 'raw', raw: JSON.stringify({ email: 'admin@test.com', password: 'secret' }) }
+}, (err, res) => {
+  pm.environment.set('token', res.json().token);
+});
+```
+
+### Postman Tests
+
+```javascript
+// Tests tab - JavaScript assertions
+pm.test('Status code is 200', () => {
+  pm.response.to.have.status(200);
+});
+
+pm.test('Response has users array', () => {
+  const json = pm.response.json();
+  pm.expect(json.success).to.be.true;
+  pm.expect(json.data).to.be.an('array');
+});
+
+pm.test('Response time < 500ms', () => {
+  pm.expect(pm.response.responseTime).to.be.below(500);
+});
+```
+
+### Newman (CLI Runner)
+
+```bash
+npm install -g newman
+
+# Run collection from command line
+newman run collection.json \
+  --environment environment.json \
+  --reporters cli,htmlextra
+```
+
+## 2. Automated Testing with Supertest + Jest
+
+### Installation
+
+```bash
+npm install --save-dev jest supertest
+```
+
+### Setting Up Jest
+
+**package.json:**
+```json
+{
+  "scripts": {
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  }
+}
+```
+
+### Structuring the App for Testing
+
+Export the app without starting the server:
+
+```javascript
+// app.js - export without listening
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+app.use('/api/users', require('./routes/users'));
+app.use(errorHandler);
+
+module.exports = app; // Export for Supertest
+```
+
+```javascript
+// server.js - imports app and starts listening
+const app = require('./app');
+app.listen(3000);
+```
+
+## Writing Tests
+
+### Basic Test
+
+```javascript
+// tests/users.test.js
+const request = require('supertest');
+const app = require('../app');
+
+describe('GET /api/users', () => {
+  it('should return 200 and list users', async () => {
+    const res = await request(app)
+      .get('/api/users')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('should return empty array when no users exist', async () => {
+    const res = await request(app).get('/api/users');
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual([]);
+  });
+});
+```
+
+### Testing CRUD Operations
+
+```javascript
+describe('POST /api/users', () => {
+  it('should create a new user', async () => {
+    const res = await request(app)
+      .post('/api/users')
+      .send({ name: 'Alice', email: 'alice@test.com' })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.name).toBe('Alice');
+    expect(res.body.data.email).toBe('alice@test.com');
+  });
+
+  it('should return 422 for invalid data', async () => {
+    const res = await request(app)
+      .post('/api/users')
+      .send({ name: '' })
+      .expect(422);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.details).toBeDefined();
+  });
+});
+
+describe('GET /api/users/:id', () => {
+  it('should return a single user', async () => {
+    const create = await request(app)
+      .post('/api/users')
+      .send({ name: 'Bob', email: 'bob@test.com' });
+
+    const res = await request(app)
+      .get(`/api/users/${create.body.data._id}`)
+      .expect(200);
+
+    expect(res.body.data.email).toBe('bob@test.com');
+  });
+
+  it('should return 404 for non-existent user', async () => {
+    const res = await request(app)
+      .get('/api/users/507f1f77bcf86cd799439011')
+      .expect(404);
+  });
+});
+
+describe('DELETE /api/users/:id', () => {
+  it('should delete a user', async () => {
+    const create = await request(app)
+      .post('/api/users')
+      .send({ name: 'Charlie', email: 'charlie@test.com' });
+
+    await request(app)
+      .delete(`/api/users/${create.body.data._id}`)
+      .expect(204);
+  });
+});
+```
+
+### Testing Authentication
+
+```javascript
+describe('POST /api/login', () => {
+  it('should return a JWT token on success', async () => {
+    const res = await request(app)
+      .post('/api/login')
+      .send({ email: 'admin@test.com', password: 'secret' })
+      .expect(200);
+
+    expect(res.body.token).toBeDefined();
+    expect(res.body.token.split('.')).toHaveLength(3); // JWT format
+  });
+
+  it('should return 401 for wrong credentials', async () => {
+    const res = await request(app)
+      .post('/api/login')
+      .send({ email: 'wrong@test.com', password: 'wrong' })
+      .expect(401);
+
+    expect(res.body.success).toBe(false);
+  });
+});
+
+describe('Protected routes', () => {
+  it('should return 401 without token', async () => {
+    await request(app)
+      .get('/api/profile')
+      .expect(401);
+  });
+
+  it('should return 200 with valid token', async () => {
+    const login = await request(app)
+      .post('/api/login')
+      .send({ email: 'admin@test.com', password: 'secret' });
+
+    const res = await request(app)
+      .get('/api/profile')
+      .set('Authorization', `Bearer ${login.body.token}`)
+      .expect(200);
+
+    expect(res.body.user).toBeDefined();
+  });
+});
+```
+
+### Testing Error Responses
+
+```javascript
+describe('Error handling', () => {
+  it('should return 404 for unknown routes', async () => {
+    const res = await request(app)
+      .get('/api/nonexistent')
+      .expect(404);
+
+    expect(res.body.success).toBe(false);
+  });
+
+  it('should return 500 on unexpected errors', async () => {
+    // Mock a route that throws
+    app.get('/api/force-error', () => {
+      throw new Error('Unexpected');
+    });
+
+    const res = await request(app)
+      .get('/api/force-error')
+      .expect(500);
+
+    expect(res.body.success).toBe(false);
+  });
+});
+```
+
+### Testing with Database Setup/Teardown
+
+```javascript
+// tests/setup.js
+const mongoose = require('mongoose');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+
+let mongoServer;
+
+beforeAll(async () => {
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri());
+});
+
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
+
+beforeEach(async () => {
+  // Clear all collections between tests
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
+  }
+});
+```
+
+### Test Configuration
+
+**jest.config.js:**
+```javascript
+module.exports = {
+  testEnvironment: 'node',
+  setupFilesAfterSetup: ['./tests/setup.js'],
+  testTimeout: 30000,
+  verbose: true,
+  collectCoverageFrom: [
+    'routes/**/*.js',
+    'middleware/**/*.js',
+    '!**/node_modules/**'
+  ]
+};
+```
+
+## Supertest Methods
+
+```javascript
+// HTTP methods
+request(app).get('/url')
+request(app).post('/url')
+request(app).put('/url')
+request(app).patch('/url')
+request(app).delete('/url')
+
+// Request setup
+.send({ key: 'value' })         // Request body
+.set('Authorization', 'Bearer token') // Headers
+.query({ page: 1, limit: 10 })  // Query params
+.field('name', 'Alice')         // Form field (multipart)
+.attach('avatar', 'file.jpg')   // File upload
+.expect(200)                    // Assert status code
+.expect('Content-Type', /json/) // Assert header
+
+// Response
+res.status        // Status code
+res.headers       // Response headers
+res.body          // Parsed JSON body
+res.text          // Raw text body
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# With coverage
+npm run test:coverage
+
+# Specific test file
+npx jest tests/users.test.js
+
+# Test with a specific name pattern
+npx jest -t "should create a new user"
+```
+
+## CI/CD Integration
+
+```yaml
+# .github/workflows/test.yml
+name: API Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: npm ci
+      - run: npm test
+        env:
+          MONGO_URI: mongodb://localhost:27017/test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+```
+
+## Key Takeaways
+
+- **Postman** is for manual API exploration and debugging
+- **Supertest** + **Jest** is for automated integration tests
+- Export the Express `app` without calling `app.listen()` for Supertest
+- Test **happy paths** (200, 201) and **error paths** (400, 401, 404, 500)
+- Use `MongoMemoryServer` or a test database for isolated tests
+- Clean up database state between tests with `beforeEach`
+- Run tests in CI/CD pipeline to prevent regressions
+- Export Postman collections as documentation and share with the team

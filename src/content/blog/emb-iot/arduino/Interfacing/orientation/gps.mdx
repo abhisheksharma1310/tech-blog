@@ -40,10 +40,10 @@ The u-blox NEO-6M (and its successors NEO-7M, NEO-8M, NEO-M8) are 50-channel GPS
 ```
 GPS Module            Arduino
 -----------           -------
-VCC           -->     5V (or 3.3V — check module)
+VCC           -->     5V (or 3.3V - check module)
 GND           -->     GND
 TX            -->     Digital Pin 3 (Arduino RX via SoftwareSerial)
-RX            -->     Digital Pin 2 (Arduino TX — optional, not needed for receive-only)
+RX            -->     Digital Pin 2 (Arduino TX - optional, not needed for receive-only)
 ```
 
 On an Arduino Mega, use Serial1 (pins 19 RX1, 18 TX1):
@@ -205,17 +205,17 @@ void loop()
 
 ### Code breakdown
 
-- `gps.encode(c)` — feeds one character at a time from the GPS module into the TinyGPS++ parser. Parse the serial buffer in a tight loop. Call this as frequently as possible (every byte received).
-- `gps.location.isValid()` — returns `true` when a valid 3D fix has been obtained and the location data is current (age < 1000 ms).
-- `gps.location.lat()` / `.lng()` — latitude and longitude in signed decimal degrees (South/West are negative).
-- `gps.altitude.meters()` — altitude above mean sea level (WGS84 geoid), ±10–20 m accuracy.
-- `gps.speed.kmph()` — speed over ground in km/h.
-- `gps.course.deg()` — course over ground (COG) in degrees (0–359, relative to true north).
-- `gps.date` / `gps.time` — UTC date and time from the GPS. Time is **UTC**, not local time.
-- `gps.satellites.value()` — number of satellites used in the fix (3D fix requires ≥ 4).
-- `gps.hdop.hdop()` — horizontal dilution of precision. Lower = better. < 2 = excellent, > 6 = poor.
-- `TinyGPSPlus::distanceBetween(lat1, lng1, lat2, lng2)` — static method returning the great-circle distance in km between two coordinates (Haversine formula).
-- `TinyGPSPlus::courseTo(lat1, lng1, lat2, lng2)` — initial bearing in degrees from point 1 to point 2.
+- `gps.encode(c)` - feeds one character at a time from the GPS module into the TinyGPS++ parser. Parse the serial buffer in a tight loop. Call this as frequently as possible (every byte received).
+- `gps.location.isValid()` - returns `true` when a valid 3D fix has been obtained and the location data is current (age < 1000 ms).
+- `gps.location.lat()` / `.lng()` - latitude and longitude in signed decimal degrees (South/West are negative).
+- `gps.altitude.meters()` - altitude above mean sea level (WGS84 geoid), ±10–20 m accuracy.
+- `gps.speed.kmph()` - speed over ground in km/h.
+- `gps.course.deg()` - course over ground (COG) in degrees (0–359, relative to true north).
+- `gps.date` / `gps.time` - UTC date and time from the GPS. Time is **UTC**, not local time.
+- `gps.satellites.value()` - number of satellites used in the fix (3D fix requires ≥ 4).
+- `gps.hdop.hdop()` - horizontal dilution of precision. Lower = better. < 2 = excellent, > 6 = poor.
+- `TinyGPSPlus::distanceBetween(lat1, lng1, lat2, lng2)` - static method returning the great-circle distance in km between two coordinates (Haversine formula).
+- `TinyGPSPlus::courseTo(lat1, lng1, lat2, lng2)` - initial bearing in degrees from point 1 to point 2.
 
 ### Configuring the GPS module (baud rate, update rate)
 
@@ -253,7 +253,7 @@ Calculate the checksum using the u-blox Checksum Calculator or a library like **
 7. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
 8. The GPS receiver flashes an LED (if present) at 1 Hz while searching for a fix.
 9. Once the fix LED is solid (or blinking at different rate), location data starts printing.
-10. Walk outside with the Arduino + GPS — observe speed and course updating.
+10. Walk outside with the Arduino + GPS - observe speed and course updating.
 
 ### Fix time expectations
 
@@ -265,12 +265,12 @@ Calculate the checksum using the u-blox Checksum Calculator or a library like **
 
 ## Caution
 
-- **Antenna must have sky view:** GPS signals are extremely weak (–127 dBm). They do not penetrate concrete roofs, metal enclosures, or dense foliage. For indoor operation, an external antenna placed directly against a window (facing south in the northern hemisphere) with unobstructed sky is the minimum requirement. Wood and glass attenuate signals by 3–6 dB — enough to reduce the fix time but still achievable. Brick walls reduce signals by 10–20 dB and typically prevent a fix.
+- **Antenna must have sky view:** GPS signals are extremely weak (–127 dBm). They do not penetrate concrete roofs, metal enclosures, or dense foliage. For indoor operation, an external antenna placed directly against a window (facing south in the northern hemisphere) with unobstructed sky is the minimum requirement. Wood and glass attenuate signals by 3–6 dB - enough to reduce the fix time but still achievable. Brick walls reduce signals by 10–20 dB and typically prevent a fix.
 - **First fix time (TTFF):** The NEO-6M takes **30–60 seconds** for a cold start (no stored ephemeris data) under open sky. If the backup battery is dead or missing, every start is a cold start. A warm start (stored ephemeris < 4 hours old) takes ≈ 5–10 seconds. A hot start (ephemeris < 2 hours old + time/position known) takes ≈ 1–2 seconds.
-- **Backup battery:** Most NEO-6M modules include a rechargeable CR2032 or coin cell holder. The battery maintains the RTC and SRAM for hot/warm starts. Without a battery, the module performs a cold start every power-up. The battery charges automatically from the module's VCC when power is applied — it takes ≈ 12–24 hours to fully charge a depleted CR2032.
+- **Backup battery:** Most NEO-6M modules include a rechargeable CR2032 or coin cell holder. The battery maintains the RTC and SRAM for hot/warm starts. Without a battery, the module performs a cold start every power-up. The battery charges automatically from the module's VCC when power is applied - it takes ≈ 12–24 hours to fully charge a depleted CR2032.
 - **Serial baud rate:** The default baud rate is 9600. For 5 Hz or 10 Hz update rates, increase the baud rate to 57600 or 115200 to avoid serial buffer overflow (NMEA sentences are ≈ 80 bytes each × 5 Hz = 400 bytes/s, within 9600 baud's ≈ 960 bytes/s capacity; at 10 Hz it becomes marginal). Change via UBX protocol or use the u-blox u-center software on a PC.
 - **SoftwareSerial limitations:** At 9600 baud, `SoftwareSerial` works reliably on pins 2 and 3. At 57600 baud, SoftwareSerial may drop characters on the Uno. For higher baud rates, use a Mega with Serial1 or a board with multiple hardware UARTs. The GPS data is ASCII, so occasional character loss causes TinyGPS++ to miss NMEA sentences but recovers on the next valid sentence.
 - **NMEA sentence selection:** The NEO-6M outputs GGA, GSA, GSV, GLL, RMC, VTG, and ZDA by default. TinyGPS++ parses GGA, RMC, GSA, and VTG. If you need only position (lat/lon) and time, the minimal set is GGA + RMC. Configuring the module to output only these sentences reduces serial bandwidth. Use u-center or UBX commands to customise output.
-- **Interference:** Active USB cables (some have ferrite beads), nearby radio transmitters (Wi-Fi at high power, GSM/cellular), and switching power supplies can interfere with GPS reception. Keep the GPS antenna at least 15 cm away from the Arduino board, Wi-Fi antennas, and the USB cable. A ground plane under the ceramic patch antenna improves reception — attach the module to a metal plate or use the copper on a PCB.
-- **Altitude accuracy:** GPS altitude is less accurate than horizontal position (typically ±10–20 m vs ±2.5 m for position). This is due to satellite geometry (satellites are only overhead, not below). Do not rely on GPS altitude for precision applications — use a barometric altimeter (BMP280) fused with GPS.
+- **Interference:** Active USB cables (some have ferrite beads), nearby radio transmitters (Wi-Fi at high power, GSM/cellular), and switching power supplies can interfere with GPS reception. Keep the GPS antenna at least 15 cm away from the Arduino board, Wi-Fi antennas, and the USB cable. A ground plane under the ceramic patch antenna improves reception - attach the module to a metal plate or use the copper on a PCB.
+- **Altitude accuracy:** GPS altitude is less accurate than horizontal position (typically ±10–20 m vs ±2.5 m for position). This is due to satellite geometry (satellites are only overhead, not below). Do not rely on GPS altitude for precision applications - use a barometric altimeter (BMP280) fused with GPS.
 - **NMEA vs UBX:** The NEO-6M supports both NMEA (text, slower) and u-blox's binary UBX protocol (binary, faster). UBX can achieve higher update rates and provides raw measurements. The TinyGPS++ library only parses NMEA. For UBX, use the **u-blox GNSS** library by u-blox.

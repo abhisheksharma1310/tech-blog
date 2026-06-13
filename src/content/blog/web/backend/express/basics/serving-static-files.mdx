@@ -1,0 +1,366 @@
+---
+title: "Serving Static Files"
+description: "Learn how to serve CSS, JavaScript, images, and other static assets with Express"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Basics"]
+tags: ["Express", "Static Files", "Assets", "CSS", "Images"]
+slug: "express-static-files"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## What are Static Files?
+
+**Static files** are files that don't change based on the request - they're the same for every user. Common examples:
+
+- **CSS stylesheets** (`style.css`)
+- **Client-side JavaScript** (`app.js`)
+- **Images** (`logo.png`, `photo.jpg`)
+- **Fonts** (`Roboto.woff2`)
+- **PDF documents** (`manual.pdf`)
+- **HTML files** (`about.html`)
+
+## express.static()
+
+Express provides built-in middleware `express.static()` to serve static files:
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.use(express.static('public'));
+
+app.listen(3000);
+```
+
+With this setup, files in the `public/` directory are served at the root path:
+
+```
+Project Structure:
+project/
+├── public/
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   └── app.js
+│   └── images/
+│       └── logo.png
+├── index.js
+└── package.json
+```
+
+```
+URLs:
+http://localhost:3000/css/style.css
+http://localhost:3000/js/app.js
+http://localhost:3000/images/logo.png
+```
+
+## Virtual Path Prefix
+
+You can add a **mount path** so static files look like they're served from a subdirectory:
+
+```javascript
+app.use('/static', express.static('public'));
+```
+
+Now files are served with a `/static` prefix:
+
+```
+http://localhost:3000/static/css/style.css
+http://localhost:3000/static/images/logo.png
+```
+
+## Multiple Static Directories
+
+You can serve files from multiple directories. Express searches them in order:
+
+```javascript
+app.use(express.static('public'));
+app.use(express.static('uploads'));
+app.use(express.static('assets'));
+```
+
+If the same filename exists in multiple directories, the **first match wins**.
+
+```
+public/logo.png    → http://localhost:3000/logo.png    (wins if exists here)
+uploads/logo.png   → http://localhost:3000/logo.png    (only served if not in public)
+```
+
+## Absolute Paths
+
+Always use absolute paths to avoid issues when running the app from different directories:
+
+```javascript
+const path = require('path');
+
+// ❌ Relative path - depends on where you run the command
+app.use(express.static('public'));
+
+// ✅ Absolute path - always works
+app.use(express.static(path.join(__dirname, 'public')));
+```
+
+`__dirname` gives the directory of the current file, making the path reliable.
+
+## Full Working Example
+
+```javascript
+const express = require('express');
+const path = require('path');
+
+const app = express();
+const port = 3000;
+
+// Serve static files from 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// API route alongside static files
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+```
+
+### public/index.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Express Static Files</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to Express Static Files</h1>
+    <img src="/images/logo.png" alt="Logo" width="200">
+    <p id="message"></p>
+  </div>
+  <script src="/js/app.js"></script>
+</body>
+</html>
+```
+
+### public/css/style.css
+
+```css
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  margin: 0;
+  padding: 40px;
+}
+
+.container {
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+h1 {
+  color: #333;
+}
+
+img {
+  border-radius: 8px;
+  margin: 20px 0;
+}
+```
+
+### public/js/app.js
+
+```javascript
+document.getElementById('message').textContent =
+  'This page is served by Express static middleware!';
+```
+
+## .env or Config-Driven Static Path
+
+For production, use environment variables:
+
+```javascript
+const publicDir = process.env.PUBLIC_DIR || 'public';
+app.use(express.static(path.join(__dirname, publicDir)));
+```
+
+## Sending Specific Files with sendFile
+
+When you need to send a specific file from a route handler, use `res.sendFile()`:
+
+```javascript
+app.get('/download', (req, res) => {
+  const filePath = path.join(__dirname, 'files', 'document.pdf');
+  res.sendFile(filePath);
+});
+```
+
+You can also use it with the `root` option:
+
+```javascript
+app.get('/download/:file', (req, res) => {
+  const options = {
+    root: path.join(__dirname, 'files'),
+    dotfiles: 'deny',
+    headers: {
+      'x-timestamp': Date.now(),
+      'x-sent': true
+    }
+  };
+
+  res.sendFile(req.params.file, options, (err) => {
+    if (err) {
+      console.error(err);
+      res.status(404).send('File not found');
+    }
+  });
+});
+```
+
+## express.static() Options
+
+The `express.static()` function accepts an options object:
+
+```javascript
+const options = {
+  dotfiles: 'ignore',       // How to handle dotfiles: 'allow' | 'deny' | 'ignore'
+  etag: true,               // Enable ETag generation
+  extensions: ['html', 'htm'], // Fallback to extensions if file not found
+  fallthrough: true,        // Pass to next middleware if file not found
+  immutable: false,         // Set immutable directive in Cache-Control
+  index: 'index.html',      // Directory index file (false to disable)
+  lastModified: true,       // Set Last-Modified header
+  maxAge: '1d',             // Cache-Control max-age
+  redirect: true,           // Redirect to trailing '/' when path is a directory
+  setHeaders: (res, path, stat) => {
+    // Custom headers based on file type
+    if (path.endsWith('.wasm')) {
+      res.set('Content-Type', 'application/wasm');
+    }
+  }
+};
+
+app.use(express.static('public', options));
+```
+
+## Caching Headers
+
+Set `maxAge` to control browser caching:
+
+```javascript
+// Cache for 1 day
+app.use(express.static('public', { maxAge: '1d' }));
+
+// Cache for 1 year (for fingerprinted assets)
+app.use(express.static('public', { maxAge: '1y', immutable: true }));
+
+// No caching (for development)
+app.use(express.static('public', { maxAge: 0 }));
+```
+
+## Security Considerations
+
+### 1. Avoid exposing sensitive files
+
+Files outside the static directory are NOT accessible:
+
+```
+✅ /public/secret.txt              → http://localhost:3000/secret.txt (served)
+❌ /secret.txt                     → http://localhost:3000/../secret.txt (blocked)
+❌ /node_modules/express/index.js  → http://localhost:3000/../node_modules/... (blocked)
+```
+
+Express prevents directory traversal attacks by default.
+
+### 2. Don't serve node_modules
+
+Never do this:
+```javascript
+// ❌ Security risk - exposes all your dependencies
+app.use(express.static('node_modules'));
+```
+
+### 3. Use dotfiles option
+
+```javascript
+app.use(express.static('public', {
+  dotfiles: 'deny'  // Prevent serving .env, .gitignore, etc.
+}));
+```
+
+### 4. Production best practices
+
+```javascript
+const express = require('express');
+const path = require('path');
+
+const app = express();
+const isProduction = process.env.NODE_ENV === 'production';
+
+app.use(express.static(path.join(__dirname, 'public'), {
+  dotfiles: 'deny',
+  maxAge: isProduction ? '30d' : 0,
+  etag: isProduction,
+  lastModified: isProduction,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.set('Cache-Control', 'no-cache');
+    }
+  }
+}));
+
+// Fallback to index.html for SPA routing (React, Vue, etc.)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+```
+
+## Real-World Project Structure
+
+```
+my-app/
+├── public/               # Static assets (served to clients)
+│   ├── index.html        # Main HTML page
+│   ├── css/
+│   │   ├── main.css
+│   │   └── vendor.css
+│   ├── js/
+│   │   ├── app.js
+│   │   └── vendor.js
+│   ├── images/
+│   │   ├── logo.svg
+│   │   └── hero.jpg
+│   ├── fonts/
+│   │   └── inter.woff2
+│   └── favicon.ico
+├── views/                # Server-side templates (if using a template engine)
+│   └── index.ejs
+├── routes/               # Route modules
+│   └── api.js
+├── middleware/            # Custom middleware
+│   └── auth.js
+├── node_modules/
+├── index.js              # Entry point
+├── package.json
+└── .gitignore
+```
+
+## Key Takeaways
+
+- `express.static('public')` serves files from the `public/` directory
+- Use a **virtual path prefix** (`/static`) to namespace static files
+- Always use **absolute paths** with `path.join(__dirname, ...)`
+- Configure **caching** with the `maxAge` option
+- Express prevents **directory traversal** attacks automatically
+- Use `res.sendFile()` for one-off file deliveries
+- For SPAs, add a **catch-all route** after static middleware

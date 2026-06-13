@@ -26,7 +26,7 @@ element.addEventListener('touchstart', handler);
 // ... more complexity
 ```
 
-With pointer events — **one handler for all input types**:
+With pointer events - **one handler for all input types**:
 
 ```javascript
 element.addEventListener('pointerdown', handler);
@@ -43,7 +43,7 @@ element.addEventListener('pointerdown', handler);
 | `pointerout` | `mouseout` |
 | `pointerenter` | `mouseenter` |
 | `pointerleave` | `mouseleave` |
-| `pointercancel` | — (touch-specific) |
+| `pointercancel` | - (touch-specific) |
 
 ## Pointer Properties
 
@@ -84,7 +84,7 @@ area.addEventListener('pointerdown', function(e) {
 
 area.addEventListener('pointermove', function(e) {
   if (e.pressure > 0) {
-    out.textContent = 'Pressure: ' + e.pressure.toFixed(2) + ' — drawing!';
+    out.textContent = 'Pressure: ' + e.pressure.toFixed(2) + ' - drawing!';
   }
 });
 "
@@ -116,7 +116,7 @@ element.addEventListener('pointermove', function(e) {
 });
 ```
 
-This simplifies drag-and-drop — no need to listen on `document`.
+This simplifies drag-and-drop - no need to listen on `document`.
 
 <CodePlayground
   title="Pointer Capture for Drag"
@@ -141,7 +141,7 @@ dot.addEventListener('pointerdown', function(e) {
   const rect = this.getBoundingClientRect();
   this.dataset.shiftX = e.clientX - rect.left;
   this.dataset.shiftY = e.clientY - rect.top;
-  out.textContent = 'Pointer captured — drag started';
+  out.textContent = 'Pointer captured - drag started';
 });
 
 dot.addEventListener('pointermove', function(e) {
@@ -159,7 +159,7 @@ dot.addEventListener('pointermove', function(e) {
 dot.addEventListener('pointerup', function(e) {
   this.style.cursor = 'grab';
   this.dataset.dragging = false;
-  out.textContent += ' — dropped';
+  out.textContent += ' - dropped';
 });
 
 dot.addEventListener('pointercancel', function() {
@@ -191,4 +191,4 @@ Pointer Events are supported in **all modern browsers**. For older browsers, you
 - Set `touch-action: none` on draggable elements to prevent scroll interference
 - **Pointer capture** (`setPointerCapture`) simplifies drag by routing all events to one element
 - Always handle `pointercancel` to reset drag states
-- Pointer events are the **modern standard** — use them for new projects
+- Pointer events are the **modern standard** - use them for new projects

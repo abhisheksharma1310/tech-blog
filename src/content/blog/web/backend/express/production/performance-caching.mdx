@@ -1,0 +1,399 @@
+---
+title: "Performance Optimization & Caching (Redis)"
+description: "Optimize Express app performance with caching, Redis, compression, database optimization, and monitoring"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Production"]
+tags: ["Express", "Performance", "Caching", "Redis", "Optimization", "Compression"]
+slug: "express-performance-caching"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Performance Bottlenecks
+
+```
+Request ──→ Network ──→ Nginx ──→ Express ──→ Database
+              │          │          │            │
+            CDN        static    caching,    indexing,
+            (optional)  files    gzip,       connection
+                         served   cluster     pooling
+                         by       mode
+                         Nginx
+```
+
+| Bottleneck | Solution |
+|---|---|
+| Repeated DB queries | Redis caching |
+| Large response bodies | Compression (gzip) |
+| Single-threaded Node.js | PM2 cluster mode |
+| Slow database queries | Indexing, query optimization |
+| N+1 queries | Eager loading, data loader |
+| Unoptimized assets | CDN, static file serving via Nginx |
+
+## 1. Response Compression
+
+```bash
+npm install compression
+```
+
+```javascript
+const compression = require('compression');
+
+// Compress all responses
+app.use(compression());
+
+// With options
+app.use(compression({
+  level: 6,              // Compression level 0-9 (balance of speed/size)
+  threshold: 1024,       // Only compress responses >= 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
+```
+
+## 2. Redis Caching
+
+### Installation
+
+```bash
+npm install ioredis
+```
+
+### Redis Client Setup
+
+```javascript
+// config/redis.js
+const Redis = require('ioredis');
+
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+  retryStrategy: (times) => Math.min(times * 50, 2000),
+  maxRetriesPerRequest: 3,
+  enableReadyCheck: true,
+  lazyConnect: true
+});
+
+redis.on('error', (err) => console.error('Redis error:', err));
+redis.on('connect', () => console.log('Redis connected'));
+
+module.exports = redis;
+```
+
+### Caching Middleware
+
+```javascript
+// middleware/cache.js
+const redis = require('../config/redis');
+
+function cache(duration = 60) {
+  return async (req, res, next) => {
+    // Only cache GET requests
+    if (req.method !== 'GET') return next();
+
+    const key = `cache:${req.originalUrl}`;
+
+    try {
+      const cached = await redis.get(key);
+
+      if (cached) {
+        console.log(`Cache HIT: ${key}`);
+        return res.json(JSON.parse(cached));
+      }
+
+      console.log(`Cache MISS: ${key}`);
+
+      // Override res.json to cache the response
+      const originalJson = res.json.bind(res);
+      res.json = (body) => {
+        redis.setex(key, duration, JSON.stringify(body));
+        return originalJson(body);
+      };
+
+      next();
+    } catch (err) {
+      next();
+    }
+  };
+}
+
+module.exports = cache;
+```
+
+### Using Cache Middleware
+
+```javascript
+const cache = require('../middleware/cache');
+
+// Cache for 5 minutes
+app.get('/api/products', cache(300), async (req, res) => {
+  const products = await Product.find().populate('category');
+  res.json({ success: true, data: products });
+});
+
+// Cache for 1 hour (rarely changes)
+app.get('/api/categories', cache(3600), async (req, res) => {
+  const categories = await Category.find();
+  res.json({ success: true, data: categories });
+});
+
+// No cache (dynamic data)
+app.get('/api/users/me', async (req, res) => {
+  res.json({ success: true, data: req.user });
+});
+```
+
+### Cache Invalidation
+
+```javascript
+// Invalidate cache when data changes
+app.post('/api/products', async (req, res) => {
+  const product = await Product.create(req.body);
+
+  // Clear the cached products list
+  await redis.del('cache:/api/products');
+
+  res.status(201).json({ success: true, data: product });
+});
+
+// Pattern-based invalidation
+app.put('/api/products/:id', async (req, res) => {
+  const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+  // Clear all cache keys matching the pattern
+  const keys = await redis.keys('cache:/api/products*');
+  if (keys.length > 0) await redis.del(...keys);
+
+  res.json({ success: true, data: product });
+});
+```
+
+### Caching Database Queries
+
+```javascript
+// Helper for caching DB results
+async function getOrSetCache(key, fetchFn, ttl = 300) {
+  const cached = await redis.get(key);
+
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const data = await fetchFn();
+  await redis.setex(key, ttl, JSON.stringify(data));
+  return data;
+}
+
+// Usage
+app.get('/api/products/:id', async (req, res) => {
+  const product = await getOrSetCache(
+    `cache:product:${req.params.id}`,
+    () => Product.findById(req.params.id),
+    600 // 10 min
+  );
+
+  if (!product) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  res.json({ success: true, data: product });
+});
+```
+
+## 3. PM2 Cluster Mode
+
+Use all CPU cores by running multiple instances:
+
+```bash
+npm install -g pm2
+```
+
+```javascript
+// ecosystem.config.js
+module.exports = {
+  apps: [{
+    name: 'myapp',
+    script: 'index.js',
+    instances: 'max',          // Use all CPU cores
+    exec_mode: 'cluster',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000
+    },
+    max_memory_restart: '500M',
+    error_file: './logs/error.log',
+    out_file: './logs/output.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    autorestart: true
+  }]
+};
+```
+
+```bash
+pm2 start ecosystem.config.js
+pm2 monit   # Monitor CPU/memory usage
+```
+
+## 4. Database Optimization
+
+### MongoDB Indexing
+
+```javascript
+// Create indexes for frequently queried fields
+const productSchema = new mongoose.Schema({
+  name: String,
+  price: Number,
+  category: String,
+  createdAt: Date,
+  tags: [String]
+});
+
+productSchema.index({ category: 1, price: -1 });  // Compound index for filtered sorts
+productSchema.index({ name: 'text', description: 'text' });  // Text search
+productSchema.index({ tags: 1 });  // Array index
+productSchema.index({ createdAt: -1 });  // Sort index
+```
+
+### Query Optimization
+
+```javascript
+// ❌ Slow - returns all fields, no limit
+const products = await Product.find({ category: 'electronics' });
+
+// ✅ Fast - select only needed fields, limit results
+const products = await Product.find({ category: 'electronics' })
+  .select('name price')
+  .limit(20)
+  .lean();  // Returns plain JS objects (faster than Mongoose documents)
+```
+
+### Connection Pooling
+
+```javascript
+// MongoDB connection pooling
+mongoose.connect(process.env.MONGO_URI, {
+  maxPoolSize: 10,      // Max concurrent connections
+  minPoolSize: 2,       // Keep minimum connections alive
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000
+});
+
+// PostgreSQL connection pooling (Prisma handles this automatically)
+// Sequelize
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  pool: {
+    max: 10,
+    min: 2,
+    acquire: 30000,
+    idle: 10000
+  }
+});
+```
+
+## 5. Session Caching with Redis
+
+```javascript
+const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+const redis = require('./config/redis');
+
+app.use(session({
+  store: new RedisStore({ client: redis }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: true,
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000
+  }
+}));
+```
+
+## 6. HTTP/2 & Connection Keep-Alive
+
+```nginx
+# Enable HTTP/2 in Nginx
+server {
+    listen 443 ssl http2;   # http2 enables multiplexing
+    keepalive_timeout 65;
+    keepalive_requests 100;
+
+    # ... rest of config
+}
+```
+
+## 7. Performance Monitoring
+
+```bash
+npm install express-status-monitor
+```
+
+```javascript
+const monitor = require('express-status-monitor');
+app.use(monitor()); // /status dashboard
+
+// OR: simple health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    cpu: process.cpuUsage(),
+    pid: process.pid
+  });
+});
+```
+
+## 8. Load Testing
+
+```bash
+npm install -g artillery
+
+# artillery.yml
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 50
+scenarios:
+  - flow:
+      - get:
+          url: '/api/products'
+```
+
+```bash
+artillery run artillery.yml
+```
+
+## Performance Checklist
+
+```javascript
+const checklist = [
+  '✅ Enable gzip compression',
+  '✅ Use Redis for caching API responses',
+  '✅ Run in PM2 cluster mode (all CPU cores)',
+  '✅ Add database indexes for frequent queries',
+  '✅ Use .lean() for Mongoose read queries',
+  '✅ Select only needed fields in DB queries',
+  '✅ Implement connection pooling',
+  '✅ Serve static files via Nginx (not Express)',
+  '✅ Enable HTTP/2',
+  '✅ Use Redis for session storage',
+  '✅ Monitor with express-status-monitor or APM',
+  '✅ Load test before every major release'
+];
+```
+
+## Key Takeaways
+
+- **Compression** reduces bandwidth - always enable it
+- **Redis caching** eliminates repeated DB queries - cache API responses and DB results
+- **PM2 cluster mode** utilizes all CPU cores
+- **Database indexes** dramatically speed up queries
+- Use `.lean()` in Mongoose for read-only queries to skip document hydration
+- Use **connection pooling** for database connections
+- Serve **static files via Nginx**, not Express
+- Monitor performance with **express-status-monitor** or APM tools
+- **Load test** with Artillery before production releases

@@ -1,0 +1,367 @@
+---
+title: "Centralized Error Handlers"
+description: "Build a robust centralized error handling system for Express with custom error classes and consistent responses"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Error Handling & Logging"]
+tags: ["Express", "Error Handling", "Error Middleware", "Custom Errors", "Best Practices"]
+slug: "express-centralized-error-handler"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Why Centralized Error Handling?
+
+Without a centralized handler, every route duplicates error logic - leading to inconsistent responses and missed errors.
+
+```javascript
+// ❌ Without centralized handling - each route does its own thing
+app.get('/users', async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ msg: 'oops', error: err.message }); // Inconsistent!
+  }
+});
+
+app.get('/posts', async (req, res) => {
+  try {
+    const posts = await Post.find();
+    res.json(posts);
+  } catch (err) {
+    res.send('Error: ' + err.message); // Different format!
+  }
+});
+
+// ✅ With centralized handler - consistent, DRY, maintainable
+app.get('/users', asyncHandler(async (req, res) => {
+  res.json(await User.find());
+}));
+
+app.get('/posts', asyncHandler(async (req, res) => {
+  res.json(await Post.find());
+}));
+```
+
+## Custom Error Class
+
+```javascript
+// errors/AppError.js
+class AppError extends Error {
+  constructor(message, statusCode = 500, details = null) {
+    super(message);
+    this.statusCode = statusCode;
+    this.details = details;
+    this.isOperational = true;      // Distinguishes expected errors from bugs
+    this.timestamp = new Date().toISOString();
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+// Specific error types
+class NotFoundError extends AppError {
+  constructor(resource = 'Resource') {
+    super(`${resource} not found`, 404);
+  }
+}
+
+class ValidationError extends AppError {
+  constructor(details) {
+    super('Validation failed', 422, details);
+  }
+}
+
+class AuthError extends AppError {
+  constructor(message = 'Unauthorized') {
+    super(message, 401);
+  }
+}
+
+class ForbiddenError extends AppError {
+  constructor(message = 'Forbidden') {
+    super(message, 403);
+  }
+}
+
+module.exports = { AppError, NotFoundError, ValidationError, AuthError, ForbiddenError };
+```
+
+## Centralized Error Handler Middleware
+
+```javascript
+// middleware/errorHandler.js
+const { AppError } = require('../errors/AppError');
+
+function errorHandler(err, req, res, next) {
+  // Log the error (detailed)
+  console.error(`[${new Date().toISOString()}] ERROR:`, {
+    message: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip,
+    body: req.body,
+    params: req.params,
+    query: req.query
+  });
+
+  // Default to 500 if not set
+  let statusCode = err.statusCode || 500;
+  let response = {
+    success: false,
+    error: err.isOperational ? err.message : 'Internal server error'
+  };
+
+  // Mongoose validation error
+  if (err.name === 'ValidationError') {
+    statusCode = 422;
+    response.error = 'Validation failed';
+    response.details = Object.values(err.errors).map(e => ({
+      field: e.path,
+      message: e.message
+    }));
+  }
+
+  // Mongoose cast error (invalid ObjectId)
+  if (err.name === 'CastError') {
+    statusCode = 400;
+    response.error = `Invalid value for ${err.path}: ${err.value}`;
+  }
+
+  // MongoDB duplicate key
+  if (err.code === 11000) {
+    statusCode = 409;
+    const field = Object.keys(err.keyPattern).join(', ');
+    response.error = `Duplicate value for: ${field}`;
+  }
+
+  // Mongoose validation error
+  if (err.name === 'MongoServerError' && err.code === 11000) {
+    statusCode = 409;
+    response.error = 'Duplicate entry';
+  }
+
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    response.error = 'Invalid token';
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    response.error = 'Token expired';
+  }
+
+  // Add validation details if present
+  if (err.details) {
+    response.details = err.details;
+  }
+
+  // Add stack trace in development
+  if (process.env.NODE_ENV === 'development') {
+    response.stack = err.stack;
+    response.timestamp = err.timestamp || new Date().toISOString();
+  }
+
+  res.status(statusCode).json(response);
+}
+
+module.exports = errorHandler;
+```
+
+## Setting Up the Error Pipeline
+
+```javascript
+const express = require('express');
+const { AppError, NotFoundError } = require('./errors/AppError');
+const errorHandler = require('./middleware/errorHandler');
+const asyncHandler = require('./middleware/asyncHandler');
+
+const app = express();
+
+// 1. Body parser
+app.use(express.json());
+
+// 2. Routes
+app.use('/api/users', require('./routes/users'));
+app.use('/api/posts', require('./routes/posts'));
+
+// 3. 404 handler - must be after all routes
+app.all('*', (req, res, next) => {
+  next(new NotFoundError(`Route ${req.method} ${req.originalUrl}`));
+});
+
+// 4. Global error handler - must be last
+app.use(errorHandler);
+
+module.exports = app;
+```
+
+## Using AppError in Routes
+
+```javascript
+// routes/users.js
+const { AppError, NotFoundError } = require('../errors/AppError');
+
+router.get('/:id', asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    throw new NotFoundError('User');
+  }
+
+  if (user.isBanned) {
+    throw new AppError('This account has been suspended', 403);
+  }
+
+  res.json({ success: true, data: user });
+}));
+
+router.post('/', asyncHandler(async (req, res) => {
+  const { name, email } = req.body;
+
+  if (!name || name.length < 2) {
+    throw new AppError('Validation failed', 422, [
+      { field: 'name', message: 'Name must be at least 2 characters' }
+    ]);
+  }
+
+  if (!email || !email.includes('@')) {
+    throw new AppError('Validation failed', 422, [
+      { field: 'email', message: 'Valid email is required' }
+    ]);
+  }
+
+  const user = await User.create({ name, email });
+  res.status(201).json({ success: true, data: user });
+}));
+```
+
+## Error Handler for Different Environments
+
+```javascript
+// middleware/errorHandler.js - environment-aware
+function errorHandler(err, req, res, next) {
+  let statusCode = err.statusCode || 500;
+
+  const response = {
+    success: false,
+    error: err.isOperational ? err.message : 'Internal server error'
+  };
+
+  if (process.env.NODE_ENV === 'development') {
+    // Development: verbose with stack traces
+    response.stack = err.stack;
+    response.details = err.details;
+    console.error('\x1b[31m%s\x1b[0m', err.stack); // Red text
+  } else if (process.env.NODE_ENV === 'staging') {
+    // Staging: show validation details but no stack
+    if (err.details) response.details = err.details;
+    console.error(`[${new Date().toISOString()}] ${err.message}`);
+  } else {
+    // Production: minimal, no stack
+    if (!err.isOperational) {
+      // Log programmer errors but don't expose details
+      console.error('UNEXPECTED ERROR:', err);
+    }
+  }
+
+  res.status(statusCode).json(response);
+}
+```
+
+## Error Response Consistency
+
+```javascript
+// ✅ Consistent success response
+{ success: true, data: { ... } }
+{ success: true, count: 10, data: [ ... ] }
+
+// ✅ Consistent error response
+{
+  success: false,
+  error: "User not found"
+}
+
+// ✅ With validation details
+{
+  success: false,
+  error: "Validation failed",
+  details: [
+    { field: "email", message: "Valid email is required" }
+  ]
+}
+
+// ✅ With stack (development only)
+{
+  success: false,
+  error: "Something went wrong",
+  stack: "Error: ..."
+}
+```
+
+## Wrapping Third-Party Errors
+
+```javascript
+// Convert third-party errors into AppError
+function normalizeError(err) {
+  // Already our error
+  if (err instanceof AppError) return err;
+
+  // Prisma errors
+  if (err.code === 'P2002') {
+    return new AppError('Duplicate entry', 409);
+  }
+  if (err.code === 'P2025') {
+    return new AppError('Record not found', 404);
+  }
+
+  // Axios errors (external API calls)
+  if (err.response) {
+    return new AppError(
+      `External API error: ${err.response.statusText}`,
+      err.response.status
+    );
+  }
+
+  // Default - mark as programmer error
+  const normalized = new AppError('Internal server error', 500);
+  normalized.isOperational = false;
+  return normalized;
+}
+
+// Usage in error handler
+app.use((err, req, res, next) => {
+  err = normalizeError(err);
+  // ... rest of error handling
+});
+```
+
+## Unhandled Rejections & Uncaught Exceptions
+
+```javascript
+// Catch unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION:', reason);
+  // Give the server time to finish current requests before shutting down
+  server.close(() => process.exit(1));
+});
+
+// Catch uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+  process.exit(1);
+});
+```
+
+## Key Takeaways
+
+- Create a **custom error class** (`AppError`) with status code and operational flag
+- Build a **single error handler middleware** with 4 parameters `(err, req, res, next)`
+- Place the error handler **after all routes and the 404 handler**
+- Return **consistent error responses** across all endpoints
+- Handle **Mongoose, JWT, Prisma, and other third-party errors** centrally
+- Show **stack traces in development only**
+- Distinguish **operational errors** (expected, client-facing) from **programmer errors** (bugs)
+- Catch **unhandled rejections** and **uncaught exceptions** at the process level

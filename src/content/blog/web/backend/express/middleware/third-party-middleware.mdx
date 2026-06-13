@@ -1,0 +1,370 @@
+---
+title: "Third-party Middleware (Morgan, CORS, Helmet)"
+description: "Use popular third-party middleware like Morgan, CORS, and Helmet to enhance your Express app"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Middleware"]
+tags: ["Express", "Middleware", "Morgan", "CORS", "Helmet", "Logging", "Security"]
+slug: "express-third-party-middleware"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Why Third-Party Middleware?
+
+Express's ecosystem includes hundreds of ready-made middleware packages that solve common problems - logging, security, compression, rate limiting, and more. Instead of reinventing the wheel, you `npm install` them and plug them in.
+
+```
+npm install morgan cors helmet compression express-rate-limit
+```
+
+## Morgan - HTTP Request Logger
+
+**Morgan** logs every HTTP request with customizable formats.
+
+### Installation
+
+```bash
+npm install morgan
+```
+
+### Basic Usage
+
+```javascript
+const morgan = require('morgan');
+app.use(morgan('dev'));
+```
+
+### Output Formats
+
+| Format | Example |
+|---|---|
+| `'dev'` | `GET /users 200 5.123 ms` |
+| `'short'` | `127.0.0.1 - GET /users HTTP/1.1 200 24 -` |
+| `'combined'` | `127.0.0.1 - alice [10/Jun/2026:12:00:00 +0000] "GET /users HTTP/1.1" 200 24 "-" "Mozilla/5.0"` |
+| `'common'` | `127.0.0.1 - alice [10/Jun/2026:12:00:00 +0000] "GET /users HTTP/1.1" 200 24` |
+| `'tiny'` | `GET /users 200 24 - 5.123 ms` |
+
+### Custom Format String
+
+```javascript
+app.use(morgan(':method :url :status :response-time ms - :res[content-length]'));
+```
+
+| Token | Description |
+|---|---|
+| `:method` | HTTP method |
+| `:url` | Request URL |
+| `:status` | Response status code |
+| `:response-time` | Response time in ms |
+| `:date[iso]` | ISO timestamp |
+| `:res[header]` | Response header value |
+| `:req[header]` | Request header value |
+| `:remote-addr` | Client IP |
+| `:http-version` | HTTP version |
+| `:user-agent` | User agent string |
+| `:referrer` | Referrer header |
+
+### Conditional Logging
+
+```javascript
+// Skip logging for static files
+app.use(morgan('dev', {
+  skip: (req) => req.url.startsWith('/static')
+}));
+
+// Only log errors
+app.use(morgan('dev', {
+  skip: (req, res) => res.statusCode < 400
+}));
+
+// Write to file instead of stdout
+const fs = require('fs');
+const path = require('path');
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, 'access.log'),
+  { flags: 'a' }
+);
+app.use(morgan('combined', { stream: accessLogStream }));
+```
+
+### Full Example
+
+```javascript
+const morgan = require('morgan');
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined', { stream: accessLogStream }));
+} else {
+  app.use(morgan('dev'));
+}
+```
+
+## CORS - Cross-Origin Resource Sharing
+
+**CORS** enables your API to be called from browsers running on different domains.
+
+### Why CORS Matters
+
+```
+Without CORS:                          With CORS:
+                                       │
+  Browser                              │  Browser
+    │                                  │    │
+    │── GET api.example.com/data ─────→│    │── GET api.example.com/data ─────→│
+    │←── 200 (no Access-Control-*) ────│    │←── 200 Access-Control-Allow-Origin: * ──│
+    │                                  │    │    ↑
+    │  ❌ Blocked by browser           │    │  ✅ Allowed
+```
+
+### Installation
+
+```bash
+npm install cors
+```
+
+### Basic Usage
+
+```javascript
+const cors = require('cors');
+
+// Allow all origins (not for production)
+app.use(cors());
+```
+
+### Configuration Options
+
+```javascript
+app.use(cors({
+  origin: 'https://myapp.com',       // Allow single origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['X-Total-Count'],  // Headers exposed to browser
+  credentials: true,                   // Allow cookies/auth headers
+  maxAge: 86400,                       // Cache preflight for 24h
+  preflightContinue: false
+}));
+```
+
+### Multiple Origins
+
+```javascript
+const allowedOrigins = ['https://app1.com', 'https://app2.com'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
+```
+
+### Per-Route CORS
+
+```javascript
+// Public API - open to all
+app.get('/api/public', cors(), (req, res) => {
+  res.json({ data: 'public' });
+});
+
+// Private API - restricted
+const corsOptions = {
+  origin: 'https://admin.myapp.com',
+  credentials: true
+};
+app.get('/api/private', cors(corsOptions), (req, res) => {
+  res.json({ data: 'secret' });
+});
+```
+
+## Helmet - Security Headers
+
+**Helmet** sets various HTTP security headers to protect your app from common web vulnerabilities.
+
+### Installation
+
+```bash
+npm install helmet
+```
+
+### Basic Usage
+
+```javascript
+const helmet = require('helmet');
+app.use(helmet()); // Sets 15+ security headers
+```
+
+### What Helmet Does
+
+| Header | Purpose |
+|---|---|
+| `Content-Security-Policy` | Prevents XSS and data injection |
+| `X-Content-Type-Options` | Prevents MIME-type sniffing |
+| `X-Frame-Options` | Prevents clickjacking |
+| `X-XSS-Protection` | Enables browser XSS filter |
+| `Strict-Transport-Security` | Enforces HTTPS |
+| `Referrer-Policy` | Controls Referrer header |
+| `Permissions-Policy` | Restricts browser APIs |
+
+### Custom Configuration
+
+```javascript
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdn.example.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "https://images.example.com"]
+    }
+  },
+  frameguard: { action: 'deny' },
+  referrerPolicy: { policy: 'same-origin' }
+}));
+```
+
+### Disabling Specific Headers
+
+```javascript
+app.use(helmet({
+  contentSecurityPolicy: false,    // Disable if using inline scripts
+  crossOriginEmbedderPolicy: false // Disable for cross-origin assets
+}));
+```
+
+## Compression - Gzip Responses
+
+**Compression** reduces response size by gzipping it.
+
+### Installation
+
+```bash
+npm install compression
+```
+
+### Usage
+
+```javascript
+const compression = require('compression');
+app.use(compression());
+
+// With options
+app.use(compression({
+  level: 6,           // Compression level 0-9 (default: -1)
+  threshold: 1024,    // Minimum size in bytes to compress (default: 0)
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
+```
+
+## express-rate-limit - Rate Limiting
+
+**express-rate-limit** protects your app from brute-force attacks and DOS.
+
+### Installation
+
+```bash
+npm install express-rate-limit
+```
+
+### Usage
+
+```javascript
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 100,                    // Max 100 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' }
+});
+
+// Apply to all routes
+app.use(limiter);
+
+// Apply only to /api/auth
+app.use('/api/auth', limiter);
+```
+
+## Putting It All Together
+
+```javascript
+const express = require('express');
+const morgan = require('morgan');
+const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+
+const app = express();
+
+// 1. Security headers (should be first)
+app.use(helmet());
+
+// 2. Compression
+app.use(compression());
+
+// 3. CORS
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true
+}));
+
+// 4. Body parsing
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 5. Logging
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+}
+
+// 6. Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests' }
+});
+app.use('/api', limiter);
+
+// 7. Routes
+app.get('/', (req, res) => res.send('Hello World'));
+app.use('/api/users', require('./routes/users'));
+
+// 8. Error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+app.listen(3000);
+```
+
+## Popular Third-Party Middleware at a Glance
+
+| Package | Purpose | Weekly Downloads |
+|---|---|---|
+| `morgan` | HTTP request logging | 20M+ |
+| `cors` | Cross-Origin Resource Sharing | 50M+ |
+| `helmet` | Security headers | 15M+ |
+| `compression` | Gzip/Brotli response compression | 10M+ |
+| `express-rate-limit` | Rate limiting | 5M+ |
+| `cookie-parser` | Parse Cookie header | 15M+ |
+| `express-session` | Session management | 10M+ |
+| `passport` | Authentication strategies | 10M+ |
+| `multer` | File upload handling | 5M+ |
+| `express-validator` | Input validation | 5M+ |
+
+## Key Takeaways
+
+- **Morgan** logs HTTP requests - use `'dev'` in development, `'combined'` in production
+- **CORS** enables cross-origin requests - configure `origin` tightly in production
+- **Helmet** adds 15+ security headers - it's a must for production apps
+- **Compression** reduces bandwidth - add it early in the middleware chain
+- **Rate limiting** prevents abuse - apply specifically to auth endpoints
+- Always order middleware: security → parsing → logging → routes → error handler

@@ -13,7 +13,7 @@ import CloudinaryImage from '@/components/CloudinaryImage.astro';
 
 # HC-05 Bluetooth Module
 
-The HC-05 is a popular Bluetooth 2.0 + EDR serial port module based on the CSR BC417 chip. It acts as a transparent UART bridge — data sent from the Arduino over serial is transmitted wirelessly to a paired device (phone, laptop, or another HC-05), and vice versa. It supports both master and slave modes, configurable via AT commands. The HC-05 is widely used in wireless control, data logging, and robotics projects where cable-free serial communication is needed.
+The HC-05 is a popular Bluetooth 2.0 + EDR serial port module based on the CSR BC417 chip. It acts as a transparent UART bridge - data sent from the Arduino over serial is transmitted wirelessly to a paired device (phone, laptop, or another HC-05), and vice versa. It supports both master and slave modes, configurable via AT commands. The HC-05 is widely used in wireless control, data logging, and robotics projects where cable-free serial communication is needed.
 
 <CloudinaryImage 
    publicId="bluetooth-hc-05_p76r53" 
@@ -36,15 +36,15 @@ Connect the HC-05 module to the Arduino as follows:
 ```
 HC-05 Module          Arduino
 ------------          -------
-VCC           -->     5V  (or 3.3V on some modules — check yours)
+VCC           -->     5V  (or 3.3V on some modules - check yours)
 GND           -->     GND
 TXD           -->     Digital Pin 3  (Arduino RX)
-RXD           -->     Digital Pin 2  (Arduino TX — via voltage divider!)
+RXD           -->     Digital Pin 2  (Arduino TX - via voltage divider!)
 EN / KEY      -->     Digital Pin 4  (HIGH for AT command mode)
-STATE         -->     Not connected (optional — indicates connection)
+STATE         -->     Not connected (optional - indicates connection)
 ```
 
-**Important:** The HC-05 operates at 3.3V logic. The RX pin is NOT 5V tolerant. Use a voltage divider (1 kΩ from Arduino TX → HC-05 RX, 2.2 kΩ from HC-05 RX → GND) to step down the 5V Arduino TX signal to ~3.3V. Many HC-05 modules include this voltage divider on the breakout board — if yours does, you can connect directly. The TX pin outputs 3.3V which is safe for Arduino input.
+**Important:** The HC-05 operates at 3.3V logic. The RX pin is NOT 5V tolerant. Use a voltage divider (1 kΩ from Arduino TX → HC-05 RX, 2.2 kΩ from HC-05 RX → GND) to step down the 5V Arduino TX signal to ~3.3V. Many HC-05 modules include this voltage divider on the breakout board - if yours does, you can connect directly. The TX pin outputs 3.3V which is safe for Arduino input.
 
 ### Voltage divider for RX pin
 
@@ -60,10 +60,10 @@ HC-05 RXD          --/\/\/\-- GND
 
 | HC-05 Pin | Name | Arduino Connection |
 |---|---|---|
-| VCC | Power | 5V (or 3.3V — check module) |
+| VCC | Power | 5V (or 3.3V - check module) |
 | GND | Ground | GND |
 | TXD | Transmit (output) | Pin 3 (Arduino RX via SoftwareSerial) |
-| RXD | Receive (input) | Pin 2 (Arduino TX — via voltage divider) |
+| RXD | Receive (input) | Pin 2 (Arduino TX - via voltage divider) |
 | EN / KEY | Enable / AT mode | Pin 4 (HIGH = enter AT commands) |
 | STATE | Connection status | Not connected |
 
@@ -92,7 +92,7 @@ This sketch configures the HC-05 to enter AT command mode, set the device name a
 #include <SoftwareSerial.h>
 
 // Bluetooth TX → Arduino pin 3 (RX via SoftwareSerial)
-// Bluetooth RX → Arduino pin 2 (TX — via voltage divider!)
+// Bluetooth RX → Arduino pin 2 (TX - via voltage divider!)
 SoftwareSerial bluetooth(3, 2); // RX, TX
 
 const int enPin = 4;  // EN/KEY pin
@@ -218,15 +218,15 @@ void scanDevices()
 
 ### Code breakdown
 
-- `SoftwareSerial bluetooth(3, 2)` — creates a software serial port. Pin 3 (RX) connects to HC-05 TX. Pin 2 (TX) connects to HC-05 RX (via voltage divider).
-- `digitalWrite(enPin, HIGH)` — drives the EN/KEY pin HIGH to put the HC-05 into AT command mode. The module must be powered on with this pin HIGH (or pulsed HIGH after power-up, depending on the module variant).
-- `bluetooth.println("AT")` — the basic attention command. The module should respond with `OK`.
-- `AT+NAME=<name>` — sets the Bluetooth device name.
-- `AT+UART=<baud>,<stop>,<parity>` — sets the UART baud rate, stop bits, and parity. Default is 9600,0,0.
-- `AT+ROLE=<role>` — 0 = slave, 1 = master, 2 = slave-loop. Slave mode listens for connections. Master mode initiates connections.
-- `AT+PSWD=<pin>` — sets the pairing PIN code (default 1234).
-- `AT+RESET` — resets the module (required after most configuration changes).
-- `AT+INQ` — inquires (scans) for visible Bluetooth devices in range.
+- `SoftwareSerial bluetooth(3, 2)` - creates a software serial port. Pin 3 (RX) connects to HC-05 TX. Pin 2 (TX) connects to HC-05 RX (via voltage divider).
+- `digitalWrite(enPin, HIGH)` - drives the EN/KEY pin HIGH to put the HC-05 into AT command mode. The module must be powered on with this pin HIGH (or pulsed HIGH after power-up, depending on the module variant).
+- `bluetooth.println("AT")` - the basic attention command. The module should respond with `OK`.
+- `AT+NAME=<name>` - sets the Bluetooth device name.
+- `AT+UART=<baud>,<stop>,<parity>` - sets the UART baud rate, stop bits, and parity. Default is 9600,0,0.
+- `AT+ROLE=<role>` - 0 = slave, 1 = master, 2 = slave-loop. Slave mode listens for connections. Master mode initiates connections.
+- `AT+PSWD=<pin>` - sets the pairing PIN code (default 1234).
+- `AT+RESET` - resets the module (required after most configuration changes).
+- `AT+INQ` - inquires (scans) for visible Bluetooth devices in range.
 
 ### Common AT commands
 
@@ -258,16 +258,16 @@ void scanDevices()
 7. Type `D` to return to data mode.
 8. Pair with the HC-05 from your phone (open Bluetooth settings, scan for "Arduino-BT", enter PIN 1234).
 9. Install a Bluetooth Serial Terminal app (e.g., Serial Bluetooth Terminal for Android).
-10. Connect to "Arduino-BT" from the app and type messages — they should appear in the Serial Monitor.
-11. Type in the Serial Monitor — the text should appear in the phone app.
+10. Connect to "Arduino-BT" from the app and type messages - they should appear in the Serial Monitor.
+11. Type in the Serial Monitor - the text should appear in the phone app.
 
 ## Caution
 
 - **RX voltage divider required:** The HC-05 RX pin expects 3.3V logic. Connecting it directly to a 5V Arduino TX pin will eventually damage the module. Always use a voltage divider (1 kΩ / 2.2 kΩ) unless your breakout board includes one. The HC-05 TX pin outputs 3.3V and is safe for Arduino inputs.
 - **AT mode entry:** There are two common HC-05 configurations for entering AT mode: (a) hold the EN pin HIGH while powering on, then release, or (b) keep EN HIGH during operation. Some modules use a push button instead. If AT commands do not work, try power-cycling with EN held HIGH, or use the button to enter AT mode. The default AT baud rate is 38400 on most modules (some use 9600 or 115200).
-- **Baud rate mismatch:** After changing the baud rate with `AT+UART=9600,0,0`, the module uses the new rate immediately after `AT+RESET`. You must change the `bluetooth.begin()` call to match. Keep a record of your configured baud rate — if you forget it, restore factory defaults with `AT+ORGL` (which resets to 38400).
+- **Baud rate mismatch:** After changing the baud rate with `AT+UART=9600,0,0`, the module uses the new rate immediately after `AT+RESET`. You must change the `bluetooth.begin()` call to match. Keep a record of your configured baud rate - if you forget it, restore factory defaults with `AT+ORGL` (which resets to 38400).
 - **Power:** The HC-05 draws 30–50 mA during normal operation. When transmitting at higher power or pairing, it can draw up to 100 mA. This is within the Arduino 5V regulator's capacity but may contribute to overheating if other high-current components are connected.
 - **Bluetooth version:** The HC-05 is Bluetooth 2.0 + EDR. It is not Bluetooth Low Energy (BLE) and cannot communicate with BLE-only apps or devices. For BLE projects, use an HM-10 or HM-11 module instead.
-- **Security:** The HC-05 defaults to PIN 1234. The connection is not encrypted — any paired device can send and receive data. Do not use the HC-05 for sensitive or secure data transmission without additional encryption.
+- **Security:** The HC-05 defaults to PIN 1234. The connection is not encrypted - any paired device can send and receive data. Do not use the HC-05 for sensitive or secure data transmission without additional encryption.
 - **Master mode pairing:** When using two HC-05 modules (master + slave), the master must be bound to the slave's address. Use `AT+CMODE=0` (connect to specific address) then `AT+BIND=<slave address>` and `AT+RESET`. The master will automatically connect to the slave on power-up. The slave must be in pairing mode (unconnected, PIN visible).
 

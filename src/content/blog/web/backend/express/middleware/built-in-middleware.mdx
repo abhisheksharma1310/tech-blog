@@ -1,0 +1,283 @@
+---
+title: "Built-in Middleware (express.json, express.urlencoded)"
+description: "Learn Express's built-in middleware for parsing request bodies, cookies, and serving static files"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Middleware"]
+tags: ["Express", "Middleware", "express.json", "express.urlencoded", "Body Parsing"]
+slug: "express-built-in-middleware"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## What Built-in Middleware Does Express Ship With?
+
+Express comes with several built-in middleware functions (available since Express 4.16+, where they were extracted back from the `body-parser` package):
+
+| Middleware | Purpose | Added |
+|---|---|---|
+| `express.json()` | Parse JSON request bodies | Express 4.16+ |
+| `express.urlencoded()` | Parse URL-encoded form data | Express 4.16+ |
+| `express.raw()` | Parse raw binary bodies | Express 4.16+ |
+| `express.text()` | Parse plain text bodies | Express 4.16+ |
+| `express.static()` | Serve static files | Since Express 3.x |
+
+These are the middleware functions you don't need to `npm install` - they're part of Express itself.
+
+## express.json()
+
+Parses incoming requests with **Content-Type: application/json**. The parsed data is available on `req.body`.
+
+```javascript
+const express = require('express');
+const app = express();
+
+// Parse JSON bodies
+app.use(express.json());
+
+app.post('/api/users', (req, res) => {
+  console.log(req.body); // { name: "Alice", email: "alice@test.com" }
+  res.json({ received: req.body });
+});
+```
+
+### How It Works
+
+```
+Client                          Express
+  │                                │
+  │ POST /api/users                │
+  │ Content-Type: application/json │
+  │ ┌──────────────────────┐       │
+  │ │ {                    │       │
+  │ │   "name": "Alice",   │──────→│ express.json() parses
+  │ │   "email": "..."     │       │ the raw body into
+  │ │ }                    │       │ req.body as an object
+  │ └──────────────────────┘       │
+  │                                │
+  │←─── 200 { received: ... } ────│
+```
+
+### Options
+
+```javascript
+app.use(express.json({
+  inflate: true,              // Decompress gzip/deflate bodies (default: true)
+  limit: '100kb',             // Maximum body size (default: 100kb)
+  reviver: null,              // JSON.parse reviver function
+  strict: true,               // Only accepts objects/arrays (default: true)
+  type: 'application/json',   // Content-Type to match (default: application/json)
+  verify: (req, res, buf, encoding) => {
+    // Custom verification - throw to reject
+    if (buf.length > 1000) {
+      throw new Error('Body too large');
+    }
+  }
+}));
+```
+
+### Limiting Body Size
+
+```javascript
+// Reject bodies larger than 1MB
+app.use(express.json({ limit: '1mb' }));
+
+// Custom error when limit exceeded
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Body too large' });
+  }
+  next(err);
+});
+```
+
+## express.urlencoded()
+
+Parses incoming requests with **Content-Type: application/x-www-form-urlencoded** - the format HTML forms submit by default.
+
+```javascript
+app.use(express.urlencoded({ extended: true }));
+
+app.post('/login', (req, res) => {
+  // For a form: <input name="username"> <input name="password">
+  console.log(req.body); // { username: "alice", password: "secret" }
+  res.json({ ok: true });
+});
+```
+
+### extended: true vs false
+
+| Option | Parser Library | Data Types |
+|---|---|---|
+| `extended: true` | `qs` | Nested objects, arrays: `user[name]=Alice&user[age]=30` |
+| `extended: false` | `query-string` | Simple flat key-value pairs only |
+
+```javascript
+// With extended: true
+app.use(express.urlencoded({ extended: true }));
+// POST with: user[name]=Alice&user[age]=30&tags[]=a&tags[]=b
+// req.body → { user: { name: "Alice", age: "30" }, tags: ["a", "b"] }
+
+// With extended: false
+app.use(express.urlencoded({ extended: false }));
+// POST with: user[name]=Alice&user[age]=30
+// req.body → { "user[name]": "Alice", "user[age]": "30" }
+```
+
+Most real-world apps use `extended: true`.
+
+### HTML Form Example
+
+```html
+<form action="/login" method="POST">
+  <input name="email" type="email" placeholder="Email" />
+  <input name="password" type="password" placeholder="Password" />
+  <button type="submit">Login</button>
+</form>
+```
+
+```javascript
+app.post('/login', express.urlencoded({ extended: true }), (req, res) => {
+  const { email, password } = req.body;
+  // Validate and authenticate
+  res.redirect('/dashboard');
+});
+```
+
+## express.raw()
+
+Parses bodies as a **Buffer** - useful for webhooks and binary data:
+
+```javascript
+app.use(express.raw({ type: 'application/octet-stream', limit: '5mb' }));
+
+app.post('/webhook', (req, res) => {
+  console.log(req.body); // <Buffer 89 50 4e 47 ... >
+  console.log(req.body.length); // raw byte length
+  res.status(200).send('OK');
+});
+```
+
+## express.text()
+
+Parses bodies as a plain **string**:
+
+```javascript
+app.use(express.text({ type: 'text/plain' }));
+
+app.post('/raw', (req, res) => {
+  console.log(typeof req.body); // "string"
+  res.send(`Received ${req.body.length} characters`);
+});
+```
+
+## express.static()
+
+Serves static files from a directory:
+
+```javascript
+app.use(express.static('public'));
+
+// With options
+app.use(express.static('public', {
+  maxAge: '1d',
+  dotfiles: 'deny',
+  index: false
+}));
+```
+
+See the dedicated [Serving Static Files](/express-static-files) tutorial for full coverage.
+
+## Combining Body Parsers
+
+Most apps need both JSON and URL-encoded parsing:
+
+```javascript
+const express = require('express');
+const app = express();
+
+// Parse common content types
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.post('/api/data', (req, res) => {
+  // Works with both JSON and form submissions
+  res.json({ body: req.body });
+});
+```
+
+## Content-Type Negotiation
+
+Express matches the request's `Content-Type` header to determine which parser to use:
+
+```javascript
+// Custom content type matching
+app.use(express.json({ type: 'application/vnd.api+json' }));
+app.use(express.text({ type: 'text/*' })); // any text/* type
+app.use(express.raw({ type: '*/*' }));     // catch-all
+```
+
+## Order Matters
+
+Always register body parsers **before** routes that need `req.body`:
+
+```javascript
+const express = require('express');
+const app = express();
+
+// ❌ req.body is undefined here
+app.post('/fail', (req, res) => {
+  console.log(req.body); // undefined
+  res.json({ body: req.body });
+});
+
+// ✅ Body parser registered AFTER the route won't help
+app.use(express.json());
+
+// ✅ Correct: body parser before route
+app.use(express.json());
+
+app.post('/success', (req, res) => {
+  console.log(req.body); // Parsed object
+  res.json({ body: req.body });
+});
+```
+
+## Error Handling for Body Parsers
+
+Body parsing errors (malformed JSON, exceeded limits) need dedicated handling:
+
+```javascript
+app.use(express.json({ limit: '1mb' }));
+
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Malformed JSON' });
+  }
+
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Failed to parse body' });
+  }
+
+  next(err);
+});
+```
+
+## Benchmark: Which Parser to Use
+
+| Parser | Use Case | Example Content-Type |
+|---|---|---|
+| `express.json()` | REST APIs, SPAs sending JSON | `application/json` |
+| `express.urlencoded()` | HTML form submissions | `application/x-www-form-urlencoded` |
+| `express.raw()` | Webhooks, file uploads, binary data | `application/octet-stream` |
+| `express.text()` | Webhook raw text, markdown | `text/plain` |
+| `express.static()` | CSS, JS, images, fonts | N/A (GET only) |
+
+## Key Takeaways
+
+- Express 4.16+ bundles `express.json()` and `express.urlencoded()` - no extra install needed
+- `express.json()` parses JSON bodies into `req.body`
+- `express.urlencoded()` parses form data - use `{ extended: true }` for nested objects
+- Body size is limited to **100kb by default** - configure with `{ limit: '1mb' }`
+- Register body parsers **before** routes
+- Handle body parsing errors with a custom error middleware

@@ -11,7 +11,7 @@ order: 1
 
 ## Fetch
 
-The `fetch()` API makes HTTP requests — GET, POST, PUT, DELETE, and more. It's the modern replacement for `XMLHttpRequest`.
+The `fetch()` API makes HTTP requests - GET, POST, PUT, DELETE, and more. It's the modern replacement for `XMLHttpRequest`.
 
 ## Basic GET Request
 
@@ -212,10 +212,10 @@ for (const [key, value] of response.headers) {
 
 ## Key Takeaways
 
-- `fetch()` returns a **Promise** — use `await` or `.then()`
+- `fetch()` returns a **Promise** - use `await` or `.then()`
 - Check `response.ok` to handle HTTP errors (404, 500)
 - Read the body with the appropriate method: `.json()`, `.text()`, `.blob()`
 - For POST/PUT, set `Content-Type` header and stringify the body
-- `fetch()` doesn't reject on 4xx/5xx — only on network failures
+- `fetch()` doesn't reject on 4xx/5xx - only on network failures
 - Use `response.headers.get()` to read response headers
 - `credentials: 'include'` sends cookies cross-origin

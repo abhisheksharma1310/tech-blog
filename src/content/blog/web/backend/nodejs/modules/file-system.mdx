@@ -1,6 +1,6 @@
 ---
 title: "File System Module (fs)"
-description: "Master Node.js file system operations — read/write files, work with directories, file stats, streams, and permissions"
+description: "Master Node.js file system operations - read/write files, work with directories, file stats, streams, and permissions"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Modules"]
 tags: ["Node.js", "Modules", "File System", "fs"]
@@ -169,7 +169,7 @@ await fs.rmdir('./old-uploads');
 
 // Remove recursively (use with extreme caution)
 await fs.rm('./node_modules', { recursive: true, force: true });
-// ⚠️ force: true — doesn't throw if path doesn't exist
+// ⚠️ force: true - doesn't throw if path doesn't exist
 ```
 
 ## File Stats
@@ -232,9 +232,9 @@ try {
 }
 
 // Change permissions (chmod)
-await fs.chmod('./script.sh', 0o755);  // rwxr-xr-x — executable
+await fs.chmod('./script.sh', 0o755);  // rwxr-xr-x - executable
 
-// Change ownership (chown) — requires root
+// Change ownership (chown) - requires root
 await fs.chown('./file.txt', 1000, 1000);  // uid, gid
 ```
 
@@ -245,7 +245,7 @@ await fs.chown('./file.txt', 1000, 1000);  // uid, gid
 | `fs.constants.R_OK` | 4 | Read permission |
 | `fs.constants.W_OK` | 2 | Write permission |
 | `fs.constants.X_OK` | 1 | Execute permission |
-| `fs.constants.F_OK` | — | File exists |
+| `fs.constants.F_OK` | - | File exists |
 
 ## Copying, Moving, Renaming
 
@@ -392,8 +392,8 @@ async function main() {
 
 ## Key Takeaways
 
-- Use **`fs.promises`** API for modern async code — prefer it over callbacks and sync variants
-- **`readFile`** loads entire file into memory — use streams for large files
+- Use **`fs.promises`** API for modern async code - prefer it over callbacks and sync variants
+- **`readFile`** loads entire file into memory - use streams for large files
 - **`writeFile`** creates or overwrites; **`appendFile`** adds to existing
 - Always handle **`ENOENT`** (not found) and **`EACCES`** (permission) errors
 - **`fs.stat`** provides metadata: size, timestamps, file type, permissions
@@ -401,4 +401,4 @@ async function main() {
 - Use **`readdir({ withFileTypes: true })`** to distinguish files from directories
 - **`fs.watch`** enables real-time file change monitoring
 - File flags: `'r'` (read), `'w'` (write/truncate), `'a'` (append), add `'x'` to fail if exists
-- Operations like `cp`, `mv`, `rm` — always use `{ recursive: true }` for directories
+- Operations like `cp`, `mv`, `rm` - always use `{ recursive: true }` for directories

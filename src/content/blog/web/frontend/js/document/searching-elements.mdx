@@ -15,7 +15,7 @@ Before you can manipulate an element, you need to **find it**. JavaScript provid
 
 ## Modern Methods: `querySelector` / `querySelectorAll`
 
-These are the **most versatile** — they accept any CSS selector:
+These are the **most versatile** - they accept any CSS selector:
 
 ```javascript
 document.querySelector('.card')           // first .card element
@@ -99,11 +99,11 @@ document.getElementById('add-btn').addEventListener('click', function() {
   const li = document.createElement('li');
   li.textContent = 'Item ' + (ul.children.length + 1);
   ul.appendChild(li);
-  // Static items didn't update — show it
+  // Static items didn't update - show it
   const out = document.getElementById('live-output');
   out.textContent =
     'Live collection: ' + liveItems.length + ' (auto-updated!)' + '\\n' +
-    'Static collection: ' + staticItems.length + ' (stale — still ' + staticItems.length + ')';
+    'Static collection: ' + staticItems.length + ' (stale - still ' + staticItems.length + ')';
 });
 
 updateCounts();
@@ -160,7 +160,7 @@ element.matches('li:first-child') // true if it's the first li
 
 ## Key Takeaways
 
-- `querySelector` and `querySelectorAll` are the **most flexible** — use them by default
+- `querySelector` and `querySelectorAll` are the **most flexible** - use them by default
 - `getElementById` is the **fastest** for single elements with IDs
 - Be aware of **live vs static** collections to avoid bugs
 - Use `closest()` to find parent elements matching a selector

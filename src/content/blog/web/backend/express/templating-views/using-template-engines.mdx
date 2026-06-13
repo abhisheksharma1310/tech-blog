@@ -1,0 +1,335 @@
+---
+title: "Using EJS, Pug, or Handlebars"
+description: "Set up and use template engines in Express - EJS, Pug, and Handlebars compared with examples"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Templating & Views"]
+tags: ["Express", "Templating", "EJS", "Pug", "Handlebars", "Views"]
+slug: "express-template-engines"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## What is a Template Engine?
+
+A **template engine** lets you embed dynamic data into HTML using templates. Instead of manually building HTML strings:
+
+```javascript
+// ❌ Without template engine - painful string concatenation
+res.send(
+  '<html><body><h1>' + user.name + '</h1><p>' + user.email + '</p></body></html>'
+);
+
+// ✅ With template engine - clean, readable, maintainable
+res.render('profile', { user });
+```
+
+Express supports many template engines. The three most popular are:
+
+| Engine | Syntax | Strengths |
+|---|---|---|
+| **EJS** | `<%= name %>` | Looks like HTML, easy learning curve |
+| **Pug** | `h1= name` | Very concise, whitespace-sensitive |
+| **Handlebars** | `{{name}}` | Logic-less, strict separation of concerns |
+
+## Setting Up Express for Templates
+
+```javascript
+const express = require('express');
+const path = require('path');
+
+const app = express();
+
+// Set the views directory (where templates live)
+app.set('views', path.join(__dirname, 'views'));
+
+// Set the template engine
+app.set('view engine', 'ejs'); // or 'pug' or 'hbs'
+
+app.listen(3000);
+```
+
+Express uses `app.set('view engine', ...)` to know which engine to use when you call `res.render()`.
+
+## EJS (Embedded JavaScript)
+
+### Installation
+
+```bash
+npm install ejs
+```
+
+### Syntax Quick Reference
+
+| Tag | Description |
+|---|---|
+| `<%= value %>` | Output escaped HTML-safe value |
+| `<%- value %>` | Output unescaped raw HTML |
+| `<% code %>` | Execute JavaScript code (no output) |
+| `<%# comment %>` | Comment (not rendered) |
+| `<%%` | Output literal `<%` |
+| `%>` | End tag in some inline contexts |
+
+### Example: views/profile.ejs
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Welcome, <%= user.name %>!</h1>
+  <p>Email: <%= user.email %></p>
+
+  <% if (user.bio) { %>
+    <p>Bio: <%= user.bio %></p>
+  <% } else { %>
+    <p><em>No bio yet</em></p>
+  <% } %>
+
+  <h2>Posts</h2>
+  <ul>
+    <% posts.forEach(post => { %>
+      <li>
+        <strong><%= post.title %></strong> -
+        <%= post.date.toLocaleDateString() %>
+      </li>
+    <% }) %>
+  </ul>
+
+  <footer>&copy; <%= new Date().getFullYear() %> My App</footer>
+</body>
+</html>
+```
+
+### Route
+
+```javascript
+app.get('/profile/:id', (req, res) => {
+  const user = { name: 'Alice', email: 'alice@test.com', bio: 'Developer' };
+  const posts = [
+    { title: 'Hello World', date: new Date() },
+    { title: 'Express Tips', date: new Date() }
+  ];
+
+  res.render('profile', {
+    title: 'User Profile',
+    user,
+    posts
+  });
+});
+```
+
+## Pug
+
+### Installation
+
+```bash
+npm install pug
+```
+
+### Syntax Quick Reference
+
+```pug
+//- HTML elements: tag + content
+h1 Hello World
+p This is a paragraph
+
+//- Attributes in parentheses
+a(href="/link", class="btn") Click Me
+img(src="/logo.png", alt="Logo")
+
+//- ID and class shorthands (like CSS)
+div#main.container
+  p.content Hello
+
+//- JavaScript interpolation
+h1= user.name
+p= `Email: ${user.email}`
+
+//- Conditionals
+if user.admin
+  a(href="/admin") Admin Panel
+else
+  p Regular user
+
+//- Loops
+each post in posts
+  article
+    h2= post.title
+    p= post.body
+
+//- Comments
+//- This comment won't appear in HTML
+// This comment will appear in HTML
+```
+
+### Example: views/profile.pug
+
+```pug
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    title= title
+    link(rel="stylesheet", href="/css/style.css")
+  body
+    h1 Welcome, #{user.name}!
+    p Email: #{user.email}
+
+    if user.bio
+      p Bio: #{user.bio}
+    else
+      p: em No bio yet
+
+    h2 Posts
+    ul
+      each post in posts
+        li
+          strong= post.title
+          | &nbsp;-
+          = post.date.toLocaleDateString()
+
+    footer &copy; #{new Date().getFullYear()} My App
+```
+
+### Route (same as EJS - `res.render('profile', ...)`)
+
+```javascript
+// Pug figures out file extension from the view engine setting
+res.render('profile', { title, user, posts });
+```
+
+## Handlebars
+
+### Installation
+
+```bash
+npm install hbs
+```
+
+### Syntax Quick Reference
+
+| Tag | Description |
+|---|---|
+| `{{value}}` | Output HTML-escaped value |
+| `{{{value}}}` | Output unescaped raw HTML |
+| `{{#if condition}}...{{/if}}` | Conditional block |
+| `{{#each array}}...{{/each}}` | Loop block |
+| `{{#unless condition}}...{{/unless}}` | Inverse conditional |
+| `{{> partialName}}` | Include a partial |
+| `{{! comment }}` | Comment |
+
+### Example: views/profile.hbs
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Welcome, {{user.name}}!</h1>
+  <p>Email: {{user.email}}</p>
+
+  {{#if user.bio}}
+    <p>Bio: {{user.bio}}</p>
+  {{else}}
+    <p><em>No bio yet</em></p>
+  {{/if}}
+
+  <h2>Posts</h2>
+  <ul>
+    {{#each posts}}
+      <li>
+        <strong>{{this.title}}</strong> -
+        {{this.date}}
+      </li>
+    {{/each}}
+  </ul>
+
+  <footer>&copy; {{year}} My App</footer>
+</body>
+</html>
+```
+
+Helpers are registered separately:
+
+```javascript
+const hbs = require('hbs');
+
+hbs.registerHelper('formatDate', (date) => {
+  return new Date(date).toLocaleDateString();
+});
+
+// Usage in template: {{formatDate post.date}}
+```
+
+## Engine Comparison
+
+| Feature | EJS | Pug | Handlebars |
+|---|---|---|---|
+| **Learning curve** | Low (stays close to HTML) | Medium (new syntax) | Low |
+| **HTML structure** | Full HTML | Indentation-based | Full HTML |
+| **Logic in templates** | Full JS (`<% %>`) | Full JS (`- `) | Limited (helpers) |
+| **Partials** | `<%- include('file') %>` | `include file` | `{{> partial}}` |
+| **Layouts** | Manual via include | `extends layout` | Via `express-handlebars` |
+| **Whitespace control** | Manual | Built-in | Manual |
+| **npm downloads/week** | ~15M | ~6M | ~4M |
+
+## Choosing the Right Engine
+
+```javascript
+// ✅ EJS - Best if you know HTML and want minimal abstraction
+app.set('view engine', 'ejs');
+
+// ✅ Pug - Best if you value concise, DRY templates
+app.set('view engine', 'pug');
+
+// ✅ Handlebars - Best if you want strict logic-less templates
+app.set('view engine', 'hbs');
+```
+
+### Recommendation
+
+- **EJS** for most projects - it's the most intuitive, stays closest to HTML, and has the largest ecosystem
+- **Pug** if you're writing many templates and want minimal syntax
+- **Handlebars** if you're enforcing a strict MVC pattern where templates shouldn't contain logic
+
+## Multiple Template Engines
+
+You can use multiple engines in one app:
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.set('views', path.join(__dirname, 'views'));
+
+// Register multiple engines
+app.set('view engine', 'ejs'); // default
+app.engine('pug', require('pug').__express);
+
+// Use them by specifying the engine in the file extension
+app.get('/ejs', (req, res) => {
+  res.render('page.ejs', { message: 'Rendered with EJS' });
+});
+
+app.get('/pug', (req, res) => {
+  res.render('page.pug', { message: 'Rendered with Pug' });
+});
+```
+
+## Key Takeaways
+
+- Set the views directory with `app.set('views', ...)`
+- Set the template engine with `app.set('view engine', '...')`
+- Render templates with `res.render('templateName', { data })`
+- **EJS** uses `<%= %>` - closest to HTML, easiest to learn
+- **Pug** uses indentation-based syntax - most concise
+- **Handlebars** uses `{{}}` - logic-less, strict separation
+- All engines support loops, conditionals, partials, and layouts

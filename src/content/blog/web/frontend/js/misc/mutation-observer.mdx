@@ -1,6 +1,6 @@
 ---
 title: "Mutation Observer"
-description: "Watch for DOM changes with MutationObserver — additions, removals, and attribute changes"
+description: "Watch for DOM changes with MutationObserver - additions, removals, and attribute changes"
 date: "2026-06-10"
 category: ["Web Development", "Frontend", "JavaScript DOM", "Misc"]
 tags: ["JavaScript", "DOM", "Mutation Observer"]
@@ -11,15 +11,15 @@ order: 1
 
 ## Mutation Observer
 
-`MutationObserver` lets you watch for **changes** in the DOM — elements added or removed, attributes modified, text content changed.
+`MutationObserver` lets you watch for **changes** in the DOM - elements added or removed, attributes modified, text content changed.
 
 ## Why Use MutationObserver?
 
 Before `MutationObserver`, you had to poll the DOM or use hacky `DOMSubtreeModified` events (deprecated, slow). `MutationObserver` is:
 
-- **Efficient** — async, batched, no polling
-- **Precise** — tells you exactly what changed
-- **Well-supported** — all modern browsers
+- **Efficient** - async, batched, no polling
+- **Precise** - tells you exactly what changed
+- **Well-supported** - all modern browsers
 
 ## Basic Usage
 
@@ -248,7 +248,7 @@ document.getElementById('add-detect').onclick = function() {
 
 ## Key Takeaways
 
-- `MutationObserver` watches for **DOM changes** — additions, removals, attributes, text
+- `MutationObserver` watches for **DOM changes** - additions, removals, attributes, text
 - Always pass `subtree: true` if you want to watch **descendants** too
 - Use `attributeFilter` to watch **specific attributes** only
 - The observer callback receives an **array of MutationRecords** (batched)

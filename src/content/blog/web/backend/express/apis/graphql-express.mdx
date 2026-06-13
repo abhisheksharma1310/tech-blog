@@ -1,0 +1,482 @@
+---
+title: "Introduction to GraphQL with Express"
+description: "Build a GraphQL API with Express using Apollo Server - schemas, resolvers, queries, and mutations"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "APIs"]
+tags: ["Express", "GraphQL", "Apollo", "API", "Query Language"]
+slug: "express-graphql"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## GraphQL vs REST
+
+| Feature | REST | GraphQL |
+|---|---|---|
+| **Data fetching** | Multiple endpoints, fixed structure | Single endpoint, client specifies shape |
+| **Over-fetching** | Often returns more data than needed | Client asks for exactly what it needs |
+| **Under-fetching** | May need multiple requests | Single request can get all related data |
+| **Versioning** | URL or header-based | Evolve without versions (add fields, deprecate old) |
+| **Tooling** | Swagger/OpenAPI | GraphiQL, Apollo Studio, codegen |
+
+```
+REST:                  GraphQL:
+GET /api/users          POST /api/graphql
+GET /api/users/:id      { users { id, name, posts { title } } }
+GET /api/users/:id/posts
+```
+
+## Installation
+
+```bash
+npm install @apollo/server express graphql
+```
+
+## Basic Setup
+
+```javascript
+const express = require('express');
+const { ApolloServer } = require('@apollo/server');
+const { expressMiddleware } = require('@apollo/server/express4');
+
+const app = express();
+app.use(express.json());
+
+// Schema
+const typeDefs = `
+  type Query {
+    hello: String
+    users: [User]
+    user(id: ID!): User
+    posts: [Post]
+  }
+
+  type Mutation {
+    createUser(name: String!, email: String!): User
+    createPost(title: String!, body: String!, authorId: ID!): Post
+  }
+
+  type User {
+    id: ID
+    name: String
+    email: String
+    posts: [Post]
+  }
+
+  type Post {
+    id: ID
+    title: String
+    body: String
+    author: User
+  }
+`;
+
+// Resolvers
+const users = [
+  { id: '1', name: 'Alice', email: 'alice@test.com' },
+  { id: '2', name: 'Bob', email: 'bob@test.com' }
+];
+
+const posts = [
+  { id: '1', title: 'GraphQL 101', body: 'Content...', authorId: '1' },
+  { id: '2', title: 'Express Tips', body: 'Content...', authorId: '1' },
+  { id: '3', title: 'Node.js Best Practices', body: 'Content...', authorId: '2' }
+];
+
+const resolvers = {
+  Query: {
+    hello: () => 'Hello from GraphQL!',
+    users: () => users,
+    user: (_, { id }) => users.find(u => u.id === id),
+    posts: () => posts
+  },
+
+  Mutation: {
+    createUser: (_, { name, email }) => {
+      const user = { id: String(users.length + 1), name, email };
+      users.push(user);
+      return user;
+    },
+    createPost: (_, { title, body, authorId }) => {
+      const post = { id: String(posts.length + 1), title, body, authorId };
+      posts.push(post);
+      return post;
+    }
+  },
+
+  User: {
+    posts: (parent) => posts.filter(p => p.authorId === parent.id)
+  },
+
+  Post: {
+    author: (parent) => users.find(u => u.id === parent.authorId)
+  }
+};
+
+// Start server
+async function start() {
+  const server = new ApolloServer({ typeDefs, resolvers });
+  await server.start();
+
+  app.use('/api/graphql', expressMiddleware(server));
+
+  app.listen(3000, () => {
+    console.log('Server at http://localhost:3000');
+    console.log('GraphQL at http://localhost:3000/api/graphql');
+  });
+}
+
+start();
+```
+
+## Querying the API
+
+```graphql
+# Get specific fields - no over-fetching
+query {
+  users {
+    id
+    name
+    email
+  }
+}
+
+# Nested query - replaces REST's multiple requests
+query {
+  users {
+    name
+    posts {
+      title
+      body
+    }
+  }
+}
+
+# Single resource with argument
+query {
+  user(id: "1") {
+    name
+    email
+    posts {
+      title
+    }
+  }
+}
+
+# Mutations
+mutation {
+  createUser(name: "Charlie", email: "charlie@test.com") {
+    id
+    name
+  }
+}
+```
+
+### Using cURL
+
+```bash
+curl -X POST http://localhost:3000/api/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ users { name email posts { title } } }"}'
+```
+
+## Schema Design
+
+### Types
+
+```graphql
+type Product {
+  id: ID!
+  name: String!
+  price: Float!
+  description: String
+  category: Category!
+  inStock: Boolean!
+  tags: [String]
+  reviews: [Review]
+  createdAt: String
+}
+
+type Category {
+  id: ID!
+  name: String!
+  products: [Product]
+}
+
+type Review {
+  id: ID!
+  rating: Int!
+  comment: String
+  author: User!
+}
+
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  role: Role!
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+```
+
+### Input Types (for Mutations)
+
+```graphql
+input CreateProductInput {
+  name: String!
+  price: Float!
+  description: String
+  categoryId: ID!
+  tags: [String]
+}
+
+input UpdateProductInput {
+  name: String
+  price: Float
+  description: String
+  tags: [String]
+}
+
+type Mutation {
+  createProduct(input: CreateProductInput!): Product!
+  updateProduct(id: ID!, input: UpdateProductInput!): Product!
+  deleteProduct(id: ID!): Boolean!
+}
+```
+
+## Resolver Pattern
+
+### Parent-Child Resolvers
+
+```javascript
+const resolvers = {
+  Query: {
+    products: async (_, args, context) => {
+      return context.db.Product.find();
+    },
+    product: (_, { id }) => products.find(p => p.id === id)
+  },
+
+  Mutation: {
+    createProduct: async (_, { input }, context) => {
+      if (!context.user) throw new Error('Not authenticated');
+
+      const product = await context.db.Product.create(input);
+      return product;
+    }
+  },
+
+  // Field resolvers for relationships
+  Product: {
+    category: (parent) => categories.find(c => c.id === parent.categoryId),
+    reviews: (parent) => reviews.filter(r => r.productId === parent.id),
+    // Computed field
+    formattedPrice: (parent) => `$${parent.price.toFixed(2)}`
+  },
+
+  Category: {
+    products: (parent) => products.filter(p => p.categoryId === parent.id)
+  }
+};
+```
+
+## Context (Authentication & Data Sources)
+
+```javascript
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: async ({ req }) => {
+    // Auth - extract user from token
+    const token = req.headers['authorization']?.slice(7);
+    let user = null;
+
+    if (token) {
+      try {
+        user = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (err) {
+        // Invalid token - user stays null
+      }
+    }
+
+    return {
+      user,
+      db: {
+        Product,
+        User,
+        Review
+      }
+    };
+  }
+});
+```
+
+### Using Context in Resolvers
+
+```javascript
+const resolvers = {
+  Query: {
+    me: (_, __, context) => {
+      if (!context.user) throw new Error('Not authenticated');
+      return context.db.User.findById(context.user.sub);
+    }
+  },
+
+  Mutation: {
+    updateProduct: async (_, { id, input }, context) => {
+      if (!context.user) throw new Error('Not authenticated');
+
+      const product = await context.db.Product.findById(id);
+      if (!product) throw new Error('Product not found');
+
+      // Only admin or owner can update
+      if (context.user.role !== 'admin') {
+        throw new Error('Not authorized');
+      }
+
+      return context.db.Product.findByIdAndUpdate(id, input, { new: true });
+    }
+  }
+};
+```
+
+## Error Handling
+
+```javascript
+const { GraphQLError } = require('graphql');
+
+const resolvers = {
+  Query: {
+    user: async (_, { id }, context) => {
+      const user = await context.db.User.findById(id);
+
+      if (!user) {
+        throw new GraphQLError('User not found', {
+          extensions: { code: 'NOT_FOUND', http: { status: 404 } }
+        });
+      }
+
+      return user;
+    }
+  },
+
+  Mutation: {
+    createUser: async (_, { name, email }, context) => {
+      const existing = await context.db.User.findOne({ email });
+
+      if (existing) {
+        throw new GraphQLError('Email already exists', {
+          extensions: { code: 'DUPLICATE', field: 'email', http: { status: 409 } }
+        });
+      }
+
+      if (name.length < 2) {
+        throw new GraphQLError('Validation failed', {
+          extensions: {
+            code: 'VALIDATION_ERROR',
+            details: [{ field: 'name', message: 'Name must be 2+ characters' }]
+          }
+        });
+      }
+
+      return context.db.User.create({ name, email });
+    }
+  }
+};
+```
+
+## Pagination in GraphQL
+
+```graphql
+type Query {
+  products(
+    page: Int = 1
+    limit: Int = 10
+    category: String
+    minPrice: Float
+    maxPrice: Float
+    sort: String = "-createdAt"
+    search: String
+  ): ProductConnection!
+}
+
+type ProductConnection {
+  edges: [Product!]!
+  pagination: PaginationInfo!
+}
+
+type PaginationInfo {
+  page: Int!
+  limit: Int!
+  total: Int!
+  totalPages: Int!
+  hasNext: Boolean!
+  hasPrev: Boolean!
+}
+```
+
+```javascript
+const resolvers = {
+  Query: {
+    products: async (_, { page, limit, category, minPrice, maxPrice, sort, search }) => {
+      const filter = {};
+      if (category) filter.category = category;
+      if (minPrice || maxPrice) filter.price = {};
+      if (minPrice) filter.price.$gte = minPrice;
+      if (maxPrice) filter.price.$lte = maxPrice;
+      if (search) filter.$text = { $search: search };
+
+      const skip = (page - 1) * limit;
+      const [products, total] = await Promise.all([
+        Product.find(filter).sort(sort).skip(skip).limit(limit),
+        Product.countDocuments(filter)
+      ]);
+
+      return {
+        edges: products,
+        pagination: {
+          page, limit, total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1
+        }
+      };
+    }
+  }
+};
+```
+
+## GraphQL vs REST Decision Guide
+
+```
+Use REST when:
+├── Simple CRUD with fixed data shapes
+├── File uploads and binary data
+├── Caching at the HTTP level is important
+├── Public APIs for third-party consumers
+└── Your team is more familiar with REST
+
+Use GraphQL when:
+├── Complex, nested data requirements
+├── Clients need flexibility in data shape
+├── Mobile apps (minimize data transfer)
+├── Rapidly evolving frontends
+└── Real-time subscriptions (WebSockets)
+```
+
+## Key Takeaways
+
+- GraphQL exposes a **single endpoint**; clients specify exactly what data they need
+- **Type definitions** define the schema (types, queries, mutations)
+- **Resolvers** implement the logic for each field
+- Use **context** for auth, data sources, and shared state
+- Apollo Server integrates with Express via `expressMiddleware`
+- GraphQL eliminates **over-fetching** and **under-fetching**
+- Use **input types** for mutation arguments
+- Pagination, filtering, and auth work similarly to REST - just structured differently
+- GraphQL is not a replacement for REST - choose based on your use case

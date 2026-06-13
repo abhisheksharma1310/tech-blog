@@ -1,0 +1,373 @@
+---
+title: "Rendering Dynamic Content"
+description: "Render dynamic HTML in Express using template engines - conditionals, loops, helpers, and more"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Templating & Views"]
+tags: ["Express", "Dynamic Content", "EJS", "Pug", "Handlebars", "Templates"]
+slug: "express-rendering-dynamic-content"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## What is Dynamic Content?
+
+**Static content** is the same for every user. **Dynamic content** changes based on data, user state, or request parameters.
+
+```
+Static:  <h1>Welcome to My App</h1>
+Dynamic: <h1>Welcome back, Alice!</h1>
+         <h1>Welcome back, Bob!</h1>
+```
+
+Template engines let you inject data, run logic, and generate HTML dynamically.
+
+## Conditionals
+
+Show or hide content based on conditions.
+
+### EJS
+
+```html
+<% if (user) { %>
+  <h1>Welcome back, <%= user.name %>!</h1>
+  <a href="/logout">Logout</a>
+<% } else { %>
+  <h1>Welcome, Guest!</h1>
+  <a href="/login">Login</a>
+<% } %>
+
+<%# else if %>
+<% if (user.role === 'admin') { %>
+  <a href="/admin">Admin Panel</a>
+<% } else if (user.role === 'moderator') { %>
+  <a href="/moderate">Moderate</a>
+<% } else { %>
+  <a href="/dashboard">Dashboard</a>
+<% } %>
+
+<%# unless (inverse if) %>
+<% if (!user.verified) { %>
+  <p class="warning">Please verify your email.</p>
+<% } %>
+```
+
+### Pug
+
+```pug
+if user
+  h1 Welcome back, #{user.name}!
+  a(href="/logout") Logout
+else
+  h1 Welcome, Guest!
+  a(href="/login") Login
+
+//- else if
+if user.role === 'admin'
+  a(href="/admin") Admin Panel
+else if user.role === 'moderator'
+  a(href="/moderate") Moderate
+else
+  a(href="/dashboard") Dashboard
+
+//- unless
+unless user.verified
+  p.warning Please verify your email.
+```
+
+### Handlebars
+
+```html
+{{#if user}}
+  <h1>Welcome back, {{user.name}}!</h1>
+  <a href="/logout">Logout</a>
+{{else}}
+  <h1>Welcome, Guest!</h1>
+  <a href="/login">Login</a>
+{{/if}}
+
+{{#if user.admin}}
+  <a href="/admin">Admin Panel</a>
+{{else if user.moderator}}
+  <a href="/moderate">Moderate</a>
+{{else}}
+  <a href="/dashboard">Dashboard</a>
+{{/if}}
+
+{{#unless user.verified}}
+  <p class="warning">Please verify your email.</p>
+{{/unless}}
+```
+
+## Loops
+
+Iterate over arrays and objects.
+
+### EJS
+
+```html
+<h2>Posts (<%= posts.length %>)</h2>
+<ul>
+  <% posts.forEach((post, index) => { %>
+    <li class="<%= index % 2 === 0 ? 'even' : 'odd' %>">
+      <h3><%= post.title %></h3>
+      <p><%= post.body.substring(0, 100) %>...</p>
+      <small><%= post.date.toLocaleDateString() %></small>
+    </li>
+  <% }) %>
+</ul>
+
+<%# Iterating over object keys %>
+<dl>
+  <% Object.entries(metadata).forEach(([key, value]) => { %>
+    <dt><%= key %></dt>
+    <dd><%= value %></dd>
+  <% }) %>
+</dl>
+```
+
+### Pug
+
+```pug
+h2 Posts (#{posts.length})
+ul
+  each post, index in posts
+    li(class= index % 2 === 0 ? 'even' : 'odd')
+      h3= post.title
+      p= post.body.substring(0, 100) + '...'
+      small= post.date.toLocaleDateString()
+
+//- else when array is empty
+ul
+  each post in posts
+    li= post.title
+  else
+    li No posts yet.
+
+//- Iterating object
+each value, key in metadata
+  dt= key
+  dd= value
+```
+
+### Handlebars
+
+```html
+<h2>Posts ({{posts.length}})</h2>
+<ul>
+  {{#each posts}}
+    <li>
+      <h3>{{this.title}}</h3>
+      <p>{{this.body}}</p>
+      <small>{{this.date}}</small>
+    </li>
+  {{else}}
+    <li>No posts yet.</li>
+  {{/each}}
+</ul>
+
+{{#each metadata}}
+  <dt>{{@key}}</dt>
+  <dd>{{this}}</dd>
+{{/each}}
+```
+
+## Working with Variables
+
+### Accessing Properties
+
+```javascript
+// EJS
+<%= user.name %>
+<%= user['full name'] %>
+<%= users[0].email %>
+
+// Pug
+= user.name
+= user['full name']
+= users[0].email
+
+// Handlebars
+{{user.name}}
+{{user.[full name]}}
+{{users.[0].email}}
+```
+
+## Filters and Transformations
+
+### EJS - Inline JavaScript
+
+```html
+<p><%= post.body.toUpperCase().substring(0, 50) %>...</p>
+<p><%= new Date(post.date).toISOString().split('T')[0] %></p>
+<p><%= Number(price).toFixed(2) %></p>
+```
+
+### Pug - JavaScript in templates
+
+```pug
+- const truncate = (str, len) => str.length > len ? str.slice(0, len) + '...' : str;
+- const formatDate = (d) => new Date(d).toLocaleDateString();
+- const formatPrice = (p) => '$' + Number(p).toFixed(2);
+
+p= truncate(post.body, 100)
+p= formatDate(post.date)
+p= formatPrice(product.price)
+```
+
+### Handlebars - Custom Helpers
+
+```javascript
+const hbs = require('hbs');
+
+hbs.registerHelper('truncate', (str, len) => {
+  return str.length > len ? str.substring(0, len) + '...' : str;
+});
+
+hbs.registerHelper('formatDate', (date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+});
+
+hbs.registerHelper('formatPrice', (price) => {
+  return `$${Number(price).toFixed(2)}`;
+});
+
+hbs.registerHelper('json', (context) => {
+  return JSON.stringify(context);
+});
+```
+
+```html
+<p>{{truncate post.body 100}}</p>
+<p>{{formatDate post.date}}</p>
+<p>{{formatPrice product.price}}</p>
+<script>const data = {{{json user}}};</script>
+```
+
+## Dynamic Attributes and Classes
+
+### EJS
+
+```html
+<div class="card <%= post.featured ? 'featured' : '' %>"
+     data-id="<%= post.id %>">
+</div>
+
+<a href="/posts/<%= post.slug %>">Read More</a>
+
+<button <%= user ? '' : 'disabled' %>>Submit</button>
+```
+
+### Pug
+
+```pug
+div.card(class= post.featured ? 'featured' : null, data-id= post.id)
+a(href='/posts/' + post.slug) Read More
+button(disabled= !user) Submit
+```
+
+### Handlebars
+
+```html
+<div class="card {{#if post.featured}}featured{{/if}}" data-id="{{post.id}}">
+</div>
+
+<a href="/posts/{{post.slug}}">Read More</a>
+
+<button {{#unless user}}disabled{{/unless}}>Submit</button>
+```
+
+## Rendering with Different Status Codes
+
+```javascript
+// Error page with 404
+app.get('/404', (req, res) => {
+  res.status(404).render('errors/not-found', {
+    title: 'Page Not Found',
+    url: req.originalUrl
+  });
+});
+
+// Server error page
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).render('errors/server-error', {
+    title: 'Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+```
+
+## Rendering JSON vs HTML from the Same Route
+
+```javascript
+app.get('/api/users/:id', (req, res) => {
+  const user = getUser(req.params.id);
+  if (!user) return res.status(404).render('errors/not-found');
+
+  // Respond with HTML or JSON depending on the request
+  if (req.accepts('html')) {
+    res.render('users/show', { user });
+  } else {
+    res.json({ user });
+  }
+});
+```
+
+## Caching Rendered Output
+
+For performance, cache rendered templates:
+
+```javascript
+const mcache = require('memory-cache');
+
+function cache(duration) {
+  return (req, res, next) => {
+    const key = `__express__${req.originalUrl}`;
+    const cached = mcache.get(key);
+
+    if (cached) {
+      return res.send(cached);
+    }
+
+    const originalSend = res.send.bind(res);
+    res.send = (body) => {
+      mcache.put(key, body, duration * 1000);
+      originalSend(body);
+    };
+    next();
+  };
+}
+
+app.get('/posts', cache(300), (req, res) => {
+  res.render('posts', { posts: fetchPosts() });
+});
+```
+
+## Dynamic Layout Selection
+
+Switch layouts based on context:
+
+```javascript
+// Different layouts for different sections
+app.get('/admin/*', (req, res, next) => {
+  res.locals.layout = 'layouts/admin';
+  next();
+});
+
+app.get('/*', (req, res, next) => {
+  res.locals.layout = 'layouts/main';
+  next();
+});
+```
+
+## Key Takeaways
+
+- Use **conditionals** (`if`/`else`) to show/hide content based on data
+- Use **loops** (`forEach`, `each`) to iterate arrays and objects
+- **Handlebars helpers** extend template functionality without inline logic
+- Inject variables into **attributes, classes, and URLs**
+- Render **error pages** with appropriate HTTP status codes
+- Cache rendered templates for **production performance**
+- Switch layouts dynamically based on **route or user role**

@@ -11,7 +11,7 @@ order: 3
 
 ## The Clickjacking Attack
 
-**Clickjacking** tricks users into clicking something they didn't intend to. An attacker overlays an invisible iframe on top of a decoy page — the user thinks they're clicking a button, but actually clicks something on the hidden page.
+**Clickjacking** tricks users into clicking something they didn't intend to. An attacker overlays an invisible iframe on top of a decoy page - the user thinks they're clicking a button, but actually clicks something on the hidden page.
 
 ## How It Works
 
@@ -87,7 +87,7 @@ Header always set X-Frame-Options "DENY"
 
 ### 2. `Content-Security-Policy` frame-ancestors
 
-The modern approach — more flexible:
+The modern approach - more flexible:
 
 ```
 Content-Security-Policy: frame-ancestors 'none';
@@ -120,7 +120,7 @@ Generate a random token, store it in a cookie and session, and verify on sensiti
 ```javascript
 // On sensitive form submission
 if (req.cookies.csrf_token !== req.session.csrf_token) {
-  // reject — likely clickjacking or CSRF
+  // reject - likely clickjacking or CSRF
 }
 ```
 
@@ -144,7 +144,7 @@ try {
     log.textContent =
       'window.self: ' + window.self.location.href + '\\n' +
       'window.top: ' + window.top.location.href + '\\n' +
-      'These are DIFFERENT — we are framed!';
+      'These are DIFFERENT - we are framed!';
   } else {
     status.textContent = '✅ I am the top-level window. Not framed.';
     status.style.color = '#22c55e';
@@ -154,7 +154,7 @@ try {
   }
 } catch (e) {
   // Cross-origin access to top.location throws
-  status.textContent = '⚠️ Cannot access top — likely cross-origin iframe';
+  status.textContent = '⚠️ Cannot access top - likely cross-origin iframe';
   status.style.color = '#eab308';
   log.textContent = 'SecurityError: ' + e.message + '\\n' + 'This means we\\'re likely in a cross-origin iframe.';
 }
@@ -175,7 +175,7 @@ When `window.self !== window.top`, you're inside an iframe.
 
 1. **Always** set `X-Frame-Options: DENY` on auth pages (login, payment)
 2. Use `Content-Security-Policy: frame-ancestors` for fine-grained control
-3. Don't rely solely on JavaScript frame busting — headers are the primary defense
+3. Don't rely solely on JavaScript frame busting - headers are the primary defense
 4. For pages that legitimately need framing (widgets, embeds), restrict to specific origins:
    ```
    Content-Security-Policy: frame-ancestors https://partner.com;

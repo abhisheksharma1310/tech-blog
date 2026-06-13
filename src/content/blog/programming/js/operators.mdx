@@ -112,7 +112,7 @@ Strings are compared letter-by-letter lexicographically (dictionary order):
 ```js
 "a" < "b";   // → true
 "Z" < "a";   // → true (uppercase have lower Unicode values)
-"2" > "10";  // → true (compares "2" vs "1" — character by character!)
+"2" > "10";  // → true (compares "2" vs "1" - character by character!)
 ```
 
 ### Different Types
@@ -131,12 +131,12 @@ false == 0; // → true
 This is critical to understand:
 
 ```js
-// Loose == — converts types before comparing
+// Loose == - converts types before comparing
 5 == "5";   // → true
 0 == false; // → true
 null == undefined; // → true
 
-// Strict === — no type conversion (check value AND type)
+// Strict === - no type conversion (check value AND type)
 5 === "5";   // → false
 0 === false; // → false
 null === undefined; // → false
@@ -184,7 +184,7 @@ let access = age >= 18 ? "Allowed" : "Denied";
 // else access = "Denied";
 ```
 
-Nested ternaries (use sparingly — hard to read):
+Nested ternaries (use sparingly - hard to read):
 
 ```js
 let category = age >= 18 ? "Adult" : age >= 13 ? "Teen" : "Child";
@@ -203,7 +203,7 @@ if (NaN) {}    // false
 if (false) {}  // false
 ```
 
-Everything else is truthy — including `"0"`, `"false"`, empty arrays `[]`, and empty objects `{}`.
+Everything else is truthy - including `"0"`, `"false"`, empty arrays `[]`, and empty objects `{}`.
 
 ## Logical Operators
 
@@ -215,7 +215,7 @@ Returns the **first truthy** value, or the last if all are falsy:
 true || false;        // → true
 false || false;       // → false
 0 || 1 || 2;          // → 1 (first truthy)
-null || undefined || 0; // → 0 (all falsy — returns last)
+null || undefined || 0; // → 0 (all falsy - returns last)
 
 // Practical: default value
 let name = userInput || "Guest";
@@ -227,7 +227,7 @@ Returns the **first falsy** value, or the last if all are truthy:
 
 ```js
 true && false;        // → false
-1 && 2 && 3;          // → 3 (all truthy — returns last)
+1 && 2 && 3;          // → 3 (all truthy - returns last)
 1 && 0 && 2;          // → 0 (first falsy)
 null && "hello";      // → null
 
@@ -242,7 +242,7 @@ Returns the inverse boolean:
 ```js
 !true;          // → false
 !0;             // → true
-!!"hello";      // → true (double NOT — converts to boolean)
+!!"hello";      // → true (double NOT - converts to boolean)
 ```
 
 ### Short-circuit Evaluation
@@ -357,14 +357,14 @@ for (; i < 3; ) { // initialization and step are outside
 ### Breaking the Loop
 
 ```js
-// break — exits the loop entirely
+// break - exits the loop entirely
 for (let i = 0; i < 10; i++) {
   if (i === 3) break;
   console.log(i);
 }
 // → 0, 1, 2
 
-// continue — skips to the next iteration
+// continue - skips to the next iteration
 for (let i = 0; i < 5; i++) {
   if (i === 2) continue;
   console.log(i);
@@ -438,7 +438,7 @@ console.log(dayName); // → "Wednesday"
 ### How it works
 
 - `switch` compares using **strict equality** (`===`)
-- The `break` is essential — without it, execution **falls through** to the next case:
+- The `break` is essential - without it, execution **falls through** to the next case:
 
 ```js
 let fruit = "apple";

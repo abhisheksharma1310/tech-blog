@@ -15,9 +15,9 @@ order: 10
 
 Object properties have more than just a value. Each property has three **flags**:
 
-- **writable** — can the value be changed?
-- **enumerable** — does it show up in `for...in` loops?
-- **configurable** — can the property be deleted or modified?
+- **writable** - can the value be changed?
+- **enumerable** - does it show up in `for...in` loops?
+- **configurable** - can the property be deleted or modified?
 
 ### Property Descriptor
 
@@ -44,7 +44,7 @@ Object.defineProperty(user, "name", {
 user.name = "Bob";     // Fails silently (in strict mode: TypeError)
 console.log(user.name); // → "Alice"
 
-for (let key in user) console.log(key); // Nothing — not enumerable
+for (let key in user) console.log(key); // Nothing - not enumerable
 
 delete user.name;        // Fails silently
 console.log(user.name);  // → "Alice"
@@ -131,13 +131,13 @@ console.log(descriptors);
 ```js
 let user = { name: "Alice", age: 30 };
 
-// Seal — prevent adding/removing properties (sets configurable: false)
+// Seal - prevent adding/removing properties (sets configurable: false)
 Object.seal(user);
 delete user.age;     // Silently ignored
 user.email = "test"; // Silently ignored (can't add)
 user.name = "Bob";   // ✅ Allowed (writable)
 
-// Freeze — make completely immutable
+// Freeze - make completely immutable
 Object.freeze(user);
 user.name = "Charlie"; // Silently ignored
 delete user.age;       // Silently ignored
@@ -184,9 +184,9 @@ console.log(user.lastName);  // → "Smith"
 
 ### Why use getters/setters?
 
-- **Computed properties** — derive a value from other properties
-- **Validation** — check values before setting
-- **Encapsulation** — hide internal representation
+- **Computed properties** - derive a value from other properties
+- **Validation** - check values before setting
+- **Encapsulation** - hide internal representation
 
 ### Validation with Setter
 
@@ -241,7 +241,7 @@ console.log(descriptor);
 // → { get: [Function], set: [Function], enumerable: true, configurable: true }
 ```
 
-### Smart Getter — Lazy Computation
+### Smart Getter - Lazy Computation
 
 ```js
 let data = {
@@ -265,10 +265,10 @@ console.log(data.bigData); // → From cache (no computation)
 Getters/setters let you add logic without breaking existing code:
 
 ```js
-// Before — simple property
+// Before - simple property
 let user = { name: "Alice" };
 
-// After — refactored to getter (code using user.name still works)
+// After - refactored to getter (code using user.name still works)
 let user = {
   _name: "Alice",
   get name() { return this._name; },

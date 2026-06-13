@@ -11,11 +11,11 @@ order: 1
 
 ## ArrayBuffer and Binary Arrays
 
-JavaScript handles binary data through `ArrayBuffer` and typed arrays — essential for file processing, networking, WebGL, and crypto.
+JavaScript handles binary data through `ArrayBuffer` and typed arrays - essential for file processing, networking, WebGL, and crypto.
 
 ## What is an ArrayBuffer?
 
-An `ArrayBuffer` is a fixed-length, raw binary data buffer. You can't read or write it directly — you need a **view** (typed array or DataView).
+An `ArrayBuffer` is a fixed-length, raw binary data buffer. You can't read or write it directly - you need a **view** (typed array or DataView).
 
 ```
 ArrayBuffer (raw bytes)
@@ -50,7 +50,7 @@ const float64 = new Float64Array(buffer);
 |---|---|---|---|
 | `Int8Array` | 1 | -128 to 127 | `signed char` |
 | `Uint8Array` | 1 | 0 to 255 | `unsigned char` |
-| `Uint8ClampedArray` | 1 | 0 to 255 (clamped) | — |
+| `Uint8ClampedArray` | 1 | 0 to 255 (clamped) | - |
 | `Int16Array` | 2 | -32768 to 32767 | `short` |
 | `Uint16Array` | 2 | 0 to 65535 | `unsigned short` |
 | `Int32Array` | 4 | -2³¹ to 2³¹-1 | `int` |
@@ -89,7 +89,7 @@ out.textContent =
 
 ## Creating Typed Arrays Directly
 
-You don't always need an `ArrayBuffer` — typed arrays can be created directly:
+You don't always need an `ArrayBuffer` - typed arrays can be created directly:
 
 ```javascript
 // From an array
@@ -168,7 +168,7 @@ normal[0] = 300; // becomes 44 (300 % 256)
 normal[1] = -50; // becomes 206 (256 - 50)
 ```
 
-Used in **canvas pixel manipulation** — color values are clamped to 0-255.
+Used in **canvas pixel manipulation** - color values are clamped to 0-255.
 
 ## Typed Array Methods
 
@@ -221,7 +221,7 @@ document.getElementById('hex-btn').onclick = function() {
 
 ## Key Takeaways
 
-- `ArrayBuffer` is a **raw byte** container — you need a **view** to read/write
+- `ArrayBuffer` is a **raw byte** container - you need a **view** to read/write
 - **Typed arrays** (`Uint8Array`, `Int32Array`, etc.) give typed views
 - **`DataView`** gives explicit endianness control for mixed data
 - Typed arrays behave like regular arrays but are **fixed-length** and **typed**

@@ -11,7 +11,7 @@ order: 2
 
 ## LocalStorage and SessionStorage
 
-`localStorage` and `sessionStorage` are key-value stores that survive page refreshes. Unlike cookies, they're **not sent** with HTTP requests — making them ideal for client-side data.
+`localStorage` and `sessionStorage` are key-value stores that survive page refreshes. Unlike cookies, they're **not sent** with HTTP requests - making them ideal for client-side data.
 
 ## Web Storage API
 
@@ -160,7 +160,7 @@ document.getElementById('save-object').onclick = function() {
 document.getElementById('load-object').onclick = function() {
   const data = localStorage.getItem('user');
   if (!data) {
-    out.textContent = 'No user object found — save one first';
+    out.textContent = 'No user object found - save one first';
     return;
   }
   const user = JSON.parse(data);
@@ -174,7 +174,7 @@ document.getElementById('load-object').onclick = function() {
 document.getElementById('update-scores').onclick = function() {
   const data = localStorage.getItem('user');
   if (!data) {
-    out.textContent = 'No user found — save one first';
+    out.textContent = 'No user found - save one first';
     return;
   }
   const user = JSON.parse(data);
@@ -258,9 +258,9 @@ loadTheme();
 ## Key Takeaways
 
 - `localStorage` persists **indefinitely**; `sessionStorage` lives per-tab
-- Both are **key-value** with **string-only** values — use JSON for objects
+- Both are **key-value** with **string-only** values - use JSON for objects
 - ~5-10MB capacity (much more than cookies' 4KB)
 - **Not sent** with HTTP requests (unlike cookies)
 - The `storage` event syncs changes across **tabs**
-- Always wrap in `try/catch` — quota exceeded errors are common
+- Always wrap in `try/catch` - quota exceeded errors are common
 - Use for preferences, draft saves, cached data, and client-side state

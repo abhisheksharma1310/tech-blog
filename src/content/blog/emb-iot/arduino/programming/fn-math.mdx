@@ -71,7 +71,7 @@ void loop() {
 }
 ```
 
-In this example, an ADC reading of 512 (roughly the middle of the 0–1023 range) is mapped to 127 (roughly the middle of the 0–255 PWM range). `map()` does not clamp values — if the input falls outside the source range, the output can exceed the target range. Use `constrain()` after `map()` if clamping is needed.
+In this example, an ADC reading of 512 (roughly the middle of the 0–1023 range) is mapped to 127 (roughly the middle of the 0–255 PWM range). `map()` does not clamp values - if the input falls outside the source range, the output can exceed the target range. Use `constrain()` after `map()` if clamping is needed.
 
 ## max()
 
@@ -115,7 +115,7 @@ Here, `min(15, 42)` returns `15`. You can use `min()` to find the lowest sensor 
 
 ## pow()
 
-The `pow()` function calculates the value of a number raised to a power. It takes two `float` arguments — the base and the exponent — and returns a `float`.
+The `pow()` function calculates the value of a number raised to a power. It takes two `float` arguments - the base and the exponent - and returns a `float`.
 
 ```cpp
 void setup() {

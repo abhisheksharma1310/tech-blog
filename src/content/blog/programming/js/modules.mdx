@@ -13,14 +13,14 @@ order: 16
 
 ## Modules, Introduction
 
-Modules let you split code into separate files, each with its own scope. Before modules, JavaScript had global scope pollution — every script shared the same global namespace.
+Modules let you split code into separate files, each with its own scope. Before modules, JavaScript had global scope pollution - every script shared the same global namespace.
 
 ### What Modules Solve
 
-- **Scope isolation** — variables don't leak to the global scope
-- **Reusability** — import/export code across files
-- **Dependency management** — explicit declarations of what each file needs
-- **Lazy loading** — load code only when needed
+- **Scope isolation** - variables don't leak to the global scope
+- **Reusability** - import/export code across files
+- **Dependency management** - explicit declarations of what each file needs
+- **Lazy loading** - load code only when needed
 
 ### Module Syntax
 
@@ -58,7 +58,7 @@ console.log(this); // → undefined
 
 ### Modules are Deferred
 
-Module scripts are always **deferred** — they wait for HTML parsing to finish before executing:
+Module scripts are always **deferred** - they wait for HTML parsing to finish before executing:
 
 ```html
 <!-- These execute in order, after the page loads -->
@@ -149,7 +149,7 @@ console.log(sum(2, 3)); // → 5
 ### Re-exporting
 
 ```js
-// 📁 index.js — barrel file
+// 📁 index.js - barrel file
 export { add, subtract } from "./math.js";
 export { User } from "./user.js";
 export { formatDate } from "./date-utils.js";
@@ -169,7 +169,7 @@ export { default } from "./user.js"; // Re-export default
 
 ```js
 // 1. Module code runs only once per import
-// 2. Modules are singletons — shared across all importers
+// 2. Modules are singletons - shared across all importers
 // 3. Modules are evaluated lazily (in some systems) or eagerly
 ```
 
@@ -213,10 +213,10 @@ Static imports must be at the top level. Dynamic imports (`import()`) let you lo
 ### Static vs Dynamic
 
 ```js
-// Static import — at the top of file
+// Static import - at the top of file
 import { add } from "./math.js";
 
-// Dynamic import — anywhere in code
+// Dynamic import - anywhere in code
 const mathModule = await import("./math.js");
 console.log(mathModule.add(2, 3));
 ```
@@ -224,13 +224,13 @@ console.log(mathModule.add(2, 3));
 ### When to Use Dynamic Imports
 
 ```js
-// 1. Code splitting — load heavy modules lazily
+// 1. Code splitting - load heavy modules lazily
 button.addEventListener("click", async () => {
   const chart = await import("./heavy-chart-library.js");
   chart.render(data);
 });
 
-// 2. Conditional loading — load based on conditions
+// 2. Conditional loading - load based on conditions
 if (user.locale === "de") {
   const i18n = await import("./locales/de.js");
   applyTranslations(i18n);

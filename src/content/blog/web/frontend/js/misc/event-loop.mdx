@@ -1,6 +1,6 @@
 ---
 title: "Event Loop"
-description: "Understand the JavaScript event loop — microtasks, macrotasks, and async execution"
+description: "Understand the JavaScript event loop - microtasks, macrotasks, and async execution"
 date: "2026-06-10"
 category: ["Web Development", "Frontend", "JavaScript DOM", "Misc"]
 tags: ["JavaScript", "DOM", "Event Loop", "Async"]
@@ -11,7 +11,7 @@ order: 3
 
 ## Event Loop: Microtasks and Macrotasks
 
-JavaScript is **single-threaded** — it runs one thing at a time. The **event loop** is how it handles asynchronous operations (timers, promises, DOM events) without blocking.
+JavaScript is **single-threaded** - it runs one thing at a time. The **event loop** is how it handles asynchronous operations (timers, promises, DOM events) without blocking.
 
 ## The Basic Idea
 
@@ -92,7 +92,7 @@ The `Promise.then` (microtask) always runs before the `setTimeout` (macrotask), 
 
 ## Blocking the Event Loop
 
-Long-running synchronous code **blocks** everything — no UI updates, no event handling, no rendering:
+Long-running synchronous code **blocks** everything - no UI updates, no event handling, no rendering:
 
 ```javascript
 // BAD: blocks the event loop
@@ -174,7 +174,7 @@ Useful for running code **after** the current operation but **before** rendering
 
 ## `requestAnimationFrame`
 
-`requestAnimationFrame` runs **before the next paint/repaint** — not in the task queue:
+`requestAnimationFrame` runs **before the next paint/repaint** - not in the task queue:
 
 ```javascript
 requestAnimationFrame(() => {
@@ -228,10 +228,10 @@ document.getElementById('batch-btn').onclick = function() {
 
 ## Key Takeaways
 
-- JavaScript is **single-threaded** — one thing at a time
+- JavaScript is **single-threaded** - one thing at a time
 - **Microtasks** (Promise.then, queueMicrotask) run **before** macrotasks
 - **Macrotasks** (setTimeout, setInterval, events) run after microtasks
-- Long synchronous code **blocks the event loop** — freeze UI, no events fire
+- Long synchronous code **blocks the event loop** - freeze UI, no events fire
 - Use **chunking** (break work with setTimeout) to keep the UI responsive
 - `requestAnimationFrame` runs before the browser repaints
 - The event loop order: sync code → microtasks → macrotask → microtasks → render → repeat

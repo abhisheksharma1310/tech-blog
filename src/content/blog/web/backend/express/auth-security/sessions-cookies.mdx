@@ -1,0 +1,355 @@
+---
+title: "Sessions & Cookies (express-session)"
+description: "Implement session-based authentication in Express using cookies and express-session"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Auth & Security"]
+tags: ["Express", "Sessions", "Cookies", "express-session", "Authentication"]
+slug: "express-sessions-cookies"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Sessions vs Cookies
+
+| Feature | Cookies | Sessions |
+|---|---|---|
+| **Where data lives** | Client (browser) | Server (memory/DB/Redis) |
+| **What's stored** | Session ID only | User data, cart, preferences |
+| **Size limit** | ~4KB per cookie | Limited by storage |
+| **Security** | Tamperable (must sign) | Controlled by server |
+| **Persistence** | Client-controlled | Server-controlled |
+
+```
+Browser                          Server
+  │                                │
+  │── POST /login ────────────────→│
+  │   { username, password }       │ Create session
+  │                                │ Store { userId, role } in session store
+  │                                │
+  │←── Set-Cookie: connect.sid=...─│ Send session ID in signed cookie
+  │                                │
+  │── GET /dashboard ─────────────→│
+  │   Cookie: connect.sid=...      │ Look up session by ID
+  │                                │ Load { userId, role } from session store
+  │←── 200 Dashboard HTML ─────────│
+```
+
+## Installing express-session
+
+```bash
+npm install express-session
+```
+
+## Basic Setup
+
+```javascript
+const express = require('express');
+const session = require('express-session');
+
+const app = express();
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,     // Not accessible via JavaScript
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    sameSite: 'lax'
+  }
+}));
+
+app.listen(3000);
+```
+
+## Session Configuration Options
+
+```javascript
+app.use(session({
+  // Required: used to sign the session ID cookie
+  secret: process.env.SESSION_SECRET || 'fallback-secret',
+
+  // Forces session to be saved even if unmodified
+  resave: false,
+
+  // Forces uninitialized sessions to be saved
+  saveUninitialized: false,
+
+  // Cookie settings
+  cookie: {
+    secure: true,          // HTTPS only
+    httpOnly: true,        // No JS access (prevents XSS)
+    maxAge: 86400000,      // 24 hours in ms
+    sameSite: 'strict',    // CSRF protection
+    path: '/',             // Cookie path
+    domain: '.example.com' // Domain (optional)
+  },
+
+  // Session store (default: MemoryStore - use Redis in production)
+  store: new RedisStore({ client: redisClient }),
+
+  // Session ID cookie name
+  name: 'myapp.sid',
+
+  // Rolling session - reset maxAge on every response
+  rolling: false,
+
+  // Function to generate session IDs
+  genid: (req) => crypto.randomUUID()
+}));
+```
+
+## Session Usage in Routes
+
+```javascript
+// Login route
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  // Verify credentials (simplified)
+  if (username === 'admin' && password === 'secret') {
+    // Store data in session
+    req.session.userId = 1;
+    req.session.username = username;
+    req.session.role = 'admin';
+    req.session.loggedInAt = new Date().toISOString();
+
+    res.json({ message: 'Logged in successfully' });
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+// Protected route - reads from session
+app.get('/dashboard', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Please login first' });
+  }
+
+  res.json({
+    message: `Welcome, ${req.session.username}!`,
+    role: req.session.role,
+    loggedInAt: req.session.loggedInAt
+  });
+});
+
+// Logout - destroy session
+app.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.clearCookie('connect.sid');
+    res.json({ message: 'Logged out' });
+  });
+});
+```
+
+## Session Middleware for Auth
+
+```javascript
+// middleware/auth.js - protect routes
+function requireAuth(req, res, next) {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+}
+
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    if (!roles.includes(req.session.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    next();
+  };
+}
+
+// Usage
+app.get('/profile', requireAuth, (req, res) => {
+  res.json({ user: req.session.username });
+});
+
+app.get('/admin', requireRole('admin'), (req, res) => {
+  res.json({ secret: 'Admin data' });
+});
+```
+
+## Session Store - MemoryStore (Default)
+
+```javascript
+// Default - NOT for production
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: false
+}));
+// MemoryStore leaks memory and doesn't scale across processes
+```
+
+## Session Store - Redis (Production)
+
+```bash
+npm install redis connect-redis
+```
+
+```javascript
+const RedisStore = require('connect-redis').default;
+const { createClient } = require('redis');
+
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+redisClient.connect().catch(console.error);
+
+app.use(session({
+  store: new RedisStore({ client: redisClient }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: true, httpOnly: true, maxAge: 86400000 }
+}));
+```
+
+### Other Session Stores
+
+| Store | Use Case |
+|---|---|
+| **Redis** | Fast, production-ready, shared across processes |
+| **MongoDB** (`connect-mongo`) | Good if you already use MongoDB |
+| **PostgreSQL** (`connect-pg-simple`) | Good if you already use PostgreSQL |
+| **MySQL** (`express-mysql-session`) | Good if you already use MySQL |
+
+## Cookie Parser Utility
+
+For reading unsigned cookies sent by the client:
+
+```bash
+npm install cookie-parser
+```
+
+```javascript
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
+app.get('/cookies', (req, res) => {
+  console.log(req.cookies);     // Unsigned cookies
+  console.log(req.signedCookies); // Signed cookies
+  res.json({ cookies: req.cookies });
+});
+```
+
+## Full Auth Flow with Sessions
+
+```javascript
+const express = require('express');
+const session = require('express-session');
+const bcrypt = require('bcrypt');
+const User = require('./models/User');
+
+const app = express();
+
+app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, secure: false, maxAge: 86400000 }
+}));
+
+// Register
+app.post('/register', async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, password: hashedPassword });
+    res.status(201).json({ message: 'User created' });
+  } catch (err) { next(err); }
+});
+
+// Login
+app.post('/login', async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    req.session.userId = user._id;
+    req.session.username = user.username;
+    req.session.role = user.role;
+
+    res.json({ message: 'Login successful', user: { username: user.username, role: user.role } });
+  } catch (err) { next(err); }
+});
+
+// Check session
+app.get('/me', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  res.json({
+    userId: req.session.userId,
+    username: req.session.username,
+    role: req.session.role
+  });
+});
+
+// Logout
+app.post('/logout', (req, res) => {
+  req.session.destroy();
+  res.clearCookie('connect.sid');
+  res.json({ message: 'Logged out' });
+});
+
+app.listen(3000);
+```
+
+## Security Considerations
+
+```javascript
+// ❌ Insecure cookie settings
+cookie: {
+  secure: false,    // Sent over HTTP
+  httpOnly: false,  // XSS can read it
+  sameSite: false   // Vulnerable to CSRF
+}
+
+// ✅ Secure cookie settings
+cookie: {
+  secure: true,         // HTTPS only
+  httpOnly: true,       // No JS access
+  sameSite: 'strict',   // CSRF protection
+  maxAge: 86400000      // Reasonable expiry
+}
+```
+
+- Rotate `secret` periodically
+- Use a **proper session store** (Redis, DB) in production
+- Set `httpOnly: true` to prevent XSS access
+- Set `secure: true` in production (HTTPS)
+- Use `sameSite: 'lax'` or `'strict'` for CSRF protection
+- Regenerate session ID on privilege escalation:
+
+```javascript
+req.session.regenerate((err) => {
+  // New session ID, old data discarded
+  req.session.userId = user.id;
+});
+```
+
+## Key Takeaways
+
+- Express sessions store data server-side, only the session ID is stored in a cookie
+- Install `express-session` and configure with a **secret** and **cookie options**
+- Access session data via `req.session` - it's a plain object you can read/write
+- Use `req.session.destroy()` to log out
+- For production, use **Redis** or another external session store
+- Set `httpOnly: true`, `secure: true`, and `sameSite: 'strict'` for security
+- Use session middleware (`requireAuth`) to protect routes

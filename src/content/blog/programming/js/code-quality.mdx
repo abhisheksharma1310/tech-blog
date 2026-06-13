@@ -11,7 +11,7 @@ order: 5
 
 # Code Quality
 
-Writing code that works is just the start. Writing code that's readable, maintainable, and reliable — that's what separates good developers from great ones.
+Writing code that works is just the start. Writing code that's readable, maintainable, and reliable - that's what separates good developers from great ones.
 
 ## Debugging in the Browser
 
@@ -19,7 +19,7 @@ Writing code that works is just the start. Writing code that's readable, maintai
 
 Modern browsers have powerful developer tools. The **Sources** panel in Chrome/Edge lets you:
 
-- Set **breakpoints** — pause execution at a specific line
+- Set **breakpoints** - pause execution at a specific line
 - **Step through** code line by line
 - Inspect **variables** and the **call stack**
 - **Watch** expressions
@@ -50,9 +50,9 @@ When you run this with DevTools open, execution pauses at the `debugger` line.
 |---|---|
 | Set breakpoint | Click line number in Sources panel |
 | Conditional breakpoint | Right-click line number, enter condition |
-| Step over | `F10` — execute current line, go to next |
-| Step into | `F11` — enter a function call |
-| Step out | `Shift + F11` — finish current function |
+| Step over | `F10` - execute current line, go to next |
+| Step into | `F11` - enter a function call |
+| Step out | `Shift + F11` - finish current function |
 | Watch | Right-click variable → "Add to Watch" |
 
 ```js
@@ -70,21 +70,21 @@ Consistent code style makes your code readable by others (and your future self).
 ### Indentation
 
 ```js
-// Good — 2 spaces
+// Good - 2 spaces
 function greet(name) {
   if (name) {
     console.log("Hello, " + name);
   }
 }
 
-// Also good — 4 spaces
+// Also good - 4 spaces
 function greet(name) {
     if (name) {
         console.log("Hello, " + name);
     }
 }
 
-// Bad — inconsistent
+// Bad - inconsistent
 function greet(name) {
   if (name) {
        console.log("Hello, " + name);
@@ -133,7 +133,7 @@ Keep lines under 80-100 characters:
 // Good
 let result = someLongFunctionName(param1, param2, param3);
 
-// Better — break into multiple lines
+// Better - break into multiple lines
 let result = someLongFunctionName(
   param1,
   param2,
@@ -151,25 +151,25 @@ if (condition) {
   doSomething();
 }
 
-// Bad — easy to miss when adding another line
+// Bad - easy to miss when adding another line
 if (condition) doSomething();
 ```
 
 ### Whitespace
 
 ```js
-// Good — spaces around operators
+// Good - spaces around operators
 let sum = a + b;
 
-// Good — space after keywords
+// Good - space after keywords
 if (condition) { ... }
 for (let i = 0; i < 10; i++) { ... }
 while (condition) { ... }
 
-// Good — space after commas
+// Good - space after commas
 function sum(a, b, c) {}
 
-// Good — empty lines between logical blocks
+// Good - empty lines between logical blocks
 function process() {
   let user = getUser();
 
@@ -198,7 +198,7 @@ npx eslint your-file.js
 
 ## Ninja Code
 
-> **What NOT to do.** These are anti-patterns — writing "clever" code that's hard to understand.
+> **What NOT to do.** These are anti-patterns - writing "clever" code that's hard to understand.
 
 ### Bad Practices to Avoid
 
@@ -255,9 +255,9 @@ Testing ensures your code works correctly and keeps working as you make changes.
 
 ### Why Test?
 
-- **Confidence** — refactor without fear
-- **Documentation** — tests show how code should behave
-- **Catch bugs early** — before they reach production
+- **Confidence** - refactor without fear
+- **Documentation** - tests show how code should behave
+- **Catch bugs early** - before they reach production
 
 ### Testing Frameworks
 
@@ -414,7 +414,7 @@ import "core-js/stable";
 Modern build tools like **Vite**, **Webpack**, and **Parcel** include transpilation and polyfilling out of the box:
 
 ```bash
-# Vite — modern, fast
+# Vite - modern, fast
 npm create vite@latest my-app
 
 # Or use a starter

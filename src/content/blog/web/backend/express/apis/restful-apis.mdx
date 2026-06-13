@@ -1,0 +1,375 @@
+---
+title: "Building RESTful APIs"
+description: "Design and build production-ready RESTful APIs with Express following REST principles"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "APIs"]
+tags: ["Express", "REST", "API", "RESTful", "Resource Design"]
+slug: "express-restful-apis"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## What is REST?
+
+**REST (Representational State Transfer)** is an architectural style for designing networked applications. RESTful APIs use HTTP methods to perform CRUD operations on **resources**.
+
+```
+REST Principles:
+1. Resources are identified by URIs (nouns, not verbs)
+2. HTTP methods define actions (GET, POST, PUT, DELETE)
+3. Representations (JSON, XML) are transferred between client and server
+4. Stateless - each request contains all needed information
+5. Responses use standard HTTP status codes
+```
+
+## URL Design Conventions
+
+| Resource | GET (list) | GET (single) | POST (create) | PUT (update) | DELETE |
+|---|---|---|---|---|---|
+| Users | `GET /api/users` | `GET /api/users/:id` | `POST /api/users` | `PUT /api/users/:id` | `DELETE /api/users/:id` |
+| Posts | `GET /api/posts` | `GET /api/posts/:id` | `POST /api/posts` | `PUT /api/posts/:id` | `DELETE /api/posts/:id` |
+| Comments | `GET /api/posts/:id/comments` | `GET /api/comments/:id` | `POST /api/posts/:id/comments` | `PUT /api/comments/:id` | `DELETE /api/comments/:id` |
+
+### URL Naming Rules
+
+```javascript
+// ✅ Good - nouns, consistent, hierarchical
+GET    /api/users
+GET    /api/users/:id
+POST   /api/users
+PUT    /api/users/:id
+DELETE /api/users/:id
+GET    /api/users/:id/posts
+GET    /api/posts/:id/comments
+
+// ❌ Bad - verbs, inconsistent, non-standard
+GET    /api/getUsers          // Verb in URL
+POST   /api/createUser        // Verb instead of POST
+PUT    /api/updateUser/1      // Verb
+DELETE /api/removeUser/1      // Verb
+GET    /api/userDetails/1     // Not a resource name
+```
+
+## Consistent Response Format
+
+```javascript
+// Success response
+{
+  "success": true,
+  "data": { ... },           // Single resource
+  "data": [ ... ],           // Collection
+  "count": 25,               // For collections
+  "pagination": { ... }      // When paginated
+}
+
+// Error response
+{
+  "success": false,
+  "error": "Validation failed",
+  "details": [               // Optional details
+    { "field": "email", "message": "Email is required" }
+  ]
+}
+```
+
+## Building a RESTful API
+
+### Project Structure
+
+```
+src/
+├── routes/
+│   ├── index.js       # Route aggregator
+│   ├── users.js       # User resource routes
+│   └── posts.js       # Post resource routes
+├── controllers/
+│   ├── userController.js
+│   └── postController.js
+├── middleware/
+│   ├── auth.js
+│   ├── validate.js
+│   └── errorHandler.js
+├── models/
+│   ├── User.js
+│   └── Post.js
+├── config/
+│   └── database.js
+└── index.js           # Entry point
+```
+
+### Controller Layer
+
+```javascript
+// controllers/userController.js
+const User = require('../models/User');
+
+exports.list = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10, sort = '-createdAt' } = req.query;
+    const users = await User.find()
+      .sort(sort)
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+
+    const total = await User.countDocuments();
+
+    res.json({
+      success: true,
+      count: users.length,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit))
+      },
+      data: users
+    });
+  } catch (err) { next(err); }
+};
+
+exports.get = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    res.json({ success: true, data: user });
+  } catch (err) { next(err); }
+};
+
+exports.create = async (req, res, next) => {
+  try {
+    const user = await User.create(req.body);
+    res.status(201).json({ success: true, data: user });
+  } catch (err) { next(err); }
+};
+
+exports.update = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    res.json({ success: true, data: user });
+  } catch (err) { next(err); }
+};
+
+exports.remove = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    res.status(204).send();
+  } catch (err) { next(err); }
+};
+```
+
+### Route Layer
+
+```javascript
+// routes/users.js
+const express = require('express');
+const router = express.Router();
+const userController = require('../controllers/userController');
+const { authenticate } = require('../middleware/auth');
+
+router.get('/', userController.list);
+router.get('/:id', userController.get);
+router.post('/', authenticate, userController.create);
+router.put('/:id', authenticate, userController.update);
+router.delete('/:id', authenticate, userController.remove);
+
+module.exports = router;
+```
+
+### Entry Point
+
+```javascript
+// index.js
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+app.use('/api/users', require('./routes/users'));
+app.use('/api/posts', require('./routes/posts'));
+
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Route not found' });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
+    success: false,
+    error: err.message || 'Internal server error'
+  });
+});
+
+app.listen(3000);
+```
+
+## Handling Nested Resources
+
+```javascript
+// POST /api/users/:userId/posts - create post for a user
+router.post('/:userId/posts', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const post = await Post.create({
+      ...req.body,
+      author: req.params.userId
+    });
+
+    res.status(201).json({ success: true, data: post });
+  } catch (err) { next(err); }
+});
+
+// GET /api/users/:userId/posts - list posts by user
+router.get('/:userId/posts', async (req, res, next) => {
+  try {
+    const posts = await Post.find({ author: req.params.userId });
+    res.json({ success: true, count: posts.length, data: posts });
+  } catch (err) { next(err); }
+});
+```
+
+## HATEOAS (Hypermedia as the Engine of Application State)
+
+Include links in responses so clients can navigate the API:
+
+```javascript
+function addLinks(resource, req) {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+  resource._links = {
+    self: { href: `${baseUrl}${req.originalUrl}` },
+    collection: { href: `${baseUrl}/api/users` },
+    posts: { href: `${baseUrl}/api/users/${resource._id}/posts` }
+  };
+
+  return resource;
+}
+
+exports.get = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Not found' });
+    }
+    res.json({
+      success: true,
+      data: addLinks(user.toObject(), req)
+    });
+  } catch (err) { next(err); }
+};
+```
+
+## Error Handling in REST APIs
+
+```javascript
+// middleware/errorHandler.js
+class ApiError extends Error {
+  constructor(statusCode, message, details = null) {
+    super(message);
+    this.statusCode = statusCode;
+    this.details = details;
+    this.isOperational = true;
+  }
+}
+
+function errorHandler(err, req, res, next) {
+  const statusCode = err.statusCode || 500;
+
+  const response = { success: false, error: err.message || 'Internal server error' };
+  if (err.details) response.details = err.details;
+
+  // Mongoose errors
+  if (err.name === 'ValidationError') {
+    response.error = 'Validation failed';
+    response.details = Object.values(err.errors).map(e => ({
+      field: e.path,
+      message: e.message
+    }));
+    return res.status(422).json(response);
+  }
+
+  if (err.name === 'CastError') {
+    response.error = 'Invalid ID format';
+    return res.status(400).json(response);
+  }
+
+  // Log unexpected errors
+  if (!err.isOperational) {
+    console.error('Unexpected error:', err);
+    response.error = 'Internal server error';
+  }
+
+  res.status(statusCode).json(response);
+}
+
+module.exports = { ApiError, errorHandler };
+```
+
+## Testing the API
+
+```bash
+# Create a user
+curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@test.com"}'
+
+# Response
+{"success":true,"data":{"_id":"...","name":"Alice","email":"alice@test.com"}}
+
+# List users
+curl http://localhost:3000/api/users?page=1&limit=10
+
+# Get single user
+curl http://localhost:3000/api/users/507f1f77bcf86cd799439011
+
+# Update user
+curl -X PUT http://localhost:3000/api/users/507f1f77bcf86cd799439011 \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice Updated"}'
+
+# Delete user
+curl -X DELETE http://localhost:3000/api/users/507f1f77bcf86cd799439011
+
+# Handle error
+curl http://localhost:3000/api/users/invalid-id
+{"success":false,"error":"Invalid ID format"}
+```
+
+## REST API Checklist
+
+- [ ] Use nouns for resource URLs (`/api/users`, not `/api/getUsers`)
+- [ ] Use correct HTTP methods (GET, POST, PUT, PATCH, DELETE)
+- [ ] Use plural resource names (`/api/users`, not `/api/user`)
+- [ ] Nest related resources logically (`/api/users/:id/posts`)
+- [ ] Return appropriate HTTP status codes
+- [ ] Use consistent JSON response format
+- [ ] Include pagination metadata for collections
+- [ ] Validate all input
+- [ ] Authenticate and authorize requests
+- [ ] Version your API
+- [ ] Document your API (OpenAPI/Swagger)
+
+## Key Takeaways
+
+- Resources are **nouns**, HTTP methods are **verbs**
+- Use consistent URL patterns: `/api/resource` and `/api/resource/:id`
+- Separate concerns: **routes** → **controllers** → **models**
+- Return consistent JSON: `{ success, data, error, pagination }`
+- Use proper HTTP status codes (200, 201, 204, 400, 401, 404, 422, 500)
+- Handle errors centrally with a custom error handler
+- Support filtering, pagination, and sorting via query parameters
+- Nest resources logically under parent resources

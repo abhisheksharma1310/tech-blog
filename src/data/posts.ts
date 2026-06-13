@@ -1,3 +1,4 @@
+//src/data/posts.ts
 export interface PostFrontmatter {
   title: string;
   description: string;
@@ -17,7 +18,7 @@ export interface Post {
   Content: any;
 }
 
-// 1. Scan the new 'posts' folder recursively (** covers all subfolders)
+// Scan the 'blog' folder recursively 
 const modules = import.meta.glob('../content/blog/**/*.{md,mdx}', { eager: true }) as Record<
   string,
   {
@@ -28,12 +29,16 @@ const modules = import.meta.glob('../content/blog/**/*.{md,mdx}', { eager: true 
 
 const posts: Post[] = Object.entries(modules)
   .map(([path, module]) => {
+    // Extract the custom slug from the file's frontmatter
+    // Fallback to the file name if the slug property is accidentally left blank
     const fileName = path.split('/').pop() ?? '';
-    const slug = fileName.replace(/\.(md|mdx)$/, '');
+    const fileFallbackSlug = fileName.replace(/\.(md|mdx)$/, '');
+    
+    const slug = module.frontmatter.slug || fileFallbackSlug;
 
     return {
       slug,
-      // 2. Removed '/blog/' prefix from the URL asset path
+      // Sets the clean root-level URL using your frontmatter slug
       url: `/${slug}`, 
       frontmatter: module.frontmatter,
       Content: module.default

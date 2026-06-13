@@ -40,14 +40,14 @@ void loop()
 ```
 
 Key `Serial` methods:
-- `begin(baud)` — start serial communication (common rates: 9600, 115200)
-- `print(val)` — print data as human-readable text
-- `println(val)` — print with a newline
-- `read()` — read one byte (returns -1 if none available)
-- `readString()` — read available bytes as a String
-- `available()` — return number of bytes available to read
-- `write(val)` — write raw binary data (one byte or a byte array)
-- `parseInt()` / `parseFloat()` — read the next integer or float from the buffer
+- `begin(baud)` - start serial communication (common rates: 9600, 115200)
+- `print(val)` - print data as human-readable text
+- `println(val)` - print with a newline
+- `read()` - read one byte (returns -1 if none available)
+- `readString()` - read available bytes as a String
+- `available()` - return number of bytes available to read
+- `write(val)` - write raw binary data (one byte or a byte array)
+- `parseInt()` / `parseFloat()` - read the next integer or float from the buffer
 
 For boards with multiple UARTs (Mega, Due, Zero), additional serial ports are available: `Serial1`, `Serial2`, `Serial3`.
 
@@ -81,10 +81,10 @@ void loop()
 ```
 
 `Print` provides the following formatting options via the second argument of `print()`/`println()`:
-- `DEC` (default) — decimal
-- `HEX` — hexadecimal
-- `OCT` — octal
-- `BIN` — binary
+- `DEC` (default) - decimal
+- `HEX` - hexadecimal
+- `OCT` - octal
+- `BIN` - binary
 - For floats: the second argument specifies the number of decimal places
 
 ## Stream
@@ -119,19 +119,19 @@ void loop()
 ```
 
 Key `Stream` methods inherited by `Serial` and `Wire`:
-- `parseInt()` — read next integer, skipping non-digit characters
-- `parseFloat()` — read next float
-- `readString()` — read all available characters into a String
-- `readStringUntil(terminator)` — read until a specific character
-- `setTimeout(timeout)` — set the timeout for parsing (default 1000 ms)
-- `find(target)` — search for a string in the stream
-- `findUntil(target, terminator)` — search until a target or terminator
+- `parseInt()` - read next integer, skipping non-digit characters
+- `parseFloat()` - read next float
+- `readString()` - read all available characters into a String
+- `readStringUntil(terminator)` - read until a specific character
+- `setTimeout(timeout)` - set the timeout for parsing (default 1000 ms)
+- `find(target)` - search for a string in the stream
+- `findUntil(target, terminator)` - search until a target or terminator
 
 ## Wire
 
 `Wire` (I²C / Two-Wire Interface) allows communication with sensors, displays, and other I²C devices using two pins: SDA (data) and SCL (clock). Multiple devices can share the same bus, each with a unique address.
 
-**I²C Scanner — discover devices on the bus:**
+**I²C Scanner - discover devices on the bus:**
 
 ```cpp
 #include <Wire.h>
@@ -212,13 +212,13 @@ void loop()
 ```
 
 Key `Wire` methods:
-- `begin()` — join I²C bus as master (optional address for slave mode)
-- `beginTransmission(address)` — start transmission to a slave device
-- `write(data)` — queue bytes for transmission
-- `endTransmission(stop)` — send queued bytes (true = send stop, false = send restart)
-- `requestFrom(address, count)` — request bytes from a slave device
-- `available()` — number of bytes available to read
-- `read()` — read one byte
+- `begin()` - join I²C bus as master (optional address for slave mode)
+- `beginTransmission(address)` - start transmission to a slave device
+- `write(data)` - queue bytes for transmission
+- `endTransmission(stop)` - send queued bytes (true = send stop, false = send restart)
+- `requestFrom(address, count)` - request bytes from a slave device
+- `available()` - number of bytes available to read
+- `read()` - read one byte
 
 ## SPI
 
@@ -295,12 +295,12 @@ void loop()
 ```
 
 Key `SPI` methods:
-- `begin()` — initialize SPI bus in master mode
-- `end()` — disable SPI
-- `transfer(val)` — send and receive one byte simultaneously
-- `transfer(buf, size)` — send and receive a buffer of bytes
-- `beginTransaction(settings)` — configure SPI settings before communication (clock speed, bit order, mode)
-- `endTransaction()` — end the SPI transaction
+- `begin()` - initialize SPI bus in master mode
+- `end()` - disable SPI
+- `transfer(val)` - send and receive one byte simultaneously
+- `transfer(buf, size)` - send and receive a buffer of bytes
+- `beginTransaction(settings)` - configure SPI settings before communication (clock speed, bit order, mode)
+- `endTransaction()` - end the SPI transaction
 - Using `SPISettings(clockSpeed, bitOrder, dataMode)` with `beginTransaction()` allows different devices on the same bus with different settings:
 
 ```cpp
@@ -329,7 +329,7 @@ void loop()
 
 ## Complete Example: Multi-Protocol Weather Station
 
-This example reads a temperature/humidity sensor over I²C (AHT20), logs data to an SD card over SPI, and prints results over Serial — demonstrating all three protocols working together.
+This example reads a temperature/humidity sensor over I²C (AHT20), logs data to an SD card over SPI, and prints results over Serial - demonstrating all three protocols working together.
 
 ```cpp
 #include <Wire.h>

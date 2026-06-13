@@ -67,9 +67,9 @@ A **Promise** represents a value that may be available now, later, or never.
 
 ### Promise States
 
-- **pending** — initial state
-- **fulfilled** — operation completed successfully
-- **rejected** — operation failed
+- **pending** - initial state
+- **fulfilled** - operation completed successfully
+- **rejected** - operation failed
 
 ### Creating a Promise
 
@@ -329,7 +329,7 @@ let p2 = new Promise(resolve => setTimeout(() => resolve("done"), 1000));
 let p3 = fetch("/api/data").then(r => r.json());
 
 Promise.all([p1, p2, p3]).then((results) => {
-  console.log(results); // [3, "done", data] — all results in order
+  console.log(results); // [3, "done", data] - all results in order
 });
 
 // If any rejects, Promise.all rejects with that error
@@ -499,8 +499,8 @@ let readFile = promisify(require("fs").readFile);
 
 JavaScript has an event loop that processes:
 
-1. **Macrotasks** — setTimeout, setInterval, I/O, UI rendering
-2. **Microtasks** — Promise.then/catch/finally, queueMicrotask, MutationObserver
+1. **Macrotasks** - setTimeout, setInterval, I/O, UI rendering
+2. **Microtasks** - Promise.then/catch/finally, queueMicrotask, MutationObserver
 
 ```js
 console.log("Start");
@@ -562,7 +562,7 @@ document.getElementById("loading").textContent = "Loading...";
 
 fetch("/api/data")
   .then(data => {
-    // Microtask — runs before rendering
+    // Microtask - runs before rendering
     // DOM isn't updated yet from the line above
   });
 ```
@@ -616,7 +616,7 @@ function getWeather(city) {
     .catch(err => console.error("Failed:", err));
 }
 
-// Async/await — much cleaner
+// Async/await - much cleaner
 async function getWeather(city) {
   try {
     let response = await fetch(`/api/weather/${city}`);

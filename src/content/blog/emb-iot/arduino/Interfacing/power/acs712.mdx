@@ -46,7 +46,7 @@ AC/DC source (-) terminal (ACS712) --> Load (+)
 Load (-)        --> Power supply (-)
 ```
 
-The ACS712 is placed in series with the load. Current flows through the two thick screw terminals or pins on the module. The direction of current flow matters for DC — reversing the wires inverts the output voltage swing.
+The ACS712 is placed in series with the load. Current flows through the two thick screw terminals or pins on the module. The direction of current flow matters for DC - reversing the wires inverts the output voltage swing.
 
 ## Pin Map
 
@@ -81,7 +81,7 @@ This sketch reads the ACS712 output voltage, calculates the current (DC), and pr
 ```cpp
 const int sensorPin = A0;
 
-// Sensitivity in mV per A — change for your variant
+// Sensitivity in mV per A - change for your variant
 const float SENSITIVITY = 185.0; // mV/A (5A = 185, 20A = 100, 30A = 66)
 
 const float VCC = 5.0;     // Supply voltage
@@ -164,10 +164,10 @@ Serial.println(" A");
 
 ### Code breakdown
 
-- `analogRead(sensorPin)` — reads the analog voltage (0–1023) from the ACS712 output.
-- `raw * (VCC / 1023.0)` — converts the raw ADC value to voltage (0–5 V).
+- `analogRead(sensorPin)` - reads the analog voltage (0–1023) from the ACS712 output.
+- `raw * (VCC / 1023.0)` - converts the raw ADC value to voltage (0–5 V).
 - **Zero-current offset:** At 0 A, the output is VCC/2 = 2.5 V (ideal). The calibration loop averages 50 readings to find the actual offset, which varies due to component tolerances and supply voltage variation.
-- `(voltage - zeroOffset) / (SENSITIVITY / 1000.0)` — subtracts the offset, then divides by sensitivity in V/A (sensitivity in mV/A divided by 1000). A positive result means current flows in the direction indicated by the module's arrow.
+- `(voltage - zeroOffset) / (SENSITIVITY / 1000.0)` - subtracts the offset, then divides by sensitivity in V/A (sensitivity in mV/A divided by 1000). A positive result means current flows in the direction indicated by the module's arrow.
 - **AC RMS:** `sqrt(average(squared_current_samples))` gives the RMS current. The sampling must cover a full number of cycles for accuracy.
 
 ### Using the ACS712 library
@@ -219,10 +219,10 @@ void loop()
 
 ## Caution
 
-- **Galvanic isolation:** The ACS712 provides galvanic isolation between the current path (pins 1–4) and the sensor electronics (pins 5–8) rated for 2.1 kV RMS minimum. This means the Arduino is electrically isolated from the high-current circuit — do not bypass this isolation by connecting the high-current ground to the Arduino ground. However, the sensor output (OUT) is referenced to the sensor GND, which should be connected to Arduino GND. The high-current path has its own separate ground.
-- **Supply voltage sensitivity:** The output voltage is ratiometric — the zero-current offset is VCC/2, and the sensitivity scales with VCC. If using a 3.3 V Arduino, the zero offset is 1.65 V and the sensitivity is proportionally lower. The calibration step compensates for this automatically.
+- **Galvanic isolation:** The ACS712 provides galvanic isolation between the current path (pins 1–4) and the sensor electronics (pins 5–8) rated for 2.1 kV RMS minimum. This means the Arduino is electrically isolated from the high-current circuit - do not bypass this isolation by connecting the high-current ground to the Arduino ground. However, the sensor output (OUT) is referenced to the sensor GND, which should be connected to Arduino GND. The high-current path has its own separate ground.
+- **Supply voltage sensitivity:** The output voltage is ratiometric - the zero-current offset is VCC/2, and the sensitivity scales with VCC. If using a 3.3 V Arduino, the zero offset is 1.65 V and the sensitivity is proportionally lower. The calibration step compensates for this automatically.
 - **Noise on output:** The ACS712 output has significant noise (especially on the 5 A variant, ±100 mV peak-to-peak). For stable readings, average 10–50 samples. For AC measurement, use synchronous sampling or a hardware low-pass filter (RC filter: 1 kΩ + 10 µF ≈ 16 Hz cutoff).
-- **Bandwidth:** The ACS712 has a bandwidth of 80 kHz (typical). For DC measurements, the wide bandwidth picks up high-frequency noise — digital filtering is essential. For AC mains (50/60 Hz), the bandwidth is adequate but may require anti-aliasing before the ADC.
+- **Bandwidth:** The ACS712 has a bandwidth of 80 kHz (typical). For DC measurements, the wide bandwidth picks up high-frequency noise - digital filtering is essential. For AC mains (50/60 Hz), the bandwidth is adequate but may require anti-aliasing before the ADC.
 - **Overcurrent:** Applying current beyond the sensor's rated range will not damage it immediately (the sensor can withstand up to 5× the rated current for short pulses), but the output saturates at the supply rails and the reading will be inaccurate. Sustained overcurrent can heat the internal conductor and change the calibration.
 - **Magnetic fields:** As a hall-effect sensor, the ACS712 is sensitive to external magnetic fields. Keep the module away from transformers, inductors, and magnets. Nearby magnetic fields add an offset to the current reading.
 

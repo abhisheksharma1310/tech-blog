@@ -1,6 +1,6 @@
 ---
 title: "What Are Streams & Why They Matter"
-description: "Understand Node.js streams — backpressure, memory efficiency, and why streams are critical for production applications"
+description: "Understand Node.js streams - backpressure, memory efficiency, and why streams are critical for production applications"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Streams"]
 tags: ["Node.js","Streams"]
@@ -18,7 +18,7 @@ const http = require('http');
 const fs = require('fs');
 
 http.createServer((req, res) => {
-  // ❌ BAD — loads entire 5GB into memory
+  // ❌ BAD - loads entire 5GB into memory
   fs.readFile('./huge-file.zip', (err, data) => {
     res.end(data);
   });
@@ -28,7 +28,7 @@ http.createServer((req, res) => {
 This crashes with an `out of memory` error because `readFile` loads the **entire file into RAM** before sending it. With streams, you never hold more than a 64KB chunk in memory at once:
 
 ```js
-// ✅ GOOD — streams use ~64KB of memory regardless of file size
+// ✅ GOOD - streams use ~64KB of memory regardless of file size
 http.createServer((req, res) => {
   const readStream = fs.createReadStream('./huge-file.zip');
   readStream.pipe(res);
@@ -78,11 +78,11 @@ const stream = fs.createReadStream('file.txt', { highWaterMark: 16384 });
 
 stream.on('data', (chunk) => {
   console.log('Received chunk of', chunk.length, 'bytes');
-  // chunk is a Buffer — call chunk.toString() for a string
+  // chunk is a Buffer - call chunk.toString() for a string
 });
 ```
 
-## Backpressure — The Killer Feature
+## Backpressure - The Killer Feature
 
 When a readable stream produces data faster than a writable stream can consume it, **backpressure** kicks in. The readable stream pauses until the writable stream catches up.
 
@@ -107,13 +107,13 @@ const writable = fs.createWriteStream('dest.txt');
 readable.on('data', (chunk) => {
   const canContinue = writable.write(chunk);
   if (!canContinue) {
-    console.log('Backpressure — pausing read');
+    console.log('Backpressure - pausing read');
     readable.pause();  // Stop reading until drain
   }
 });
 
 writable.on('drain', () => {
-  console.log('Drained — resuming read');
+  console.log('Drained - resuming read');
   readable.resume();  // Safe to read more
 });
 ```
@@ -162,7 +162,7 @@ readStream.pipe(writable);
 You explicitly call `read()` to pull data:
 
 ```js
-// No 'data' listener — stream is in paused mode
+// No 'data' listener - stream is in paused mode
 readStream.on('readable', () => {
   let chunk;
   while ((chunk = readStream.read()) !== null) {
@@ -196,9 +196,9 @@ console.log(stream.destroyed);        // true
 
 | State | Description |
 |-------|-------------|
-| `readableFlowing === null` | Not yet flowing — wait for pipe or 'data' listener |
-| `readableFlowing === true` | Flowing — data is being read automatically |
-| `readableFlowing === false` | Paused — call `read()` or `resume()` |
+| `readableFlowing === null` | Not yet flowing - wait for pipe or 'data' listener |
+| `readableFlowing === true` | Flowing - data is being read automatically |
+| `readableFlowing === false` | Paused - call `read()` or `resume()` |
 | `destroyed === true` | Stream has been destroyed |
 
 ## Why Streams Matter in Production
@@ -212,12 +212,12 @@ console.log(stream.destroyed);        // true
 
 ### Common Scenarios Where Streams Are Essential
 
-1. **File upload/download** — handling large files without RAM explosion
-2. **Log processing** — reading gigabyte-sized log files line by line
-3. **Video streaming** — delivering media without buffering entire files
-4. **Compression** — gzipping data on the fly as it's sent
-5. **Database migrations** — processing millions of rows in batches
-6. **CSV/JSON parsing** — parsing large datasets incrementally
+1. **File upload/download** - handling large files without RAM explosion
+2. **Log processing** - reading gigabyte-sized log files line by line
+3. **Video streaming** - delivering media without buffering entire files
+4. **Compression** - gzipping data on the fly as it's sent
+5. **Database migrations** - processing millions of rows in batches
+6. **CSV/JSON parsing** - parsing large datasets incrementally
 
 ## Practical: Processing a Large CSV
 
@@ -261,11 +261,11 @@ processLargeCSV('./sales_2025.csv').catch(console.error);
 
 ## Key Takeaways
 
-- **Streams process data chunk by chunk** — not all at once. This makes large data handling possible.
-- **Memory efficiency** — streams use ~64KB per chunk regardless of total data size
-- **Backpressure** is automatic with `pipe()` — the source slows down if the sink can't keep up
-- Without streams, a 5GB file requires 5GB of RAM — with streams, it's ~64KB
+- **Streams process data chunk by chunk** - not all at once. This makes large data handling possible.
+- **Memory efficiency** - streams use ~64KB per chunk regardless of total data size
+- **Backpressure** is automatic with `pipe()` - the source slows down if the sink can't keep up
+- Without streams, a 5GB file requires 5GB of RAM - with streams, it's ~64KB
 - There are **4 stream types**: Readable, Writable, Duplex, Transform
 - Streams can be in **flowing** (auto-read) or **paused** (manual `read()`) mode
-- **`pipe()`** is the safest way to connect streams — it handles backpressure, errors, and cleanup
+- **`pipe()`** is the safest way to connect streams - it handles backpressure, errors, and cleanup
 - Use streams for: file I/O, HTTP, compression, CSV/JSON parsing, and any large data processing

@@ -1,0 +1,305 @@
+---
+title: "Route Parameters & Query Strings"
+description: "Capture dynamic segments with route params and parse URL query strings in Express"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Routing"]
+tags: ["Express", "Routing", "Route Parameters", "Query Strings", "URL"]
+slug: "express-route-params-query"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## URL Anatomy
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ https://api.example.com/users/42/posts?page=2&limit=10#top │
+│ └────┬────┘ └──┬──┘ └──┬──┘ │   └──────┬──────┘ └──┬──┘   │
+│    host      path   param  │   query string   fragment     │
+│                            │                               │
+│                      route params                   not sent│
+│                                                   to server │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Express gives you access to:
+- **Route parameters** via `req.params`
+- **Query string** via `req.query`
+
+## Route Parameters
+
+Route parameters are named URL segments prefixed with `:`. They capture dynamic values from the URL.
+
+### Basic Syntax
+
+```javascript
+app.get('/users/:userId', (req, res) => {
+  res.json({ userId: req.params.userId });
+});
+// GET /users/42 → { userId: "42" }
+// GET /users/john → { userId: "john" }
+```
+
+### Multiple Parameters
+
+```javascript
+app.get('/users/:userId/posts/:postId', (req, res) => {
+  res.json({
+    userId: req.params.userId,
+    postId: req.params.postId
+  });
+});
+// GET /users/42/posts/101 → { userId: "42", postId: "101" }
+```
+
+### Parameter with Hyphens and Dots
+
+```javascript
+// Route: /flights/:from-:to
+app.get('/flights/:from-:to', (req, res) => {
+  res.json(req.params);
+});
+// GET /flights/LAX-SFO → { from: "LAX", to: "SFO" }
+
+// Route: /files/:filename.:ext
+app.get('/files/:filename.:ext', (req, res) => {
+  res.json(req.params);
+});
+// GET /files/report.pdf → { filename: "report", ext: "pdf" }
+```
+
+### Optional Parameters
+
+Use `?` to make a parameter optional:
+
+```javascript
+app.get('/users/:userId?', (req, res) => {
+  if (req.params.userId) {
+    res.json({ userId: req.params.userId });
+  } else {
+    res.json({ message: 'All users' });
+  }
+});
+// GET /users → { message: "All users" }
+// GET /users/42 → { userId: "42" }
+```
+
+### Regular Expression in Parameters
+
+Add constraints with regex patterns:
+
+```javascript
+// Only numeric IDs
+app.get('/users/:userId(\\d+)', (req, res) => {
+  res.json({ userId: parseInt(req.params.userId) });
+});
+// GET /users/42 → { userId: 42 }
+// GET /users/abc → 404 (no match)
+```
+
+## Common Patterns with Route Params
+
+```javascript
+// Blog post by slug
+app.get('/blog/:slug', (req, res) => {
+  const post = findPostBySlug(req.params.slug);
+  if (!post) return res.status(404).send('Post not found');
+  res.json(post);
+});
+
+// Product by category and ID
+app.get('/products/:category/:productId', (req, res) => {
+  const { category, productId } = req.params;
+  res.json({ category, productId });
+});
+
+// API versioning
+app.get('/api/v:version/users', (req, res) => {
+  res.json({ version: req.params.version, users: [] });
+});
+// GET /api/v2/users → { version: "2", users: [] }
+```
+
+## Query Strings
+
+Query strings come after `?` in the URL as `key=value` pairs separated by `&`.
+
+Express parses them automatically into `req.query`:
+
+```javascript
+app.get('/search', (req, res) => {
+  console.log(req.query);
+  res.json(req.query);
+});
+// GET /search?q=express&page=2&sort=desc
+// → { q: "express", page: "2", sort: "desc" }
+```
+
+### Arrays in Query Strings
+
+```javascript
+// GET /products?tags=node&tags=express&tags=api
+app.get('/products', (req, res) => {
+  const tags = req.query.tags; // ["node", "express", "api"]
+  res.json({ tags });
+});
+```
+
+### Nested Objects in Query Strings
+
+```javascript
+// GET /filter?user[name]=John&user[age]=30
+app.get('/filter', (req, res) => {
+  console.log(req.query);
+  // → { user: { name: "John", age: "30" } }
+  res.json(req.query);
+});
+```
+
+### Boolean and Numeric Values
+
+Query string values are always strings. Cast them explicitly:
+
+```javascript
+app.get('/products', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const active = req.query.active === 'true';
+
+  res.json({ page, limit, active });
+});
+```
+
+## Practical Full Example
+
+```javascript
+app.get('/api/products', (req, res) => {
+  const {
+    category,
+    minPrice,
+    maxPrice,
+    sort = 'name',
+    order = 'asc',
+    page = '1',
+    limit = '10',
+    search
+  } = req.query;
+
+  let filtered = [...products];
+
+  // Filter by category
+  if (category) {
+    filtered = filtered.filter(p => p.category === category);
+  }
+
+  // Filter by price range
+  if (minPrice) {
+    filtered = filtered.filter(p => p.price >= parseFloat(minPrice));
+  }
+  if (maxPrice) {
+    filtered = filtered.filter(p => p.price <= parseFloat(maxPrice));
+  }
+
+  // Text search
+  if (search) {
+    const q = search.toLowerCase();
+    filtered = filtered.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q)
+    );
+  }
+
+  // Sort
+  filtered.sort((a, b) => {
+    const valA = a[sort];
+    const valB = b[sort];
+    if (typeof valA === 'string') {
+      return order === 'desc'
+        ? valB.localeCompare(valA)
+        : valA.localeCompare(valB);
+    }
+    return order === 'desc' ? valB - valA : valA - valB;
+  });
+
+  // Pagination
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const start = (pageNum - 1) * limitNum;
+  const paginated = filtered.slice(start, start + limitNum);
+
+  res.json({
+    data: paginated,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total: filtered.length,
+      totalPages: Math.ceil(filtered.length / limitNum)
+    }
+  });
+});
+```
+
+## Route Params vs Query Strings
+
+| Aspect | Route Params | Query Strings |
+|---|---|---|
+| **Purpose** | Identify a specific resource | Filter, sort, or paginate |
+| **Example** | `/users/42` | `/users?role=admin&page=2` |
+| **Required?** | Usually required | Usually optional |
+| **Best for** | Resource IDs, slugs | Search, filtering, metadata |
+
+## Middleware with Route Parameters
+
+```javascript
+// Middleware that runs only when :userId is present
+app.param('userId', (req, res, next, id) => {
+  const user = users.find(u => u.id === parseInt(id));
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  req.user = user;
+  next();
+});
+
+app.get('/users/:userId', (req, res) => {
+  // req.user is already populated by the param middleware
+  res.json(req.user);
+});
+
+app.get('/users/:userId/posts', (req, res) => {
+  // req.user is also available here
+  const userPosts = posts.filter(p => p.userId === req.user.id);
+  res.json(userPosts);
+});
+```
+
+## Validation and Sanitization
+
+Always validate and sanitize URL parameters:
+
+```javascript
+app.get('/users/:userId', (req, res) => {
+  const id = parseInt(req.params.userId);
+
+  // Validate
+  if (isNaN(id) || id < 1) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  // Sanitize string params
+  const name = req.query.name ? req.query.name.trim() : '';
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+
+  // Proceed safely
+  res.json({ id, name, page });
+});
+```
+
+## Key Takeaways
+
+- `req.params` captures **route parameters** - dynamic URL segments like `:id`
+- `req.query` parses the **query string** - key-value pairs after `?`
+- Route params identify **specific resources**; query strings **filter/sort/paginate**
+- Query values are **always strings** - cast to numbers/booleans as needed
+- Use `app.param()` to run middleware for specific route parameters
+- Always **validate and sanitize** both params and query values

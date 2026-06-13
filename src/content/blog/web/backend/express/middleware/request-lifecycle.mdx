@@ -1,0 +1,355 @@
+---
+title: "Request Lifecycle & Middleware Chaining"
+description: "Understand how Express processes a request through the middleware stack - from entry to response"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Middleware"]
+tags: ["Express", "Middleware", "Request Lifecycle", "Pipeline", "Chaining"]
+slug: "express-request-lifecycle"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## The Request-Response Cycle
+
+When a request hits your Express server, it follows a well-defined path through the application:
+
+```
+                           Express App
+                             │
+                     ┌───────┴────────┐
+                     │   Request In   │
+                     └───────┬────────┘
+                             │
+                ┌────────────┼────────────┐
+                ▼            ▼            ▼
+          Middleware 1  Middleware 2  Middleware 3
+                │            │            │
+                └────────────┼────────────┘
+                             │ next()
+                             ▼
+                     ┌───────────────┐
+                     │  Route Match  │
+                     └───────┬───────┘
+                             │
+                ┌────────────┼────────────┐
+                ▼            ▼            ▼
+          Handler A     Handler B    Handler C
+                             │
+                             ▼ res.send()
+                     ┌───────────────┐
+                     │  Response Out │
+                     └───────────────┘
+```
+
+## Step by Step: What Happens on Every Request
+
+### 1. Request Arrives
+
+```javascript
+// A client sends: GET /api/users?sort=name HTTP/1.1
+// Host: localhost:3000
+// Authorization: Bearer <token>
+```
+
+Express wraps the Node.js `http.IncomingMessage` into the `req` object and `http.ServerResponse` into `res`.
+
+### 2. Global Middleware Executes (First In, First Out)
+
+Middleware registered with `app.use()` runs on **every** request first:
+
+```javascript
+// Order 1: Security headers
+app.use(helmet());
+
+// Order 2: Logging
+app.use(morgan('dev'));
+
+// Order 3: Body parsing
+app.use(express.json());
+
+// Order 4: URL-encoded parsing
+app.use(express.urlencoded({ extended: true }));
+
+// Order 5: CORS
+app.use(cors());
+```
+
+### 3. Path-Specific Middleware
+
+Middleware registered with a path prefix runs when the URL matches:
+
+```javascript
+// Runs only on /api routes
+app.use('/api', (req, res, next) => {
+  req.apiVersion = 'v1';
+  next();
+});
+
+// Runs only on /admin routes
+app.use('/admin', authenticate);
+```
+
+### 4. Route Matching & Method Selection
+
+Express matches the URL pattern and HTTP method:
+
+```javascript
+// GET /api/users?sort=name
+// Express checks each registered route in order:
+
+app.get('/api/users', handler);              // ✅ Matches - runs handler
+app.post('/api/users', handler);             // ❌ Wrong method - skip
+app.get('/api/users/:id', handler);          // ❌ Wrong path - skip
+app.put('/api/users', handler);              // ❌ Wrong method - skip
+```
+
+### 5. Route Handler Executes
+
+The matching route handler runs. It can use `req` and `res` to send a response:
+
+```javascript
+app.get('/api/users', (req, res) => {
+  // req.query → { sort: 'name' }
+  // req.method → 'GET'
+  // req.path → '/api/users'
+
+  const users = getUsers({ sort: req.query.sort });
+  res.json(users); // ← Response is sent
+});
+```
+
+### 6. Response is Sent
+
+After `res.json()`, `res.send()`, or `res.end()` is called, Express sends the response and the cycle ends.
+
+## The Onion Model
+
+Express middleware follows an **onion/stack model** - code before `next()` runs inbound, code after `next()` runs outbound:
+
+```javascript
+app.use((req, res, next) => {
+  console.log('1 - Before next()');
+  next();
+  console.log('1 - After next()');
+});
+
+app.use((req, res, next) => {
+  console.log('2 - Before next()');
+  next();
+  console.log('2 - After next()');
+});
+
+app.get('/', (req, res) => {
+  console.log('3 - Handler');
+  res.send('Hello');
+});
+
+// Console output on GET /:
+// 1 - Before next()
+// 2 - Before next()
+// 3 - Handler
+// 2 - After next()
+// 1 - After next()
+```
+
+```
+Request → [M1 → next → [M2 → next → [Handler] → back] → back] → Response
+           ▲           ▲              ▼            ▼           ▼
+         inbound    inbound       response     outbound    outbound
+```
+
+This pattern is useful for:
+- **Timing** - start a timer before `next()`, stop it after
+- **Logging** - log request before `next()`, log status after
+- **Modifying headers** - set headers before `next()`, add final headers after
+- **Transactions** - open DB transaction before `next()`, commit/rollback after
+
+## What Happens When No Route Matches
+
+If Express goes through all middleware and route handlers without finding a match:
+
+```javascript
+// Request: GET /nonexistent
+
+app.get('/users', handler);   // ❌ Path doesn't match
+app.post('/api', handler);    // ❌ Path doesn't match
+// ... all routes checked, none match
+
+// Falls through to 404 handler:
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    path: req.originalUrl
+  });
+});
+```
+
+## What Happens When an Error is Thrown
+
+When `next(err)` is called or an error is thrown:
+
+```javascript
+app.get('/risky', (req, res, next) => {
+  next(new Error('DB connection failed'));
+  // or: throw new Error('DB connection failed');
+});
+
+// All regular middleware is skipped
+app.use((req, res, next) => {
+  // This does NOT run for errored requests
+  next();
+});
+
+// Express looks for the next error handler
+app.use((err, req, res, next) => {
+  console.error(err.message);
+  res.status(500).json({ error: 'Internal server error' });
+});
+```
+
+## Routing Layers & Middleware Stack
+
+Express internally maintains a **stack** (array) of layers. Each layer is either a route or middleware:
+
+```javascript
+const app = express();
+
+app.use(logger);                    // Layer 1: middleware (no path)
+app.use('/api', apiMiddleware);     // Layer 2: middleware at /api
+app.get('/api/users', listUsers);   // Layer 3: route GET /api/users
+app.use(errorHandler);             // Layer 4: error middleware
+```
+
+Express iterates through this stack sequentially:
+- For regular middleware: always executes
+- For path-scoped middleware: executes if path matches
+- For route middleware: executes if path AND method match
+- For error middleware: only executes if `next(err)` was called
+
+## Request Object Lifecycle
+
+The `req` object is built progressively as it passes through middleware:
+
+```javascript
+// Middleware 1: Parse body
+app.use(express.json());
+// req.body is now populated
+
+// Middleware 2: Authenticate
+app.use((req, res, next) => {
+  req.user = { id: 1, role: 'admin' };
+  next();
+});
+
+// Middleware 3: Attach permissions
+app.use((req, res, next) => {
+  req.can = (action) => {
+    return req.user.role === 'admin' || req.permissions.includes(action);
+  };
+  next();
+});
+
+// Route handler - has access to everything
+app.get('/admin/users', (req, res) => {
+  console.log(req.body);   // from middleware 1
+  console.log(req.user);   // from middleware 2
+  console.log(req.can);    // from middleware 3
+  res.json({ ok: true });
+});
+```
+
+## Chaining Multiple Handlers Per Route
+
+You can pass multiple handler functions to a single route:
+
+```javascript
+// Inline
+app.get('/profile',
+  authenticate,
+  loadProfile,
+  (req, res) => {
+    res.json(req.profile);
+  }
+);
+
+// As array
+const handlers = [authenticate, loadProfile, sendProfile];
+app.get('/profile', handlers);
+
+// Mixed
+app.get('/profile', authenticate, [loadProfile, sendProfile]);
+```
+
+## request and response Lifecycle Diagram
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  REQUEST ENTERS                                                  │
+│     │                                                            │
+│     ▼                                                            │
+│  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────────┐  ┌──────┐          │
+│  │parse │  │auth  │  │log   │  │route:get  │  │send  │          │
+│  │body  │──│check │──│req   │──│/api/users │──│json  │          │
+│  └──────┘  └──────┘  └──────┘  └──────────┘  └──────┘          │
+│     │          │          │          │           │               │
+│     │ next()   │ next()   │ next()   │ res.json │               │
+│     ▼          ▼          ▼          │           │               │
+│                                       │           │               │
+│  on('finish') event fires ───────────┘           │               │
+│     │                                            │               │
+│     ▼                                            ▼               │
+│  {log response, clean up}               RESPONSE LEAVES          │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+## Understanding next() Behavior
+
+```javascript
+function middleware(req, res, next) {
+  // Call next() to pass to next matching layer
+  next();
+
+  // Call next('route') to skip to the next route handler
+  // (only in app.METHOD / router.METHOD, not in app.use)
+  next('route');
+
+  // Call next(err) to skip to error handler
+  next(new Error('fail'));
+
+  // Don't call anything - request hangs until timeout
+  // (never do this accidentally)
+}
+```
+
+## Debugging the Lifecycle
+
+Use Express's built-in debugger to trace middleware execution:
+
+```bash
+DEBUG=express:* node index.js
+```
+
+This shows which layers are matched, skipped, and executed:
+
+```
+express:router:route new / +0ms
+express:router:layer new /api +1ms
+express:router:route get /api/users +2ms
+express:router:layer new /api/users +0ms
+express:router:match found /api/users +1ms
+express:router:trim /api/users (/api) /users +0ms
+express:router:layer /api → dispatch +1ms
+express:router:layer /api/users → dispatch +0ms
+```
+
+## Key Takeaways
+
+- Every request flows through middleware in **registration order**
+- `next()` passes control to the next matching layer
+- The **onion model** lets code run both before and after downstream handlers
+- `req` is enriched progressively as it passes through middleware
+- Express's internal **layer stack** powers the entire lifecycle
+- No match → 404 handler; error thrown → error handler (skips normal middleware)
+- Use `DEBUG=express:*` to trace the exact lifecycle of any request

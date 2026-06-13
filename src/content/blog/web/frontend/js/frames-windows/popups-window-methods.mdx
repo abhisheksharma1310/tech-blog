@@ -134,10 +134,10 @@ document.getElementById('close-popup').onclick = function() {
 Browsers block popups that aren't triggered by user action. Popups opened on page load are blocked. Only open popups in direct response to a user click:
 
 ```javascript
-// OK — user gesture
+// OK - user gesture
 button.addEventListener('click', () => window.open(url));
 
-// Blocked — no user gesture
+// Blocked - no user gesture
 window.open(url); // blocked by most browsers
 ```
 
@@ -183,7 +183,7 @@ Modern browsers restrict cross-origin `opener` access. Use `noopener` for securi
 
 - Open popups only in **direct response to user clicks** (bypass blocker)
 - Use `window.open()` with feature params for size and position
-- The popup window is a `Window` object — you can **control and inspect** it
+- The popup window is a `Window` object - you can **control and inspect** it
 - Popups can access the opener via `window.opener` (same-origin only)
 - Always handle the **popup blocked** case gracefully
 - For modern apps, prefer modals or `<dialog>` over popups for better UX

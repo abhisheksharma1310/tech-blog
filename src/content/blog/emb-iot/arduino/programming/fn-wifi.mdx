@@ -57,12 +57,12 @@ void loop()
 ```
 
 Network status codes returned by `WiFi.status()`:
-- `WL_CONNECTED` — connected to a network
-- `WL_IDLE_STATUS` — idle (no connection in progress)
-- `WL_NO_SSID_AVAIL` — SSID not found
-- `WL_CONNECT_FAILED` — wrong password
-- `WL_DISCONNECTED` — disconnected
-- `WL_NO_MODULE` — no Wi-Fi hardware detected
+- `WL_CONNECTED` - connected to a network
+- `WL_IDLE_STATUS` - idle (no connection in progress)
+- `WL_NO_SSID_AVAIL` - SSID not found
+- `WL_CONNECT_FAILED` - wrong password
+- `WL_DISCONNECTED` - disconnected
+- `WL_NO_MODULE` - no Wi-Fi hardware detected
 
 ## WiFi Network
 
@@ -96,14 +96,14 @@ void loop() {}
 ```
 
 Key `WiFi` methods:
-- `begin(ssid, password)` — connect to a network
-- `beginAP(ssid, password)` — start as an access point
-- `scanNetworks()` — scan for visible networks (returns count)
-- `SSID(index)` — get SSID of a scanned network
-- `RSSI(index)` — signal strength in dBm
-- `localIP()` — get the assigned IP address
-- `macAddress(mac)` — get the MAC address
-- `disconnect()` — disconnect from the network
+- `begin(ssid, password)` - connect to a network
+- `beginAP(ssid, password)` - start as an access point
+- `scanNetworks()` - scan for visible networks (returns count)
+- `SSID(index)` - get SSID of a scanned network
+- `RSSI(index)` - signal strength in dBm
+- `localIP()` - get the assigned IP address
+- `macAddress(mac)` - get the MAC address
+- `disconnect()` - disconnect from the network
 
 ## IPAddress
 
@@ -147,8 +147,8 @@ void loop() {}
 ```
 
 `IPAddress` supports construction from four octets:
-- `IPAddress(192, 168, 1, 100)` — manual address
-- `IPAddress(0xFFFFFFFF)` — from a 32-bit integer (network byte order)
+- `IPAddress(192, 168, 1, 100)` - manual address
+- `IPAddress(0xFFFFFFFF)` - from a 32-bit integer (network byte order)
 - Comparison: `if (ip == IPAddress(192, 168, 1, 1))`
 - Access: `ip[0]`, `ip[1]`, `ip[2]`, `ip[3]`
 
@@ -213,14 +213,14 @@ void loop()
 ```
 
 Key `WiFiClient` methods:
-- `connect(host, port)` — connect to a TCP server (returns true/false)
-- `connected()` — check if the client is still connected
-- `available()` — number of bytes available to read
-- `read()` — read one byte
-- `read(buf, len)` — read into a buffer
-- `print()` / `println()` / `write()` — send data (inherited from `Print`)
-- `stop()` — close the connection
-- `setTimeout(timeout)` — set read timeout in milliseconds
+- `connect(host, port)` - connect to a TCP server (returns true/false)
+- `connected()` - check if the client is still connected
+- `available()` - number of bytes available to read
+- `read()` - read one byte
+- `read(buf, len)` - read into a buffer
+- `print()` / `println()` / `write()` - send data (inherited from `Print`)
+- `stop()` - close the connection
+- `setTimeout(timeout)` - set read timeout in milliseconds
 
 ## WiFiServer
 
@@ -284,12 +284,12 @@ void loop()
 ```
 
 Key `WiFiServer` methods:
-- `server(port)` — create a server on the given port
-- `begin()` — start listening for connections
-- `available()` — return the first client that has data (or a new connection)
-- `accept()` — accept a pending connection (returns `WiFiClient`)
-- `status()` — get server status
-- `write(data)` — send data to all connected clients
+- `server(port)` - create a server on the given port
+- `begin()` - start listening for connections
+- `available()` - return the first client that has data (or a new connection)
+- `accept()` - accept a pending connection (returns `WiFiClient`)
+- `status()` - get server status
+- `write(data)` - send data to all connected clients
 
 ## WiFiUDP
 
@@ -415,16 +415,16 @@ void loop()
 ```
 
 Key `WiFiUDP` methods:
-- `begin(port)` — start UDP on a local port
-- `beginPacket(host, port)` — start a packet to a remote host (returns true/false)
-- `beginPacket(ip, port)` — start a packet to an `IPAddress`
-- `write(data)` / `print(data)` — add data to the packet
-- `endPacket()` — send the packet
-- `parsePacket()` — check for incoming packet (returns size or 0)
-- `read(buffer, len)` — read incoming packet data
-- `available()` — bytes available after parsing
-- `remoteIP()` / `remotePort()` — sender's address and port
-- `stop()` — close UDP
+- `begin(port)` - start UDP on a local port
+- `beginPacket(host, port)` - start a packet to a remote host (returns true/false)
+- `beginPacket(ip, port)` - start a packet to an `IPAddress`
+- `write(data)` / `print(data)` - add data to the packet
+- `endPacket()` - send the packet
+- `parsePacket()` - check for incoming packet (returns size or 0)
+- `read(buffer, len)` - read incoming packet data
+- `available()` - bytes available after parsing
+- `remoteIP()` / `remotePort()` - sender's address and port
+- `stop()` - close UDP
 
 ## Complete Example: HTTP Weather Station Server
 

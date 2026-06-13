@@ -1,5 +1,5 @@
 ---
-title: "Process Management — Child Processes & Clustering"
+title: "Process Management - Child Processes & Clustering"
 description: "Learn how to spawn child processes and cluster Node.js instances for multi-core performance"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "Node.js", "Advanced"]
@@ -13,9 +13,9 @@ order: 4
 
 Node.js runs on a **single thread** with a single event loop. This is great for I/O-bound work but means:
 
-1. **You can only use one CPU core** — the other 7, 15, or 63 cores sit idle
-2. **CPU-heavy tasks block everything** — if you sort a million records, no HTTP requests get processed
-3. **One crash kills everything** — there's no isolation between components
+1. **You can only use one CPU core** - the other 7, 15, or 63 cores sit idle
+2. **CPU-heavy tasks block everything** - if you sort a million records, no HTTP requests get processed
+3. **One crash kills everything** - there's no isolation between components
 
 Process management solves all three problems:
 
@@ -43,9 +43,9 @@ Node.js provides four methods in the `child_process` module, each designed for d
 | `execFile` | Execute a binary file | Like exec but more efficient | No |
 | `fork` | New Node.js process | Streams + built-in messaging | Yes |
 
-### `spawn` — The Streaming Workhorse
+### `spawn` - The Streaming Workhorse
 
-`spawn` creates a new process and returns a `ChildProcess` object with `stdout` and `stderr` streams. Data flows as it's produced — no buffering.
+`spawn` creates a new process and returns a `ChildProcess` object with `stdout` and `stderr` streams. Data flows as it's produced - no buffering.
 
 ```js
 // spawn.js
@@ -54,7 +54,7 @@ const { spawn } = require('child_process');
 // spawn(command, [args], [options])
 const child = spawn('ls', ['-lh', '/usr']);
 
-// stdout is a Readable stream — data arrives in chunks
+// stdout is a Readable stream - data arrives in chunks
 child.stdout.on('data', (data) => {
   process.stdout.write(data.toString());
 });
@@ -73,7 +73,7 @@ child.on('close', (code) => {
 - When you need to process output as it arrives (streaming JSON parsing)
 - When memory matters (no buffer)
 
-### `exec` — Convenience for Small Output
+### `exec` - Convenience for Small Output
 
 `exec` runs a command in a shell and buffers the entire output:
 
@@ -98,9 +98,9 @@ exec('find / -name "*.js" 2>/dev/null', { maxBuffer: 1024 * 1024 }, (error, stdo
 
 > **Warning:** `exec` has a default `maxBuffer` of 1024×1024 bytes (1 MB). If the command produces more output than this, the process is killed. For large output, use `spawn`.
 
-### `fork` — Node.js-to-Node.js IPC
+### `fork` - Node.js-to-Node.js IPC
 
-`fork` is special — it creates a new Node.js process with an **IPC channel** built in. You can send messages back and forth using `child.send()` and `process.on('message')`.
+`fork` is special - it creates a new Node.js process with an **IPC channel** built in. You can send messages back and forth using `child.send()` and `process.on('message')`.
 
 ```
 Parent Process                   Child Process
@@ -135,7 +135,7 @@ child.on('exit', (code) => console.log(`Worker exited: ${code}`));
 // worker.js
 process.on('message', (msg) => {
   if (msg.task === 'compute') {
-    // CPU-heavy work — this won't block the parent
+    // CPU-heavy work - this won't block the parent
     let result = 0;
     for (let i = 0; i < msg.data.iterations; i++) {
       result += Math.sqrt(i);
@@ -147,7 +147,7 @@ process.on('message', (msg) => {
 
 > **Use `fork` when:** You need to offload CPU-intensive operations without blocking the event loop. The child runs on its own CPU core with its own event loop and heap.
 
-### `execSync` / `spawnSync` — Blocking Variants
+### `execSync` / `spawnSync` - Blocking Variants
 
 These block the event loop until the child process exits. Use them sparingly:
 
@@ -236,13 +236,13 @@ Request ──► Master (port 3000) ──► Round Robin ──► Worker 1 on
                                                    └► Worker 4 on core 3
 ```
 
-- **On Linux/macOS:** Default is round-robin (`cluster.SCHED_RR`) — the master distributes connections one by one
-- **On Windows:** Default is OS scheduling (`cluster.SCHED_NONE`) — the OS decides which worker gets the connection
+- **On Linux/macOS:** Default is round-robin (`cluster.SCHED_RR`) - the master distributes connections one by one
+- **On Windows:** Default is OS scheduling (`cluster.SCHED_NONE`) - the OS decides which worker gets the connection
 - You can change this with `cluster.schedulingPolicy`
 
 ### Why Workers Must Use the Same Port
 
-All workers call `.listen(3000)`. The master intercepts this and creates a **shared file descriptor** — only one socket binds to port 3000, and all workers share it. This is what makes cluster seamless — no reverse proxy needed.
+All workers call `.listen(3000)`. The master intercepts this and creates a **shared file descriptor** - only one socket binds to port 3000, and all workers share it. This is what makes cluster seamless - no reverse proxy needed.
 
 ## Practical: Zero-Downtime Restart
 
@@ -381,12 +381,12 @@ Signals are OS-level notifications sent to processes:
 ```js
 // Handle signals in your process
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received — shutting down');
+  console.log('SIGTERM received - shutting down');
   server.close(() => process.exit(0));
 });
 
 process.on('SIGINT', () => {
-  console.log('Ctrl+C pressed — cleaning up');
+  console.log('Ctrl+C pressed - cleaning up');
   cleanup();
   process.exit(0);
 });
@@ -424,9 +424,9 @@ pm2 logs                      # View logs
 - Use **`exec`** for short, shell-based commands with small output
 - Use **`fork`** to offload CPU-heavy work to another Node.js process with IPC
 - Use **`cluster`** to utilise all CPU cores for HTTP servers
-- **Auto-restart** crashed workers — always handle `cluster.on('exit')`
+- **Auto-restart** crashed workers - always handle `cluster.on('exit')`
 - **Round-robin** is the default load-balancing strategy on Linux/macOS
 - Always handle **`SIGTERM`** for graceful shutdown in production
 - Use a **process pool** pattern to limit concurrent child processes
 - PM2 provides clustering, monitoring, and zero-downtime reloads out of the box
-- **Sync methods** (`execSync`, `spawnSync`) block the event loop — only use at startup or in CLI tools
+- **Sync methods** (`execSync`, `spawnSync`) block the event loop - only use at startup or in CLI tools

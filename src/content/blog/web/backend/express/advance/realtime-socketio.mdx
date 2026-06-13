@@ -1,0 +1,464 @@
+---
+title: "Real-time Communication with Socket.IO"
+description: "Add real-time bidirectional communication to Express using Socket.IO - chat, notifications, and live updates"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Advanced"]
+tags: ["Express", "Socket.IO", "WebSocket", "Real-time", "Chat", "Live Updates"]
+slug: "express-realtime-socketio"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## What is Socket.IO?
+
+**Socket.IO** enables real-time, bidirectional, event-based communication between the browser and the server. It uses WebSockets as the transport, with HTTP long-polling as a fallback.
+
+```
+Server                              Client
+  │                                   │
+  │  ┌────────────────────┐           │
+  │  │  Socket.IO Server  │           │
+  │  │                    │           │
+  │  │  Events:           │           │
+  │  │  - connection      │◄──────────│── connect
+  │  │  - message         │──────────►│── message
+  │  │  - disconnect      │◄──────────│── disconnect
+  │  │                    │           │
+  │  │  Rooms:            │           │
+  │  │  - room:general    │           │
+  │  │  - room:random     │           │
+  │  └────────────────────┘           │
+```
+
+## Installation
+
+```bash
+npm install socket.io
+```
+
+## Basic Setup with Express
+
+```javascript
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Serve static files
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
+
+// Socket.IO logic
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+
+  socket.on('chat message', (msg) => {
+    io.emit('chat message', msg);
+  });
+});
+
+server.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
+});
+```
+
+### Client-Side (index.html)
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.IO Chat</title>
+  <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
+</head>
+<body>
+  <input id="input" placeholder="Type a message..." />
+  <button onclick="send()">Send</button>
+  <ul id="messages"></ul>
+
+  <script>
+    const socket = io();
+
+    socket.on('chat message', (msg) => {
+      const li = document.createElement('li');
+      li.textContent = msg;
+      document.getElementById('messages').appendChild(li);
+    });
+
+    function send() {
+      const input = document.getElementById('input');
+      socket.emit('chat message', input.value);
+      input.value = '';
+    }
+  </script>
+</body>
+</html>
+```
+
+## Server & Client Events
+
+### Server-Side Events
+
+```javascript
+io.on('connection', (socket) => {
+  // Listen for events from this client
+  socket.on('event-name', (data) => {
+    // Handle event
+  });
+
+  // Send to this client only
+  socket.emit('private-message', { text: 'Only you see this' });
+
+  // Send to all clients except sender
+  socket.broadcast.emit('user-joined', { userId: socket.id });
+
+  // Send to all clients including sender
+  io.emit('global-notification', { text: 'Everyone sees this' });
+
+  // Send to a specific room
+  io.to('room-123').emit('room-message', { text: 'Room only' });
+});
+```
+
+### Client-Side Events
+
+```javascript
+// Connect
+const socket = io('http://localhost:3000', {
+  auth: { token: 'jwt-token-here' },
+  transports: ['websocket'] // Skip polling
+});
+
+// Listen for events
+socket.on('connect', () => console.log('Connected:', socket.id));
+socket.on('disconnect', (reason) => console.log('Disconnected:', reason));
+socket.on('connect_error', (err) => console.error('Connection error:', err));
+
+// Emit events
+socket.emit('chat message', 'Hello!');
+
+// Emit with acknowledgment
+socket.emit('request-data', { id: 123 }, (response) => {
+  console.log('Server responded:', response);
+});
+```
+
+## Rooms (Grouping Sockets)
+
+Rooms let you broadcast to subsets of clients:
+
+```javascript
+io.on('connection', (socket) => {
+  // Join a room on connection
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room ${roomId}`);
+
+    // Notify others in the room
+    socket.to(roomId).emit('user-joined', { userId: socket.id });
+  });
+
+  // Leave a room
+  socket.on('leave-room', (roomId) => {
+    socket.leave(roomId);
+  });
+
+  // Message to room
+  socket.on('room-message', ({ roomId, message }) => {
+    io.to(roomId).emit('room-message', {
+      userId: socket.id,
+      message
+    });
+  });
+});
+
+// Broadcast to all rooms except sender
+socket.broadcast.emit('event');
+
+// Broadcast to a specific room except sender
+socket.to('room-123').emit('event');
+
+// Broadcast to multiple rooms
+io.to('room-1').to('room-2').emit('event');
+
+// Get all sockets in a room
+const sockets = await io.in('room-123').fetchSockets();
+```
+
+## Authentication with Socket.IO
+
+```javascript
+// Server-side auth middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  if (!token) {
+    return next(new Error('Authentication required'));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded; // Attach user to socket
+    next();
+  } catch (err) {
+    next(new Error('Invalid token'));
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('Authenticated user:', socket.user.username);
+
+  socket.on('private-message', ({ to, message }) => {
+    // Send to specific user (requires tracking socket IDs per user)
+    const targetSocket = userSockets.get(to);
+    if (targetSocket) {
+      io.to(targetSocket).emit('private-message', {
+        from: socket.user.username,
+        message
+      });
+    }
+  });
+});
+```
+
+### Client-Side Auth
+
+```javascript
+// Send token on connection
+const socket = io({
+  auth: { token: localStorage.getItem('token') }
+});
+
+// Reconnect with new token
+socket.on('connect_error', (err) => {
+  if (err.message === 'Invalid token') {
+    // Refresh token and reconnect
+    socket.auth.token = getNewToken();
+    socket.connect();
+  }
+});
+```
+
+## Tracking Connected Users
+
+```javascript
+const onlineUsers = new Map(); // userId → socketId
+
+io.on('connection', (socket) => {
+  const userId = socket.user?.id;
+  if (userId) {
+    onlineUsers.set(userId, socket.id);
+    io.emit('users-online', Array.from(onlineUsers.keys()));
+  }
+
+  socket.on('disconnect', () => {
+    onlineUsers.delete(userId);
+    io.emit('users-online', Array.from(onlineUsers.keys()));
+  });
+});
+```
+
+## Real-Time Notifications
+
+```javascript
+// In your Express route
+app.post('/api/posts', async (req, res) => {
+  const post = await Post.create(req.body);
+
+  // Notify all connected clients about new post
+  io.emit('new-post', {
+    id: post._id,
+    title: post.title,
+    author: post.author
+  });
+
+  res.status(201).json(post);
+});
+
+// Client listens
+socket.on('new-post', (post) => {
+  // Update UI without page refresh
+  addPostToFeed(post);
+});
+```
+
+## Typing Indicator
+
+```javascript
+// Server
+io.on('connection', (socket) => {
+  socket.on('typing', (roomId) => {
+    socket.to(roomId).emit('user-typing', { userId: socket.id });
+  });
+
+  socket.on('stop-typing', (roomId) => {
+    socket.to(roomId).emit('user-stopped-typing', { userId: socket.id });
+  });
+});
+
+// Client - typing indicator
+let typingTimer;
+
+input.addEventListener('input', () => {
+  socket.emit('typing', roomId);
+  clearTimeout(typingTimer);
+
+  typingTimer = setTimeout(() => {
+    socket.emit('stop-typing', roomId);
+  }, 1000);
+});
+
+socket.on('user-typing', (data) => {
+  showTypingIndicator(data.userId);
+});
+
+socket.on('user-stopped-typing', (data) => {
+  hideTypingIndicator(data.userId);
+});
+```
+
+## Namespaces
+
+Namespaces let you split Socket.IO into separate channels:
+
+```javascript
+// Default namespace: /
+io.on('connection', (socket) => { /* ... */ });
+
+// Admin namespace: /admin
+const adminNamespace = io.of('/admin');
+adminNamespace.on('connection', (socket) => {
+  // Only admin users connect here
+  socket.on('ban-user', (userId) => {
+    // Admin action
+  });
+});
+
+// Chat namespace: /chat
+const chatNamespace = io.of('/chat');
+chatNamespace.on('connection', (socket) => {
+  socket.on('message', (msg) => {
+    chatNamespace.emit('message', msg);
+  });
+});
+```
+
+### Client Connects to Namespace
+
+```javascript
+const chat = io('/chat');
+const admin = io('/admin', { auth: { token: 'admin-token' } });
+
+chat.emit('message', 'Hello chat!');
+admin.emit('ban-user', '123');
+```
+
+## Scaling Socket.IO (Multiple Servers)
+
+For production with multiple Node.js instances, use a Redis adapter:
+
+```bash
+npm install @socket.io/redis-adapter ioredis
+```
+
+```javascript
+const { createAdapter } = require('@socket.io/redis-adapter');
+const { createClient } = require('ioredis');
+
+const pubClient = createClient(process.env.REDIS_URL);
+const subClient = pubClient.duplicate();
+
+io.adapter(createAdapter(pubClient, subClient));
+```
+
+## Full Chat Application
+
+```javascript
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
+// Store messages in memory (use DB in production)
+const messages = [];
+
+io.use((socket, next) => {
+  const username = socket.handshake.auth.username || 'Anonymous';
+  socket.username = username;
+  next();
+});
+
+io.on('connection', (socket) => {
+  console.log(`${socket.username} connected`);
+
+  // Send existing messages
+  socket.emit('load-messages', messages);
+
+  // Listen for new messages
+  socket.on('send-message', (text) => {
+    const message = {
+      id: Date.now(),
+      username: socket.username,
+      text,
+      timestamp: new Date().toISOString()
+    };
+
+    messages.push(message);
+    io.emit('new-message', message);
+  });
+
+  // Join room
+  socket.on('join-room', (room) => {
+    socket.join(room);
+    socket.currentRoom = room;
+    socket.to(room).emit('user-joined', socket.username);
+  });
+
+  // Room message
+  socket.on('room-message', (text) => {
+    if (socket.currentRoom) {
+      io.to(socket.currentRoom).emit('new-message', {
+        username: socket.username,
+        text,
+        room: socket.currentRoom
+      });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`${socket.username} disconnected`);
+    if (socket.currentRoom) {
+      socket.to(socket.currentRoom).emit('user-left', socket.username);
+    }
+  });
+});
+
+server.listen(3000);
+```
+
+## Key Takeaways
+
+- Socket.IO enables **bidirectional real-time** communication over WebSocket
+- Use `io.on('connection')` to handle new socket connections
+- Use **rooms** to group sockets and broadcast to subsets
+- Use **namespaces** (`/chat`, `/admin`) to separate concerns
+- Authenticate sockets via middleware using `socket.handshake.auth`
+- Track online users with a map of `userId → socketId`
+- For production, scale with the **Redis adapter**
+- Always handle `connect_error` and `disconnect` on the client

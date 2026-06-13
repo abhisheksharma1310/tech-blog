@@ -33,7 +33,7 @@ void loop() {
 }
 ```
 
-In this example, comments explain what each section of code does. The commented-out `Serial.println()` line is ignored by the compiler, which is useful for temporarily removing code without deleting it. Use comments to explain *why* code exists, not *what* it does — the code itself should show the what.
+In this example, comments explain what each section of code does. The commented-out `Serial.println()` line is ignored by the compiler, which is useful for temporarily removing code without deleting it. Use comments to explain *why* code exists, not *what* it does - the code itself should show the what.
 
 ## /* */ (block comment)
 
@@ -61,7 +61,7 @@ void loop() {
 }
 ```
 
-Block comments can appear on a single line or stretch across many lines. Unlike single line comments, they can also be used inline within a line of code. Be careful not to nest block comments — `/* /* */ */` will cause a compiler error.
+Block comments can appear on a single line or stretch across many lines. Unlike single line comments, they can also be used inline within a line of code. Be careful not to nest block comments - `/* /* */ */` will cause a compiler error.
 
 ## {} (curly braces)
 
@@ -108,7 +108,7 @@ Each line in this example is a complete statement terminated by a semicolon. Not
 
 ## #define
 
-The `#define` directive creates a macro — a text substitution that the preprocessor performs before compilation. It is commonly used to define constant values, pin numbers, or short code snippets. By convention, macro names are written in UPPERCASE.
+The `#define` directive creates a macro - a text substitution that the preprocessor performs before compilation. It is commonly used to define constant values, pin numbers, or short code snippets. By convention, macro names are written in UPPERCASE.
 
 ```cpp
 #define LED_PIN 13
@@ -128,7 +128,7 @@ void loop() {
 }
 ```
 
-Here, `#define LED_PIN 13` causes the preprocessor to replace every occurrence of `LED_PIN` with `13` before the code is compiled. Unlike `const`, `#define` does not use any RAM — the substitution happens at the text level. However, `#define` does not follow scope rules and provides no type checking, so `const` is preferred for typed constants in modern Arduino code.
+Here, `#define LED_PIN 13` causes the preprocessor to replace every occurrence of `LED_PIN` with `13` before the code is compiled. Unlike `const`, `#define` does not use any RAM - the substitution happens at the text level. However, `#define` does not follow scope rules and provides no type checking, so `const` is preferred for typed constants in modern Arduino code.
 
 ## #include
 

@@ -1,0 +1,440 @@
+---
+title: "Custom Middleware Functions"
+description: "Build your own Express middleware for logging, authentication, validation, and more"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "Express", "Middleware"]
+tags: ["Express", "Middleware", "Custom Middleware", "Authentication", "Validation"]
+slug: "express-custom-middleware"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Anatomy of Custom Middleware
+
+A middleware function is just a function with three arguments (or four for error handlers):
+
+```javascript
+function myMiddleware(req, res, next) {
+  // 1. Read/modify req or res
+  // 2. End the response (send/end/json) OR
+  // 3. Call next() to pass control forward
+}
+```
+
+### Three Possible Outcomes
+
+```javascript
+function sample(req, res, next) {
+  // Option A: Pass to next middleware
+  next();
+
+  // Option B: End the response here
+  res.status(400).json({ error: 'Bad request' });
+
+  // Option C: Pass an error
+  next(new Error('Something went wrong'));
+}
+```
+
+## Basic Logger Middleware
+
+```javascript
+// Simple logger
+function logger(req, res, next) {
+  const start = Date.now();
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ` +
+      `${res.statusCode} ${duration}ms`
+    );
+  });
+
+  next();
+}
+
+app.use(logger);
+```
+
+## Authentication Middleware
+
+```javascript
+// Token-based auth middleware
+function authenticate(req, res, next) {
+  const authHeader = req.headers['authorization'];
+
+  if (!authHeader) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+      message: 'No authorization header provided'
+    });
+  }
+
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : authHeader;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        error: 'Token expired',
+        message: 'Please refresh your token'
+      });
+    }
+    return res.status(403).json({
+      error: 'Invalid token',
+      message: 'Authentication failed'
+    });
+  }
+}
+
+// Apply to protected routes
+app.get('/api/profile', authenticate, (req, res) => {
+  res.json({ user: req.user, message: 'Welcome to your profile' });
+});
+```
+
+## Authorization Middleware (Role-Based)
+
+```javascript
+function authorize(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: `Requires one of: ${allowedRoles.join(', ')}`
+      });
+    }
+
+    next();
+  };
+}
+
+// Usage
+app.get('/api/admin', authenticate, authorize('admin'), (req, res) => {
+  res.json({ secret: 'admin data' });
+});
+
+app.get('/api/moderator', authenticate, authorize('admin', 'moderator'), (req, res) => {
+  res.json({ secret: 'moderator data' });
+});
+```
+
+## Request Validation Middleware
+
+```javascript
+function validate(schema) {
+  return (req, res, next) => {
+    const errors = [];
+
+    for (const [field, rules] of Object.entries(schema)) {
+      const value = req.body[field];
+
+      for (const rule of rules) {
+        if (rule.required && (value === undefined || value === null || value === '')) {
+          errors.push(`${field} is required`);
+          break;
+        }
+
+        if (value !== undefined && value !== null && value !== '') {
+          if (rule.type === 'string' && typeof value !== 'string') {
+            errors.push(`${field} must be a string`);
+          }
+
+          if (rule.type === 'number' && isNaN(Number(value))) {
+            errors.push(`${field} must be a number`);
+          }
+
+          if (rule.min !== undefined && value.length < rule.min) {
+            errors.push(`${field} must be at least ${rule.min} characters`);
+          }
+
+          if (rule.max !== undefined && value.length > rule.max) {
+            errors.push(`${field} must be at most ${rule.max} characters`);
+          }
+
+          if (rule.pattern && !rule.pattern.test(value)) {
+            errors.push(`${field} format is invalid`);
+          }
+
+          if (rule.custom) {
+            const customErr = rule.custom(value, req.body);
+            if (customErr) errors.push(customErr);
+          }
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(422).json({ error: 'Validation failed', details: errors });
+    }
+
+    next();
+  };
+}
+
+// Schema definition
+const userSchema = {
+  name: [
+    { required: true },
+    { type: 'string' },
+    { min: 2 },
+    { max: 50 }
+  ],
+  email: [
+    { required: true },
+    { type: 'string' },
+    { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ }
+  ],
+  age: [
+    { type: 'number' },
+    { custom: (v) => v < 18 ? 'Must be 18 or older' : null }
+  ]
+};
+
+// Usage
+app.post('/api/users', validate(userSchema), (req, res) => {
+  res.status(201).json({ message: 'User created', data: req.body });
+});
+```
+
+## Request Timing Middleware
+
+```javascript
+function requestTimer(label = 'Request') {
+  return (req, res, next) => {
+    const start = process.hrtime.bigint();
+
+    res.on('finish', () => {
+      const duration = Number(process.hrtime.bigint() - start) / 1e6;
+      console.log(`${label}: ${req.method} ${req.originalUrl} took ${duration.toFixed(2)}ms`);
+
+      // Store for observability
+      if (!req.app.locals.timings) req.app.locals.timings = [];
+      req.app.locals.timings.push({
+        path: req.originalUrl,
+        method: req.method,
+        duration,
+        timestamp: new Date().toISOString()
+      });
+    });
+
+    next();
+  };
+}
+
+app.use(requestTimer('API'));
+```
+
+## IP Whitelist Middleware
+
+```javascript
+function ipWhitelist(allowedIPs) {
+  return (req, res, next) => {
+    const clientIP = req.ip || req.connection.remoteAddress;
+
+    if (!allowedIPs.includes(clientIP)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Your IP is not allowed'
+      });
+    }
+
+    next();
+  };
+}
+
+// Only allow internal network
+const internalIPs = ['127.0.0.1', '::1', '10.0.0.1', '192.168.1.100'];
+app.use('/api/admin', ipWhitelist(internalIPs));
+```
+
+## Configurable Middleware Factory
+
+Create middleware factories (functions that return middleware) for reusability:
+
+```javascript
+function pagination(defaultPage = 1, defaultLimit = 10) {
+  return (req, res, next) => {
+    const page = Math.max(1, parseInt(req.query.page) || defaultPage);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || defaultLimit));
+    const skip = (page - 1) * limit;
+
+    req.pagination = { page, limit, skip };
+    next();
+  };
+}
+
+app.get('/api/users', pagination(), (req, res) => {
+  const { page, limit, skip } = req.pagination;
+  const data = allUsers.slice(skip, skip + limit);
+
+  res.json({
+    data,
+    pagination: {
+      page,
+      limit,
+      total: allUsers.length,
+      totalPages: Math.ceil(allUsers.length / limit)
+    }
+  });
+});
+```
+
+## Async Middleware Wrapper
+
+Express 4 doesn't catch rejected promises. Use a wrapper:
+
+```javascript
+function asyncHandler(fn) {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
+
+// Instead of try/catch in every route
+app.get('/api/users/:id', asyncHandler(async (req, res) => {
+  const user = await db.findUser(req.params.id);
+  if (!user) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  res.json(user);
+}));
+```
+
+## Header Manipulation Middleware
+
+```javascript
+function securityHeaders(req, res, next) {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Cache-Control': 'no-store',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+  });
+  next();
+}
+
+function rateLimitHeaders(limit, remaining, reset) {
+  return (req, res, next) => {
+    res.set({
+      'X-RateLimit-Limit': limit,
+      'X-RateLimit-Remaining': remaining,
+      'X-RateLimit-Reset': reset
+    });
+    next();
+  };
+}
+```
+
+## Conditional Middleware
+
+Run middleware only under certain conditions:
+
+```javascript
+function ifMethod(methods, middleware) {
+  return (req, res, next) => {
+    if (methods.includes(req.method)) {
+      return middleware(req, res, next);
+    }
+    next();
+  };
+}
+
+// Only log POST requests
+app.use(ifMethod(['POST', 'PUT', 'PATCH'], (req, res, next) => {
+  console.log('Mutation request:', req.method, req.path);
+  next();
+}));
+```
+
+## Middleware Execution Order
+
+```javascript
+// Custom middleware that verifies execution order
+function trace(name) {
+  return (req, res, next) => {
+    if (!req.trace) req.trace = [];
+    req.trace.push(name);
+    console.log(`[${name}] Entering`);
+    next();
+    console.log(`[${name}] Exiting`);
+  };
+}
+
+app.use(trace('A'));
+app.use('/api', trace('B'));
+app.get('/api/test', trace('C'), (req, res) => {
+  console.log('Trace:', req.trace);
+  res.json({ trace: req.trace });
+});
+
+// Console output:
+// [A] Entering
+// [B] Entering
+// [C] Entering
+// Trace: ['A', 'B', 'C']
+// [C] Exiting
+// [B] Exiting
+// [A] Exiting
+```
+
+## Best Practices
+
+```javascript
+// ✅ Good: Configurable factory function
+function myMiddleware(options = {}) {
+  return (req, res, next) => {
+    // use options
+    next();
+  };
+}
+
+// ✅ Good: Attach data to req for downstream middleware
+function attachUser(req, res, next) {
+  req.user = { id: 1, name: 'Alice' };
+  next();
+}
+
+// ✅ Good: Handle errors with next()
+function riskyOperation(req, res, next) {
+  try {
+    const result = doSomething();
+    req.result = result;
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ❌ Bad: Mutating res without calling next or ending
+function badMiddleware(req, res, next) {
+  res.set('X-Custom', 'value');
+  // Forgot next() - request hangs
+}
+
+// ❌ Bad: Throwing synchronously
+function badMiddleware(req, res, next) {
+  throw new Error('Will crash the app'); // Use next(new Error(...)) instead
+}
+```
+
+## Key Takeaways
+
+- Middleware is just a function with `(req, res, next)` signature
+- Use **factory functions** to make configurable, reusable middleware
+- Attach data to `req` to pass between middleware (e.g., `req.user`)
+- Always call `next()` or end the response - never do both or neither
+- Wrap async middleware to handle rejected promises
+- Use middleware for **cross-cutting concerns**: auth, logging, validation, timing
+- Test middleware in isolation by mocking `req`, `res`, and `next`

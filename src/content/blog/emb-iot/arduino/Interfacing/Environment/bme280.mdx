@@ -35,7 +35,7 @@ The BME280 is a digital environmental sensor from Bosch that measures temperatur
 ```
 BME280 Module         Arduino
 --------------        -------
-VCC           -->     3.3V or 5V (check module — most accept 5V)
+VCC           -->     3.3V or 5V (check module - most accept 5V)
 GND           -->     GND
 SCL           -->     A5 (Uno) / SCL (Mega)
 SDA           -->     A4 (Uno) / SDA (Mega)
@@ -67,8 +67,8 @@ CS            -->     Pin 10
 
 ### I²C address
 
-- **0x76** — default (SDO pin LOW, most modules)
-- **0x77** — alternative (SDO pin HIGH)
+- **0x76** - default (SDO pin LOW, most modules)
+- **0x77** - alternative (SDO pin HIGH)
 
 ### SPI
 
@@ -181,12 +181,12 @@ void setup()
 
 ### Code breakdown
 
-- `bme.begin(0x76)` — initialises the BME280 at the given I²C address. Returns `false` if the sensor is not detected.
-- `bme.readTemperature()` — returns temperature in °C.
-- `bme.readHumidity()` — returns relative humidity in % (0–100).
-- `bme.readPressure()` — returns barometric pressure in **Pascals**. Divide by 100 to get hPa (millibars).
-- `bme.readAltitude(seaLevelPressure)` — approximates altitude in metres based on the measured pressure and the reference sea-level pressure (1013.25 hPa = standard atmosphere). This is accurate to ±1 m near sea level but drifts with weather changes.
-- `bme.setSampling(...)` — configures oversampling and filtering. Higher oversampling = better precision + longer measurement time. The IIR filter smooths out rapid pressure changes.
+- `bme.begin(0x76)` - initialises the BME280 at the given I²C address. Returns `false` if the sensor is not detected.
+- `bme.readTemperature()` - returns temperature in °C.
+- `bme.readHumidity()` - returns relative humidity in % (0–100).
+- `bme.readPressure()` - returns barometric pressure in **Pascals**. Divide by 100 to get hPa (millibars).
+- `bme.readAltitude(seaLevelPressure)` - approximates altitude in metres based on the measured pressure and the reference sea-level pressure (1013.25 hPa = standard atmosphere). This is accurate to ±1 m near sea level but drifts with weather changes.
+- `bme.setSampling(...)` - configures oversampling and filtering. Higher oversampling = better precision + longer measurement time. The IIR filter smooths out rapid pressure changes.
 
 ### Environmental monitoring with SD card logging
 
@@ -222,15 +222,15 @@ void logData()
 5. Upload the sketch to the Arduino.
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
 7. Temperature, humidity, pressure, and altitude are displayed every 2 seconds.
-8. Breathe on the sensor — humidity and temperature should rise.
-9. Lift the board a few metres (or a floor) — altitude should increase.
+8. Breathe on the sensor - humidity and temperature should rise.
+9. Lift the board a few metres (or a floor) - altitude should increase.
 
 ## Caution
 
 - **I²C address conflict:** The BME280's I²C address is determined by the SDO (or CSB) pin. Most modules have SDO connected to GND = address 0x76. If you have another I²C device at 0x76, change the BME280's SDO pin to HIGH (solder bridge) for address 0x77, or use a multiplexer. The BMP280 (pressure-only) also uses 0x76/0x77 and can conflict if both sensors are on the same bus.
-- **3.3V vs 5V:** The BME280's VDDIO pin operates at 1.7–3.6V. Many breakout boards include a 3.3V regulator and level shifters so VIN can accept 5V. Check your module's schematic — if it lacks a regulator, power from the Arduino's 3.3V pin only. The I²C logic levels follow VDDIO — if powered at 3.3V, I²C signals are 3.3V and are safe for Arduino inputs.
+- **3.3V vs 5V:** The BME280's VDDIO pin operates at 1.7–3.6V. Many breakout boards include a 3.3V regulator and level shifters so VIN can accept 5V. Check your module's schematic - if it lacks a regulator, power from the Arduino's 3.3V pin only. The I²C logic levels follow VDDIO - if powered at 3.3V, I²C signals are 3.3V and are safe for Arduino inputs.
 - **Altitude accuracy:** `readAltitude()` uses the standard barometric formula. The reference sea-level pressure (1013.25 hPa) must be corrected for local weather conditions. A passing storm can change pressure by 20–30 hPa, creating an apparent altitude change of 160–250 m. For accurate absolute altitude, sync the reference pressure with a local weather station reading ("altimeter setting" / QNH).
 - **Self-heating:** The BME280 contains a temperature sensor that is affected by the self-heating of the IC itself (≈ 0.1–0.5°C depending on the measurement rate). In still air, the sensor reads slightly above ambient. Ventilation or reducing the measurement rate (higher standby time) minimises this effect. The humidity sensor is not affected by self-heating.
 - **Oversampling vs speed:** The default configuration (×1 or ×2 oversampling) completes a measurement in ≈ 5–10 ms. Maximum oversampling (×16 for T, ×16 for P, ×16 for H) takes ≈ 100 ms per reading. For weather stations, oversampling is beneficial and 1–2 s intervals are fine. For fast-reacting applications (e.g., altitude for drone stabilisation), use lower oversampling to reduce latency.
 - **Waterproofing:** The BME280 is **not waterproof**. In outdoor weather stations, place the sensor inside a Stevenson screen (ventilated radiation shield) or a 3D-printed housing with openings covered by hydrophobic mesh (Gore-Tex vent). Direct rain or condensation on the sensor will give false humidity readings and may permanently damage the humidity sensing polymer.
-- **BMP280 vs BME280:** The BMP280 is the pressure-only version of the BME280 (no humidity sensor). The BMP280 uses the **same I²C address and library** — it will work with the code above but will return 0% humidity. If you need humidity data, ensure your module is labelled BME280 (E = Environmental, includes humidity).
+- **BMP280 vs BME280:** The BMP280 is the pressure-only version of the BME280 (no humidity sensor). The BMP280 uses the **same I²C address and library** - it will work with the code above but will return 0% humidity. If you need humidity data, ensure your module is labelled BME280 (E = Environmental, includes humidity).

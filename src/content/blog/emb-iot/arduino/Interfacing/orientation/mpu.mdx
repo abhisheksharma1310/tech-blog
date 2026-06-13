@@ -46,8 +46,8 @@ INT (optional) -->    Digital Pin 2 (interrupt for data-ready)
 ### AD0 pin (I²C address select)
 
 The AD0 pin (pin 9 on the GY-521) selects the I²C address:
-- **0x68** — AD0 = LOW (default, GND)
-- **0x69** — AD0 = HIGH (VCC)
+- **0x68** - AD0 = LOW (default, GND)
+- **0x69** - AD0 = HIGH (VCC)
 
 If you have two MPU6050s, connect one with AD0 to GND (0x68) and one with AD0 to VCC (0x69).
 
@@ -75,7 +75,7 @@ arduino-cli lib install "Adafruit MPU6050"
 arduino-cli lib install "Adafruit Unified Sensor"
 ```
 
-For DMP-based quaternion output, install the **MPU6050** library by Electronic Cats (or the DMP-compatible version by jrowberg/i2cdevlib — manual install from GitHub).
+For DMP-based quaternion output, install the **MPU6050** library by Electronic Cats (or the DMP-compatible version by jrowberg/i2cdevlib - manual install from GitHub).
 
 ## Code with complete explanation
 
@@ -144,7 +144,7 @@ void loop()
 }
 ```
 
-### DMP — quaternion and Euler angles (sensor fusion)
+### DMP - quaternion and Euler angles (sensor fusion)
 
 The DMP fuses accelerometer and gyroscope data to produce orientation in quaternion form, eliminating gyroscope drift.
 
@@ -208,12 +208,12 @@ void onDataReady()
 
 ### Code breakdown
 
-- `mpu.getEvent(&a, &g, &temp)` — fills three `sensors_event_t` structures with accelerometer (m/s²), gyroscope (rad/s), and temperature (°C) data. This is the Adafruit Unified Sensor interface.
-- `mpu.setAccelerometerRange(range)` — sets the accelerometer full-scale range. ±2 g (default) gives best resolution (0.061 mg/LSB). ±16 g for high-impact applications.
-- `mpu.setGyroRange(range)` — sets the gyroscope full-scale range. ±250 °/s (default) for slow rotation (best resolution). ±2000 °/s for fast rotation.
-- `mpu.setFilterBandwidth(bandwidth)` — sets the DLPF (digital low-pass filter) cutoff frequency. Lower bandwidth = less noise, slower response. Options: 5, 10, 21, 44, 94, 184, 260 Hz. 21 Hz is a good balance.
+- `mpu.getEvent(&a, &g, &temp)` - fills three `sensors_event_t` structures with accelerometer (m/s²), gyroscope (rad/s), and temperature (°C) data. This is the Adafruit Unified Sensor interface.
+- `mpu.setAccelerometerRange(range)` - sets the accelerometer full-scale range. ±2 g (default) gives best resolution (0.061 mg/LSB). ±16 g for high-impact applications.
+- `mpu.setGyroRange(range)` - sets the gyroscope full-scale range. ±250 °/s (default) for slow rotation (best resolution). ±2000 °/s for fast rotation.
+- `mpu.setFilterBandwidth(bandwidth)` - sets the DLPF (digital low-pass filter) cutoff frequency. Lower bandwidth = less noise, slower response. Options: 5, 10, 21, 44, 94, 184, 260 Hz. 21 Hz is a good balance.
 - DMP-based angles from the `MPU6050_tockn` library provide drift-free orientation by fusing accelerometer (long-term reference) with gyroscope (short-term dynamics).
-- `mpu6050.calcGyroOffsets(true)` — auto-calibrates the gyroscope bias while the sensor is stationary. With `true`, prints calibration progress. The gyroscope can be configured (set `true`/`false` to enable/disable the auto-calibration print) by the respective library.
+- `mpu6050.calcGyroOffsets(true)` - auto-calibrates the gyroscope bias while the sensor is stationary. With `true`, prints calibration progress. The gyroscope can be configured (set `true`/`false` to enable/disable the auto-calibration print) by the respective library.
 
 ### Step counter (pedometer)
 
@@ -247,18 +247,18 @@ void loop()
 4. Select the correct board and port (`Tools > Board` and `Tools > Port`).
 5. Upload the sketch to the Arduino.
 6. Open the Serial Monitor (`Tools > Serial Monitor`, set baud rate to 9600).
-7. Hold the sensor flat and still — observe the accelerometer values: Z ≈ 9.81 m/s², X and Y ≈ 0.
-8. Rotate the sensor — observe the gyroscope values change proportional to rotation speed.
-9. Tilt the sensor and hold — the accelerometer shows the static tilt angle while the gyroscope returns to near 0 (when not moving).
+7. Hold the sensor flat and still - observe the accelerometer values: Z ≈ 9.81 m/s², X and Y ≈ 0.
+8. Rotate the sensor - observe the gyroscope values change proportional to rotation speed.
+9. Tilt the sensor and hold - the accelerometer shows the static tilt angle while the gyroscope returns to near 0 (when not moving).
 10. With the DMP code, the angle values integrate gyroscope data and auto-correct from the accelerometer.
 
 ## Caution
 
-- **Gyroscope drift:** The gyroscope has a zero-rate bias (offset) that varies with temperature and from unit to unit. When the sensor is stationary, the gyroscope output is not zero — it may read 0.5–5 °/s on each axis even when not moving. **Gyroscope calibration is essential** for any application. The `calcGyroOffsets()` function samples the gyroscope for ≈ 2 seconds while the sensor is stationary and stores the average bias. This bias is then subtracted from all subsequent readings. Recalibrate when the temperature changes by > 5°C.
+- **Gyroscope drift:** The gyroscope has a zero-rate bias (offset) that varies with temperature and from unit to unit. When the sensor is stationary, the gyroscope output is not zero - it may read 0.5–5 °/s on each axis even when not moving. **Gyroscope calibration is essential** for any application. The `calcGyroOffsets()` function samples the gyroscope for ≈ 2 seconds while the sensor is stationary and stores the average bias. This bias is then subtracted from all subsequent readings. Recalibrate when the temperature changes by > 5°C.
 - **Accelerometer bandwidth vs noise:** The default DLPF bandwidth (260 Hz) allows high-frequency noise through. The accelerometer output will appear noisy (fluctuations of ±0.3 m/s² or more). Decreasing the bandwidth to 21 Hz or lower reduces noise significantly but adds ≈ 10 ms of group delay. For tilt sensing (static orientation), use ≤ 21 Hz. For impact detection, use ≥ 94 Hz.
-- **DMP quaternion accuracy:** The DMP provides Euler angles (roll, pitch, yaw) by fusing accelerometer and gyroscope data. Pitch and roll are accurate to ≈ 1° after calibration. **Yaw (heading) will drift** over minutes because the MPU6050 has no magnetometer — it cannot sense absolute heading. Yaw drift is typically 1–5°/minute. For drift-free yaw, add a magnetometer (HMC5883L or AK8963) and fuse with a 9-axis algorithm (AHRS). The MPU6050 has an auxiliary I²C bus (XDA/XCL) that can interface directly with a magnetometer without using the Arduino.
-- **3.3V logic:** The MPU6050 operates at 3.3V. The GY-521 breakout includes a 3.3V regulator and level shifters for 5V I²C, so you can safely connect VCC to 5V. The INT pin outputs 3.3V — recognised as HIGH by the Arduino's 5V input. If using a bare MPU6050 without a breakout, power from 3.3V and use a level shifter on I²C.
+- **DMP quaternion accuracy:** The DMP provides Euler angles (roll, pitch, yaw) by fusing accelerometer and gyroscope data. Pitch and roll are accurate to ≈ 1° after calibration. **Yaw (heading) will drift** over minutes because the MPU6050 has no magnetometer - it cannot sense absolute heading. Yaw drift is typically 1–5°/minute. For drift-free yaw, add a magnetometer (HMC5883L or AK8963) and fuse with a 9-axis algorithm (AHRS). The MPU6050 has an auxiliary I²C bus (XDA/XCL) that can interface directly with a magnetometer without using the Arduino.
+- **3.3V logic:** The MPU6050 operates at 3.3V. The GY-521 breakout includes a 3.3V regulator and level shifters for 5V I²C, so you can safely connect VCC to 5V. The INT pin outputs 3.3V - recognised as HIGH by the Arduino's 5V input. If using a bare MPU6050 without a breakout, power from 3.3V and use a level shifter on I²C.
 - **FIFO overflow:** At high output rates (1 kHz) with all axes enabled, the 1024-byte FIFO buffer fills in ≈ 170 ms. If the Arduino does not read the FIFO frequently enough, data is lost. Use the data-ready interrupt (INT pin) to trigger reads, or use the DMP which manages the FIFO internally at ≈ 200 Hz.
-- **Self-heating:** The MPU6050's internal temperature sensor reads approximately 30–45°C during operation — 5–15°C above ambient due to self-heating from the IC. The gyroscope bias drifts with temperature, which is why the chip includes a temperature sensor (for bias compensation in the DMP). In still air, the sensor runs warmer than in forced airflow. Mount the sensor with an air gap underneath the PCB to reduce heat build-up.
-- **Mounting vibration:** MEMS gyroscopes are sensitive to vibration. When mounted on a motorised platform (drone, robot), the vibration couples into the gyroscope, causing angle drift. Use soft silicone mounts (the GY-521 does not come with them — you must add them). Rubber grommets or double-sided foam tape reduces vibration coupling at high frequencies.
+- **Self-heating:** The MPU6050's internal temperature sensor reads approximately 30–45°C during operation - 5–15°C above ambient due to self-heating from the IC. The gyroscope bias drifts with temperature, which is why the chip includes a temperature sensor (for bias compensation in the DMP). In still air, the sensor runs warmer than in forced airflow. Mount the sensor with an air gap underneath the PCB to reduce heat build-up.
+- **Mounting vibration:** MEMS gyroscopes are sensitive to vibration. When mounted on a motorised platform (drone, robot), the vibration couples into the gyroscope, causing angle drift. Use soft silicone mounts (the GY-521 does not come with them - you must add them). Rubber grommets or double-sided foam tape reduces vibration coupling at high frequencies.
 - **I²C bus speed:** The MPU6050 supports up to 400 kHz (Fast Mode) I²C. The Arduino Wire library defaults to 100 kHz. At 400 kHz, data can be read at 1 kHz sample rate without saturating the bus. Set `Wire.setClock(400000)` in `setup()` for faster sampling.

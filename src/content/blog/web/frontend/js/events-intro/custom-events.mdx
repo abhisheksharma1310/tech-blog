@@ -11,7 +11,7 @@ order: 5
 
 ## Dispatching Custom Events
 
-You can create your **own** events and dispatch them on any element. This is great for decoupling components — one part of your code triggers an event, and another part handles it.
+You can create your **own** events and dispatch them on any element. This is great for decoupling components - one part of your code triggers an event, and another part handles it.
 
 ## Creating Events
 
@@ -78,14 +78,14 @@ const event = new CustomEvent('type', {
 <div id='outer-custom' style='padding:20px;border:2px solid #6366f1;border-radius:8px;background:#eef2ff;'>
   OUTER DIV
   <div id='inner-custom' style='padding:16px;margin-top:8px;border:2px dashed #059669;border-radius:6px;background:#f0fdf4;'>
-    INNER DIV — source of events
+    INNER DIV - source of events
   </div>
 </div>
 <pre id='bubble-custom-log' style='background:#f1f5f9;padding:8px;border-radius:4px;'></pre>"
   js="
 const log = document.getElementById('bubble-custom-log');
 
-// Listen on OUTER — will catch bubbled events from inner
+// Listen on OUTER - will catch bubbled events from inner
 document.getElementById('outer-custom').addEventListener('statusChange', function(e) {
   log.textContent += 'OUTER caught event. Target: ' + e.target.id + ', status: ' + e.detail.status + '\\n';
 });
@@ -189,7 +189,7 @@ document.getElementById('app-area').addEventListener('app:loaded', function(e) {
 document.getElementById('app-area').addEventListener('app:error', function(e) {
   statusSpan.textContent = 'error: ' + e.detail.reason;
   statusSpan.style.color = '#ef4444';
-  log.textContent += 'Event: error — ' + e.detail.reason + '\\n';
+  log.textContent += 'Event: error - ' + e.detail.reason + '\\n';
 });
 
 document.getElementById('start-load').onclick = function() {

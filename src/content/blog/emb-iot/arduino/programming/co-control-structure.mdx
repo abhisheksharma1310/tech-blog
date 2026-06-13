@@ -31,7 +31,7 @@ void loop() {
 }
 ```
 
-In this example, the message is printed only when pin 2 reads `LOW` (button pressed). The condition inside the parentheses is evaluated as a Boolean — any non-zero value is treated as `true`.
+In this example, the message is printed only when pin 2 reads `LOW` (button pressed). The condition inside the parentheses is evaluated as a Boolean - any non-zero value is treated as `true`.
 
 ## else
 
@@ -56,7 +56,7 @@ void loop() {
 }
 ```
 
-This sketch reads a light sensor and prints different messages based on the reading. Only one block executes — the first whose condition is true. The final `else` acts as a default when no prior condition matches.
+This sketch reads a light sensor and prints different messages based on the reading. Only one block executes - the first whose condition is true. The final `else` acts as a default when no prior condition matches.
 
 ## for
 
@@ -106,7 +106,7 @@ void loop() {
 }
 ```
 
-This sketch waits for a button press using `while` loops. The first loop blocks until the button is pressed (pin 2 goes LOW), and the second blocks until it is released. Be careful with `while` loops — if the condition never becomes false, the loop runs forever.
+This sketch waits for a button press using `while` loops. The first loop blocks until the button is pressed (pin 2 goes LOW), and the second blocks until it is released. Be careful with `while` loops - if the condition never becomes false, the loop runs forever.
 
 ## do...while
 
@@ -195,7 +195,7 @@ In this example, the `for` loop would normally run 100 times, but `break` exits 
 
 ## continue
 
-The `continue` statement skips the rest of the current loop iteration and jumps to the next one. Unlike `break`, it does not exit the loop — it only skips the remaining code for that particular iteration.
+The `continue` statement skips the rest of the current loop iteration and jumps to the next one. Unlike `break`, it does not exit the loop - it only skips the remaining code for that particular iteration.
 
 ```cpp
 void setup() {
@@ -268,4 +268,4 @@ stop:
 }
 ```
 
-In this example, `goto` exits two nested `for` loops at once — something `break` alone cannot do (it only exits the innermost loop). Use `goto` sparingly and only when it makes the code clearer than alternative approaches like flags or restructured logic.
+In this example, `goto` exits two nested `for` loops at once - something `break` alone cannot do (it only exits the innermost loop). Use `goto` sparingly and only when it makes the code clearer than alternative approaches like flags or restructured logic.

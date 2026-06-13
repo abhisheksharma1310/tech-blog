@@ -35,7 +35,7 @@ let str = "hello";
 // Calls .toUpperCase()
 // Destroys the wrapper
 
-// Primitives stay primitive — the wrapper is temporary
+// Primitives stay primitive - the wrapper is temporary
 str.test = 5; // Wrapper created, property set, wrapper destroyed
 console.log(str.test); // → undefined (new wrapper has no test)
 ```
@@ -174,7 +174,7 @@ let str = "hello";
 
 str[0];      // → "h"
 str[1];      // → "e"
-str.at(-1);  // → "o" (ES2022 — negative indexing!)
+str.at(-1);  // → "o" (ES2022 - negative indexing!)
 str.at(-2);  // → "l"
 str.charAt(0); // → "h"
 ```
@@ -206,14 +206,14 @@ str.endsWith("ld");     // → true
 ```js
 let str = "JavaScript";
 
-str.slice(0, 4);    // → "Java" (start, end — end exclusive)
+str.slice(0, 4);    // → "Java" (start, end - end exclusive)
 str.slice(4);       // → "Script" (from index 4 to end)
 str.slice(-6);      // → "Script" (negative = from end)
 
 str.substring(0, 4); // → "Java" (same as slice)
 str.substring(4, 0); // → "Java" (swaps if start > end)
 
-str.substr(4, 3);    // → "Scr" (start, length — legacy, avoid)
+str.substr(4, 3);    // → "Scr" (start, length - legacy, avoid)
 ```
 
 ### Splitting and Joining
@@ -247,7 +247,7 @@ str.substr(4, 3);    // → "Scr" (start, length — legacy, avoid)
 ```js
 "Hello World".replace("World", "JS");     // → "Hello JS" (first only)
 "Hello World".replace(/o/g, "0");          // → "Hell0 W0rld" (global regex)
-"Hello World".replaceAll("o", "0");        // → "Hell0 W0rld" (ES2021 — all)
+"Hello World".replaceAll("o", "0");        // → "Hell0 W0rld" (ES2021 - all)
 ```
 
 ### Template Literals
@@ -327,15 +327,15 @@ arr.length = 0; // Clear the array
 ```js
 let fruits = ["Apple"];
 
-// Push / Pop — end of array
+// Push / Pop - end of array
 fruits.push("Banana");    // → ["Apple", "Banana"]  (add to end)
 fruits.pop();             // → "Banana", fruits is ["Apple"] (remove from end)
 
-// Shift / Unshift — beginning of array
+// Shift / Unshift - beginning of array
 fruits.unshift("Orange"); // → ["Orange", "Apple"] (add to start)
 fruits.shift();           // → "Orange", fruits is ["Apple"] (remove from start)
 
-// Splice — general purpose
+// Splice - general purpose
 let arr = [1, 2, 3, 4, 5];
 arr.splice(1, 2);         // → [2, 3] (removed), arr is [1, 4, 5]
 arr.splice(1, 0, 2, 3);   // Insert at index 1: arr is [1, 2, 3, 4, 5]
@@ -380,16 +380,16 @@ typeof []; // → "object" (arrays are objects!)
 ```js
 let arr = [1, 2, 3, 4, 5];
 
-// map — transform each element
+// map - transform each element
 let doubled = arr.map(n => n * 2); // → [2, 4, 6, 8, 10]
 
-// filter — keep elements that pass a test
+// filter - keep elements that pass a test
 let evens = arr.filter(n => n % 2 === 0); // → [2, 4]
 
-// reduce — accumulate to a single value
+// reduce - accumulate to a single value
 let sum = arr.reduce((acc, n) => acc + n, 0); // → 15
 
-// reduceRight — same but right to left
+// reduceRight - same but right to left
 ```
 
 ### Searching Methods
@@ -401,19 +401,19 @@ arr.indexOf(3);       // → 2 (first occurrence)
 arr.lastIndexOf(3);   // → 5 (last occurrence)
 arr.includes(3);      // → true
 
-// find — returns the first element that passes
+// find - returns the first element that passes
 arr.find(n => n > 3); // → 4
 
-// findIndex — returns the index
+// findIndex - returns the index
 arr.findIndex(n => n > 3); // → 3
 
 // findLast (ES2023)
 arr.findLast(n => n > 3); // → 5
 
-// some — tests if any element passes
+// some - tests if any element passes
 arr.some(n => n > 4); // → true
 
-// every — tests if ALL elements pass
+// every - tests if ALL elements pass
 arr.every(n => n > 0); // → true
 ```
 
@@ -426,7 +426,7 @@ arr.sort(); // → [1, 1, 2, 3, 4, 5, 6, 9]
 // But sort converts to strings first!
 [10, 2, 1].sort(); // → [1, 10, 2] (lexicographic!)
 
-// Fix — provide a comparator
+// Fix - provide a comparator
 arr.sort((a, b) => a - b);  // Ascending: → [1, 2, 3, 4, 5, 6, 9]
 arr.sort((a, b) => b - a);  // Descending
 
@@ -446,12 +446,12 @@ arr.concat([4, 5]); // → [1, 2, 3, 4, 5]
 arr.slice(0, 2); // → [1, 2]
 arr.slice(-2);   // → [2, 3]
 
-// flat (ES2019) — flatten nested arrays
+// flat (ES2019) - flatten nested arrays
 [1, [2, [3]]].flat();       // → [1, 2, [3]] (default depth 1)
 [1, [2, [3]]].flat(2);      // → [1, 2, 3]
 [1, [2, [3]]].flat(Infinity); // → [1, 2, 3] (all levels)
 
-// flatMap — map then flat(1)
+// flatMap - map then flat(1)
 ["hello world", "foo bar"].flatMap(s => s.split(" "));
 // → ["hello", "world", "foo", "bar"]
 

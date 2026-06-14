@@ -4,7 +4,7 @@ import SEO from '../../components/SEO.astro';
 import ArticleCard from '../../components/ArticleCard.tsx';
 import { getPosts } from '../../data/posts';
 
-const posts = getPosts();
+const posts = await getPosts();
 const title = 'All Posts · Tech Blog';
 const description = 'Browse every article in the Tech Blog, organized by category and optimized for static deployment.';
 ---

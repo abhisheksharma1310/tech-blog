@@ -15,7 +15,7 @@ function buildTree(posts: Post[]) {
   const root: TreeNode = { name: 'root', posts: [], children: {} };
 
   for (const post of posts) {
-    const categories = post.frontmatter.category.length ? post.frontmatter.category : ['Other'];
+    const categories = post.data.category.length ? post.data.category : ['Other'];
     let node = root;
 
     for (const category of categories) {
@@ -55,10 +55,10 @@ function renderNode(node: TreeNode, activeSlug?: string) {
                   {child.posts.map((post) => (
                     <li key={post.slug}>
                       <a
-                        href={post.url}
+                        href={post.slug}
                         className={post.slug === activeSlug ? 'active' : undefined}
                       >
-                        {post.frontmatter.title}
+                        {post.data.title}
                       </a>
                     </li>
                   ))}

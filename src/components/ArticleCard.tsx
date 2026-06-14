@@ -5,11 +5,11 @@ interface ArticleCardProps {
 }
 
 export default function ArticleCard({ post }: ArticleCardProps) {
-  const { title, description, date, category, tags } = post.frontmatter;
+  const { title, description, date, category, tags } = post.data;
 
   return (
     <article className="post-card">
-      <a href={post.url}>
+      <a href={post.slug}>
         <h2>{title}</h2>
       </a>
       <p>{description}</p>

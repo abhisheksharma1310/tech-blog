@@ -4,7 +4,7 @@ export const prerender = true;
 
 export async function GET() {
   const site = 'https://learncode.live';
-  const posts = getPosts();
+  const posts = await getPosts();
 
   const urls = [
     `${site}/`,
@@ -12,13 +12,13 @@ export async function GET() {
     `${site}/contact/`,
     `${site}/privacy-policy/`,
     `${site}/terms/`,
-    ...posts.map((post) => `${site}${post.url}`)
+    ...posts.map((post) => `${site}${post.slug}`)
   ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
-    .map((url) => `  <url>\n    <loc>${url}</loc>\n  </url>`)
+    .map((url) => `<url>\n<loc>${url}</loc>\n</url>`)
     .join('\n')}
 </urlset>`;
 

@@ -6,7 +6,7 @@
   "homepage": "https://www.learncode.live",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' astro build",
     "preview": "astro preview"
   },
   "devDependencies": {

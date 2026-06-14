@@ -4,8 +4,8 @@ import SEO from '../components/SEO.astro';
 import ArticleCard from '@/components/ArticleCard.tsx';
 import { getPosts } from '../data/posts';
 
-const posts = getPosts();
-const title = 'Astro Tech Blog';
+const posts = await getPosts();
+const title = 'LearncodeLive';
 const description = 'A simple technology blog for Web Development, Cloud Computing, Embedded/IoT, DevOps, and Aptitude written with Astro + React.';
 ---
 <BaseLayout title={title} description={description} posts={posts}>

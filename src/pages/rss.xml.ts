@@ -3,15 +3,16 @@ import { getPosts } from '../data/posts';
 export const prerender = true;
 
 export async function GET() {
-  const site = 'https://astro-tech-blog.example.com';
-  const posts = getPosts();
+  const site = 'https://learncode.live';
+  const posts = await getPosts();
   const channelItems = posts
     .map((post) => {
-      const { title, description, date, slug, author } = post.frontmatter;
-      const url = `${site}${post.url}`;
+      const slug = post.slug;
+      const { title, description, date, author } = post.data;
+      const url = `${site}/${slug}`;
       const pubDate = new Date(date).toUTCString();
 
-      return `    <item>
+      return `<item>
       <title>${title}</title>
       <link>${url}</link>
       <guid>${url}</guid>

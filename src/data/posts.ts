@@ -1,72 +1,24 @@
-//src/data/posts.ts
-export interface PostFrontmatter {
-  title: string;
-  description: string;
-  date: string;
-  category: string[];
-  tags: string[];
-  slug: string;
-  author: string;
-  order?: number;
-  draft?: boolean;
-}
+// src/data/posts.ts
+import { getCollection, type CollectionEntry } from 'astro:content';
 
-export interface Post {
-  slug: string;
-  url: string;
-  frontmatter: PostFrontmatter;
-  Content: any;
-}
+export type Post = CollectionEntry<'blog'>;
 
-// Scan the 'blog' folder recursively 
-const modules = import.meta.glob('../content/blog/**/*.{md,mdx}', { eager: true }) as Record<
-  string,
-  {
-    frontmatter: PostFrontmatter;
-    default: any;
-  }
->;
+export async function getPosts(): Promise<Post[]> {
+  const allPosts = await getCollection('blog');
 
-const posts: Post[] = Object.entries(modules)
-  .map(([path, module]) => {
-    // Extract the custom slug from the file's frontmatter
-    // Fallback to the file name if the slug property is accidentally left blank
-    const fileName = path.split('/').pop() ?? '';
-    const fileFallbackSlug = fileName.replace(/\.(md|mdx)$/, '');
-    
-    const slug = module.frontmatter.slug || fileFallbackSlug;
+  return allPosts
+    .filter((post) => !post.data.draft)
+    .sort((a, b) => {
+      const catA = a.data.category?.join('/') || '';
+      const catB = b.data.category?.join('/') || '';
 
-    return {
-      slug,
-      // Sets the clean root-level URL using your frontmatter slug
-      url: `/${slug}`, 
-      frontmatter: module.frontmatter,
-      Content: module.default
-    };
-  })
-  .filter((post) => !post.frontmatter.draft)
-  .sort((a, b) => {
-    const catA = a.frontmatter.category[0] || '';
-    const catB = b.frontmatter.category[0] || '';
+      if (catA !== catB) return catA.localeCompare(catB);
 
-    if (catA !== catB) {
-      return catA.localeCompare(catB);
-    }
+      const orderA = a.data.order ?? Infinity;
+      const orderB = b.data.order ?? Infinity;
 
-    const orderA = a.frontmatter.order ?? Infinity;
-    const orderB = b.frontmatter.order ?? Infinity;
+      if (orderA !== orderB) return orderA - orderB;
 
-    if (orderA !== orderB) {
-      return orderA - orderB;
-    }
-
-    return b.frontmatter.date.localeCompare(a.frontmatter.date);
-  });
-
-export function getPosts() {
-  return posts;
-}
-
-export function getPost(slug: string) {
-  return posts.find((post) => post.slug === slug);
+      return b.data.date.localeCompare(a.data.date);
+    });
 }

@@ -1,96 +1,68 @@
 ---
+// src/pages/[slug].astro
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SEO from "../components/SEO.astro";
-import { getPosts, getPost } from "../data/posts";
+import { getPosts } from "../data/posts";
 import CodePlayground from "@/components/CodePlayground.astro";
 
 export async function getStaticPaths() {
-  return getPosts().map((post) => ({ params: { slug: post.slug } }));
+  const posts = await getPosts();
+  return posts.map((post) => ({
+    // FIX: Read post.slug directly from the root element
+    params: { slug: post.slug }, 
+    props: { post },
+  }));
 }
 
-const posts = getPosts();
+const posts = await getPosts();
 const slug = Astro.params.slug as string;
-const post = getPost(slug);
+// FIX: Match against the root level post.slug property
+const post = posts.find((p) => p.slug === slug); 
 
 if (!post) {
   throw new Error(`Post not found: ${slug}`);
 }
 
-const { frontmatter, Content } = post;
-const title = `${frontmatter.title} · Astro Tech Blog`;
+const { Content } = await post.render();
+const { data: frontmatter } = post;
+
+const title = `${frontmatter.title} · learncode.live`;
 const description = frontmatter.description;
 
-const categoryKey = (post) => post.frontmatter.category.join('|');
+const categoryKey = (p) => p.data.category.join("|");
 const currentCategoryKey = categoryKey(post);
 const sameCategoryPosts = posts.filter((item) => categoryKey(item) === currentCategoryKey);
+
 const currentIndex = sameCategoryPosts.findIndex((item) => item.slug === slug);
 const previousPost = currentIndex > 0 ? sameCategoryPosts[currentIndex - 1] : null;
 const nextPost = currentIndex < sameCategoryPosts.length - 1 ? sameCategoryPosts[currentIndex + 1] : null;
+
+// FIX: Target post.slug for clean path string mapping
+const cleanUrl = `/${post.slug}`; 
 ---
 
-<BaseLayout
-  title={title}
-  description={description}
-  posts={posts}
-  activeSlug={slug}
->
-  <SEO
-    title={title}
-    description={description}
-    canonical={`https://tech-blog-31y.pages.dev/${post.url}`}
-  />
+<BaseLayout title={title} description={description} posts={posts} activeSlug={slug}>
+  <SEO title={title} description={description} canonical={`https://learncode.live${cleanUrl}`} />
+  
   <article class="post-article">
-    <!-- <h1>{frontmatter.title}</h1> -->
     <div class="post-meta">
       <span class="category">{frontmatter.category.join(" / ")}</span>
-      <!-- <span class="date">{new Date(frontmatter.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span> -->
-      <!-- <span class="tags">
-        {
-          frontmatter.tags.map((tag) => (
-            <span key={tag} className="tag">
-              {tag}
-            </span>
-          ))
-        }
-      </span> -->
     </div>
-    {
-      Content ? (
-        <Content components={{ CodePlayground }} />
-      ) : (
-        <div
-          class="post-empty-debug"
-          style="background:#fff6f6;border:1px solid #fca5a5;padding:1rem;border-radius:.5rem;margin-top:1rem;"
-        >
-          <strong>Debug:</strong> Content component is missing or failed to
-          load.
-          <pre style="white-space:pre-wrap;margin-top:.5rem">
-            {JSON.stringify(
-              {
-                slug: post.slug,
-                frontmatter: post.frontmatter,
-                contentType: typeof post.Content,
-              },
-              null,
-              2,
-            )}
-          </pre>
-        </div>
-      )
-    }
+    
+    <Content components={{ CodePlayground }} />
 
     <nav class="post-navigation" aria-label="Post navigation">
       {previousPost ? (
-        <a href={previousPost.url} class="post-navigation-link prev">
+        <a href={`/${previousPost.slug}`} class="post-navigation-link prev">
           <span>← Previous</span>
-          <strong>{previousPost.frontmatter.title}</strong>
+          <strong>{previousPost.data.title}</strong>
         </a>
       ) : <div />}
 
       {nextPost ? (
-        <a href={nextPost.url} class="post-navigation-link next">
+        <a href={`/${nextPost.slug}`} class="post-navigation-link next">
           <span>Next →</span>
-          <strong>{nextPost.frontmatter.title}</strong>
+          <strong>{nextPost.data.title}</strong>
         </a>
       ) : <div />}
     </nav>

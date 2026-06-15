@@ -1,0 +1,337 @@
+---
+title: "Path Parameters & Query Parameters"
+description: "Learn how to accept dynamic values from URLs using path parameters, query parameters, and type validation"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Basics"]
+tags: ["FastAPI", "Python", "Path Parameters", "Query Parameters", "Validation"]
+slug: "fastapi-path-query-params"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Path Parameters
+
+Path parameters let you capture dynamic values from the URL path:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/items/{item_id}")
+def read_item(item_id):
+    return {"item_id": item_id}
+```
+
+Test it:
+
+```bash
+curl http://127.0.0.1:8000/items/42
+# {"item_id": "42"}
+```
+
+## Type Hints for Path Parameters
+
+By default, path parameters come in as **strings**. Add a type hint to enforce typing:
+
+```python
+@app.get("/items/{item_id}")
+def read_item(item_id: int):
+    return {"item_id": item_id, "double": item_id * 2}
+```
+
+Now FastAPI will:
+
+1. **Validate** that the value is a valid integer
+2. **Convert** the string "42" to the integer 42
+3. **Return 422** with an error message if the value is not an integer
+
+```bash
+curl http://127.0.0.1:8000/items/42
+# {"item_id": 42, "double": 84}
+
+curl http://127.0.0.1:8000/items/abc
+# {"detail": [{"type": "int_parsing", "loc": ["path", "item_id"], ...}]}
+```
+
+### Multiple Path Parameters
+
+You can have several path parameters in a single path:
+
+```python
+@app.get("/users/{user_id}/orders/{order_id}")
+def get_order(user_id: int, order_id: int):
+    return {
+        "user_id": user_id,
+        "order_id": order_id,
+        "summary": f"Order #{order_id} for user #{user_id}"
+    }
+```
+
+```
+URL:  GET /users/7/orders/99
+
+user_id  = 7   (int)
+order_id = 99  (int)
+```
+
+### Path Parameter Order Matters
+
+FastAPI matches routes from top to bottom. Place more specific routes before parameterized ones:
+
+```python
+# This works correctly
+@app.get("/users/me")           # Specific
+def get_current_user():
+    return {"user": "current"}
+
+@app.get("/users/{user_id}")    # Parameterized
+def get_user(user_id: int):
+    return {"user_id": user_id}
+
+
+# This would FAIL — "/users/me" would never be reached
+# @app.get("/users/{user_id}")
+# def get_user(user_id: int):
+#     return {"user_id": user_id}
+#
+# @app.get("/users/me")           # Unreachable! {user_id} matches "me"
+# def get_current_user():
+#     return {"user": "current"}
+```
+
+## Predefined Path Values with Enums
+
+Constrain a path parameter to specific values using Python's `Enum`:
+
+```python
+from enum import Enum
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+class ModelName(str, Enum):
+    alexnet = "alexnet"
+    resnet = "resnet"
+    vgg = "vgg"
+
+
+@app.get("/models/{model_name}")
+def get_model(model_name: ModelName):
+    if model_name is ModelName.alexnet:
+        return {"model": "AlexNet", "year": 2012}
+    if model_name.value == "resnet":
+        return {"model": "ResNet", "year": 2015}
+    return {"model": "VGG", "year": 2014}
+```
+
+```bash
+curl http://127.0.0.1:8000/models/vgg
+# {"model": "VGG", "year": 2014}
+
+curl http://127.0.0.1:8000/models/inception
+# 422 Validation Error — "inception" is not a valid model
+```
+
+## Query Parameters
+
+Query parameters come after the `?` in the URL — `?key=value&key2=value2`. Any function parameter that is **not** part of the path is automatically treated as a query parameter:
+
+```python
+@app.get("/items")
+def list_items(skip: int = 0, limit: int = 10):
+    return {"skip": skip, "limit": limit}
+```
+
+```bash
+curl "http://127.0.0.1:8000/items?skip=5&limit=3"
+# {"skip": 5, "limit": 3}
+```
+
+### How FastAPI Distinguishes Path vs Query
+
+```
+┌────────────────────────────────────────────────────────┐
+│  @app.get("/items/{item_id}")                           │
+│  def read_item(item_id: int, q: str | None = None):     │
+│                                                │        │
+│  Path param ───────────────────────────────────┘        │
+│  (from the URL path: /items/123)                        │
+│                                                         │
+│  Query param ────────────────────────────────────┘     │
+│  (from ?q=search, or defaults to None if omitted)       │
+└────────────────────────────────────────────────────────┘
+```
+
+**Rule:** If the parameter name matches a path segment `{name}`, it's a path parameter. Otherwise, it's a query parameter.
+
+## Optional Query Parameters
+
+Use `Optional` or a default value of `None` to make query parameters optional:
+
+```python
+from typing import Optional
+
+
+@app.get("/items/{item_id}")
+def read_item(
+    item_id: int,
+    q: str | None = None,        # Optional query param
+    short: bool = False,          # Bool query param with default
+):
+    item = {"item_id": item_id}
+    if q:
+        item["q"] = q
+    if short:
+        item["description"] = "Short description"
+    else:
+        item["description"] = "A very long description..."
+    return item
+```
+
+```bash
+curl http://127.0.0.1:8000/items/5
+# {"item_id":5,"description":"A very long description..."}
+
+curl "http://127.0.0.1:8000/items/5?q=hello&short=true"
+# {"item_id":5,"q":"hello","description":"Short description"}
+```
+
+### Boolean Query Parameters
+
+Bool parameters accept common truthy/falsy values:
+
+```bash
+# All of these set `available=True`
+curl "http://.../items?available=true"
+curl "http://.../items?available=1"
+curl "http://.../items?available=on"
+curl "http://.../items?available=yes"
+```
+
+## Parameter Validation with Query()
+
+For more control, use FastAPI's `Query()` class — it adds validation, metadata, and documentation:
+
+```python
+from fastapi import FastAPI, Query
+
+app = FastAPI()
+
+
+@app.get("/items")
+def list_items(
+    skip: int = Query(0, ge=0, description="Records to skip"),
+    limit: int = Query(10, ge=1, le=100, description="Max records"),
+    category: str | None = Query(None, max_length=50),
+    in_stock: bool = Query(False),
+):
+    return {
+        "skip": skip,
+        "limit": limit,
+        "category": category,
+        "in_stock": in_stock,
+    }
+```
+
+### Common Query() Parameters
+
+| Parameter | Type | Purpose |
+|---|---|---|
+| `default` | any | Default value when omitted |
+| `ge` | int/float | Greater than or equal |
+| `le` | int/float | Less than or equal |
+| `gt` | int/float | Strictly greater than |
+| `lt` | int/float | Strictly less than |
+| `min_length` | int | Minimum string length |
+| `max_length` | int | Maximum string length |
+| `regex` | str | Pattern validation |
+| `description` | str | Shown in API docs |
+| `deprecated` | bool | Marks as deprecated |
+| `alias` | str | Alternative parameter name |
+
+```python
+@app.get("/search")
+def search(
+    q: str = Query(..., min_length=3, description="Search query (min 3 chars)"),
+    page: int = Query(1, ge=1),
+    sort: str = Query("name", regex="^(name|price|date)$"),
+):
+    return {"q": q, "page": page, "sort": sort}
+```
+
+The `...` (Ellipsis) means the parameter is **required**.
+
+## Mixing Path and Query Parameters
+
+```python
+@app.get("/products/{product_id}/reviews")
+def get_product_reviews(
+    product_id: int,                    # Path param
+    min_rating: float | None = Query(None, ge=1, le=5),  # Query
+    sort_by: str = Query("date", regex="^(date|rating|helpful)$"),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=50),
+):
+    return {
+        "product_id": product_id,
+        "min_rating": min_rating,
+        "sort_by": sort_by,
+        "page": page,
+        "per_page": per_page,
+    }
+```
+
+```bash
+curl "http://127.0.0.1:8000/products/42/reviews?min_rating=4&sort_by=rating&page=1&per_page=5"
+```
+
+## Required vs Optional Summary
+
+```
+┌─────────────────────┬────────────────────┬─────────────────────┐
+│     Declaration      │     Required?      │       Example URL   │
+├─────────────────────┼────────────────────┼─────────────────────┤
+│ item_id: int        │ Yes (path param)   │ /items/5            │
+│ skip: int = 0       │ No (has default)   │ /items?skip=10      │
+│ q: str = None       │ No (default None)  │ /items              │
+│ q: str = Query(...) │ Yes (Ellipsis)     │ /items?q=hello      │
+│ q: str = Query(None)│ No (default None)  │ /items              │
+└─────────────────────┴────────────────────┴─────────────────────┘
+```
+
+## Validation Error Responses
+
+When validation fails, FastAPI returns a **422 Unprocessable Entity** with detailed messages:
+
+```json
+{
+  "detail": [
+    {
+      "type": "int_parsing",
+      "loc": ["path", "item_id"],
+      "msg": "Input should be a valid integer, unable to parse string as an integer",
+      "input": "abc"
+    },
+    {
+      "type": "greater_than_equal",
+      "loc": ["query", "page"],
+      "msg": "Input should be greater than or equal to 1",
+      "input": 0
+    }
+  ]
+}
+```
+
+Each error includes the `loc` (location), `type` (rule broken), and `input` (what was received). You can use these in your frontend to show inline validation messages.
+
+## Key Takeaways
+
+- **Path parameters** `{item_id}` capture values from the URL path; type hints enforce validation
+- **Query parameters** are function parameters not in the path; they come after `?` in the URL
+- Optional params use **`None` defaults** or **`Optional[str]`**; required params use **`...` (Ellipsis)** with `Query()`
+- Use **`Query(ge=1, le=100, min_length=3, regex="...")`** for parameter-level validation
+- Invalid parameters return **422 Validation Error** with detailed per-field messages
+- Route order matters — place **specific routes** before parameterized ones

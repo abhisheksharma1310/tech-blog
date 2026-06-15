@@ -1314,6 +1314,279 @@ declare module 'astro:content' {
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
+"web/backend/fastapi/advanced/background-tasks.mdx": {
+	id: "web/backend/fastapi/advanced/background-tasks.mdx";
+  slug: "fastapi-background-tasks";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/advanced/dependency-overrides.mdx": {
+	id: "web/backend/fastapi/advanced/dependency-overrides.mdx";
+  slug: "fastapi-dependency-overrides";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/advanced/event-handlers.mdx": {
+	id: "web/backend/fastapi/advanced/event-handlers.mdx";
+  slug: "fastapi-event-handlers";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/advanced/websockets.mdx": {
+	id: "web/backend/fastapi/advanced/websockets.mdx";
+  slug: "fastapi-websockets";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/api-documentation/auto-docs.mdx": {
+	id: "web/backend/fastapi/api-documentation/auto-docs.mdx";
+  slug: "fastapi-auto-docs";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/api-documentation/request-response-models.mdx": {
+	id: "web/backend/fastapi/api-documentation/request-response-models.mdx";
+  slug: "fastapi-request-response-models";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/api-documentation/status-codes-headers.mdx": {
+	id: "web/backend/fastapi/api-documentation/status-codes-headers.mdx";
+  slug: "fastapi-status-codes-headers";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/api-documentation/versioning.mdx": {
+	id: "web/backend/fastapi/api-documentation/versioning.mdx";
+  slug: "fastapi-api-versioning";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/auth-security/oauth2-jwt.mdx": {
+	id: "web/backend/fastapi/auth-security/oauth2-jwt.mdx";
+  slug: "fastapi-oauth2-jwt";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/auth-security/password-hashing.mdx": {
+	id: "web/backend/fastapi/auth-security/password-hashing.mdx";
+  slug: "fastapi-password-hashing";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/auth-security/role-based-access.mdx": {
+	id: "web/backend/fastapi/auth-security/role-based-access.mdx";
+  slug: "fastapi-role-based-access";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/auth-security/security-utilities.mdx": {
+	id: "web/backend/fastapi/auth-security/security-utilities.mdx";
+  slug: "fastapi-security-utilities";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/basics/first-app.mdx": {
+	id: "web/backend/fastapi/basics/first-app.mdx";
+  slug: "fastapi-first-app";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/basics/introduction.mdx": {
+	id: "web/backend/fastapi/basics/introduction.mdx";
+  slug: "fastapi-introduction";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/basics/path-query-params.mdx": {
+	id: "web/backend/fastapi/basics/path-query-params.mdx";
+  slug: "fastapi-path-query-params";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/basics/request-body.mdx": {
+	id: "web/backend/fastapi/basics/request-body.mdx";
+  slug: "fastapi-request-body";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/basics/setup.mdx": {
+	id: "web/backend/fastapi/basics/setup.mdx";
+  slug: "fastapi-setup";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/data-databases/async-queries.mdx": {
+	id: "web/backend/fastapi/data-databases/async-queries.mdx";
+  slug: "fastapi-async-database-queries";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/data-databases/crud-routes.mdx": {
+	id: "web/backend/fastapi/data-databases/crud-routes.mdx";
+  slug: "fastapi-crud-routes";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/data-databases/nosql-redis.mdx": {
+	id: "web/backend/fastapi/data-databases/nosql-redis.mdx";
+  slug: "fastapi-nosql-mongodb-redis";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/data-databases/sqlalchemy.mdx": {
+	id: "web/backend/fastapi/data-databases/sqlalchemy.mdx";
+  slug: "fastapi-sqlalchemy-orm";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/error-handling-testing/custom-errors.mdx": {
+	id: "web/backend/fastapi/error-handling-testing/custom-errors.mdx";
+  slug: "fastapi-custom-error-responses";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/error-handling-testing/http-exception.mdx": {
+	id: "web/backend/fastapi/error-handling-testing/http-exception.mdx";
+  slug: "fastapi-http-exception";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/error-handling-testing/pytest-testing.mdx": {
+	id: "web/backend/fastapi/error-handling-testing/pytest-testing.mdx";
+  slug: "fastapi-pytest-testing";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/error-handling-testing/testclient.mdx": {
+	id: "web/backend/fastapi/error-handling-testing/testclient.mdx";
+  slug: "fastapi-testclient";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/middleware-dependencies/built-in-middleware.mdx": {
+	id: "web/backend/fastapi/middleware-dependencies/built-in-middleware.mdx";
+  slug: "fastapi-built-in-middleware";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/middleware-dependencies/custom-middleware.mdx": {
+	id: "web/backend/fastapi/middleware-dependencies/custom-middleware.mdx";
+  slug: "fastapi-custom-middleware";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/middleware-dependencies/dependency-injection.mdx": {
+	id: "web/backend/fastapi/middleware-dependencies/dependency-injection.mdx";
+  slug: "fastapi-dependency-injection";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/middleware-dependencies/using-depends.mdx": {
+	id: "web/backend/fastapi/middleware-dependencies/using-depends.mdx";
+  slug: "fastapi-using-depends";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/production/cicd.mdx": {
+	id: "web/backend/fastapi/production/cicd.mdx";
+  slug: "fastapi-cicd";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/production/deployment.mdx": {
+	id: "web/backend/fastapi/production/deployment.mdx";
+  slug: "fastapi-deployment";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/production/env-config.mdx": {
+	id: "web/backend/fastapi/production/env-config.mdx";
+  slug: "fastapi-env-config";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/production/performance.mdx": {
+	id: "web/backend/fastapi/production/performance.mdx";
+  slug: "fastapi-performance";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/production/uvicorn-gunicorn.mdx": {
+	id: "web/backend/fastapi/production/uvicorn-gunicorn.mdx";
+  slug: "fastapi-uvicorn-gunicorn";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/routing-requests/defaults-optional.mdx": {
+	id: "web/backend/fastapi/routing-requests/defaults-optional.mdx";
+  slug: "fastapi-defaults-optional";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/routing-requests/form-data-uploads.mdx": {
+	id: "web/backend/fastapi/routing-requests/form-data-uploads.mdx";
+  slug: "fastapi-form-data-uploads";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/routing-requests/http-methods.mdx": {
+	id: "web/backend/fastapi/routing-requests/http-methods.mdx";
+  slug: "fastapi-http-methods";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/routing-requests/path-operations.mdx": {
+	id: "web/backend/fastapi/routing-requests/path-operations.mdx";
+  slug: "fastapi-path-operations";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"web/backend/fastapi/routing-requests/request-validation.mdx": {
+	id: "web/backend/fastapi/routing-requests/request-validation.mdx";
+  slug: "fastapi-request-validation";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
 "web/backend/nodejs/advance/debugging-monitoring.mdx": {
 	id: "web/backend/nodejs/advance/debugging-monitoring.mdx";
   slug: "nodejs-debugging-monitoring";

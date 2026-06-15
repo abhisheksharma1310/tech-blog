@@ -1,0 +1,234 @@
+---
+title: "Role-Based Access Control"
+description: "Implement role-based access control (RBAC) in FastAPI with user roles, permission dependencies, and scoped access"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Authentication & Security"]
+tags: ["FastAPI", "RBAC", "Role-Based Access Control", "Authorization", "Permissions", "Security"]
+slug: "fastapi-role-based-access"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why Role-Based Access Control?
+
+**RBAC (Role-Based Access Control)** restricts access based on a user's role. Instead of checking permissions per-user, you assign roles and grant access by role — making authorization scalable and auditable.
+
+| Role | Permissions |
+|------|-------------|
+| `admin` | Create, Read, Update, Delete (all resources) |
+| `user` | Read, Update (own resources only) |
+| `viewer` | Read-only |
+
+## Defining User Roles
+
+```python
+from enum import Enum
+
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+    VIEWER = "viewer"
+```
+
+Using `str, Enum` makes roles JSON-serializable and compatible with database string columns.
+
+Add the role to your user model:
+
+```python
+class User(BaseModel):
+    username: str
+    email: str
+    role: UserRole = UserRole.USER
+    disabled: bool = False
+```
+
+## Permission Dependencies
+
+### Role Checker
+
+The cleanest approach is a **callable class** that returns a dependency:
+
+```python
+from fastapi import Depends, HTTPException, status
+
+class RoleChecker:
+    def __init__(self, allowed_roles: list[UserRole]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, current_user: User = Depends(get_current_user)):
+        if current_user.role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action",
+            )
+        return current_user
+```
+
+### Usage
+
+```python
+admin_only = RoleChecker([UserRole.ADMIN])
+user_or_admin = RoleChecker([UserRole.USER, UserRole.ADMIN])
+
+@router.get("/admin/dashboard")
+async def admin_dashboard(user: User = Depends(admin_only)):
+    return {"message": "Welcome, admin!"}
+
+@router.get("/profile")
+async def user_profile(user: User = Depends(user_or_admin)):
+    return user
+```
+
+- `RoleChecker` is instantiated once with allowed roles
+- Each call to `__call__` runs on every request
+- Returns `403 Forbidden` when the role does not match
+
+## Route-Level vs Endpoint-Level
+
+| Approach | Scope | Use Case |
+|----------|-------|----------|
+| **Route-level** | All endpoints under a router | Entire admin panel |
+| **Endpoint-level** | Individual routes | Mixed-role routers |
+
+### Route-Level (via Router Dependencies)
+
+```python
+admin_router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
+    dependencies=[Depends(admin_only)],
+)
+
+@admin_router.get("/users")
+async def list_all_users(db: Session = Depends(get_db)):
+    return db.query(User).all()
+
+@admin_router.delete("/users/{user_id}")
+async def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).get(user_id)
+    db.delete(user)
+    db.commit()
+    return {"ok": True}
+```
+
+- All endpoints under `admin_router` require the `admin` role
+- No need to sprinkle `Depends(admin_only)` on every handler
+- Router-level dependencies run **before** endpoint-level dependencies
+
+### Endpoint-Level
+
+```python
+@router.get("/public-items")
+async def list_items(db: Session = Depends(get_db)):
+    return db.query(Item).all()
+
+@router.post("/items", dependencies=[Depends(admin_only)])
+async def create_item(item: ItemCreate, db: Session = Depends(get_db)):
+    db_item = Item(**item.model_dump())
+    db.add(db_item)
+    db.commit()
+    return db_item
+
+@router.delete("/items/{item_id}", dependencies=[Depends(admin_only)])
+async def delete_item(item_id: int, db: Session = Depends(get_db)):
+    item = db.query(Item).get(item_id)
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
+```
+
+Public routes remain accessible; admin-only routes require the role.
+
+## Scoped Access (Ownership)
+
+Sometimes a `user` should only access their own resources:
+
+```python
+@router.get("/users/{user_id}/orders")
+async def get_user_orders(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != UserRole.ADMIN and current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return db.query(Order).filter(Order.user_id == user_id).all()
+```
+
+- Admins can access any user's data
+- Regular users can only access their own
+- This pattern is called **ownership-based access**
+
+## Role Checking Middleware
+
+For **global** role enforcement (e.g., block disabled users), use middleware:
+
+```python
+@app.middleware("http")
+async def check_disabled_users(request: Request, call_next):
+    token = request.headers.get("Authorization")
+    if token:
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            username = payload.get("sub")
+            user = get_user(username)
+            if user and user.disabled:
+                return JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content={"detail": "Account disabled"},
+                )
+        except JWTError:
+            pass
+    return await call_next(request)
+```
+
+- Middleware runs on **every request** — keep it lightweight
+- Use it for cross-cutting concerns, not granular permission checks
+- For route-specific checks, prefer the `RoleChecker` dependency
+
+## Combining Role + Ownership
+
+```python
+class PermissionChecker:
+    def __init__(self, required_role: UserRole | None = None):
+        self.required_role = required_role
+
+    def __call__(self, current_user: User = Depends(get_current_user)):
+        if self.required_role and current_user.role != self.required_role:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+
+    def owns_resource(self, resource_user_id: int, current_user: User) -> bool:
+        return current_user.role == UserRole.ADMIN or current_user.id == resource_user_id
+
+check_admin = PermissionChecker(UserRole.ADMIN)
+```
+
+## Role Hierarchy
+
+```python
+ROLE_HIERARCHY = {
+    UserRole.VIEWER: 0,
+    UserRole.USER: 1,
+    UserRole.ADMIN: 2,
+}
+
+def role_at_least(min_role: UserRole):
+    def check_role(current_user: User = Depends(get_current_user)):
+        if ROLE_HIERARCHY.get(current_user.role, -1) < ROLE_HIERARCHY[min_role]:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+    return check_role
+```
+
+This allows a compact API: `role_at_least(UserRole.USER)` covers both `user` and `admin`.
+
+## Key Takeaways
+
+- Define roles as a `str, Enum` for type safety and database compatibility
+- Use `RoleChecker` — a callable class — as a reusable dependency for role verification
+- Router-level dependencies enforce roles on entire route groups; endpoint-level for granular control
+- Ownership checks combine role and resource ID comparison
+- Middleware is for global cross-cutting checks (disabled users, IP whitelist)
+- Always return `403 Forbidden` (not `401`) for insufficient permissions — the user is authenticated but not authorized
+- Prefer a `RoleChecker` class over inline conditionals for DRY permission logic

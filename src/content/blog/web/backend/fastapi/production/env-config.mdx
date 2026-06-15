@@ -1,0 +1,313 @@
+---
+title: "Environment Variables & Config Management"
+description: "Manage FastAPI configuration with Pydantic BaseSettings, .env files, validation, secrets, and 12-factor app principles"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Production"]
+tags: ["FastAPI", "Pydantic", "Configuration", "Environment Variables", "12-Factor App", "Secrets"]
+slug: "fastapi-env-config"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why Config Management Matters
+
+The **12-Factor App** methodology states: *"Store config in the environment."* Hardcoding configuration — database URLs, API keys, secret keys — is a security risk and makes your app inflexible across environments.
+
+```
+┌──────────────────────────────────────────────────┐
+│                  Application                      │
+│                                                    │
+│   ┌─────────────┐     ┌──────────────────────┐   │
+│   │  FastAPI     │────▶│  Settings (Pydantic) │   │
+│   │  (Routes)    │     │  - DATABASE_URL      │   │
+│   │              │     │  - SECRET_KEY        │   │
+│   │              │     │  - REDIS_URL         │   │
+│   └─────────────┘     └──────────┬───────────┘   │
+│                                  │                │
+│                     ┌────────────┴───────────┐   │
+│                     │  Environment variables   │   │
+│                     │  .env / K8s Secrets /    │   │
+│                     │  Docker Secrets / Vault  │   │
+│                     └────────────────────────┘   │
+└──────────────────────────────────────────────────┘
+```
+
+## Pydantic BaseSettings
+
+Pydantic's `BaseSettings` reads environment variables automatically, with validation and type coercion built in:
+
+```python
+# app/config.py
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # App
+    APP_NAME: str = "FastAPI App"
+    DEBUG: bool = False
+    ENVIRONMENT: str = "production"
+
+    # Server
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    WORKERS: int = 4
+
+    # Database
+    DATABASE_URL: str
+    DB_POOL_SIZE: int = 20
+    DB_MAX_OVERFLOW: int = 10
+
+    # Redis / Cache
+    REDIS_URL: Optional[str] = None
+    CACHE_TTL_SECONDS: int = 300
+
+    # Auth
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # External APIs
+    STRIPE_API_KEY: Optional[str] = None
+    SENDGRID_API_KEY: Optional[str] = None
+
+    # CORS
+    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+
+
+settings = Settings()
+```
+
+### Type Coercion
+
+Pydantic automatically coerces environment variables (always strings) to the declared Python types:
+
+| Env Var Value | Declared Type | Result |
+|---|---|---|
+| `"true"` | `bool` | `True` |
+| `"8000"` | `int` | `8000` |
+| `"4"` | `int` | `4` |
+| `"http://localhost:3000,https://example.com"` | `list[str]` | `["http://localhost:3000", "https://example.com"]` |
+| `""` | `Optional[str]` | `None` |
+
+List parsing uses comma separation by default. Customize with a validator:
+
+```python
+from pydantic import field_validator
+
+class Settings(BaseSettings):
+    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",")]
+        return v
+```
+
+## .env Files
+
+```
+# .env (never committed to git)
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/myapp
+SECRET_KEY=4f7a2c9e1b3d5f8a0c2e4d6b8a1c3e5f
+REDIS_URL=redis://localhost:6379/0
+STRIPE_API_KEY=sk_live_...
+SENDGRID_API_KEY=SG....
+```
+
+```
+# .env.example (committed to git — shows required vars without secrets)
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/myapp
+SECRET_KEY=change-me-in-production
+REDIS_URL=redis://localhost:6379/0
+STRIPE_API_KEY=
+SENDGRID_API_KEY=
+```
+
+Add `.env` to `.gitignore`:
+
+```
+# .gitignore
+.env
+.env.local
+.env.production
+```
+
+## Environment-Specific Config
+
+Load different files per environment:
+
+```python
+import os
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=f".env.{os.getenv('ENVIRONMENT', 'development')}",
+        env_file_encoding="utf-8",
+    )
+    ...
+```
+
+File structure:
+
+```
+.env.development      # Local dev — DEBUG=True, local DB
+.env.staging          # Staging — staging DB, test API keys
+.env.production       # Production — prod DB, real keys
+```
+
+Override any value with direct environment variables:
+
+```bash
+ENVIRONMENT=production DATABASE_URL=postgresql://... uvicorn app.main:app
+```
+
+## Config Validation
+
+Validate critical config at startup before the server begins serving:
+
+```python
+from pydantic import model_validator
+
+class Settings(BaseSettings):
+    ENVIRONMENT: str
+    DATABASE_URL: str
+    SECRET_KEY: str
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if self.ENVIRONMENT == "production":
+            if self.SECRET_KEY == "change-me-in-production":
+                raise ValueError("SECRET_KEY must be changed in production")
+            if "localhost" in self.DATABASE_URL:
+                raise ValueError("DATABASE_URL must point to a production database")
+        return self
+```
+
+## Secrets Management in Production
+
+### Docker Secrets
+
+```yaml
+version: "3.9"
+services:
+  app:
+    image: fastapi-app
+    secrets:
+      - db_password
+    environment:
+      DATABASE_URL: "postgresql://user:${DB_PASSWORD}@db:5432/myapp"
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+```
+
+Access in code by reading the file or passing via environment.
+
+### HashiCorp Vault
+
+```python
+import hvac
+
+client = hvac.Client(url=os.getenv("VAULT_ADDR"), token=os.getenv("VAULT_TOKEN"))
+secrets = client.secrets.kv.v2.read_secret_version(path="fastapi/prod")
+settings.SECRET_KEY = secrets["data"]["data"]["SECRET_KEY"]
+```
+
+### AWS Secrets Manager / GCP Secret Manager
+
+```python
+import boto3
+from botocore.exceptions import ClientError
+
+def get_secret(secret_name: str) -> dict:
+    session = boto3.session.Session()
+    client = session.client(service_name="secretsmanager")
+    response = client.get_secret_value(SecretId=secret_name)
+    return json.loads(response["SecretString"])
+```
+
+## Using Settings in the App
+
+```python
+# app/main.py
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
+
+app = FastAPI(title=settings.APP_NAME, debug=settings.DEBUG)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+async def startup():
+    # Validate critical config early
+    if settings.ENVIRONMENT == "production":
+        assert "localhost" not in settings.DATABASE_URL, "Production DB URL uses localhost!"
+    print(f"Starting in {settings.ENVIRONMENT} mode")
+```
+
+### Dependency Injection Pattern
+
+For testability, inject settings via FastAPI dependencies:
+
+```python
+# app/dependencies.py
+from fastapi import Request
+from app.config import Settings
+
+
+def get_settings(request: Request) -> Settings:
+    return request.app.state.settings
+
+
+# app/main.py
+app.state.settings = Settings()
+
+
+# app/routes.py
+from fastapi import Depends
+from app.dependencies import get_settings
+
+
+@app.get("/config")
+def get_config(settings: Settings = Depends(get_settings)):
+    return {"environment": settings.ENVIRONMENT, "app_name": settings.APP_NAME}
+```
+
+## Configuration Checklist
+
+| Practice | Why |
+|---|---|
+| Use `BaseSettings` with type hints | Validation + auto-docs for config |
+| Never commit `.env` files | Secrets leak prevention |
+| Commit `.env.example` | Onboarding docs for new devs |
+| Validate config on startup | Fail fast, not at runtime |
+| Use `Optional[str]` with `None` default | Optional secrets don't crash dev |
+| Prefix env vars (e.g. `APP_`, `DB_`) | Avoid collisions with system vars |
+| Inject settings, don't import globals | Testability |
+
+## Key Takeaways
+
+- Use **Pydantic BaseSettings** to load, validate, and type-coerce environment variables — it replaces `os.getenv()` with proper schema validation
+- Keep `.env` files per environment (`.env.development`, `.env.production`) and commit only `.env.example` with placeholder values
+- **Validate critical config at startup** — catch missing or misconfigured secrets before the server accepts traffic
+- Use a **secrets manager** (Vault, AWS Secrets Manager, Docker secrets) in production; never bake secrets into images or source
+- Inject `Settings` via **FastAPI dependencies** rather than importing a global singleton for testability

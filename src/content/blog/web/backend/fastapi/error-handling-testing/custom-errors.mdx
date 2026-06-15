@@ -1,0 +1,266 @@
+---
+title: "Custom Error Responses"
+description: "Design a unified error response system with custom exception classes, error schemas, and global handlers"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Error Handling & Testing"]
+tags: ["FastAPI", "Custom Exceptions", "Error Handling", "Pydantic", "Validation"]
+slug: "fastapi-custom-error-responses"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## The Need for a Unified Error Format
+
+Without a standardised error structure, clients must parse different shapes for every endpoint. A unified format simplifies client-side error handling:
+
+```json
+{
+  "error": {
+    "code": "ITEM_NOT_FOUND",
+    "message": "The requested item was not found",
+    "details": {"item_id": 42}
+  }
+}
+```
+
+## Error Detail Schema with Pydantic
+
+Define a base error schema using Pydantic:
+
+```python
+from pydantic import BaseModel
+from typing import Any, Optional
+
+
+class ErrorDetail(BaseModel):
+    code: str
+    message: str
+    details: Optional[dict[str, Any]] = None
+
+
+class ErrorResponse(BaseModel):
+    error: ErrorDetail
+```
+
+## Custom Exception Classes
+
+Create a hierarchy of domain-specific exceptions:
+
+```python
+class AppException(Exception):
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status_code: int = 500,
+        details: dict[str, Any] | None = None,
+    ):
+        self.code = code
+        self.message = message
+        self.status_code = status_code
+        self.details = details or {}
+
+
+class NotFoundError(AppException):
+    def __init__(self, entity: str, entity_id: Any):
+        super().__init__(
+            code="NOT_FOUND",
+            message=f"{entity} with id '{entity_id}' not found",
+            status_code=404,
+            details={"entity": entity, "entity_id": str(entity_id)},
+        )
+
+
+class BadRequestError(AppException):
+    def __init__(self, message: str, details: dict[str, Any] | None = None):
+        super().__init__(
+            code="BAD_REQUEST",
+            message=message,
+            status_code=400,
+            details=details,
+        )
+
+
+class UnauthorizedError(AppException):
+    def __init__(self, message: str = "Authentication required"):
+        super().__init__(
+            code="UNAUTHORIZED",
+            message=message,
+            status_code=401,
+        )
+
+
+class ForbiddenError(AppException):
+    def __init__(self, message: str = "Insufficient permissions"):
+        super().__init__(
+            code="FORBIDDEN",
+            message=message,
+            status_code=403,
+        )
+
+
+class ConflictError(AppException):
+    def __init__(self, message: str, details: dict[str, Any] | None = None):
+        super().__init__(
+            code="CONFLICT",
+            message=message,
+            status_code=409,
+            details=details,
+        )
+```
+
+## Global Exception Handler for AppException
+
+Register a single handler to catch all `AppException` subclasses:
+
+```python
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ErrorResponse(
+            error=ErrorDetail(
+                code=exc.code,
+                message=exc.message,
+                details=exc.details,
+            )
+        ).model_dump(),
+    )
+```
+
+## Using Custom Exceptions in Endpoints
+
+```python
+@app.get("/users/{user_id}")
+async def get_user(user_id: int):
+    if user_id <= 0:
+        raise BadRequestError("Invalid user ID", details={"user_id": user_id})
+
+    user = fake_db.get(user_id)
+    if user is None:
+        raise NotFoundError("User", user_id)
+
+    return user
+
+
+@app.post("/users")
+async def create_user(data: dict):
+    if data.get("email") in existing_emails:
+        raise ConflictError(
+            "Email already registered",
+            details={"email": data["email"]},
+        )
+    return {"id": 123, **data}
+```
+
+## Exception Handler for 500s
+
+Catch all unhandled exceptions so the API never leaks internal details:
+
+```python
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    # Log the full traceback internally
+    logger.exception("Unhandled exception")
+    return JSONResponse(
+        status_code=500,
+        content=ErrorResponse(
+            error=ErrorDetail(
+                code="INTERNAL_ERROR",
+                message="An unexpected error occurred",
+            )
+        ).model_dump(),
+    )
+```
+
+Register it last so more specific handlers take precedence.
+
+## Overriding the Default Validation Error
+
+FastAPI returns Pydantic validation errors as a list. Override to use your unified format:
+
+```python
+from fastapi.exceptions import RequestValidationError
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(
+    request: Request, exc: RequestValidationError
+):
+    errors = exc.errors()
+    message = "; ".join(
+        f"{'.'.join(str(l) for l in e['loc'])}: {e['msg']}"
+        for e in errors
+    )
+    return JSONResponse(
+        status_code=422,
+        content=ErrorResponse(
+            error=ErrorDetail(
+                code="VALIDATION_ERROR",
+                message=message,
+                details={"errors": errors},
+            )
+        ).model_dump(),
+    )
+```
+
+## Putting It All Together
+
+```python
+app = FastAPI()
+
+
+@app.exception_handler(AppException)
+async def handle_app_exception(request: Request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=ErrorResponse(
+            error=ErrorDetail(
+                code=exc.code, message=exc.message, details=exc.details
+            )
+        ).model_dump(),
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def handle_validation(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content=ErrorResponse(
+            error=ErrorDetail(
+                code="VALIDATION_ERROR",
+                message="Request validation failed",
+                details={"fields": exc.errors()},
+            )
+        ).model_dump(),
+    )
+
+
+@app.exception_handler(Exception)
+async def handle_unhandled(request: Request, exc: Exception):
+    logger.exception("Unhandled exception")
+    return JSONResponse(
+        status_code=500,
+        content=ErrorResponse(
+            error=ErrorDetail(
+                code="INTERNAL_ERROR",
+                message="An unexpected error occurred",
+            )
+        ).model_dump(),
+    )
+```
+
+## Key Takeaways
+
+- A unified error format makes client-side error handling predictable.
+- Domain-specific exception classes (`NotFoundError`, `BadRequestError`, etc.) keep code readable and reusable.
+- Use a base `AppException` with a single global handler instead of one handler per exception.
+- Never leak stack traces — catch all unhandled exceptions and return a generic 500 response.
+- Override `RequestValidationError` to convert Pydantic's default format into your unified schema.
+- Register exception handlers in order of specificity; the most specific match wins.

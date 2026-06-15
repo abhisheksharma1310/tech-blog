@@ -1,7 +1,6 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
-import { readFileSync } from "fs";
 
 export default defineConfig({
   site: 'https://learncode.live',
@@ -16,9 +15,9 @@ export default defineConfig({
   },
 
   build: {
-    concurrency: 1, 
+    concurrency: 2, 
     rollupOptions: {
-      maxParallelFileOps: 1,
+      maxParallelFileOps: 2,
       output: {
         manualChunks: undefined,
         generatedCode: {
@@ -34,7 +33,7 @@ export default defineConfig({
       minify: 'esbuild',
       target: 'es2022',
       rollupOptions: {
-        maxParallelFileOps: 1
+        maxParallelFileOps: 2
       }
     },
     esbuild: {

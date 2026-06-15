@@ -1,0 +1,342 @@
+---
+title: "Dependency Overrides for Testing"
+description: "Swap out real dependencies during testing with app.dependency_overrides — override auth, database, and external services without modifying application code"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Advanced"]
+tags: ["FastAPI", "Testing", "Dependency Injection", "Mocking", "Python"]
+slug: "fastapi-dependency-overrides"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why Dependency Overrides?
+
+FastAPI's dependency injection system is designed to be **swappable** — you can replace any dependency at runtime without modifying your route handlers. This is invaluable during testing:
+
+- Replace a real database with an in-memory SQLite or a mock
+- Bypass authentication to test endpoints without real tokens
+- Stub out external API calls to avoid network requests
+- Inject controlled data for deterministic tests
+
+Without overrides, you'd need complex mocking fixtures or environment-specific branches in your code. With `app.dependency_overrides`, your production code stays clean and your tests stay simple.
+
+## How Dependency Overrides Work
+
+`app.dependency_overrides` is a dict mapping the original dependency function to its replacement:
+
+```python
+from fastapi import FastAPI, Depends
+
+app = FastAPI()
+
+# ── Original dependency ──
+
+async def get_current_user():
+    # In production: decode JWT, query DB, etc.
+    return {"id": 1, "name": "Alice"}
+
+@app.get("/me")
+async def read_me(user: dict = Depends(get_current_user)):
+    return user
+
+# ── Override in tests ──
+
+async def override_get_current_user():
+    return {"id": 999, "name": "TestUser"}
+
+app.dependency_overrides[get_current_user] = override_get_current_user
+```
+
+Now every route depending on `get_current_user` receives the overridden value.
+
+## Overriding Authentication Dependencies
+
+This is the most common use case — bypassing auth in tests:
+
+```python
+# app/auth.py
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer
+
+security = HTTPBearer()
+
+async def get_authenticated_user(token: str = Depends(security)) -> dict:
+    # In production: decode JWT and verify
+    if token.credentials != "real-secret-token":
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return {"id": 1, "role": "admin"}
+```
+
+```python
+# app/main.py
+from fastapi import FastAPI, Depends
+from app.auth import get_authenticated_user
+
+app = FastAPI()
+
+@app.get("/admin")
+def admin_panel(user: dict = Depends(get_authenticated_user)):
+    if user["role"] != "admin":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403)
+    return {"message": "Welcome, admin"}
+```
+
+```python
+# tests/test_admin.py
+from fastapi.testclient import TestClient
+from app.main import app
+from app.auth import get_authenticated_user
+
+async def override_admin_user():
+    return {"id": 1, "role": "admin"}
+
+app.dependency_overrides[get_authenticated_user] = override_admin_user
+
+client = TestClient(app)
+
+def test_admin_panel():
+    response = client.get("/admin")
+    assert response.status_code == 200
+    assert response.json()["message"] == "Welcome, admin"
+
+# Clean up
+app.dependency_overrides.clear()
+```
+
+### Testing Multiple Roles
+
+```python
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+from app.auth import get_authenticated_user
+
+@pytest.mark.parametrize("role,expected_status", [
+    ("admin", 200),
+    ("user", 403),
+])
+def test_admin_access(role, expected_status):
+    async def override_user():
+        return {"id": 1, "role": role}
+
+    app.dependency_overrides[get_authenticated_user] = override_user
+    client = TestClient(app)
+    response = client.get("/admin")
+    assert response.status_code == expected_status
+    app.dependency_overrides.clear()
+```
+
+## Overriding Database Dependencies
+
+Swap a production Postgres/MySQL database for an in-memory SQLite during tests:
+
+```python
+# app/database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+
+DATABASE_URL = "postgresql://user:pass@localhost/db"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+
+def get_db() -> Session:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+```
+
+```python
+# tests/conftest.py
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.main import app
+from app.database import get_db, Base
+
+TEST_DATABASE_URL = "sqlite:///./test.db"
+test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+TestSessionLocal = sessionmaker(bind=test_engine)
+
+def override_get_db():
+    db = TestSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@pytest.fixture(autouse=True)
+def setup_db():
+    Base.metadata.create_all(bind=test_engine)
+    yield
+    Base.metadata.drop_all(bind=test_engine)
+
+@pytest.fixture
+def client():
+    app.dependency_overrides[get_db] = override_get_db
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+```
+
+```python
+# tests/test_articles.py
+def test_create_article(client):
+    response = client.post(
+        "/articles",
+        json={"title": "Test", "content": "Hello"}
+    )
+    assert response.status_code == 201
+
+def test_list_articles(client):
+    # Override ensures a clean DB per test via setup_db fixture
+    response = client.get("/articles")
+    assert response.json() == []
+```
+
+## Context Manager for Overrides
+
+Instead of manually calling `clear()` in every test, use a context manager:
+
+```python
+from contextlib import contextmanager
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+@contextmanager
+def override_deps(app: FastAPI, **overrides):
+    """Temporarily apply dependency overrides for the duration of a test."""
+    original = {}
+    for dep, mock in overrides.items():
+        original[dep] = app.dependency_overrides.get(dep)
+        app.dependency_overrides[dep] = mock
+    try:
+        yield
+    finally:
+        for dep in overrides:
+            if original[dep] is None:
+                del app.dependency_overrides[dep]
+            else:
+                app.dependency_overrides[dep] = original[dep]
+
+# ── Usage ──
+
+client = TestClient(app)
+
+async def mock_user():
+    return {"id": 1}
+
+with override_deps(app, **{get_authenticated_user: mock_user}):
+    response = client.get("/me")
+    assert response.status_code == 200
+    assert response.json()["id"] == 1
+```
+
+### Pytest Fixture with Auto-Cleanup
+
+```python
+@pytest.fixture
+def override_all_deps():
+    """Apply and auto-clean all overrides after each test."""
+    overrides = {
+        get_authenticated_user: lambda: {"id": 1, "role": "admin"},
+        get_db: override_get_db,
+    }
+    app.dependency_overrides.update(overrides)
+    yield
+    app.dependency_overrides.clear()
+```
+
+## Resetting Overrides
+
+Always reset overrides between tests to avoid leakage:
+
+| Method | Effect |
+|--------|--------|
+| `app.dependency_overrides.clear()` | Removes **all** overrides |
+| `del app.dependency_overrides[dep]` | Removes a single override |
+| `app.dependency_overrides[dep] = dep` | Restores original (identity replacement) |
+
+**Best practice:** Reset in a pytest fixture with `autouse=True`:
+
+```python
+@pytest.fixture(autouse=True)
+def reset_overrides():
+    yield
+    app.dependency_overrides.clear()
+```
+
+## Overriding Dependencies with `yield` (Generators)
+
+Dependencies that use `yield` (for cleanup logic) require the override to also be a generator:
+
+```python
+# ── Original (yields a value, cleans up on teardown) ──
+
+async def get_db_session():
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+# ── Override (must also be a generator) ──
+
+def override_get_db_session():
+    session = TestSession()  # in-memory SQLite
+    try:
+        yield session
+    finally:
+        session.close()
+
+app.dependency_overrides[get_db_session] = override_get_db_session
+```
+
+FastAPI will handle the generator lifecycle (setup/yield/cleanup) for both the original and the override.
+
+## Integration with DependencyProvider Pattern
+
+For larger applications, centralize overrides in a helper:
+
+```python
+# app/deps.py
+from app.auth import get_authenticated_user
+from app.database import get_db
+
+class Deps:
+    current_user = get_authenticated_user
+    db = get_db
+```
+
+```python
+# app/main.py
+from fastapi import Depends
+from app.deps import Deps
+
+@app.get("/me")
+def get_me(user: dict = Depends(Deps.current_user)):
+    return user
+```
+
+```python
+# tests/test_me.py
+from app.deps import Deps
+
+async def mock_user():
+    return {"id": 42}
+
+app.dependency_overrides[Deps.current_user] = mock_user
+```
+
+This keeps your override code clean and prevents accidental name mismatches.
+
+## Key Takeaways
+
+- `app.dependency_overrides[original] = mock` replaces any dependency without touching route code
+- Most common use: override auth to test roles, override DB to use in-memory SQLite
+- Always reset overrides between tests — use `clear()` or a context manager
+- For `yield`-based dependencies, the override must also be a generator
+- Centralize dependency references in a `Deps` class to make overrides easier to manage
+- Use pytest fixtures with autouse cleanup to prevent test leakage

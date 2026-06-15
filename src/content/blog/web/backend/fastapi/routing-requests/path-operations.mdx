@@ -1,0 +1,291 @@
+---
+title: "Path Operations & Decorators"
+description: "Understand how @app.get() and friends work under the hood — path operation decorators, parameters like tags/summary/description, and OpenAPI metadata generation"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Routing & Requests"]
+tags: ["FastAPI", "Path Operations", "Decorators", "OpenAPI", "Routing"]
+slug: "fastapi-path-operations"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## What Is a Path Operation?
+
+A **path operation** is the combination of an HTTP method and a URL path. In FastAPI, a path operation decorator registers a function to handle requests for a specific method + path.
+
+```
+  @app.get("/items/{item_id}")
+  ────┬──── ───────┬─────────
+      │             │
+  HTTP method     URL path
+                   │
+            Dynamic segments
+            are path parameters
+```
+
+The decorator tells FastAPI: *"When a GET request arrives at `/items/{item_id}`, call this function."*
+
+## How It Works Under the Hood
+
+When your app starts, FastAPI builds a routing table by inspecting every decorated function:
+
+```python
+# What FastAPI does internally (simplified):
+
+class FastAPI:
+    def get(self, path, **kwargs):
+        def decorator(func):
+            # Register the route
+            self.routes.append({
+                "path": path,
+                "method": "GET",
+                "endpoint": func,
+                "metadata": kwargs,   # tags, summary, etc.
+            })
+            # Extract OpenAPI metadata from the function
+            # docstring → description, type hints → request/response schemas
+            return func
+        return decorator
+```
+
+```
+ User Code                    FastAPI Internals
+ ──────────                   ────────────────
+ @app.get("/")          →     APIRoute(path="/", methods={"GET"})
+ def home(): ...        →     route.endpoint = home
+                              
+                              OpenAPI.parse_docstring(home.__doc__)
+                              OpenAPI.inspect_annotations(home.__annotations__)
+                              ↓
+                          Generates OpenAPI operation object
+```
+
+### Behind `@app.get("/")`
+
+1. `app.get(path)` returns a decorator function
+2. The decorator receives the function, wraps it in an `APIRoute` object
+3. The route is appended to `app.routes[]`
+4. On startup, FastAPI iterates `app.routes` and registers each with the ASGI/WSGI server
+5. On each request, the router matches the incoming method + path against registered routes
+
+## Decorator Parameters
+
+Every path operation decorator accepts the same set of parameters:
+
+```python
+@app.get(
+    "/items/{item_id}",
+    tags=["Items"],
+    summary="Get a single item",
+    description="Retrieve an item by its unique identifier. Returns full item details.",
+    response_description="The requested item",
+    deprecated=False,
+    operation_id="getItem",
+    include_in_schema=True,
+)
+def read_item(item_id: int):
+    return {"item_id": item_id}
+```
+
+### Parameter Reference
+
+| Parameter | Purpose | Example |
+|-----------|---------|---------|
+| `tags` | Groups endpoints in OpenAPI UI | `["Items", "Admin"]` |
+| `summary` | Short label for the endpoint | `"Get a single item"` |
+| `description` | Long description (supports Markdown) | `"Retrieve an item..."` |
+| `response_description` | Describes the response | `"The requested item"` |
+| `deprecated` | Marks as deprecated in docs | `True` |
+| `operation_id` | Unique ID for OpenAPI | `"getItem"` |
+| `include_in_schema` | Exclude from OpenAPI docs | `False` |
+
+## Tags — Grouping Endpoints
+
+Tags organize endpoints into sections in the auto-generated docs:
+
+```python
+@app.get("/items", tags=["Items"])
+def list_items(): ...
+
+@app.post("/items", tags=["Items"])
+def create_item(): ...
+
+@app.get("/users", tags=["Users"])
+def list_users(): ...
+```
+
+This produces two sections in Swagger UI and ReDoc:
+
+```
+┌─────────────────────────┐
+│  Items                  │
+│  ├─ GET /items          │
+│  └─ POST /items         │
+│                         │
+│  Users                  │
+│  └─ GET /users          │
+└─────────────────────────┘
+```
+
+You can also declare tags at the `FastAPI` app level for shared metadata:
+
+```python
+app = FastAPI(
+    title="My API",
+    tags=[
+        {"name": "Items", "description": "CRUD for items"},
+        {"name": "Users", "description": "User management"},
+    ],
+)
+```
+
+## Description with Markdown
+
+The `description` parameter supports Markdown, making your OpenAPI docs rich and readable:
+
+```python
+@app.post(
+    "/items",
+    tags=["Items"],
+    summary="Create a new item",
+    description="""
+Create an item with the following rules:
+
+- **title** is required, 1–100 characters
+- **price** must be greater than 0
+- **tags** are optional, max 5
+
+### Example
+
+```json
+{
+    "title": "Widget",
+    "price": 9.99,
+    "tags": ["gadget"]
+}
+```
+""",
+)
+def create_item(payload: ItemCreate):
+    ...
+```
+
+## The `response_description` Parameter
+
+Use `response_description` to document what the response contains — this shows up in the OpenAPI response section:
+
+```python
+@app.get(
+    "/items/{item_id}",
+    response_model=Item,
+    response_description="The item with the matching ID",
+)
+def read_item(item_id: int):
+    ...
+```
+
+## Deprecating Endpoints
+
+Mark an endpoint as deprecated without removing it:
+
+```python
+@app.get("/old-endpoint", deprecated=True)
+def old_method():
+    """Still works but won't appear in the default docs view."""
+    return {"message": "Use /new-endpoint instead"}
+```
+
+Deprecated endpoints appear crossed out or greyed out in Swagger UI.
+
+## Excluding from Schema
+
+Hide internal or debug endpoints from the OpenAPI docs:
+
+```python
+@app.get("/internal/health", include_in_schema=False)
+def health_check():
+    return {"status": "ok"}
+```
+
+## Operation IDs
+
+FastAPI auto-generates `operationId` values from the function name. Override them for explicit control:
+
+```python
+@app.get("/items", operation_id="listAllItems")
+def list_items(): ...
+```
+
+This is useful when generating client SDKs, where `operationId` becomes the method name.
+
+## OpenAPI Metadata Flow
+
+```
+@decorator parameters ──► OpenAPI operation object
+       │                         │
+  tags ──────────────► tags[]    │
+  summary ───────────► summary   │
+  description ───────► description
+  deprecated ────────► deprecated
+  operation_id ──────► operationId
+                               │
+                    Used by Swagger UI, ReDoc,
+                    code generators, documentation
+```
+
+The generated OpenAPI JSON lives at `/openapi.json`:
+
+```bash
+curl http://localhost:8000/openapi.json | jq '.paths["/items"].get'
+```
+
+```json
+{
+  "summary": "Get all items",
+  "operationId": "list_items_items_get",
+  "parameters": [],
+  "responses": {
+    "200": {
+      "description": "Successful Response"
+    }
+  }
+}
+```
+
+## Using Router for Modular Path Operations
+
+For larger apps, use `APIRouter` to split path operations across files:
+
+```python
+# items.py
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/items", tags=["Items"])
+
+@router.get("/")
+def list_items(): ...
+
+@router.post("/")
+def create_item(): ...
+```
+
+```python
+# main.py
+from fastapi import FastAPI
+from items import router as items_router
+
+app = FastAPI()
+app.include_router(items_router)
+```
+
+Router-level `prefix` and `tags` are inherited by every path operation on that router.
+
+## Key Takeaways
+
+- Path operation decorators (`@app.get`, `@app.post`, etc.) register functions in FastAPI's internal routing table and generate OpenAPI metadata
+- Use `tags` to group endpoints into logical sections in the docs
+- `summary`, `description`, and `response_description` enrich the OpenAPI spec — descriptions support Markdown
+- Mark deprecated endpoints with `deprecated=True`; hide internal endpoints with `include_in_schema=False`
+- `operation_id` overrides the auto-generated ID useful for client SDK generation
+- For modular codebases, use `APIRouter` with `prefix` and `tags` split across files
+- The resulting OpenAPI spec is available at `/openapi.json`

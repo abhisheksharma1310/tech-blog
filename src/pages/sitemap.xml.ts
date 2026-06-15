@@ -12,7 +12,7 @@ export async function GET() {
     `${site}/contact/`,
     `${site}/privacy-policy/`,
     `${site}/terms/`,
-    ...posts.map((post) => `${site}${post.slug}`)
+    ...posts.map((post) => `${site}/${post.slug}`)
   ];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

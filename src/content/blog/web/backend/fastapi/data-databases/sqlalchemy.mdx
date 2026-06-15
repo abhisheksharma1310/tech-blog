@@ -1,0 +1,300 @@
+---
+title: "Connecting to SQL Databases (SQLAlchemy, Tortoise ORM)"
+description: "Connect FastAPI to PostgreSQL/MySQL with SQLAlchemy async, manage sessions, define models, run Alembic migrations, and explore Tortoise ORM as an alternative"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Data & Databases"]
+tags: ["FastAPI", "SQLAlchemy", "Alembic", "Tortoise ORM", "PostgreSQL", "Async", "Python"]
+slug: "fastapi-sqlalchemy-orm"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## The Stack
+
+FastAPI pairs naturally with **SQLAlchemy** (the most mature Python ORM) running in **async mode** via `asyncio` extensions. For those who prefer a more Django-like experience, **Tortoise ORM** is a solid alternative.
+
+```
+┌──────────────────┐
+│   FastAPI App     │
+├──────────────────┤
+│  SQLAlchemy Async │
+│  (AsyncSession)   │
+├──────────────────┤
+│  asyncpg / aiosqlite │
+├──────────────────┤
+│  PostgreSQL / SQLite │
+└──────────────────┘
+```
+
+## Async SQLAlchemy Setup
+
+### Dependencies
+
+```bash
+pip install sqlalchemy[asyncio] asyncpg aiosqlite alembic
+```
+
+### Engine and Session Factory
+
+Create a shared `database.py` module:
+
+```python
+# app/database.py
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import DeclarativeBase
+
+DATABASE_URL = "postgresql+asyncpg://user:pass@localhost:5432/mydb"
+
+engine = create_async_engine(DATABASE_URL, echo=True, pool_size=5, max_overflow=10)
+
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+class Base(DeclarativeBase):
+    pass
+
+
+async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        yield session
+```
+
+| Parameter | Purpose |
+|-----------|---------|
+| `pool_size` | Number of persistent connections kept in the pool |
+| `max_overflow` | Extra connections allowed beyond pool_size under load |
+| `echo=True` | Logs all SQL statements (disable in production) |
+| `expire_on_commit=False` | Keeps objects usable after commit |
+
+## Defining Models
+
+Models inherit from `Base` and use SQLAlchemy's type annotations:
+
+```python
+# app/models.py
+from sqlalchemy import String, Boolean, Integer, ForeignKey, DateTime, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.database import Base
+from datetime import datetime
+from typing import Optional
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    posts: Mapped[list["Post"]] = relationship(back_populates="author", cascade="all, delete-orphan")
+
+
+class Post(Base):
+    __tablename__ = "posts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(200))
+    content: Mapped[str] = mapped_column(String)
+    published: Mapped[bool] = mapped_column(Boolean, default=False)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    author: Mapped["User"] = relationship(back_populates="posts")
+```
+
+### Relationship Types
+
+| Relationship | Decorator/Option | Use Case |
+|---|---|---|
+| One-to-Many | `relationship()` on parent, `ForeignKey` on child | User → Posts |
+| Many-to-One | `ForeignKey` + `relationship()` on child | Post → User |
+| Many-to-Many | `secondary=association_table` | Posts ↔ Tags |
+| One-to-One | `uselist=False` | User → Profile |
+
+## Using AsyncSession in Routes
+
+Inject `AsyncSession` via FastAPI's `Depends`:
+
+```python
+# app/routes.py
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import get_db
+from app.models import User, Post
+from app.schemas import UserCreate, UserResponse
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+@router.post("/", response_model=UserResponse, status_code=201)
+async def create_user(payload: UserCreate, db: AsyncSession = Depends(get_db)):
+    user = User(**payload.model_dump())
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@router.get("/", response_model=list[UserResponse])
+async def list_users(skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).offset(skip).limit(limit))
+    return result.scalars().all()
+```
+
+> Every database call must be `await`ed. Without `await`, the coroutine is never executed — the endpoint returns before the query completes.
+
+## Alembic Migrations
+
+Alembic manages schema changes over time. Initialize it and wire it to your async engine:
+
+```bash
+alembic init alembic
+```
+
+Edit `alembic/env.py` for async support:
+
+```python
+# alembic/env.py
+from app.database import Base, DATABASE_URL
+from app.models import User, Post  # noqa: import all models
+
+config.set_main_option("sqlalchemy.url", DATABASE_URL.replace("+asyncpg", ""))
+
+from alembic import context
+import asyncio
+from sqlalchemy.ext.asyncio import create_async_engine
+
+def do_run_migrations(connection):
+    context.configure(connection=connection, target_metadata=Base.metadata)
+    with context.begin_transaction():
+        context.run_migrations()
+
+async def run_async_migrations():
+    connectable = create_async_engine(DATABASE_URL)
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+    await connectable.dispose()
+
+def run_migrations_online():
+    asyncio.run(run_async_migrations())
+```
+
+### Migration Workflow
+
+```bash
+# Create a migration
+alembic revision --autogenerate -m "create users and posts tables"
+
+# Inspect the generated migration (always review!)
+alembic --autogenerate
+
+# Apply migration
+alembic upgrade head
+
+# Rollback one step
+alembic downgrade -1
+
+# View history
+alembic history
+```
+
+Common migration commands:
+
+| Command | Effect |
+|---------|--------|
+| `alembic upgrade head` | Apply all pending migrations |
+| `alembic downgrade -1` | Rollback the last migration |
+| `alembic current` | Show current revision |
+| `alembic history` | Show full migration history |
+| `alembic stamp head` | Mark current state as up-to-date without running |
+
+## Tortoise ORM Alternative
+
+**Tortoise ORM** is an async-native ORM inspired by Django's ORM. It's simpler to set up but less flexible than SQLAlchemy for complex queries.
+
+### Setup
+
+```bash
+pip install tortoise-orm
+```
+
+```python
+# app/database.py
+from tortoise import Tortoise
+
+async def init_db():
+    await Tortoise.init(
+        db_url="postgres://user:pass@localhost:5432/mydb",
+        modules={"models": ["app.models"]}
+    )
+    await Tortoise.generate_schemas()
+
+async def close_db():
+    await Tortoise.close_connections()
+```
+
+### Models
+
+```python
+# app/models.py
+from tortoise import fields
+from tortoise.models import Model
+
+class User(Model):
+    id = fields.IntField(pk=True)
+    email = fields.CharField(max_length=255, unique=True)
+    name = fields.CharField(max_length=100)
+    created_at = fields.DatetimeField(auto_now_add=True)
+
+    posts: fields.ReverseRelation["Post"]
+
+class Post(Model):
+    id = fields.IntField(pk=True)
+    title = fields.CharField(max_length=200)
+    content = fields.TextField()
+    author = fields.ForeignKeyField("models.User", related_name="posts")
+    created_at = fields.DatetimeField(auto_now_add=True)
+```
+
+### Lifespan Integration
+
+```python
+# main.py
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from app.database import init_db, close_db
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+    await close_db()
+
+app = FastAPI(lifespan=lifespan)
+```
+
+## Connection String Quick Reference
+
+| Database | Driver | Connection String |
+|---|---|---|
+| PostgreSQL (async) | asyncpg | `postgresql+asyncpg://user:pass@host:5432/db` |
+| PostgreSQL (sync) | psycopg2 | `postgresql://user:pass@host:5432/db` |
+| MySQL (async) | aiomysql | `mysql+aiomysql://user:pass@host:3306/db` |
+| SQLite (async) | aiosqlite | `sqlite+aiosqlite:///./local.db` |
+| SQLite (sync) | pysqlite | `sqlite:///./local.db` |
+
+## Key Takeaways
+
+- Use `create_async_engine` + `async_sessionmaker` for async SQLAlchemy — every query must be `await`ed
+- Models use `Mapped` and `mapped_column` type annotations for clean, IDE-friendly definitions
+- Inject `AsyncSession` via `Depends(get_db)` to get a fresh session per request
+- Alembic with `run_sync` enables async-compatible migrations; always review autogenerated migrations
+- Tortoise ORM is an async-native alternative with a Django-like syntax, ideal for simpler projects
+- Choose PostgreSQL + asyncpg for production; aiosqlite works great for local development and testing

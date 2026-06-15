@@ -1,0 +1,289 @@
+---
+title: "API Testing with TestClient"
+description: "Test FastAPI endpoints end-to-end using TestClient, including auth headers, file uploads, and JSON assertions"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Error Handling & Testing"]
+tags: ["FastAPI", "TestClient", "Testing", "API Testing", "Coverage"]
+slug: "fastapi-testclient"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## TestClient Basics
+
+`TestClient` wraps Starlette's test client and lets you send HTTP requests to your app without running a server:
+
+```python
+from fastapi.testclient import TestClient
+from app.main import app
+
+client = TestClient(app)
+
+
+def test_read_root():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Hello World"}
+```
+
+## Testing Different HTTP Methods
+
+```python
+def test_create_item():
+    payload = {"name": "Laptop", "price": 999.99}
+    response = client.post("/items", json=payload)
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["name"] == "Laptop"
+    assert data["price"] == 999.99
+    assert "id" in data
+
+
+def test_update_item():
+    response = client.put("/items/1", json={"name": "Gaming Laptop"})
+    assert response.status_code == 200
+    assert response.json()["name"] == "Gaming Laptop"
+
+
+def test_delete_item():
+    response = client.delete("/items/1")
+    assert response.status_code == 204
+
+
+def test_get_nonexistent_item():
+    response = client.get("/items/9999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Item not found"
+```
+
+## Query Parameters
+
+```python
+def test_list_items_with_pagination():
+    response = client.get("/items?skip=0&limit=10")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) <= 10
+
+
+def test_search_items():
+    response = client.get("/items/search?q=laptop")
+    assert response.status_code == 200
+    results = response.json()
+    assert all("laptop" in item["name"].lower() for item in results)
+```
+
+## Authentication Headers
+
+Pass tokens or API keys via headers:
+
+```python
+def test_authenticated_endpoint():
+    headers = {"Authorization": "Bearer test_token_123"}
+    response = client.get("/users/me", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["email"] == "test@example.com"
+
+
+def test_unauthenticated_request():
+    response = client.get("/users/me")
+    assert response.status_code == 401
+
+
+def test_invalid_token():
+    headers = {"Authorization": "Bearer invalid_token"}
+    response = client.get("/users/me", headers=headers)
+    assert response.status_code == 403
+```
+
+### Dependency Override for Auth
+
+Replace the real auth dependency with a test user:
+
+```python
+from app.dependencies import get_current_user
+from app.schemas import User
+
+
+def test_override_auth():
+    test_user = User(id=1, email="test@example.com", role="admin")
+
+    app.dependency_overrides[get_current_user] = lambda: test_user
+
+    response = client.get("/admin/dashboard")
+    assert response.status_code == 200
+
+    app.dependency_overrides.clear()
+```
+
+## File Upload Testing
+
+Test file upload endpoints with `files` parameter:
+
+```python
+def test_upload_file():
+    file_content = b"Hello, this is a test file!"
+    response = client.post(
+        "/upload",
+        files={"file": ("test.txt", file_content, "text/plain")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["filename"] == "test.txt"
+    assert data["size"] == len(file_content)
+
+
+def test_upload_image():
+    response = client.post(
+        "/upload-image",
+        files={
+            "image": ("photo.jpg", b"fake-image-bytes", "image/jpeg"),
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["format"] == "jpeg"
+
+
+def test_upload_multiple_files():
+    files = [
+        ("files", ("a.txt", b"content a", "text/plain")),
+        ("files", ("b.txt", b"content b", "text/plain")),
+    ]
+    response = client.post("/upload-multiple", files=files)
+    assert response.status_code == 200
+    assert len(response.json()["files"]) == 2
+```
+
+## JSON Response Assertions
+
+Assert on the full response shape or specific fields:
+
+```python
+def test_response_structure():
+    response = client.get("/items/1")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "id" in data
+    assert "name" in data
+    assert "price" in data
+    assert "created_at" in data
+    assert isinstance(data["id"], int)
+    assert isinstance(data["price"], float)
+    assert data["price"] > 0
+
+
+def test_error_response_structure():
+    response = client.get("/items/invalid")
+    assert response.status_code == 422
+
+    error = response.json()
+    assert "error" in error
+    assert error["error"]["code"] == "VALIDATION_ERROR"
+    assert "detail" in error["error"]["message"]
+```
+
+### Snapshot Testing with Lists
+
+```python
+def test_list_contains_expected_items():
+    response = client.get("/items")
+    items = response.json()
+
+    names = [item["name"] for item in items]
+    assert "Laptop" in names
+    assert "Mouse" in names
+    assert len(items) >= 2
+```
+
+## Testing with Custom Headers
+
+```python
+def test_custom_headers():
+    response = client.get(
+        "/items",
+        headers={
+            "X-Request-ID": "abc-123",
+            "Accept-Language": "en-US",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers.get("X-Response-ID") is not None
+```
+
+## Using Context Manager
+
+The context manager ensures proper startup and shutdown events:
+
+```python
+def test_with_context_manager():
+    with TestClient(app) as client:
+        response = client.get("/")
+        assert response.status_code == 200
+```
+
+## Organising Test Files
+
+```
+tests/
+├── conftest.py          # Shared fixtures
+├── test_main.py         # Root endpoint tests
+├── test_items.py        # Item CRUD tests
+├── test_users.py        # User endpoint tests
+├── test_auth.py         # Auth-specific tests
+└── test_uploads.py      # File upload tests
+```
+
+Example `conftest.py`:
+
+```python
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+
+@pytest.fixture
+def auth_headers():
+    return {"Authorization": "Bearer test_token"}
+```
+
+## Measuring Coverage
+
+Run tests with coverage reporting:
+
+```bash
+pytest --cov=app --cov-report=term-missing --cov-report=html
+```
+
+Configure in `pyproject.toml`:
+
+```toml
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "*/migrations/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+]
+```
+
+## Key Takeaways
+
+- `TestClient` sends real HTTP requests to your app without a live server.
+- Test all HTTP methods — GET, POST, PUT, DELETE, PATCH.
+- Pass auth tokens via the `headers` parameter or dependency overrides.
+- Use the `files` parameter for multipart file upload testing.
+- Assert on status codes, response structure, and specific field values.
+- Use `app.dependency_overrides` to swap out real dependencies for tests.
+- Organise tests into separate modules matching your app's structure.
+- Run `pytest --cov` to measure and report test coverage.

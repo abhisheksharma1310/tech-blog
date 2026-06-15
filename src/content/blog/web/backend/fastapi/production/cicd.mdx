@@ -1,0 +1,479 @@
+---
+title: "CI/CD Pipelines for FastAPI Apps"
+description: "Automate testing, linting, Docker builds, and deployment for FastAPI using GitHub Actions, pytest, pre-commit hooks, and coverage"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Production"]
+tags: ["FastAPI", "CI/CD", "GitHub Actions", "Docker", "Testing", "pytest", "Pre-commit"]
+slug: "fastapi-cicd"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## CI/CD Pipeline Overview
+
+```
+                    ┌──────────┐
+   Push / PR ──────▶│   Lint   │───❌───▶ Fix and retry
+                    └────┬─────┘
+                         │ ✅
+                    ┌────▼─────┐
+                    │   Test   │───❌───▶ Fix failing tests
+                    └────┬─────┘
+                         │ ✅
+                    ┌────▼──────┐
+                    │   Build   │
+                    │  Docker   │
+                    └────┬──────┘
+                         │ ✅
+                    ┌────▼──────┐
+                    │   Deploy  │───▶ Production / Staging
+                    └───────────┘
+```
+
+Each stage gates the next — a failed lint blocks tests, failed tests block the build.
+
+## Pre-commit Hooks
+
+Run checks locally before code reaches CI:
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [pydantic, fastapi, types-redis]
+
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml]
+        additional_dependencies: ["bandit[toml]"]
+```
+
+Install and run:
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+```bash
+# Example output
+ruff.....................................................................Passed
+ruff-format.............................................................Passed
+mypy.....................................................................Passed
+bandit...................................................................Passed
+trailing-whitespace.....................................................Passed
+end-of-file-fixer.......................................................Passed
+check-added-large-files.................................................Passed
+```
+
+## Pytest Configuration
+
+```toml
+# pyproject.toml
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short --strict-markers"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "*/migrations/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "ANN", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+```
+
+### FastAPI Test Client
+
+```python
+# tests/conftest.py
+import pytest
+from httpx import ASGITransport, AsyncClient
+from app.main import app
+from app.config import Settings
+
+
+@pytest.fixture
+def settings():
+    return Settings(_env_file=".env.test")
+
+
+@pytest.fixture
+async def client():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+
+@pytest.fixture
+def sample_payload():
+    return {"title": "Test Post", "content": "Test content"}
+```
+
+```python
+# tests/test_routes.py
+import pytest
+from httpx import AsyncClient
+
+
+@pytest.mark.asyncio
+async def test_create_post(client: AsyncClient, sample_payload: dict):
+    response = await client.post("/posts", json=sample_payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["title"] == sample_payload["title"]
+
+
+@pytest.mark.asyncio
+async def test_get_nonexistent_post(client: AsyncClient):
+    response = await client.get("/posts/9999")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_health_check(client: AsyncClient):
+    response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "healthy"}
+```
+
+```bash
+# Run tests locally
+pytest
+
+# With coverage
+pytest --cov=app --cov-report=term-missing
+
+# With HTML report
+pytest --cov=app --cov-report=html
+```
+
+## GitHub Actions Workflow
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff mypy pre-commit
+
+      - name: Run ruff
+        run: ruff check --output-format=github .
+
+      - name: Run mypy
+        run: mypy app/
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx pytest-cov
+
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: test-secret-key
+          ENVIRONMENT: test
+        run: |
+          pytest --cov=app --cov-report=xml --cov-report=term-missing --junitxml=junit.xml
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: junit.xml
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Staging
+        run: |
+          # Example: Deploy to Railway via CLI
+          npm install -g @railway/cli
+          railway up --service fastapi-app --environment staging
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-production:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to Production
+        run: |
+          # Example: Update Kubernetes deployment
+          kubectl set image deployment/fastapi-app \
+            app=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+```
+
+## Test Coverage Gates
+
+```yaml
+# In the test job, add a coverage threshold
+- name: Check coverage threshold
+  run: |
+    coverage=$(grep -oP 'TOTAL.*\K(\d+)%' coverage.xml | tr -d '%')
+    if [ "$coverage" -lt 80 ]; then
+      echo "Coverage $coverage% is below threshold of 80%"
+      exit 1
+    fi
+```
+
+Or use a tool like `diff-cover` to only check new code:
+
+```bash
+pip install diff-cover
+diff-cover coverage.xml --compare-branch=origin/main --fail-under=80
+```
+
+## Branch Strategy
+
+```
+main ──────────────► Production deploy (tagged)
+  ▲
+  │
+develop ───────────► Staging deploy
+  ▲
+  │
+feature/* ─────────► PR to develop
+  ▲
+  │
+fix/* ─────────────► PR to develop
+```
+
+| Branch | CI Trigger | Deploy To |
+|---|---|---|
+| `feature/*` | Lint + Test | — |
+| `develop` | Lint + Test + Build | Staging |
+| `main` | Lint + Test + Build | Production |
+| Tags (`v*`) | Build + Push + Deploy | Production |
+
+## Environment-Specific Testing
+
+```bash
+# .env.test (sourced by pytest)
+DATABASE_URL=postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
+REDIS_URL=redis://localhost:6379/0
+SECRET_KEY=test-secret-key
+ENVIRONMENT=test
+DEBUG=true
+CORS_ORIGINS=http://localhost:3000
+```
+
+Test settings override any `.env` file:
+
+```python
+# tests/conftest.py
+@pytest.fixture(autouse=True)
+def override_settings():
+    from app.config import settings
+    settings.DATABASE_URL = "postgresql+asyncpg://testuser:testpass@localhost:5432/testdb"
+    settings.SECRET_KEY = "test-only-key"
+    settings.ENVIRONMENT = "test"
+```
+
+## Docker Build Caching
+
+The CI workflow uses GitHub Actions cache (`type=gha`) for Docker layers:
+
+```yaml
+- name: Build and push
+  uses: docker/build-push-action@v6
+  with:
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+```
+
+This reuses unchanged layers from previous builds, cutting build times from minutes to seconds.
+
+## Rollback Strategy
+
+```yaml
+# Add a rollback job to your workflow
+rollback:
+  needs: deploy-production
+  if: failure()
+  runs-on: ubuntu-latest
+  steps:
+    - name: Rollback to previous version
+      run: |
+        kubectl rollout undo deployment/fastapi-app
+```
+
+## CI/CD Checklist
+
+- [ ] Pre-commit hooks installed in repo (ruff, mypy, bandit)
+- [ ] Pytest configured with async support, coverage, and JUnit XML
+- [ ] CI runs lint → test → build — each stage gates the next
+- [ ] Docker build uses layer caching for speed
+- [ ] Secrets stored in GitHub Actions secrets, never in code
+- [ ] Deploy jobs scoped to protected environments (production requires approval)
+- [ ] Test coverage threshold enforced (≥80%)
+- [ ] Rollback mechanism documented or automated
+
+## Key Takeaways
+
+- **Gate every stage** — lint fails before tests run, tests fail before the image builds, build fails before deploy triggers
+- **Use pre-commit hooks** (ruff, mypy, bandit) to catch issues locally before they reach CI — this saves minutes per iteration
+- **Run FastAPI tests with httpx's AsyncClient** against a real test database in CI service containers (Postgres, Redis)
+- **Build Docker images with layer caching** (`type=gha`) to keep build times under a minute for small changes
+- **Protect production deploys** with GitHub Environments, manual approval gates, and automated rollback on failure
+- **Enforce a minimum test coverage threshold** (≥80%) and use `diff-cover` to only require coverage on new code

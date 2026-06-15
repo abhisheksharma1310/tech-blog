@@ -1,0 +1,176 @@
+---
+title: "Using Depends for Reusable Logic"
+description: "Master common dependency injection patterns: pagination, auth, database sessions, cleanup with yield, sub-dependencies, and global dependencies"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Middleware & Dependencies"]
+tags: ["FastAPI", "Depends", "Dependency Injection", "Pagination", "Authentication", "Database"]
+slug: "fastapi-using-depends"
+author: "Abhishek Sharma"
+order: 4
+---
+
+# Using Depends for Reusable Logic
+
+`Depends()` is the mechanism that wires dependencies into your routes. This tutorial covers the most common production patterns.
+
+## Pagination Dependency
+
+A reusable pagination dependency that every list endpoint can use.
+
+```python
+from fastapi import FastAPI, Depends, Query
+
+app = FastAPI()
+
+def pagination(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(10, ge=1, le=100, description="Max records per page"),
+):
+    return {"skip": skip, "limit": limit}
+
+@app.get("/items")
+async def list_items(pag: dict = Depends(pagination)):
+    return {"page": pag["skip"] // pag["limit"] + 1, **pag}
+
+@app.get("/users")
+async def list_users(pag: dict = Depends(pagination)):
+    return {"page": pag["skip"] // pag["limit"] + 1, **pag}
+```
+
+## Authentication Dependency
+
+Extract and validate a bearer token, then return the current user.
+
+```python
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+app = FastAPI()
+security = HTTPBearer()
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    token = credentials.credentials
+    # In real code: decode JWT / validate against DB
+    if token != "valid-token":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+    return {"user_id": 1, "username": "admin"}
+
+@app.get("/protected")
+async def protected_route(user: dict = Depends(get_current_user)):
+    return {"message": "You are authenticated", "user": user}
+```
+
+## Database Session Dependency
+
+Create a DB session per request and close it automatically.
+
+```python
+from fastapi import FastAPI, Depends
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+DATABASE_URL = "postgresql://user:pass@localhost/db"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+
+def get_db():
+    db: Session = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.execute(
+        "SELECT * FROM users WHERE id = :id", {"id": user_id}
+    ).fetchone()
+    return {"user_id": user_id, "data": user}
+```
+
+## Dependency with Yield (Cleanup)
+
+Dependencies defined as generators with `yield` run setup before the handler and **cleanup after** the response is sent.
+
+```python
+from fastapi import FastAPI, Depends
+
+app = FastAPI()
+
+def reusable_resource():
+    print("Acquiring resource...")
+    resource = {"connection": "ok"}
+    try:
+        yield resource
+    finally:
+        print("Releasing resource...")
+
+@app.get("/resource")
+async def use_resource(res: dict = Depends(reusable_resource)):
+    return res
+```
+
+The code after `yield` runs even if the route handler raised an exception. This is the idiomatic way to manage database sessions, file handles, and HTTP clients.
+
+## Sub-dependencies
+
+Dependencies can declare their own dependencies — FastAPI resolves the full tree.
+
+```python
+from fastapi import FastAPI, Depends, Header, HTTPException
+
+app = FastAPI()
+
+def extract_token(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid header")
+    return authorization.removeprefix("Bearer ")
+
+def verify_token(token: str = Depends(extract_token)):
+    if token != "super-secret":
+        raise HTTPException(status_code=403, detail="Invalid token")
+    return {"user_id": 42, "scope": "admin"}
+
+def get_db_session(user: dict = Depends(verify_token)):
+    return {"session": f"db_{user['user_id']}", "user": user}
+
+@app.get("/admin/dashboard")
+async def dashboard(data: dict = Depends(get_db_session)):
+    return {"dashboard": "admin", **data}
+```
+
+The resolution order is: `extract_token` → `verify_token` → `get_db_session` → `dashboard`.
+
+## Global Dependencies
+
+Apply a dependency to every route in the application or a router.
+
+```python
+from fastapi import FastAPI, Depends, HTTPException, APIRouter
+
+app = FastAPI(dependencies=[Depends(verify_api_key)])
+
+def verify_api_key(x_api_key: str = Header(...)):
+    if x_api_key != "global-secret":
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+@app.get("/public")   # also checked
+async def public():
+    return {"message": "public but still guarded"}
+
+# Router-level dependencies
+router = APIRouter(dependencies=[Depends(some_dep)])
+```
+
+## Key Takeaways
+
+- `Depends(pagination)` — share query parameter logic across routes.
+- Auth dependencies extract tokens, validate them, and raise `HTTPException` on failure.
+- Database sessions use `yield` for reliable cleanup after the response.
+- Sub-dependencies compose into a tree — FastAPI resolves depth-first.
+- Global dependencies via `FastAPI(dependencies=[...])` guard every route.

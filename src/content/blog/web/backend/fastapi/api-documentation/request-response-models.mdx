@@ -1,0 +1,357 @@
+---
+title: "Request & Response Models"
+description: "Control API input and output with Pydantic models — response_model for filtering, exclude_unset, include/exclude, schema nesting, Config ORM mode, and best practices"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "APIs & Documentation"]
+tags: ["FastAPI", "Pydantic", "Response Model", "Data Validation", "ORM", "Python"]
+slug: "fastapi-request-response-models"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Separating Input from Output Models
+
+A common pattern is to define distinct models for requests and responses. The request model may contain fields (like `password`) that should never appear in the response:
+
+```python
+from pydantic import BaseModel, EmailStr
+from datetime import datetime
+
+
+class UserCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    created_at: datetime
+```
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.post("/users", response_model=UserResponse)
+def create_user(payload: UserCreate):
+    """password is accepted in the request but NEVER returned."""
+    user = fake_db.save(payload)
+    return user  # password is excluded because UserResponse has no password field
+```
+
+This guarantees the `password` field is stripped before the response reaches the client — even if you accidentally return the full database object.
+
+## Using `response_model` to Filter Output
+
+The `response_model` parameter tells FastAPI how to serialise the return value. It serves two purposes:
+
+1. **Serialisation** — converts Python objects to JSON-compatible dicts
+2. **Filtering** — only fields present on the response_model are included
+3. **Documentation** — the model appears in OpenAPI schemas
+
+```python
+from pydantic import BaseModel
+
+
+class Item(BaseModel):
+    id: int
+    name: str
+    price: float
+    internal_sku: str
+
+
+class PublicItem(BaseModel):
+    id: int
+    name: str
+    price: float
+
+
+@app.get("/items/{item_id}", response_model=PublicItem)
+def get_item(item_id: int):
+    db_item = fetch_from_db(item_id)
+    # db_item has internal_sku, but PublicItem excludes it
+    return db_item
+```
+
+### Dynamic Response Models
+
+You can conditionally choose the response model:
+
+```python
+from typing import Annotated
+from fastapi import Header
+
+
+@app.get("/items/{item_id}")
+def get_item(item_id: int, x_admin: Annotated[bool, Header()] = False):
+    db_item = fetch_from_db(item_id)
+    if x_admin:
+        return db_item  # Full Item model
+    return PublicItem(**db_item.model_dump())  # Filtered model
+```
+
+## `response_model_exclude_unset`
+
+By default FastAPI includes all fields on the model, even if they have their default value. Use `exclude_unset=True` to omit fields the client didn't explicitly send:
+
+```python
+class Task(BaseModel):
+    title: str
+    completed: bool = False
+    priority: int = 0
+
+@app.post("/tasks", response_model=Task, response_model_exclude_unset=True)
+def create_task(payload: Task):
+    return payload
+```
+
+```bash
+curl -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Write docs"}'
+
+# Response (exclude_unset=True):
+# {"title": "Write docs"}
+# completed and priority are omitted because the client did not send them
+
+# Without exclude_unset:
+# {"title": "Write docs", "completed": false, "priority": 0}
+```
+
+## `response_model_include` / `response_model_exclude`
+
+Selectively include or exclude fields at the route level — useful for quick overrides without creating a new model:
+
+```python
+# Only return id and title
+@app.get("/items", response_model=list[Item], response_model_include={"id", "title"})
+def list_items():
+    return get_all_items()
+
+
+# Return everything except the internal_sku
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude={"internal_sku"})
+def get_item(item_id: int):
+    return fetch_item(item_id)
+```
+
+| Parameter | Effect |
+|---|---|
+| `response_model_include` | Set of field names to **keep** |
+| `response_model_exclude` | Set of field names to **remove** |
+
+These accept a `set` of strings or a `dict` with the same structure for nested filtering:
+
+```python
+response_model_exclude={"owner": {"password", "ssn"}}
+```
+
+> Prefer dedicated response models over `include`/`exclude` for public endpoints — they make the contract explicit and are easier to maintain.
+
+## Schema Nesting and Sub-models
+
+Pydantic models can be nested arbitrarily. FastAPI handles validation and serialisation at every level:
+
+```python
+from pydantic import BaseModel
+from typing import List
+
+
+class Category(BaseModel):
+    id: int
+    name: str
+
+
+class Tag(BaseModel):
+    id: int
+    label: str
+
+
+class Product(BaseModel):
+    id: int
+    name: str
+    price: float
+    category: Category
+    tags: List[Tag]
+
+
+@app.get("/products/{product_id}", response_model=Product)
+def get_product(product_id: int):
+    return {
+        "id": 1,
+        "name": "Wireless Mouse",
+        "price": 29.99,
+        "category": {"id": 5, "name": "Electronics"},
+        "tags": [
+            {"id": 1, "label": "wireless"},
+            {"id": 2, "label": "ergonomic"},
+        ],
+    }
+```
+
+```json
+{
+  "id": 1,
+  "name": "Wireless Mouse",
+  "price": 29.99,
+  "category": {"id": 5, "name": "Electronics"},
+  "tags": [
+    {"id": 1, "label": "wireless"},
+    {"id": 2, "label": "ergonomic"}
+  ]
+}
+```
+
+### Recursive Models
+
+Pydantic v2 supports recursive (self-referencing) models:
+
+```python
+from __future__ import annotations
+from pydantic import BaseModel
+from typing import Optional, List
+
+
+class Comment(BaseModel):
+    id: int
+    text: str
+    replies: List[Comment] = []
+
+
+@app.get("/comments/{comment_id}", response_model=Comment)
+def get_comment(comment_id: int):
+    return {
+        "id": 1,
+        "text": "Great post!",
+        "replies": [
+            {"id": 2, "text": "Thanks!", "replies": []},
+        ],
+    }
+```
+
+## Using `Config` for ORM Mode (Pydantic v1)
+
+In Pydantic v1, `orm_mode = True` in the inner `Config` class allows creating models from ORM objects:
+
+```python
+# Pydantic v1 syntax
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+
+    class Config:
+        orm_mode = True
+```
+
+```python
+# SQLAlchemy ORM object
+class UserModel(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    email = Column(String)
+
+# FastAPI automatically reads attributes from the ORM object
+@app.get("/users/{user_id}", response_model=User)
+def get_user(user_id: int):
+    return db.query(UserModel).filter(UserModel.id == user_id).first()
+```
+
+## Using `model_config` for ORM Mode (Pydantic v2)
+
+Pydantic v2 replaces the inner `Config` class with `model_config` and renames `orm_mode` to `from_attributes`:
+
+```python
+# Pydantic v2 syntax
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: int
+    name: str
+    email: str
+```
+
+```python
+@app.get("/users/{user_id}", response_model=User)
+def get_user(user_id: int):
+    return db.query(UserModel).filter(UserModel.id == user_id).first()
+```
+
+| Pydantic v1 | Pydantic v2 |
+|---|---|
+| `class Config: orm_mode = True` | `model_config = {"from_attributes": True}` |
+| Reads attributes from objects | Same behaviour, new API |
+
+## Returning Database Objects Directly
+
+When `response_model` is set, FastAPI calls `model_validate()` (v2) or `from_orm()` (v1) on the model using the returned object. This means you can return ORM objects directly:
+
+```python
+@app.get("/users", response_model=list[User])
+def list_users():
+    # Return SQLAlchemy objects — FastAPI + Pydantic handle the rest
+    return db.query(UserModel).all()
+```
+
+## Request Models with `Body`, `Query`, and `Path`
+
+You're not limited to Pydantic for inputs. Mix and match with `Body`, `Query`, `Path`, `Header`, and `Cookie`:
+
+```python
+from fastapi import Body, Query, Path
+
+
+class OrderPayload(BaseModel):
+    product_id: int
+    quantity: int
+
+
+@app.post("/orders")
+def create_order(
+    payload: OrderPayload,
+    coupon: str | None = Query(default=None, max_length=20),
+    x_idempotency_key: str = Header(alias="X-Idempotency-Key"),
+):
+    return {"status": "created", "coupon": coupon, "idempotency": x_idempotency_key}
+```
+
+## Response Model Execution Order
+
+When you return a value from a route, FastAPI processes it in this order:
+
+1. Convert the return value to a dict (`model_dump()` for Pydantic, or `jsonable_encoder`)
+2. Apply `response_model_include` and `response_model_exclude`
+3. Apply `response_model_exclude_unset`
+4. Validate against the `response_model` schema
+5. Serialise to JSON
+
+```python
+@app.post(
+    "/items",
+    response_model=Item,
+    response_model_exclude_unset=True,
+    response_model_exclude={"internal_sku"},
+)
+def create_item(payload: ItemCreate):
+    return save_to_db(payload)
+```
+
+## Key Takeaways
+
+- Use **separate request and response models** to avoid leaking sensitive fields like passwords — the request model can have extra fields the response omits
+- `response_model` controls serialisation, field filtering, and OpenAPI documentation — always set it on endpoints that return data
+- `response_model_exclude_unset=True` omits fields with default values that the client didn't explicitly send
+- `response_model_include` and `response_model_exclude` provide quick field filtering without creating new model classes
+- **Nested Pydantic models** are automatically validated and serialised — including recursive self-referencing structures
+- Enable **ORM mode** with `model_config = {"from_attributes": True}` (Pydantic v2) or `class Config: orm_mode = True` (v1) to return database objects directly

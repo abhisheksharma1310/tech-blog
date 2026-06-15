@@ -1,0 +1,341 @@
+---
+title: "Request Body Basics (Pydantic Models)"
+description: "Learn how to handle POST requests with JSON bodies using Pydantic BaseModel for validation and serialization"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Basics"]
+tags: ["FastAPI", "Python", "Pydantic", "POST", "Request Body", "Validation"]
+slug: "fastapi-request-body"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## Why Pydantic?
+
+FastAPI uses **Pydantic models** to define the structure of request and response data. This gives you:
+
+- **Automatic validation** — invalid data is rejected before your code runs
+- **Automatic parsing** — JSON strings become Python types (datetime, UUID, etc.)
+- **Editor support** — autocomplete and type checking in your IDE
+- **Auto-generated docs** — schemas appear in Swagger UI automatically
+- **Serialization** — Python objects → JSON response, no manual conversion
+
+## POST Endpoint with a Pydantic Model
+
+Create `main.py`:
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str
+    price: float
+    is_offer: bool | None = None
+
+
+@app.post("/items")
+def create_item(item: Item):
+    return {
+        "message": "Item created",
+        "item": item,
+    }
+```
+
+Run with `uvicorn main:app --reload` and test:
+
+```bash
+curl -X POST http://127.0.0.1:8000/items \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Laptop", "price": 999.99}'
+```
+
+```json
+{
+  "message": "Item created",
+  "item": {
+    "name": "Laptop",
+    "price": 999.99,
+    "is_offer": null
+  }
+}
+```
+
+## What FastAPI Does Automatically
+
+```
+Client sends:                          FastAPI receives:
+────────────────────                   ─────────────────────
+
+POST /items                            body = Item(name="Laptop", price=999.99)
+{                                      │
+  "name": "Laptop",         ─────►     │ 1. Validate JSON is valid
+  "price": 999.99                      │ 2. Parse into Item instance
+}                                      │ 3. Type-check name → str, price → float
+                                       │ 4. Set is_offer = None (default)
+                                       │ 5. Return 422 on any mismatch
+```
+
+### Invalid Body → 422
+
+```bash
+curl -X POST http://127.0.0.1:8000/items \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Laptop", "price": "free"}'
+```
+
+```json
+{
+  "detail": [
+    {
+      "type": "float_parsing",
+      "loc": ["body", "price"],
+      "msg": "Input should be a valid number",
+      "input": "free"
+    }
+  ]
+}
+```
+
+The request is rejected **before** your function runs — no manual `if` checks needed.
+
+## Nested Models
+
+Models can contain other models, creating complex nested structures:
+
+```python
+from pydantic import BaseModel
+from typing import List
+
+
+class Image(BaseModel):
+    url: str
+    alt: str | None = None
+    width: int | None = None
+    height: int | None = None
+
+
+class Tag(BaseModel):
+    name: str
+    color: str = "blue"
+
+
+class Product(BaseModel):
+    sku: str
+    name: str
+    description: str | None = None
+    price: float
+    tags: list[Tag] = []        # List of nested models
+    images: list[Image] = []    # List of nested models
+
+
+@app.post("/products")
+def create_product(product: Product):
+    return {
+        "sku": product.sku,
+        "tag_count": len(product.tags),
+        "image_count": len(product.images),
+        "total_value": product.price * 1.1,  # with tax
+    }
+```
+
+Test with a nested payload:
+
+```json
+{
+  "sku": "LAP-001",
+  "name": "Gaming Laptop",
+  "price": 1499.99,
+  "tags": [
+    {"name": "gaming", "color": "green"},
+    {"name": "laptop"}
+  ],
+  "images": [
+    {"url": "https://example.com/lap1.jpg", "alt": "Front view", "width": 800, "height": 600}
+  ]
+}
+```
+
+FastAPI validates every level — missing required fields inside nested models also return 422.
+
+## Optional Fields with Optional / None
+
+| Declaration | Required? | Default if omitted |
+|---|---|---|
+| `name: str` | Yes | — |
+| `name: str = "Default"` | No | `"Default"` |
+| `name: str = None` | No | `None` |
+| `name: str = Field(None)` | No | `None` |
+| `name: str = Field(...)` | **Yes** | — (Ellipsis means required) |
+
+```python
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    username: str                          # Required
+    email: str | None = None               # Optional, defaults to None
+    full_name: str = "Unnamed"             # Optional, default value
+    age: int = Field(ge=0, le=150)         # Optional, with constraints
+    bio: str = Field(None, max_length=500) # Optional, with max length
+```
+
+## Field() Validation
+
+Pydantic's `Field()` provides per-field constraints — the same power as `Query()` for body data:
+
+| Parameter | Applies to | Example |
+|---|---|---|
+| `default` | any | `Field("hello")` |
+| `default_factory` | any | `Field(default_factory=list)` |
+| `ge` / `le` | numeric | `Field(ge=0)` |
+| `gt` / `lt` | numeric | `Field(gt=0, lt=100)` |
+| `min_length` / `max_length` | strings | `Field(min_length=3, max_length=50)` |
+| `regex` | strings | `Field(regex=r"^[a-z]+$")` |
+| `description` | any | `Field(description="User's email address")` |
+| `examples` | any | `Field(examples=["user@example.com"])` |
+
+```python
+from pydantic import BaseModel, Field
+from datetime import datetime
+
+
+class Event(BaseModel):
+    title: str = Field(..., min_length=3, max_length=100)
+    description: str = Field(None, max_length=2000)
+    date: datetime
+    price: float = Field(ge=0, le=9999.99)
+    capacity: int = Field(ge=1, le=10000, default=100)
+    tags: list[str] = Field(default_factory=list, max_length=10)
+```
+
+## Models with Union Types
+
+Python's `Union` (or `|` syntax) lets a field accept multiple types:
+
+```python
+from pydantic import BaseModel
+from typing import Union
+
+
+class Config(BaseModel):
+    mode: Union[str, int]        # Accepts "auto" or 1
+    timeout: float | None = None # Accepts float or None
+    metadata: dict | list | None = None  # Accepts dict, list, or None
+```
+
+## Response Model
+
+Use the `response_model` parameter to control what gets sent back — useful for hiding sensitive fields:
+
+```python
+from pydantic import BaseModel
+
+
+class UserIn(BaseModel):
+    username: str
+    password: str           # Sensitive, should not be returned
+    email: str
+
+
+class UserOut(BaseModel):
+    username: str
+    email: str              # password is NOT included here
+
+
+@app.post("/users", response_model=UserOut)
+def create_user(user: UserIn):
+    # Even if we return the full UserIn, FastAPI filters it to UserOut
+    return user
+```
+
+This ensures your API **never** accidentally leaks passwords or internal fields.
+
+## Request Body + Path Parameter + Query Parameter
+
+All three can be combined in one endpoint:
+
+```python
+from fastapi import FastAPI, Query
+from pydantic import BaseModel
+
+
+class Order(BaseModel):
+    product_id: int
+    quantity: int = Field(ge=1, le=100)
+    coupon: str | None = None
+
+
+@app.post("/users/{user_id}/orders")
+def create_order(
+    user_id: int,                     # Path parameter
+    order: Order,                     # Request body (JSON)
+    discount: float | None = Query(None, ge=0, le=1),  # Query param
+):
+    total = 100.0 * order.quantity    # Simplified product price
+    if discount:
+        total *= 1 - discount
+    return {
+        "user_id": user_id,
+        "order": order,
+        "discount": discount,
+        "total": round(total, 2),
+    }
+```
+
+```bash
+curl -X POST "http://127.0.0.1:8000/users/42/orders?discount=0.1" \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": 5, "quantity": 3}'
+```
+
+```json
+{
+  "user_id": 42,
+  "order": {"product_id": 5, "quantity": 3, "coupon": null},
+  "discount": 0.1,
+  "total": 270.0
+}
+```
+
+## Diagram: Request Flow with Validation
+
+```
+Incoming Request
+      │
+      ▼
+┌─────────────────────┐
+│  1. Parse body JSON │  ← Invalid JSON → 400 Bad Request
+└─────────┬───────────┘
+          ▼
+┌─────────────────────┐
+│  2. Validate fields │  ← Field() rules & type checks
+└─────────┬───────────┘    Missing required → 422
+          │                Wrong type → 422
+          ▼                Constraint violation → 422
+┌─────────────────────┐
+│  3. Create Pydantic │  → Your function receives
+│     model instance  │     a validated Item object
+└─────────┬───────────┘
+          ▼
+┌─────────────────────┐
+│  4. Run your code   │  → Access item.name, item.price
+└─────────┬───────────┘
+          ▼
+┌─────────────────────┐
+│  5. Serialize       │  → dict → JSON response
+│     return value    │     (with response_model filtering)
+└─────────────────────┘
+```
+
+## Key Takeaways
+
+- Define request bodies with **Pydantic `BaseModel`** classes — validation comes free
+- POST endpoints accept the model as a parameter: **`def create_item(item: Item)`**
+- Use **`Field()`** for constraints like `ge`, `le`, `min_length`, `max_length`, `regex`
+- Nested models are validated recursively — every level is checked
+- Optional fields use **`= None`**, required fields have no default (or **`Field(...)`**)
+- Combine path params, query params, and body in one endpoint by ordering function parameters
+- Use **`response_model`** to control what fields are returned to the client

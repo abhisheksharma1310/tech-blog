@@ -1,0 +1,470 @@
+---
+title: "Deployment Strategies (Docker, Kubernetes, Cloud)"
+description: "Deploy FastAPI to production using Docker, docker-compose, Kubernetes, cloud platforms like Railway/Render/Fly.io, and Nginx reverse proxy"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Production"]
+tags: ["FastAPI", "Docker", "Kubernetes", "Deployment", "Nginx", "Cloud"]
+slug: "fastapi-deployment"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Deployment Architecture Overview
+
+```
+┌─────────┐     ┌──────────┐     ┌───────────┐     ┌──────────┐
+│  Client  │────▶│  Nginx   │────▶│  FastAPI  │────▶│ Database │
+│  (CDN)   │     │ (Reverse │     │ (Gunicorn │     │ (Postgres│
+│          │     │  Proxy)  │     │ +Uvicorn) │     │ /Redis)  │
+└─────────┘     └──────────┘     └───────────┘     └──────────┘
+                        │
+                        ▼
+                   Static Files
+                   (CDN / S3)
+```
+
+## Dockerfile for FastAPI
+
+```dockerfile
+# Dockerfile
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ── Production Stage ──
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Create non-root user
+RUN groupadd -r fastapi && useradd -r -g fastapi -d /app -s /sbin/nologin fastapi
+
+COPY --from=builder /root/.local /root/.local
+COPY . .
+
+ENV PATH=/root/.local/bin:$PATH \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+EXPOSE 8000
+
+USER fastapi
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### Multi-stage Build Benefits
+
+| Stage | Purpose |
+|---|---|
+| `builder` | Install dependencies (cached by Docker layer) |
+| `production` | Minimal runtime image — only code + deps |
+| Result | Smaller image, fewer CVEs, faster pull times |
+
+### Optimize with `.dockerignore`
+
+```
+__pycache__/
+*.pyc
+.venv/
+.env
+.git/
+.gitignore
+*.md
+tests/
+Dockerfile
+docker-compose.yml
+```
+
+### Build and Run
+
+```bash
+docker build -t fastapi-app .
+docker run -d --name fastapi -p 8000:8000 fastapi-app
+```
+
+## docker-compose for Local & Production
+
+```yaml
+# docker-compose.yml
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/usr/share/nginx/html/static:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  redisdata:
+```
+
+## Nginx Reverse Proxy Configuration
+
+```nginx
+# nginx.conf
+upstream fastapi_backend {
+    server app:8000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name example.com;
+
+    ssl_certificate /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=63072000" always;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+
+    # Static files (served directly by Nginx)
+    location /static/ {
+        root /usr/share/nginx/html;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # API proxy
+    location / {
+        proxy_pass http://fastapi_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+}
+```
+
+## Kubernetes Deployment
+
+### Deployment Manifest
+
+```yaml
+# k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-app
+  labels:
+    app: fastapi
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: app
+        image: ghcr.io/myorg/fastapi-app:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: fastapi-config
+        - secretRef:
+            name: fastapi-secrets
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+# k8s/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+spec:
+  type: ClusterIP
+  selector:
+    app: fastapi
+  ports:
+  - port: 80
+    targetPort: 8000
+---
+# k8s/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fastapi-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - api.example.com
+    secretName: fastapi-tls
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fastapi-service
+            port:
+              number: 80
+```
+
+### Deploy to Cluster
+
+```bash
+kubectl apply -f k8s/
+kubectl rollout status deployment/fastapi-app
+```
+
+## Cloud Platforms
+
+### Railway
+
+```bash
+# railway.json
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "healthcheckPath": "/health"
+  }
+}
+```
+
+Railway auto-detects FastAPI. Set the start command in the dashboard or via `Procfile`:
+
+```
+web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+### Render
+
+Create a `render.yaml` for infrastructure-as-code:
+
+```yaml
+# render.yaml
+services:
+  - type: web
+    name: fastapi-app
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fastapi-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: fastapi-redis
+          type: redis
+          property: connectionString
+
+databases:
+  - name: fastapi-db
+    plan: free
+
+redis:
+  - name: fastapi-redis
+    plan: free
+```
+
+### Fly.io
+
+```toml
+# fly.toml
+app = "fastapi-app"
+
+kill_signal = "SIGTERM"
+kill_timeout = 5
+
+[env]
+  PORT = "8080"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.http_checks]]
+    path = "/health"
+    interval = "30s"
+    timeout = "10s"
+```
+
+```bash
+fly launch
+fly deploy
+```
+
+## Platform Comparison
+
+| Feature | Railway | Render | Fly.io | K8s (DIY) |
+|---|---|---|---|---|
+| **Setup complexity** | Low | Low | Medium | High |
+| **Auto-scaling** | ✅ | ✅ | ✅ | ✅ |
+| **Free tier** | ✅ | ✅ | ✅ | ❌ |
+| **Custom domains** | ✅ | ✅ | ✅ | ✅ |
+| **Docker support** | ✅ | ✅ | ✅ | ✅ |
+| **Managed DB** | ✅ (Postgres) | ✅ (Postgres/Redis) | ✅ (Postgres) | ❌ |
+| **Multi-region** | ❌ | ❌ | ✅ | ✅ |
+| **Container orchestration** | ❌ | ❌ | ❌ | ✅ |
+
+## Secrets Management
+
+Never hardcode secrets in Dockerfiles or source code:
+
+```bash
+# Docker secrets (Swarm)
+echo "my_secret_key" | docker secret create db_password -
+
+# Kubernetes secrets
+kubectl create secret generic fastapi-secrets \
+  --from-literal=secret_key=abc123 \
+  --from-literal=database_url=postgresql://...
+
+# Fly.io secrets
+fly secrets set DATABASE_URL=postgresql://...
+```
+
+Access in FastAPI via environment variables (see [Environment Variables & Config Management](/blog/web/backend/fastapi/production/env-config)).
+
+## CI/CD Pipeline (High-Level)
+
+```yaml
+# .github/workflows/deploy.yml (abbreviated)
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t app .
+      - run: docker push ghcr.io/myorg/app:latest
+      - run: kubectl set image deployment/fastapi-app app=ghcr.io/myorg/app:latest
+```
+
+See [CI/CD Pipelines](/blog/web/backend/fastapi/production/cicd) for the full pipeline.
+
+## Checklist Before Going Live
+
+- [ ] Health check endpoint (`/health`) responds 200
+- [ ] Database connection pool limits configured
+- [ ] CORS middleware allows only trusted origins
+- [ ] Rate limiting (slowapi or Nginx limit_req)
+- [ ] SSL/TLS via Let's Encrypt or cloud provider
+- [ ] Logging to stdout/stderr (not files)
+- [ ] Environment variables injected, not hardcoded
+- [ ] `.env` files excluded from git
+- [ ] Non-root user in Dockerfile
+- [ ] Resource limits set (CPU/memory)
+
+## Key Takeaways
+
+- Use a **multi-stage Dockerfile** to produce minimal, secure images — separate build from runtime
+- Deploy with **docker-compose for simple stacks**, **Kubernetes for orchestration**, and **cloud platforms (Railway/Render/Fly.io) for zero-ops**
+- Place **Nginx as a reverse proxy** in front of FastAPI to handle SSL, static files, and security headers
+- Choose a platform based on your operational complexity tolerance — Railway/Render for simplicity, K8s for control
+- Never hardcode secrets — use Docker secrets, K8s Secrets, or platform-specific secret managers

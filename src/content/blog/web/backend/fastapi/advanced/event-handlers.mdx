@@ -1,0 +1,347 @@
+---
+title: "Event Handlers (Startup/Shutdown)"
+description: "Run code when your FastAPI application starts and stops — connect to databases, initialize clients, and clean up resources gracefully"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Advanced"]
+tags: ["FastAPI", "Startup", "Shutdown", "Lifespan", "ASGI", "Python"]
+slug: "fastapi-event-handlers"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Why Event Handlers?
+
+Most applications need to run code before serving traffic (connect to a database, initialize a Redis client, load ML models) and clean up when shutting down (close connections, flush buffers, release resources). FastAPI provides two mechanisms for this:
+
+| Mechanism | Approach | Since |
+|-----------|----------|-------|
+| Event handlers | `@app.on_event("startup")` / `@app.on_event("shutdown")` | FastAPI 0.1 |
+| Lifespan context manager | Single `async with` block yielding the app | FastAPI 0.93+ |
+
+Both are supported. The lifespan approach is the **recommended** pattern in modern FastAPI because it keeps startup and shutdown logic paired together and is less error-prone.
+
+## Using `@app.on_event()`
+
+### Startup Handler
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.on_event("startup")
+async def startup():
+    print("Starting up — initializing resources...")
+    # Connect to database
+    # Initialize Redis client
+    # Load ML model into memory
+    # Create thread pool
+```
+
+### Shutdown Handler
+
+```python
+@app.on_event("shutdown")
+async def shutdown():
+    print("Shutting down — cleaning up...")
+    # Close database connections
+    # Gracefully close Redis
+    # Flush logs
+    # Cancel background tasks
+```
+
+### Complete Example
+
+```python
+from fastapi import FastAPI
+import asyncpg
+
+app = FastAPI()
+db_pool: asyncpg.Pool | None = None
+
+@app.on_event("startup")
+async def startup():
+    global db_pool
+    db_pool = await asyncpg.create_pool(
+        user="postgres",
+        password="secret",
+        database="blog",
+        host="localhost",
+        min_size=2,
+        max_size=10,
+    )
+
+@app.on_event("shutdown")
+async def shutdown():
+    if db_pool:
+        await db_pool.close()
+
+@app.get("/posts")
+async def get_posts():
+    async with db_pool.acquire() as conn:
+        rows = await conn.fetch("SELECT id, title FROM posts")
+        return [dict(row) for row in rows]
+```
+
+## The Lifespan Parameter (Recommended)
+
+FastAPI 0.93+ introduced the `lifespan` parameter, which replaces `@app.on_event()` with a single async context manager:
+
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def app_lifespan(app: FastAPI):
+    # ── Startup ──
+    print("Starting up...")
+    app.state.db_pool = await asyncpg.create_pool(...)
+    app.state.redis = await redis.from_url(...)
+    yield
+    # ── Shutdown ──
+    print("Shutting down...")
+    await app.state.db_pool.close()
+    await app.state.redis.close()
+
+app = FastAPI(lifespan=app_lifespan)
+```
+
+**Why the lifespan pattern is better:**
+
+| Aspect | `@app.on_event()` | Lifespan |
+|--------|-------------------|----------|
+| Grouping | Startup and shutdown are separate decorators | Both phases in one function — paired |
+| Error safety | Exception in startup may skip shutdown | `finally` semantics — cleanup always runs if setup succeeded |
+| Type safety | `app.state` is typed as `State` | Same, but more explicit about initialization order |
+| Testing | Harder to trigger startup/shutdown in tests | Directly callable in test fixtures |
+| ASGI compliance | Custom FastAPI extension | Native ASGI lifespan protocol |
+
+## Connecting a Database on Startup
+
+### SQLAlchemy with Async Engine
+
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
+@asynccontextmanager
+async def db_lifespan(app: FastAPI):
+    engine = create_async_engine(
+        "postgresql+asyncpg://user:pass@localhost/db",
+        pool_size=5,
+        max_overflow=10,
+    )
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    app.state.db_engine = engine
+    app.state.db_session_factory = session_factory
+    yield
+    await engine.dispose()
+
+app = FastAPI(lifespan=db_lifespan)
+
+async def get_db():
+    async with app.state.db_session_factory() as session:
+        yield session
+
+@app.get("/items")
+async def list_items(db=Depends(get_db)):
+    result = await db.execute("SELECT * FROM items")
+    return result.scalars().all()
+```
+
+### Redis Client
+
+```python
+import redis.asyncio as aioredis
+
+@asynccontextmanager
+async def redis_lifespan(app: FastAPI):
+    redis_client = aioredis.from_url("redis://localhost:6379", decode_responses=True)
+    app.state.redis = redis_client
+    yield
+    await redis_client.close()
+
+app = FastAPI(lifespan=redis_lifespan)
+```
+
+### ML Model Loading
+
+```python
+import joblib
+from pathlib import Path
+
+@asynccontextmanager
+async def model_lifespan(app: FastAPI):
+    model_path = Path("models/classifier.pkl")
+    app.state.model = joblib.load(model_path)
+    app.state.vectorizer = joblib.load(Path("models/vectorizer.pkl"))
+    yield
+    # Models are read-only — no explicit cleanup needed
+
+app = FastAPI(lifespan=model_lifespan)
+
+@app.post("/predict")
+async def predict(text: str):
+    vec = app.state.vectorizer.transform([text])
+    pred = app.state.model.predict(vec)
+    return {"prediction": pred.tolist()}
+```
+
+## Cleanup on Shutdown
+
+Proper shutdown ensures zero data loss and clean resource teardown:
+
+```python
+import signal
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Startup ──
+    app.state.task_queue = asyncio.Queue()
+    app.state.shutdown_event = asyncio.Event()
+
+    async def worker():
+        while not app.state.shutdown_event.is_set():
+            try:
+                task = await asyncio.wait_for(
+                    app.state.task_queue.get(), timeout=1.0
+                )
+                # process task...
+            except asyncio.TimeoutError:
+                continue
+
+    task = asyncio.create_task(worker())
+    yield
+    # ── Shutdown ──
+    app.state.shutdown_event.set()
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+    # Now it's safe to close connections
+```
+
+### Graceful Shutdown with Database
+
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    engine = create_async_engine(DATABASE_URL)
+    app.state.db = engine
+
+    yield  # Server runs here
+
+    # Graceful shutdown steps:
+    print("Initiating graceful shutdown...")
+
+    # 1. Stop accepting new requests (ASGI server handles this)
+    # 2. Wait for in-flight requests to finish
+    await asyncio.sleep(0.5)
+
+    # 3. Close DB connections
+    await engine.dispose()
+    print("Database connections closed.")
+```
+
+## Combining Multiple Lifespan Concerns
+
+When you need to initialize several resources, compose them:
+
+```python
+from contextlib import asynccontextmanager, ExitStack
+
+@asynccontextmanager
+async def combined_lifespan(app: FastAPI):
+    # Phase 1: Initialize
+    db_engine = create_async_engine(DATABASE_URL)
+    redis_client = aioredis.from_url(REDIS_URL)
+    model = joblib.load("model.pkl")
+
+    app.state.db = db_engine
+    app.state.redis = redis_client
+    app.state.model = model
+
+    yield
+
+    # Phase 2: Shutdown (reverse order)
+    await redis_client.close()
+    await db_engine.dispose()
+
+app = FastAPI(lifespan=combined_lifespan)
+```
+
+Or use `contextlib.AsyncExitStack` for more complex dependency chains:
+
+```python
+@asynccontextmanager
+async def complex_lifespan(app: FastAPI):
+    async with AsyncExitStack() as stack:
+        db = await stack.enter_async_context(
+            create_async_engine(DATABASE_URL).connect()
+        )
+        redis = await stack.enter_async_context(
+            aioredis.from_url(REDIS_URL)
+        )
+        app.state.db = db
+        app.state.redis = redis
+        yield
+    # AsyncExitStack ensures cleanup in reverse order
+```
+
+## Mixing `on_event` and Lifespan
+
+FastAPI allows both, but **do not mix them** — the behavior is undefined:
+
+```python
+# ❌ BAD: mixing both approaches
+app = FastAPI(lifespan=my_lifespan)
+
+@app.on_event("startup")
+async def extra_startup():
+    pass  # May or may not run
+```
+
+Choose one. Lifespan is the recommended modern approach.
+
+## Testing Startup/Shutdown
+
+When using `TestClient`, startup and shutdown events are **not** triggered by default. Call them manually or set `raise_server_exceptions=False`:
+
+```python
+from fastapi.testclient import TestClient
+
+def test_with_lifespan():
+    # Lifespan context manager runs inside TestClient
+    # if using FastAPI with lifespan parameter
+    with TestClient(app) as client:
+        response = client.get("/items")
+        assert response.status_code == 200
+    # shutdown runs after exiting the `with` block
+```
+
+For `@app.on_event()` handlers, trigger them explicitly:
+
+```python
+def test_on_event_handlers():
+    # Manually trigger startup
+    app.router.startup()
+    # Or for lifespan:
+    # app.router.lifespan_context(app)
+    client = TestClient(app)
+    response = client.get("/items")
+    assert response.status_code == 200
+```
+
+## Key Takeaways
+
+- Use `@app.on_event("startup")` / `@app.on_event("shutdown")` for simple startup/shutdown logic
+- Use the **lifespan parameter** (`FastAPI(lifespan=...)`) for paired, cleanable, and ASGI-compliant lifecycle management — the recommended approach since FastAPI 0.93+
+- Store initialized resources on `app.state` (e.g., `app.state.db_pool`) to access them in route handlers
+- Always clean up connections (DB pools, Redis, HTTP clients) on shutdown to avoid resource leaks
+- Do not mix `@app.on_event()` and the lifespan parameter — choose one pattern
+- `TestClient` handles lifespan context managers automatically when used as a context manager

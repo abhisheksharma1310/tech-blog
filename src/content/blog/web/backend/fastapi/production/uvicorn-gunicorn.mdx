@@ -1,0 +1,272 @@
+---
+title: "Running with Uvicorn & Gunicorn"
+description: "Configure Uvicorn and Gunicorn for production FastAPI deployments — process management, worker types, bind options, and logging"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Production"]
+tags: ["FastAPI", "Uvicorn", "Gunicorn", "Production", "ASGI", "Deployment"]
+slug: "fastapi-uvicorn-gunicorn"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Uvicorn vs Gunicorn + Uvicorn Workers
+
+FastAPI is an **ASGI** framework, so it requires an ASGI server. Two common approaches:
+
+| Approach | Command | Use Case |
+|---|---|---|
+| **Uvicorn directly** | `uvicorn app.main:app` | Simple deployments, containers, single-process |
+| **Gunicorn + Uvicorn workers** | `gunicorn -k uvicorn.workers.UvicornWorker` | Multi-process, production servers, process management |
+
+Uvicorn is a lightning-fast ASGI server written in Rust-backed `uvloop`. Gunicorn is a mature WSGI HTTP server that provides **process management** (worker spawning, restart, signals) — and can delegate to Uvicorn workers to handle ASGI apps.
+
+## Running Uvicorn Directly
+
+Suitable for containers (Docker, Kubernetes) where the orchestrator manages processes:
+
+```bash
+pip install uvicorn
+
+# Basic
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Production settings
+uvicorn app.main:app \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --workers 4 \
+  --loop uvloop \
+  --http httptools \
+  --log-level info
+```
+
+### Key Uvicorn Options
+
+| Option | Description |
+|---|---|
+| `--host` | Bind address (`0.0.0.0` for all interfaces) |
+| `--port` | Port number |
+| `--workers` | Number of worker processes |
+| `--loop` | Event loop (`uvloop` is fastest on Linux) |
+| `--http` | HTTP parser (`httptools` is fastest) |
+| `--log-level` | Logging verbosity |
+
+### `--reload` is for Development Only
+
+```bash
+# ❌ Never use in production
+uvicorn app.main:app --reload
+
+# ✅ Production — no reload
+uvicorn app.main:app --workers 4
+```
+
+`--reload` watches the filesystem for changes and restarts the server. This adds overhead, exposes the filesystem, and prevents proper signal handling. Container orchestrators (Kubernetes, Docker Swarm) handle restarts via health checks.
+
+## Running with Gunicorn + Uvicorn Workers
+
+Gunicorn brings battle-tested process management to ASGI apps:
+
+```bash
+pip install gunicorn uvicorn
+
+gunicorn app.main:app \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:8000 \
+  --workers 4 \
+  --timeout 120 \
+  --keep-alive 5 \
+  --max-requests 1000 \
+  --max-requests-jitter 50 \
+  --log-level info \
+  --access-logfile -
+```
+
+### Gunicorn Worker Types
+
+| Worker Class | ASGI | When to Use |
+|---|---|---|
+| `uvicorn.workers.UvicornWorker` | Yes | Standard FastAPI apps |
+| `uvicorn.workers.UvicornH11Worker` | Yes | Pure-Python HTTP (no httptools) |
+| `uvicorn.workers.UvicornWorker` (uvloop) | Yes | **Recommended** — fastest on Linux |
+
+```python
+# config/gunicorn.conf.py
+import multiprocessing
+
+bind = "0.0.0.0:8000"
+worker_class = "uvicorn.workers.UvicornWorker"
+workers = multiprocessing.cpu_count() * 2 + 1
+timeout = 120
+keepalive = 5
+max_requests = 1000
+max_requests_jitter = 50
+graceful_timeout = 30
+log_level = "info"
+accesslog = "-"
+errorlog = "-"
+```
+
+Run with a config file:
+
+```bash
+gunicorn app.main:app -c config/gunicorn.conf.py
+```
+
+### Gunicorn Process Management
+
+```
+┌─────────────────────────────────────────────┐
+│           Gunicorn Master (PID 1)            │
+│          ┌───────────┬───────────┐          │
+│          │   Arbiter  │  Listener │          │
+│          └─────┬─────┴─────┬─────┘          │
+│                │           │                 │
+│   ┌────────────┼───────────┼────────────┐   │
+│   │      ┌─────┴─────┐ ┌──┴──────┐     │   │
+│   │      │ Worker 1  │ │ Worker 2│ ... │   │
+│   │      │ Uvicorn   │ │ Uvicorn │     │   │
+│   │      └───────────┘ └─────────┘     │   │
+│   └────────────────────────────────────┘   │
+└─────────────────────────────────────────────┘
+```
+
+- **Master process** — manages workers, handles signals (HUP, TERM, USR2)
+- **Worker processes** — each runs a Uvicorn ASGI server instance
+- **Auto-restart** — if a worker crashes, the master spawns a replacement
+- **Graceful shutdown** — `TERM` signal: master stops accepting connections, waits for in-flight requests (up to `timeout`), then kills workers
+
+## Signal Handling
+
+| Signal | Gunicorn | Uvicorn |
+|---|---|---|
+| `SIGHUP` | Reload config, restart workers | N/A |
+| `SIGTERM` | Graceful shutdown | Graceful shutdown |
+| `SIGUSR2` | Spawn new master (zero-downtime deploy) | N/A |
+| `SIGTTIN` | Increase workers by 1 | N/A |
+| `SIGTTOU` | Decrease workers by 1 | N/A |
+
+## Zero-Downtime Reload with Gunicorn
+
+```bash
+# Graceful restart with new code
+kill -HUP <gunicorn-master-pid>
+
+# Or spawn a new master alongside the old one
+kill -USR2 <gunicorn-master-pid>
+```
+
+## Logging Configuration
+
+### Uvicorn Logging
+
+```python
+# logging_config.py
+import logging
+
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        },
+        "access": {
+            "format": "%(asctime)s [%(levelname)s] %(client_addr)s - %(request_line)s %(status_code)s",
+        },
+    },
+    "handlers": {
+        "default": {
+            "formatter": "default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+        },
+        "access": {
+            "formatter": "access",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+        },
+    },
+    "loggers": {
+        "uvicorn": {"handlers": ["default"], "level": "INFO"},
+        "uvicorn.error": {"handlers": ["default"], "level": "INFO"},
+        "uvicorn.access": {"handlers": ["access"], "level": "INFO"},
+    },
+}
+```
+
+Pass it when creating the FastAPI app:
+
+```python
+import uvicorn
+
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, log_config=LOGGING_CONFIG)
+```
+
+### Structured JSON Logging
+
+```bash
+pip install python-json-logger
+```
+
+```python
+from pythonjsonlogger import jsonlogger
+
+LOGGING_CONFIG["formatters"]["default"] = {
+    "()": jsonlogger.JsonFormatter,
+    "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
+}
+```
+
+## Choosing Between Uvicorn and Gunicorn
+
+| Factor | Uvicorn Direct | Gunicorn + Uvicorn |
+|---|---|---|
+| **Process management** | Manual | Automatic (master/worker) |
+| **Zero-downtime deploy** | Manual (load balancer) | Built-in (USR2 signal) |
+| **Worker count config** | `--workers N` | `--workers N` + dynamic signals |
+| **Docker / K8s** | ✅ Simpler, single process | Optional (K8s handles restart) |
+| **Traditional VPS** | Less common | ✅ Recommended |
+| **Memory overhead** | Lower | Slightly higher (master process) |
+
+On a typical VPS or bare-metal server, **Gunicorn + UvicornWorkers** is the standard choice. In containers where the orchestrator manages processes, running **Uvicorn directly** is simpler and equally robust.
+
+## Health Check Endpoint
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+
+@app.get("/health")
+def health_check():
+    return JSONResponse(
+        content={"status": "healthy"},
+        status_code=200,
+        headers={"Cache-Control": "no-store"},
+    )
+```
+
+Configure Gunicorn to use it:
+
+```python
+# gunicorn.conf.py
+from app.main import app
+
+# Or use a readiness endpoint approach with
+# gunicorn --check-config ...
+```
+
+For Kubernetes, add liveness and readiness probes pointing to `/health`.
+
+## Key Takeaways
+
+- Use **Uvicorn directly** (`--workers N`) in Docker/Kubernetes where the orchestrator handles process management
+- Use **Gunicorn + UvicornWorker** on bare-metal/VPS for automatic worker management, signals, and zero-downtime reloads
+- **Never use `--reload` in production** — it adds overhead and bypasses signal handling
+- Set `--workers` to `2 * CPU_COUNT + 1` for most workloads; tune with `--max-requests` to prevent memory leaks
+- Configure structured JSON logging for production log aggregation (ELK, Datadog, Grafana Loki)
+- Always expose a `/health` endpoint for load balancer and orchestrator health checks

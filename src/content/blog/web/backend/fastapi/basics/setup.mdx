@@ -1,0 +1,256 @@
+---
+title: "Installing FastAPI & Uvicorn"
+description: "Set up your FastAPI development environment with virtual environments, Uvicorn, and hot reload"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Basics"]
+tags: ["FastAPI", "Python", "Setup", "Uvicorn", "Virtual Environment"]
+slug: "fastapi-setup"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## Prerequisites
+
+You need **Python 3.8 or newer**. Check your version:
+
+```bash
+python --version
+# Python 3.12.3
+```
+
+If you don't have Python installed, download it from [python.org](https://python.org).
+
+## Creating a Virtual Environment
+
+Always use a virtual environment to isolate project dependencies:
+
+```bash
+# Create project directory
+mkdir fastapi-tutorial
+cd fastapi-tutorial
+
+# Create virtual environment
+python -m venv .venv
+
+# Activate it
+# Linux / macOS:
+source .venv/bin/activate
+
+# Windows (PowerShell):
+# .venv\Scripts\Activate.ps1
+
+# Windows (CMD):
+# .venv\Scripts\activate.bat
+```
+
+Your prompt should change to show `(.venv)`:
+
+```
+(.venv) ~/fastapi-tutorial $
+```
+
+## Installing FastAPI and Uvicorn
+
+```bash
+pip install fastapi uvicorn
+```
+
+This installs:
+
+| Package | Role |
+|---|---|
+| **fastapi** | The framework itself (includes Starlette and Pydantic) |
+| **uvicorn** | ASGI server that runs your FastAPI application |
+
+Installation verification:
+
+```bash
+pip list | grep -E "fastapi|uvicorn|starlette|pydantic"
+# fastapi       0.115.0
+# uvicorn       0.30.0
+# starlette     0.40.0
+# pydantic      2.9.0
+```
+
+## Recommended Project Structure
+
+A minimal but scalable project layout:
+
+```
+fastapi-tutorial/
+├── .venv/                  # Virtual environment (ignored by git)
+├── app/
+│   ├── __init__.py
+│   ├── main.py             # FastAPI application instance
+│   ├── models.py           # Pydantic models
+│   ├── routers/            # Route modules
+│   │   ├── __init__.py
+│   │   ├── items.py
+│   │   └── users.py
+│   └── config.py           # Settings / env variables
+├── requirements.txt        # Pin dependencies
+└── .gitignore
+```
+
+For this tutorial series, we'll keep things simple with a single `main.py`.
+
+## Your Minimal Server
+
+Create `app/main.py`:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
+```
+
+## Running with Uvicorn
+
+From the project root, run:
+
+```bash
+uvicorn app.main:app
+```
+
+```
+INFO:     Started server process [12345]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000
+```
+
+**Breaking down `app.main:app`:**
+
+```
+app.main  →  the module (app/main.py)
+      :app  →  the variable name in that module (app = FastAPI())
+```
+
+Visit **http://127.0.0.1:8000** — you should see:
+
+```json
+{"message": "Hello World"}
+```
+
+Visit **http://127.0.0.1:8000/docs** — the auto-generated Swagger UI.
+
+## Common Uvicorn Options
+
+```bash
+# Change host and port
+uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+# Hot reload (restarts on file changes)
+uvicorn app.main:app --reload
+
+# Reload with explicit watch directory
+uvicorn app.main:app --reload --reload-dir app
+
+# Set log level
+uvicorn app.main:app --log-level debug
+
+# Use a different ASGI server (Hypercorn supports HTTP/2)
+pip install hypercorn
+hypercorn app.main:app
+```
+
+## Hot Reload in Detail
+
+The `--reload` flag watches your Python files and restarts the server automatically when you save changes:
+
+```
+File changed: app/main.py
+INFO:     Detected file change: 'app/main.py'
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Started server process [12346]
+INFO:     Application startup complete.
+```
+
+This makes the edit → refresh loop nearly instant.
+
+## VS Code Setup (Optional)
+
+Recommended extensions:
+
+| Extension | Purpose |
+|---|---|
+| **Python** (ms-python.python) | IntelliSense, linting, debugging |
+| **Pylance** (ms-python.vscode-pylance) | Fast type checking with pyright |
+| **Python Test Explorer** | Run tests inline |
+
+Create `.vscode/settings.json` for proper environment detection:
+
+```json
+{
+  "python.defaultInterpreterPath": ".venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "files.exclude": {
+    ".venv": true,
+    "**/__pycache__": true
+  }
+}
+```
+
+Add a launch configuration (`.vscode/launch.json`) for debugging:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FastAPI Debug",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["app.main:app", "--reload"],
+      "jinja": true
+    }
+  ]
+}
+```
+
+Now you can set breakpoints and press **F5** to debug.
+
+## Freezing Dependencies
+
+Freeze your installed packages to `requirements.txt`:
+
+```bash
+pip freeze > requirements.txt
+```
+
+This should include at minimum:
+
+```
+fastapi>=0.100.0
+uvicorn>=0.20.0
+```
+
+## Verify Everything Works
+
+```bash
+# 1. Activate virtual environment
+source .venv/bin/activate
+
+# 2. Start the server with hot reload
+uvicorn app.main:app --reload
+
+# 3. In another terminal, test the endpoint
+curl http://127.0.0.1:8000
+# {"message": "Hello World"}
+```
+
+## Key Takeaways
+
+- Use **`python -m venv .venv`** to isolate dependencies, then activate with `source .venv/bin/activate`
+- Install with **`pip install fastapi uvicorn`** — Uvicorn is the ASGI server that runs the app
+- Start the server: **`uvicorn app.main:app --reload`** — the `--reload` flag enables hot reload
+- Visit **`/docs`** for auto-generated Swagger UI, **`/openapi.json`** for the raw spec
+- Use VS Code with Python + Pylance extensions and a proper launch config for debugging

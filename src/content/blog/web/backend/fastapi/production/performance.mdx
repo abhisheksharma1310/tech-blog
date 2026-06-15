@@ -1,0 +1,421 @@
+---
+title: "Performance Optimization (Caching, Async Workers)"
+description: "Optimize FastAPI performance with Redis caching, CDN for static assets, database query optimization, connection pooling, gzip middleware, and profiling"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Production"]
+tags: ["FastAPI", "Performance", "Caching", "Redis", "Async", "Profiling", "Optimization"]
+slug: "fastapi-performance"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Performance Bottlenecks in FastAPI
+
+```
+Request Flow:
+Client → Nginx → Uvicorn → FastAPI → Database
+           │                   │          │
+           ▼                   ▼          ▼
+      Static Files        Cache         Pool
+       (CDN)           (Redis)      (Connection)
+```
+
+Common bottlenecks and where they occur:
+
+| Layer | Bottleneck | Solution |
+|---|---|---|
+| **Network** | Latency, bandwidth | CDN, compression, HTTP/2 |
+| **Application** | Slow endpoints, serialization | Caching, async I/O |
+| **Database** | N+1 queries, no indexes | Query optimization, connection pooling |
+| **Server** | Worker starvation, memory leaks | Tune worker count, restart limits |
+
+## Response Caching with Redis
+
+### Setup Redis
+
+```bash
+pip install redis
+```
+
+### Cache Decorator
+
+```python
+import json
+import hashlib
+from functools import wraps
+from typing import Any, Callable
+import redis.asyncio as aioredis
+
+redis_client = aioredis.from_url("redis://localhost:6379/0", decode_responses=True)
+
+
+def cache(ttl: int = 300):
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Build cache key from function name + arguments
+            key = f"{func.__name__}:{hashlib.md5(str(args).encode() + str(kwargs).encode()).hexdigest()}"
+
+            cached = await redis_client.get(key)
+            if cached is not None:
+                return json.loads(cached)
+
+            result = await func(*args, **kwargs)
+            await redis_client.setex(key, ttl, json.dumps(result, default=str))
+            return result
+        return wrapper
+    return decorator
+
+
+# Usage
+@app.get("/posts/{post_id}")
+@cache(ttl=120)
+async def get_post(post_id: int):
+    # Expensive database query
+    return await db.fetch_one(post_id)
+```
+
+### Cache Invalidation Strategies
+
+| Strategy | How | When to Use |
+|---|---|---|
+| **TTL-based** | `redis.setex(key, ttl, value)` | Read-heavy, stale data acceptable |
+| **Write-through** | Update cache when DB writes occur | High consistency required |
+| **Cache-aside** | App checks cache first, falls back to DB | General purpose |
+| **Event-driven** | Invalidate via message queue on update | Distributed systems |
+
+### Write-Through Invalidation Example
+
+```python
+@app.post("/posts")
+async def create_post(payload: PostCreate):
+    post = await db.create_post(payload)
+    # Invalidate list cache
+    await redis_client.delete("get_posts:*")
+    return post
+
+
+@app.put("/posts/{post_id}")
+async def update_post(post_id: int, payload: PostUpdate):
+    post = await db.update_post(post_id, payload)
+    # Invalidate specific post and list
+    await redis_client.delete(f"get_post:*{post_id}*")
+    await redis_client.delete("get_posts:*")
+    return post
+```
+
+## CDN for Static Assets
+
+Offload static files (images, CSS, JS) to a CDN:
+
+```python
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+app = FastAPI()
+
+# In development — serve static files directly
+if settings.ENVIRONMENT == "development":
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+```
+
+In production, configure Nginx (or a CDN like Cloudflare, CloudFront) to serve `/static/` directly:
+
+```nginx
+location /static/ {
+    root /usr/share/nginx/html;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+```
+
+Or upload to S3 + CloudFront:
+
+```python
+import boto3
+
+s3_client = boto3.client("s3")
+
+@app.post("/upload")
+async def upload_file(file: UploadFile):
+    await s3_client.upload_fileobj(file.file, "my-bucket", file.filename)
+    return {"url": f"https://cdn.example.com/{file.filename}"}
+```
+
+## Database Query Optimization
+
+### N+1 Query Problem
+
+```python
+# ❌ N+1 — makes N+1 database calls
+async def get_authors_with_books():
+    authors = await db.fetch_all("SELECT * FROM authors")
+    for author in authors:
+        books = await db.fetch_all(
+            "SELECT * FROM books WHERE author_id = $1", author["id"]
+        )
+        author["books"] = books
+    return authors
+
+
+# ✅ Eager loading — 2 queries total
+async def get_authors_with_books():
+    authors = await db.fetch_all("SELECT * FROM authors")
+    author_ids = [a["id"] for a in authors]
+    books = await db.fetch_all(
+        "SELECT * FROM books WHERE author_id = ANY($1)", author_ids
+    )
+    books_by_author = defaultdict(list)
+    for book in books:
+        books_by_author[book["author_id"]].append(book)
+    for author in authors:
+        author["books"] = books_by_author[author["id"]]
+    return authors
+```
+
+### Index Strategy
+
+```sql
+-- Slow: sequential scan
+SELECT * FROM posts WHERE published_at > '2024-01-01';
+
+-- Add index for filter columns
+CREATE INDEX idx_posts_published_at ON posts (published_at);
+
+-- Composite index for common query patterns
+CREATE INDEX idx_posts_author_published ON posts (author_id, published_at DESC);
+```
+
+### Pagination (Keyset vs Offset)
+
+```python
+# ❌ Offset pagination — slow on large datasets
+@app.get("/posts")
+async def get_posts(offset: int = 0, limit: int = 20):
+    return await db.fetch_all(
+        "SELECT * FROM posts ORDER BY id LIMIT $1 OFFSET $2",
+        limit, offset
+    )
+
+
+# ✅ Keyset pagination — fast, stable
+@app.get("/posts")
+async def get_posts(cursor: int | None = None, limit: int = 20):
+    if cursor:
+        query = "SELECT * FROM posts WHERE id > $1 ORDER BY id LIMIT $2"
+        return await db.fetch_all(query, cursor, limit)
+    return await db.fetch_all(
+        "SELECT * FROM posts ORDER BY id LIMIT $1", limit
+    )
+```
+
+## Connection Pooling
+
+Creating a new database connection per request is expensive. Use connection pooling:
+
+### Database-Agnostic Pooling
+
+```python
+from asyncpg import create_pool
+
+class DatabasePool:
+    def __init__(self, dsn: str, min_size: int = 5, max_size: int = 20):
+        self.dsn = dsn
+        self.min_size = min_size
+        self.max_size = max_size
+        self.pool = None
+
+    async def connect(self):
+        self.pool = await create_pool(
+            self.dsn,
+            min_size=self.min_size,
+            max_size=self.max_size,
+            command_timeout=60,
+        )
+
+    async def disconnect(self):
+        if self.pool:
+            await self.pool.close()
+
+    async def fetch(self, query: str, *args):
+        async with self.pool.acquire() as conn:
+            return await conn.fetch(query, *args)
+
+
+# In app/main.py
+pool = DatabasePool(settings.DATABASE_URL)
+
+
+@app.on_event("startup")
+async def startup():
+    await pool.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await pool.disconnect()
+```
+
+### SQLAlchemy Async Pool
+
+```python
+from sqlalchemy.ext.asyncio import create_async_engine
+
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    pool_size=20,
+    max_overflow=10,
+    pool_pre_ping=True,
+    pool_recycle=3600,
+)
+```
+
+| Parameter | Purpose |
+|---|---|
+| `pool_size` | Number of persistent connections |
+| `max_overflow` | Additional connections allowed beyond pool_size |
+| `pool_pre_ping` | Test connection before using (prevents stale connections) |
+| `pool_recycle` | Recycle connections after N seconds |
+
+## Gzip Middleware
+
+Compress responses to reduce bandwidth:
+
+```python
+from fastapi.middleware.gzip import GZipMiddleware
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+```
+
+| Setting | Effect |
+|---|---|
+| `minimum_size=1000` | Only compress responses > 1 KB |
+| **Trade-off** | CPU vs bandwidth — compress on the fly or offload to Nginx/CDN |
+
+For production, prefer Nginx's `gzip` module over app-level compression:
+
+```nginx
+gzip on;
+gzip_types application/json text/plain text/css application/javascript;
+gzip_min_length 1000;
+gzip_comp_level 6;
+gzip_proxied any;
+```
+
+## Profiling with cProfile
+
+Identify slow endpoints before they reach production:
+
+```python
+import cProfile
+import io
+import pstats
+from fastapi import FastAPI, Request
+from fastapi.responses import PlainTextResponse
+
+app = FastAPI()
+
+
+@app.middleware("http")
+async def profile_middleware(request: Request, call_next):
+    if request.query_params.get("profile") == "1":
+        profiler = cProfile.Profile()
+        profiler.enable()
+        response = await call_next(request)
+        profiler.disable()
+
+        s = io.StringIO()
+        ps = pstats.Stats(profiler, stream=s).sort_stats("cumtime")
+        ps.print_stats(20)
+        return PlainTextResponse(s.getvalue())
+
+    return await call_next(request)
+```
+
+```bash
+# Profile a specific request
+curl "http://localhost:8000/slow-endpoint?profile=1"
+```
+
+### Third-Party Profiling Tools
+
+| Tool | Purpose | Install |
+|---|---|---|
+| **py-spy** | Sampling profiler (no code change) | `pip install py-spy` |
+| **scalene** | CPU, memory, line-level profiler | `pip install scalene` |
+| **sentry** | Production error tracking + profiling | `pip install sentry-sdk` |
+| **opentelemetry** | Distributed tracing | `pip install opentelemetry-api` |
+
+### py-spy Example
+
+```bash
+# Profile running process
+py-spy record -o profile.svg --pid $(pgrep -f uvicorn) --duration 30
+
+# Or profile on startup
+py-spy record -o profile.svg -- uvicorn app.main:app
+```
+
+## Async Worker Configuration
+
+### Uvicorn Workers
+
+```bash
+# Optimal for I/O-bound workloads
+uvicorn app.main:app --workers $(nproc) --loop uvloop --http httptools
+```
+
+Rule of thumb: `workers = 2 * CPU_COUNT + 1` for most workloads. Tune based on profiling.
+
+### Background Tasks
+
+```python
+from fastapi import BackgroundTasks
+
+def send_welcome_email(email: str):
+    # Slow I/O — runs in a background thread
+    ...
+
+
+@app.post("/users")
+async def create_user(payload: UserCreate, tasks: BackgroundTasks):
+    user = await db.create_user(payload)
+    tasks.add_task(send_welcome_email, user.email)
+    return user
+```
+
+For CPU-bound tasks, use a separate process pool:
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+import asyncio
+
+executor = ProcessPoolExecutor(max_workers=4)
+
+
+async def run_cpu_bound(data: bytes) -> bytes:
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(executor, heavy_computation, data)
+```
+
+## Performance Checklist
+
+- [ ] Cache: Redis for expensive/database queries
+- [ ] CDN: Static files served from edge, not app
+- [ ] DB: Indexes on filter/join columns
+- [ ] DB: Keyset pagination over offset
+- [ ] Pool: Connection pool with `pool_pre_ping=True`
+- [ ] Compression: Gzip enabled (Nginx preferred over app)
+- [ ] Workers: Count tuned per CPU cores
+- [ ] Profiling: Regular profiles with py-spy or cProfile
+- [ ] Tracing: OpenTelemetry for distributed tracing
+- [ ] Timeouts: Request timeout, DB timeout, idle timeout
+
+## Key Takeaways
+
+- **Cache aggressively with Redis** — use TTL-based caching for read-heavy endpoints and write-through invalidation for consistency
+- **Offload static assets to a CDN** — Nginx, Cloudflare, or S3 + CloudFront — never serve static files from the Python process
+- **Optimize database queries** — avoid N+1 with eager loading, add indexes, and prefer keyset pagination over offset for large datasets
+- **Use connection pooling** with `pool_pre_ping=True` to reuse connections and detect stale ones
+- **Profile before optimizing** — use cProfile, py-spy, or OpenTelemetry to identify real bottlenecks rather than guessing
+- **Offload CPU-bound work** to a process pool and I/O-bound work to background tasks or external queues (Celery, RabbitMQ)

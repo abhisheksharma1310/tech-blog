@@ -1,0 +1,330 @@
+---
+title: "WebSockets for Real-Time Apps"
+description: "Build real-time features with FastAPI WebSockets — connection handling, broadcast patterns, disconnect management, and authenticating WebSocket connections with OAuth2"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Advanced"]
+tags: ["FastAPI", "WebSockets", "Real-Time", "OAuth2", "Python"]
+slug: "fastapi-websockets"
+author: "Abhishek Sharma"
+order: 2
+---
+
+## What Are WebSockets?
+
+WebSockets provide a **full-duplex**, persistent connection between client and server. Unlike HTTP (request-response), both sides can push messages at any time — ideal for chat apps, live notifications, collaborative editing, and real-time dashboards.
+
+```
+HTTP:    Client ──request──► Server ──response──► Client  (close)
+WebSocket: Client ──open──► Server ◄══messages══► Client  (persistent)
+```
+
+FastAPI supports WebSockets natively through Starlette's ASGI foundation — no additional libraries required.
+
+## Basic WebSocket Endpoint
+
+Use `@app.websocket()` to declare a WebSocket route:
+
+```python
+from fastapi import FastAPI, WebSocket
+
+app = FastAPI()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Echo: {data}")
+```
+
+**The lifecycle:**
+
+| Step | Code | Description |
+|------|------|-------------|
+| 1. Accept | `await websocket.accept()` | Server accepts the upgrade |
+| 2. Receive | `await websocket.receive_text()` | Wait for a text message |
+| 3. Send | `await websocket.send_text(...)` | Push a message to the client |
+| 4. Close | Connection drops | Client or server closes |
+
+## Message Types
+
+| Method | Returns | Use for |
+|--------|---------|---------|
+| `receive_text()` | `str` | JSON / plain text |
+| `receive_bytes()` | `bytes` | Binary (images, protobuf) |
+| `receive_json()` | `dict/list` | Auto-parsed JSON |
+| `send_text(data)` | — | Text response |
+| `send_bytes(data)` | — | Binary response |
+| `send_json(data)` | — | Auto-serialized JSON |
+
+```python
+@app.websocket("/ws-json")
+async def websocket_json(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_json()
+        await websocket.send_json({"received": data, "ok": True})
+```
+
+## Handling Disconnections
+
+When a client disconnects, `receive_*()` raises `WebSocketDisconnect`. Catch it to clean up:
+
+```python
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+
+active_connections: set[WebSocket] = set()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    active_connections.add(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # broadcast to all connected clients
+            for conn in active_connections:
+                await conn.send_text(data)
+    except WebSocketDisconnect:
+        active_connections.discard(websocket)
+```
+
+Without the `try/except`, the connection would leak — the socket stays in `active_connections` even after the client disconnects.
+
+## Broadcast Pattern
+
+A simple in-memory broadcast manager:
+
+```python
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+
+class ConnectionManager:
+    def __init__(self):
+        self.active: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active.remove(websocket)
+
+    async def broadcast(self, message: str):
+        for connection in self.active:
+            try:
+                await connection.send_text(message)
+            except WebSocketDisconnect:
+                self.disconnect(connection)
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/chat")
+async def chat_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.broadcast(f"[{id(websocket)}] {data}")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+```
+
+### Scaling Broadcast with Redis Pub/Sub
+
+For multi-process or multi-server deployments, use Redis Pub/Sub instead of in-memory:
+
+```python
+import json
+import aioredis
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+
+class RedisBroadcaster:
+    def __init__(self, redis_url: str = "redis://localhost:6379"):
+        self.redis_url = redis_url
+        self.pub = None
+        self.sub = None
+
+    async def connect(self):
+        self.pub = await aioredis.from_url(self.redis_url)
+        self.sub = self.pub.pubsub()
+
+    async def publish(self, channel: str, message: str):
+        await self.pub.publish(channel, message)
+
+    async def subscribe(self, channel: str):
+        await self.sub.subscribe(channel)
+
+    async def listen(self):
+        async for msg in self.sub.listen():
+            if msg["type"] == "message":
+                yield msg["data"]
+
+broadcaster = RedisBroadcaster()
+
+@app.on_event("startup")
+async def startup():
+    await broadcaster.connect()
+
+@app.websocket("/ws/chat")
+async def chat(websocket: WebSocket):
+    await websocket.accept()
+    await broadcaster.subscribe("chat")
+
+    async def receive_loop():
+        while True:
+            msg = await websocket.receive_text()
+            await broadcaster.publish("chat", msg)
+
+    async def send_loop():
+        async for msg in broadcaster.listen():
+            await websocket.send_text(msg)
+
+    import asyncio
+    try:
+        await asyncio.gather(receive_loop(), send_loop())
+    except WebSocketDisconnect:
+        await broadcaster.sub.unsubscribe("chat")
+```
+
+## WebSocket + OAuth2 Authentication
+
+WebSocket connections cannot send custom headers during the upgrade handshake. The standard approach is to pass the token as a **query parameter**:
+
+```python
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+app = FastAPI()
+security = HTTPBearer()
+
+# ── Simulated token validation ──
+
+VALID_TOKENS = {"valid_token_123": "user_1"}
+
+async def get_user_from_token(token: str) -> str | None:
+    return VALID_TOKENS.get(token)
+
+@app.websocket("/ws/protected")
+async def protected_websocket(websocket: WebSocket, token: str = ""):
+    user_id = await get_user_from_token(token)
+    if user_id is None:
+        await websocket.close(code=4001, reason="Unauthorized")
+        return
+
+    await websocket.accept()
+    await websocket.send_text(f"Authenticated as {user_id}")
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"[{user_id}] {data}")
+    except WebSocketDisconnect:
+        pass
+```
+
+**Client-side (JavaScript):**
+
+```javascript
+const token = "valid_token_123";
+const ws = new WebSocket(`ws://localhost:8000/ws/protected?token=${token}`);
+
+ws.onopen = () => ws.send("Hello!");
+ws.onmessage = (event) => console.log(event.data);
+```
+
+### Using OAuth2 Dependency for WebSocket
+
+You can also validate tokens inside a dependency and raise `HTTPException` before the upgrade is accepted (works because the initial handshake is an HTTP request):
+
+```python
+from fastapi import FastAPI, WebSocket, Depends, HTTPException, status
+from fastapi.security import HTTPBearer
+
+app = FastAPI()
+bearer_scheme = HTTPBearer()
+
+async def verify_token(websocket: WebSocket) -> str:
+    # Read token from query param (or header during handshake)
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=4001)
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    user_id = {"valid_token": "user_1"}.get(token)
+    if not user_id:
+        await websocket.close(code=4001)
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return user_id
+
+@app.websocket("/ws/deps")
+async def deps_websocket(websocket: WebSocket, user_id: str = Depends(verify_token)):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"[{user_id}] {data}")
+```
+
+## WebSocket in the Interactive Docs
+
+FastAPI's `/docs` (Swagger UI) does not natively support WebSocket testing. However, the WebSocket path will appear in the OpenAPI schema generated at `/openapi.json`. For manual testing, use:
+
+- **Postman** — supports WebSocket connections
+- **websocat** — CLI WebSocket client (`websocat ws://localhost:8000/ws`)
+- **A simple HTML page** — embed a `<script>` block with `new WebSocket(...)`
+
+## Error Handling and Reconnection
+
+Clients should implement reconnection logic:
+
+```python
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import asyncio
+
+app = FastAPI()
+
+@app.websocket("/ws/reliable")
+async def reliable_websocket(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            try:
+                # Set a read timeout to detect stale connections
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30)
+                await websocket.send_text(f"OK: {data}")
+            except asyncio.TimeoutError:
+                # Send a heartbeat ping
+                await websocket.send_text("__ping__")
+    except WebSocketDisconnect:
+        pass
+```
+
+**Client reconnection (JavaScript):**
+
+```javascript
+function connect() {
+    const ws = new WebSocket("ws://localhost:8000/ws/reliable");
+
+    ws.onclose = () => {
+        console.log("Disconnected, reconnecting in 2s...");
+        setTimeout(connect, 2000);
+    };
+
+    ws.onerror = () => ws.close();
+}
+
+connect();
+```
+
+## Key Takeaways
+
+- Use `@app.websocket()` to declare a WebSocket endpoint — `accept()` then loop over `receive_*()` / `send_*()`
+- Always catch `WebSocketDisconnect` to clean up server-side resources
+- Use a `ConnectionManager` class for the broadcast pattern — iterate over active connections
+- For multi-process deployments, replace in-memory broadcast with Redis Pub/Sub
+- Pass OAuth2 tokens via query parameter (WebSocket handshake cannot set custom headers)
+- Implement heartbeat pings and client-side reconnection for production reliability

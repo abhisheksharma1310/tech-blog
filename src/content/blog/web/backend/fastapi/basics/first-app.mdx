@@ -1,0 +1,297 @@
+---
+title: "First FastAPI App (GET Endpoint)"
+description: "Build your first FastAPI application with a GET endpoint and explore auto-generated Swagger documentation"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Basics"]
+tags: ["FastAPI", "Python", "GET", "Swagger", "OpenAPI"]
+slug: "fastapi-first-app"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## The Minimal FastAPI App
+
+With FastAPI installed and Uvicorn ready, let's build our first API. Create `main.py`:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
+```
+
+Run it:
+
+```bash
+uvicorn main:app --reload
+```
+
+Visit **http://127.0.0.1:8000** — you get:
+
+```json
+{"message": "Hello World"}
+```
+
+That's it. You just built your first API endpoint.
+
+## Anatomy of the Code
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  from fastapi import FastAPI                             │
+│                                         ┌─────────────┐ │
+│  app = FastAPI()  ←─── create instance  │  "app" is   │ │
+│                                         │ the ASGI    │ │
+│                                         │ application │ │
+│  @app.get("/")    ←─── path operation   └─────────────┘ │
+│       └── decorator: ties the function to GET /         │
+│                                                         │
+│  def root():       ←─── path operation function         │
+│      return {"message": "Hello World"}                  │
+│             └── FastAPI auto-converts dict to JSON      │
+└─────────────────────────────────────────────────────────┘
+```
+
+### The Path Operation Decorator
+
+`@app.get("/")` is a **path operation decorator**. It tells FastAPI:
+
+```
+HTTP Method:  GET
+Path:         /
+Function:     root()
+```
+
+FastAPI provides decorators for every HTTP method:
+
+| Decorator | HTTP Method | Use Case |
+|---|---|---|
+| `@app.get()` | GET | Retrieve resources |
+| `@app.post()` | POST | Create resources |
+| `@app.put()` | PUT | Update/replace resources |
+| `@app.patch()` | PATCH | Partial updates |
+| `@app.delete()` | DELETE | Remove resources |
+| `@app.options()` | OPTIONS | Preflight CORS requests |
+| `@app.head()` | HEAD | Get headers only |
+
+## Adding More Endpoints
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
+
+
+@app.get("/ping")
+def ping():
+    return {"status": "ok", "message": "pong"}
+
+
+@app.get("/items")
+def list_items():
+    return [
+        {"id": 1, "name": "Laptop", "price": 999.99},
+        {"id": 2, "name": "Mouse", "price": 24.99},
+        {"id": 3, "name": "Keyboard", "price": 79.99},
+    ]
+```
+
+Now test:
+
+```bash
+curl http://127.0.0.1:8000/ping
+# {"status": "ok", "message": "pong"}
+
+curl http://127.0.0.1:8000/items
+# [{"id":1,"name":"Laptop","price":999.99}, ...]
+```
+
+## Return Types and Serialization
+
+FastAPI auto-serializes return values to JSON based on Python types:
+
+```python
+@app.get("/types")
+def type_demo():
+    return {
+        "string": "hello",
+        "int": 42,
+        "float": 3.14,
+        "bool": True,
+        "list": [1, 2, 3],
+        "dict": {"nested": "value"},
+        "none": None,
+    }
+```
+
+You can also return Pydantic models, ORM objects, or any type that can be serialized:
+
+```python
+from datetime import datetime
+
+@app.get("/time")
+def get_time():
+    return {"server_time": datetime.now().isoformat()}
+
+@app.get("/status-code")
+def custom_status():
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        content={"error": "Not authorized"},
+        status_code=401,
+    )
+```
+
+## Auto-Generated Swagger Docs
+
+FastAPI automatically generates **two** documentation UIs — zero configuration required.
+
+### /docs (Swagger UI)
+
+Visit **http://127.0.0.1:8000/docs**:
+
+```
+┌──────────────────────────────────────────────────────┐
+│  FastAPI Tutorial  ───  Swagger UI                    │
+│──────────────────────────────────────────────────────│
+│                                                        │
+│  GET /           ─── [Try it out] [Cancel]             │
+│  GET /ping       ─── [Try it out] [Cancel]             │
+│  GET /items      ─── [Try it out] [Cancel]             │
+│  GET /types      ─── [Try it out] [Cancel]             │
+│                                                        │
+│  Schemas:                                              │
+│  └── HTTPValidationError                               │
+│  └── ValidationError                                   │
+└──────────────────────────────────────────────────────┘
+```
+
+- Click **"Try it out"** on any endpoint
+- Hit **"Execute"** — it sends a real request and shows the response
+- Response body, headers, and status code are all displayed
+
+### /redoc (ReDoc)
+
+Visit **http://127.0.0.1:8000/redoc** for an alternative, more documentation-style view:
+
+```
+┌──────────────────────────────────────────────────────┐
+│  FastAPI Tutorial                                     │
+│                                                        │
+│  ─── Servers ───                                      │
+│  http://127.0.0.1:8000                                │
+│                                                        │
+│  ─── GET / ───                                        │
+│  Returns a welcome message                             │
+│                                                        │
+│  Responses:                                            │
+│  200: Successful Response                              │
+│  └── application/json                                  │
+└──────────────────────────────────────────────────────┘
+```
+
+### Customizing the Docs
+
+You can configure metadata in the `FastAPI()` constructor:
+
+```python
+app = FastAPI(
+    title="My API",
+    description="A sample API for learning FastAPI",
+    version="1.0.0",
+    docs_url="/docs",        # Swagger UI path
+    redoc_url="/redoc",      # ReDoc path
+    openapi_url="/openapi.json",  # Raw OpenAPI spec
+)
+```
+
+Now the docs show your title and description.
+
+## The Request-Response Cycle
+
+Here's what happens when a request hits your app:
+
+```
+Client                Uvicorn              FastAPI              Python function
+  │                      │                    │                      │
+  │── GET / HTTP/1.1 ──►│                    │                      │
+  │                      │── ASGI event ────►│                      │
+  │                      │                    │── call decorator ──►│
+  │                      │                    │     match "/"       │
+  │                      │                    │     match GET       │
+  │                      │                    │                      │
+  │                      │                    │◄── return dict ─────│
+  │                      │                    │                      │
+  │                      │◄── JSON bytes ────│                      │
+  │◄── 200 OK JSON ─────│                    │                      │
+```
+
+## uvicorn.run() Alternative
+
+Instead of the CLI, you can run from Python directly:
+
+```python
+# run.py
+import uvicorn
+from main import app
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+        log_level="info",
+    )
+```
+
+Then just `python run.py`.
+
+## Returning Different Response Types
+
+FastAPI handles more than just dicts:
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, PlainTextResponse, FileResponse
+
+app = FastAPI()
+
+
+@app.get("/html")
+def get_html():
+    return HTMLResponse("<h1>Hello</h1>")
+
+
+@app.get("/text")
+def get_text():
+    return PlainTextResponse("This is plain text")
+
+
+@app.get("/file")
+def get_file():
+    return FileResponse("report.pdf")
+
+
+@app.get("/redirect")
+def redirect():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("/docs")
+```
+
+## Key Takeaways
+
+- Create an app with **`app = FastAPI()`** and define endpoints with decorators like **`@app.get("/")`**
+- The function's **return value is auto-serialized to JSON** — dicts, lists, Pydantic models all work
+- FastAPI generates **interactive Swagger docs at `/docs`** and ReDoc at `/redoc` — no extra config
+- Use **`uvicorn main:app --reload`** to run with hot reload during development
+- Customize docs metadata via the **`FastAPI(title=..., description=..., version=...)`** constructor

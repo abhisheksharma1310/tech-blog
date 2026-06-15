@@ -1,0 +1,286 @@
+---
+title: "Unit Testing with Pytest"
+description: "Write and run async unit tests with pytest, pytest-asyncio, fixtures, parametrization, and mocking in FastAPI"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Error Handling & Testing"]
+tags: ["FastAPI", "Pytest", "Testing", "pytest-asyncio", "Fixtures", "Mocking"]
+slug: "fastapi-pytest-testing"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Setup
+
+Install the required packages:
+
+```bash
+pip install pytest pytest-asyncio httpx pytest-cov
+```
+
+Create a `pytest.ini` or `pyproject.toml` config:
+
+```toml
+# pyproject.toml
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+```
+
+## Writing Async Tests
+
+Use `async def` test functions with `pytest-asyncio`:
+
+```python
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_async_operation():
+    result = await some_async_function()
+    assert result == expected_value
+```
+
+With `asyncio_mode = "auto"`, you don't need the `@pytest.mark.asyncio` decorator — pytest detects async functions automatically.
+
+## Fixtures
+
+Fixtures provide reusable setup and teardown:
+
+```python
+import pytest
+
+
+@pytest.fixture
+def sample_item():
+    return {"id": 1, "name": "Laptop", "price": 999.99}
+
+
+@pytest.fixture
+def db_session():
+    db = create_test_db()
+    yield db
+    db.close()
+
+
+@pytest.mark.asyncio
+async def test_create_item(sample_item, db_session):
+    result = await create_item_in_db(db_session, sample_item)
+    assert result["name"] == "Laptop"
+```
+
+### Async Fixtures
+
+```python
+@pytest.fixture
+async def async_client():
+    async with AsyncClient() as client:
+        yield client
+
+
+@pytest.mark.asyncio
+async def test_fetch_data(async_client):
+    response = await async_client.get("/data")
+    assert response.status_code == 200
+```
+
+### Scope and Autouse
+
+```python
+@pytest.fixture(scope="module")
+def expensive_resource():
+    return create_resource()
+
+
+@pytest.fixture(autouse=True)
+def setup_and_teardown():
+    setup()
+    yield
+    cleanup()
+```
+
+## Parametrize
+
+Test multiple input combinations with `@pytest.mark.parametrize`:
+
+```python
+import pytest
+from app.validators import validate_email
+
+
+@pytest.mark.parametrize(
+    "email,expected",
+    [
+        ("user@example.com", True),
+        ("user.name+tag@example.co.uk", True),
+        ("", False),
+        ("not-an-email", False),
+        ("@example.com", False),
+        ("user@", False),
+        (None, False),
+    ],
+)
+def test_email_validation(email, expected):
+    assert validate_email(email) == expected
+```
+
+### Multiple Parameter Combinations
+
+```python
+@pytest.mark.parametrize(
+    "a,b,expected",
+    [
+        (1, 2, 3),
+        (0, 0, 0),
+        (-1, 1, 0),
+        (100, 200, 300),
+    ],
+)
+@pytest.mark.parametrize("operation", ["add", "multiply"])
+def test_calculator(operation, a, b, expected):
+    if operation == "add":
+        assert add(a, b) == expected
+    elif operation == "multiply":
+        assert multiply(a, b) == a * b
+```
+
+## Mocking Dependencies
+
+Use `unittest.mock` to replace external dependencies:
+
+```python
+from unittest.mock import AsyncMock, patch, MagicMock
+
+
+@pytest.mark.asyncio
+async def test_get_user_calls_database():
+    mock_user = {"id": 1, "name": "Alice"}
+
+    with patch("app.services.get_user_from_db", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_user
+
+        result = await get_user_service(1)
+
+        mock_get.assert_awaited_once_with(1)
+        assert result == mock_user
+```
+
+### Using pytest-mock
+
+The `mocker` fixture from `pytest-mock` gives a cleaner API:
+
+```bash
+pip install pytest-mock
+```
+
+```python
+@pytest.mark.asyncio
+async def test_send_email(mocker):
+    mock_send = mocker.patch("app.services.send_email", new_callable=AsyncMock)
+    mock_send.return_value = {"status": "sent"}
+
+    result = await notification_service("user@example.com", "Hello")
+
+    mock_send.assert_awaited_once()
+    assert result["status"] == "sent"
+```
+
+### Mocking FastAPI Dependencies
+
+```python
+from app.dependencies import get_db
+
+
+@pytest.mark.asyncio
+async def test_endpoint_with_mocked_db(mocker):
+    mock_db = AsyncMock()
+    mock_db.fetch_one.return_value = {"id": 1, "name": "Test"}
+
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    # Run your test...
+
+    app.dependency_overrides.clear()
+```
+
+## Testing Validators
+
+Unit-test your Pydantic models and custom validators in isolation:
+
+```python
+from pydantic import BaseModel, field_validator
+import pytest
+
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    age: int
+
+    @field_validator("username")
+    @classmethod
+    def username_must_be_valid(cls, v):
+        if len(v) < 3:
+            raise ValueError("Username must be at least 3 characters")
+        if not v.isalnum():
+            raise ValueError("Username must be alphanumeric")
+        return v
+
+    @field_validator("age")
+    @classmethod
+    def age_must_be_valid(cls, v):
+        if v < 0 or v > 150:
+            raise ValueError("Age must be between 0 and 150")
+        return v
+
+
+class TestUserCreateValidator:
+    def test_valid_user(self):
+        user = UserCreate(username="alice", email="a@b.com", age=25)
+        assert user.username == "alice"
+
+    def test_username_too_short(self):
+        with pytest.raises(ValueError, match="at least 3 characters"):
+            UserCreate(username="ab", email="a@b.com", age=25)
+
+    def test_username_not_alphanumeric(self):
+        with pytest.raises(ValueError, match="alphanumeric"):
+            UserCreate(username="alice!", email="a@b.com", age=25)
+
+    def test_negative_age(self):
+        with pytest.raises(ValueError, match="must be between"):
+            UserCreate(username="alice", email="a@b.com", age=-5)
+
+    @pytest.mark.parametrize("age", [0, 25, 150])
+    def test_boundary_ages(self, age):
+        user = UserCreate(username="alice", email="a@b.com", age=age)
+        assert user.age == age
+```
+
+## Conftest Pattern
+
+Shared fixtures go in `conftest.py`:
+
+```python
+# tests/conftest.py
+import pytest
+
+
+@pytest.fixture
+def sample_payload():
+    return {"username": "testuser", "email": "test@example.com", "age": 20}
+
+
+@pytest.fixture(autouse=True)
+def mock_external_api(mocker):
+    mocker.patch("app.services.external_api_call", return_value={"ok": True})
+```
+
+## Key Takeaways
+
+- Use `pytest-asyncio` with `asyncio_mode = "auto"` for async test support.
+- Fixtures handle setup, teardown, and reusable dependencies across tests.
+- `@pytest.mark.parametrize` tests multiple input combinations without duplication.
+- Mock external services with `unittest.mock.AsyncMock` or `pytest-mock`'s `mocker` fixture.
+- Override FastAPI dependencies with `app.dependency_overrides` for isolated endpoint testing.
+- Test Pydantic validators directly with `pytest.raises` for focused unit tests.
+- Place shared fixtures in `conftest.py` for automatic discovery across test modules.

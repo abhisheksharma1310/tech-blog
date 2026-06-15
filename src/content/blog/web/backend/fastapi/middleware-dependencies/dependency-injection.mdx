@@ -1,0 +1,143 @@
+---
+title: "Dependency Injection System"
+description: "Understand FastAPI's dependency injection system, how Depends() works, async and class-based dependencies, and sharing data across routes"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Middleware & Dependencies"]
+tags: ["FastAPI", "Dependency Injection", "Depends", "DI", "Dependencies"]
+slug: "fastapi-dependency-injection"
+author: "Abhishek Sharma"
+order: 3
+---
+
+# Dependency Injection System
+
+**Dependency Injection (DI)** is a core feature of FastAPI that lets you declare what your route needs — parameters, database sessions, auth tokens — and FastAPI resolves them automatically.
+
+## What is DI in FastAPI?
+
+A **dependency** is any callable (function, class, or async function) that returns a value. Routes declare dependencies through `Depends()`, and FastAPI figures out how to build and inject them at runtime.
+
+```python
+from fastapi import FastAPI, Depends
+
+app = FastAPI()
+
+def common_params(q: str | None = None, skip: int = 0, limit: int = 100):
+    return {"q": q, "skip": skip, "limit": limit}
+
+@app.get("/items")
+async def read_items(params: dict = Depends(common_params)):
+    return params
+
+@app.get("/users")
+async def read_users(params: dict = Depends(common_params)):
+    return params
+```
+
+Dependencies are **cache**d per request by default — if two routes call the same dependency within one request, it runs only once.
+
+## How It Compares to Express (Node.js)
+
+| Concept | FastAPI | Express |
+|---|---|---|
+| Injection | `Depends(callable)` | `req.params`, manual middleware |
+| Resolver | Built-in, automatic | Manual or third-party (`awilix`) |
+| Cleanup | `yield` in dependency | Manual `next()` in middleware |
+| Sub-deps | Nested `Depends()` | Nested middleware |
+| OpenAPI | Automatically documented | Manual |
+
+FastAPI's DI is **type-aware** — the dependency's return type is part of the OpenAPI schema.
+
+## Async Dependencies
+
+Dependencies support `async`/`await` natively — no special setup required.
+
+```python
+import httpx
+from fastapi import FastAPI, Depends
+
+app = FastAPI()
+
+async def fetch_user(user_id: int):
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(f"https://api.example.com/users/{user_id}")
+        resp.raise_for_status()
+        return resp.json()
+
+@app.get("/users/{user_id}")
+async def get_user(user: dict = Depends(fetch_user)):
+    return user
+```
+
+## Class-based Dependencies
+
+Dependencies can be classes — FastAPI calls the class as a constructor.
+
+```python
+from fastapi import FastAPI, Depends, Query
+
+app = FastAPI()
+
+class Pagination:
+    def __init__(self, skip: int = Query(0, ge=0), limit: int = Query(100, ge=1, le=100)):
+        self.skip = skip
+        self.limit = limit
+
+@app.get("/items")
+async def list_items(pag: Pagination = Depends()):
+    return {"skip": pag.skip, "limit": pag.limit}
+```
+
+When the dependency callable is a class, `Depends()` can be used without arguments — FastAPI treats the class itself as the dependency.
+
+## Sharing Data Between Dependencies
+
+Dependencies can build on each other.
+
+```python
+from fastapi import FastAPI, Depends, Header, HTTPException
+
+app = FastAPI()
+
+def verify_token(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return authorization.removeprefix("Bearer ")
+
+def get_current_user(token: str = Depends(verify_token)):
+    if token != "secret-token":
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return {"username": "admin", "role": "admin"}
+
+@app.get("/me")
+async def read_me(user: dict = Depends(get_current_user)):
+    return user
+```
+
+The `verify_token` dependency runs first, then its result is injected into `get_current_user`.
+
+## Dependency Scopes
+
+FastAPI supports several scopes for registering dependencies:
+
+- **Route-level** — `Depends()` in the route signature.
+- **Decorator-level** — `dependencies=[Depends(...)]` on a path decorator.
+- **App-level** — `app = FastAPI(dependencies=[Depends(...)])`.
+
+```python
+from fastapi import FastAPI, Depends, HTTPException
+
+def require_https(request):
+    if request.headers.get("x-forwarded-proto") != "https":
+        raise HTTPException(status_code=400, detail="HTTPS required")
+
+app = FastAPI(dependencies=[Depends(require_https)])
+```
+
+## Key Takeaways
+
+- `Depends()` connects route signatures to reusable callables — resolution is automatic.
+- Dependencies can be sync/async functions, classes, or generators.
+- Sub-dependencies compose naturally: one dependency can call `Depends()` on another.
+- FastAPI caches dependency results per request to avoid redundant work.
+- Dependencies are auto-documented in the OpenAPI schema, unlike Express middleware.

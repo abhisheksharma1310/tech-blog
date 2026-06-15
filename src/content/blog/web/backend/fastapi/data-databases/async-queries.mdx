@@ -1,0 +1,281 @@
+---
+title: "Async Database Queries"
+description: "Understand why async matters for FastAPI, use SQLAlchemy async sessions, await query execution, manage connection pools, and avoid the N+1 problem"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Data & Databases"]
+tags: ["FastAPI", "Async", "SQLAlchemy", "Connection Pooling", "N+1", "Performance", "Python"]
+slug: "fastapi-async-database-queries"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why Async Matters for FastAPI
+
+FastAPI is an **ASGI** framework — it can handle thousands of concurrent connections with a single process. But only if your database queries don't block the event loop.
+
+```
+Time (seconds)        0────1────2────3────4────5
+Sync (blocks):        [───DB───]                  ← Thread blocked
+                      [───DB───]                  ← Next request waits
+                      [───DB───]
+
+Async (non-blocking): [───DB───]                  ← Coroutine yields
+                         [───DB───]               ← Other requests interleave
+                            [───DB───]
+                      ◄─── Event Loop runs ──►
+```
+
+| Approach | Concurrency | CPU Util | Requests/sec |
+|---|---|---|---|
+| Sync + thread pool | Thread-per-request | Medium | ~5,000 |
+| Async + `await` | Single-threaded cooperative | High | ~50,000 |
+| Async + connection pool | Event loop + pooled DB | Very High | ~45,000 |
+
+Sync database calls (e.g. `psycopg2`, `pymysql`) block the entire worker thread. Async drivers (`asyncpg`, `aiomysql`, `aiosqlite`) yield control back to the event loop while waiting for the database.
+
+## SQLAlchemy Async Session
+
+The async version of SQLAlchemy uses `AsyncSession` and `async_sessionmaker`:
+
+```python
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
+DATABASE_URL = "postgresql+asyncpg://user:pass@localhost:5432/mydb"
+
+engine = create_async_engine(DATABASE_URL, echo=True, pool_size=10, max_overflow=20)
+
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+```
+
+### Dependency Injection
+
+```python
+from fastapi import Depends
+
+async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        yield session
+
+
+@router.get("/users/{user_id}")
+async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    ...
+```
+
+> `Depends(get_db)` creates one session per request and closes it automatically when the request ends.
+
+## Awaiting Query Execution
+
+Every SQLAlchemy async operation must be `await`ed:
+
+```python
+# ── SELECT ──
+result = await db.execute(select(User).where(User.email == email))
+user = result.scalar_one_or_none()
+
+# ── INSERT ──
+db.add(new_user)
+await db.commit()
+await db.refresh(new_user)
+
+# ── UPDATE ──
+stmt = update(User).where(User.id == uid).values(name=new_name).returning(User)
+result = await db.execute(stmt)
+updated = result.scalar_one()
+
+# ── DELETE ──
+await db.execute(delete(User).where(User.id == uid))
+await db.commit()
+```
+
+### Streaming Large Results
+
+For large result sets, use streaming to avoid loading everything into memory:
+
+```python
+@router.get("/users/stream")
+async def stream_users(db: AsyncSession = Depends(get_db)):
+    result = await db.stream(select(User))
+    users = []
+    async for row in result:
+        users.append(row.User)
+    return users
+```
+
+### Multiple Queries in Parallel
+
+Use `asyncio.gather` to run independent queries concurrently:
+
+```python
+from asyncio import gather
+
+@router.get("/dashboard")
+async def get_dashboard(db: AsyncSession = Depends(get_db)):
+    async def count_users():
+        result = await db.execute(select(func.count(User.id)))
+        return result.scalar()
+
+    async def count_posts():
+        result = await db.execute(select(func.count(Post.id)))
+        return result.scalar()
+
+    async def recent_posts():
+        result = await db.execute(select(Post).order_by(Post.created_at.desc()).limit(5))
+        return result.scalars().all()
+
+    user_count, post_count, latest_posts = await gather(
+        count_users(), count_posts(), recent_posts()
+    )
+    return {
+        "users": user_count,
+        "posts": post_count,
+        "recent": latest_posts,
+    }
+```
+
+## Connection Pooling
+
+SQLAlchemy's connection pool reuses database connections instead of opening a new one per request:
+
+```python
+engine = create_async_engine(
+    DATABASE_URL,
+    pool_size=10,          # Persistent connections
+    max_overflow=20,       # Temporary extra connections under load
+    pool_timeout=30,       # Seconds to wait for a connection from pool
+    pool_recycle=1800,     # Recycle connections after 30 minutes
+    pool_pre_ping=True,    # Verify connection before using it
+)
+```
+
+### Pool Behavior Under Load
+
+```
+Requests     ──►  Pool   ──►  Database
+                   ┌───┐
+  Req 1 ──────────►│ C1 │──►  DB
+  Req 2 ──────────►│ C2 │──►  DB
+  Req 3 ──────────►│ C3 │──►  DB
+  ...
+  Req 11 ─────────►│ O1 │──►  DB  (max_overflow)
+                    └───┘
+  Req 21 ──► waits for pool_timeout ──► Error
+```
+
+When all pool + overflow connections are in use, new requests **wait** (up to `pool_timeout` seconds) and then raise `TimeoutError`. Size your pool to handle peak concurrency.
+
+### Disabling Pooling (for serverless)
+
+```python
+engine = create_async_engine(
+    DATABASE_URL,
+    poolclass=NullPool,  # Create a new connection per request
+)
+```
+
+Serverless environments (AWS Lambda, Cloud Functions) should use `NullPool` or a connection pooler like **PgBouncer**.
+
+## The N+1 Problem
+
+N+1 happens when you load a parent object, then loop over its children — issuing one query for the parent and **N** queries for N children.
+
+### The Problem
+
+```python
+# BAD: 1 query for posts + N queries for authors
+@router.get("/posts")
+async def list_posts(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Post))
+    posts = result.scalars().all()
+
+    output = []
+    for post in posts:
+        # One await per post! N queries!
+        result = await db.execute(select(User).where(User.id == post.author_id))
+        author = result.scalar_one()
+        output.append({"title": post.title, "author": author.name})
+    return output
+```
+
+With 100 posts, this issues **101 queries**.
+
+### The Fix: Eager Loading with `selectinload`
+
+```python
+from sqlalchemy.orm import selectinload
+
+@router.get("/posts")
+async def list_posts(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Post).options(selectinload(Post.author))
+    )
+    posts = result.scalars().all()
+
+    return [
+        {"title": p.title, "author": p.author.name}
+        for p in posts
+    ]
+```
+
+This issues **2 queries** total — one for posts, one for all related authors via `WHERE id IN (...)`.
+
+### Loading Strategies
+
+| Strategy | Behavior | Best For |
+|---|---|---|
+| `selectinload` | Eager load via `SELECT ... WHERE id IN (...)` | One-to-many, many-to-many |
+| `joinedload` | Eager load via `LEFT JOIN` | Many-to-one, one-to-one |
+| `lazyload` | Load on access (triggers N+1) | Avoid unless you know what you are doing |
+| `subqueryload` | Eager load via subquery | Complex hierarchies |
+
+```python
+# Many-to-one: use joinedload (single JOIN is cheaper)
+result = await db.execute(
+    select(Post).options(joinedload(Post.author))
+)
+
+# One-to-many: use selectinload (avoids Cartesian product)
+result = await db.execute(
+    select(User).options(selectinload(User.posts))
+)
+```
+
+## Async vs Sync at a Glance
+
+```
+                  Sync                           Async
+         ┌─────────────────┐            ┌─────────────────┐
+         │  def get_user(): │            │ async def get(): │
+         │  user = db.query │            │ await db.execute │
+         │  return user     │            │ return user      │
+         └────────┬────────┘            └────────┬────────┘
+                  │                               │
+         Blocks thread ◄────── await ──────► Yields to loop
+                  │                               │
+         Other requests                     Other requests
+         wait in queue ◄─────── and ──────► interleave freely
+```
+
+| Aspect | Sync | Async |
+|---|---|---|
+| **Thread model** | Blocks worker thread | Yields event loop |
+| **Concurrency** | Thread pool (limited) | Cooperative (thousands) |
+| **Driver** | `psycopg2`, `pymysql` | `asyncpg`, `aiomysql`, `aiosqlite` |
+| **SQLAlchemy** | `Session` (sync) | `AsyncSession` (async) |
+| **Code** | `db.query(User).all()` | `await db.execute(select(User))` |
+| **Caveats** | Thread pool exhaustion | Must `await` everything |
+| **Serverless** | Better cold start (no event loop overhead) | Better throughput under concurrency |
+
+> **Rule of thumb:** If your FastAPI app handles I/O-bound workloads (DB calls, HTTP requests, file uploads), use async every time. If you're CPU-bound (ML inference, image processing), sync is fine — offload to a thread pool.
+
+## Key Takeaways
+
+- Async prevents the event loop from blocking during database I/O — critical for FastAPI's concurrency model
+- Use `AsyncSession` from SQLAlchemy's `ext.asyncio` module; every DB call must be `await`ed
+- Pool connections with `pool_size` and `max_overflow`; use `NullPool` for serverless environments
+- Use `asyncio.gather` to run independent queries in parallel for dashboards and complex endpoints
+- **Avoid N+1** — use `selectinload` for one-to-many and `joinedload` for many-to-one relationships
+- Sync queries block the thread and limit concurrency; async queries yield the event loop for higher throughput
+- Streaming large result sets with `async for` prevents memory exhaustion

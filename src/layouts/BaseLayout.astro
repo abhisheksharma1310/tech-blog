@@ -1,10 +1,10 @@
 ---
-import type { Post } from '../data/posts';
-import Header from '../components/Header.tsx';
-import Sidebar from '../components/Sidebar.tsx';
-import AdBlock from '../components/AdBlock.tsx';
-import Footer from '../components/Footer.tsx';
-import '../styles/global.css';
+import type { Post } from "../data/posts";
+import Header from "../components/Header.tsx";
+import Sidebar from "../components/Sidebar.tsx";
+import AdBlock from "../components/AdBlock.tsx";
+import Footer from "../components/Footer.tsx";
+import "../styles/global.css";
 
 const { title, description, posts, activeSlug } = Astro.props as {
   title: string;
@@ -13,16 +13,30 @@ const { title, description, posts, activeSlug } = Astro.props as {
   activeSlug?: string;
 };
 ---
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    
+    <!-- FIX: Added an id attribute so our JavaScript can find and swap this link -->
+    <link 
+      id="prism-theme" 
+      rel="stylesheet" 
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css"
+    />
   </head>
   <body>
-    <input id="mobile-menu-toggle" type="checkbox" hidden class="mobile-menu-toggle" aria-hidden="true" />
+    <input
+      id="mobile-menu-toggle"
+      type="checkbox"
+      hidden
+      class="mobile-menu-toggle"
+      aria-hidden="true"
+    />
     <Header />
     <main class="layout-grid">
       <aside class="sidebar" aria-label="Article navigation">
@@ -34,35 +48,57 @@ const { title, description, posts, activeSlug } = Astro.props as {
       </aside>
     </main>
     <Footer />
+
     <script type="text/javascript">
       (function () {
         var root = document.documentElement;
-        var stored = localStorage.getItem('theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var theme = stored || (prefersDark ? 'dark' : 'light');
-        root.classList.toggle('dark', theme === 'dark');
-        root.classList.toggle('light', theme === 'light');
+        var stored = localStorage.getItem("theme");
+        var prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        var theme = stored || (prefersDark ? "dark" : "light");
+        root.classList.toggle("dark", theme === "dark");
+        root.classList.toggle("light", theme === "light");
 
-        var toggle = document.getElementById('theme-toggle');
+        // FIX: Helper function to swap out the Prism CSS files based on active state
+        function updatePrismTheme(isDark) {
+          var prismLink = document.getElementById("prism-theme");
+          if (!prismLink) return;
+          
+          // Uses 'tomorrow' theme for dark mode, and standard 'prism' theme for light mode
+          prismLink.href = isDark 
+            ? "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+            : "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css";
+        }
+
+        // Run theme mapping immediately on page initialization
+        updatePrismTheme(theme === "dark");
+
+        var toggle = document.getElementById("theme-toggle");
         if (!toggle) return;
 
         function updateButton() {
-          var isDark = root.classList.contains('dark');
-          toggle.textContent = isDark ? '☀️' : '🌙';
-          toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+          var isDark = root.classList.contains("dark");
+          toggle.textContent = isDark ? "☀️" : "🌙";
+          toggle.setAttribute(
+            "aria-label",
+            isDark ? "Switch to light mode" : "Switch to dark mode",
+          );
         }
 
         updateButton();
 
-        toggle.addEventListener('click', function () {
-          var next = root.classList.contains('dark') ? 'light' : 'dark';
-          root.classList.toggle('dark', next === 'dark');
-          root.classList.toggle('light', next === 'light');
-          localStorage.setItem('theme', next);
+        toggle.addEventListener("click", function () {
+          var next = root.classList.contains("dark") ? "light" : "dark";
+          root.classList.toggle("dark", next === "dark");
+          root.classList.toggle("light", next === "light");
+          localStorage.setItem("theme", next);
           updateButton();
+          
+          // FIX: Trigger the theme switch handler when the user clicks the button
+          updatePrismTheme(next === "dark");
         });
       })();
     </script>
-    
   </body>
 </html>

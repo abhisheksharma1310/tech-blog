@@ -1,0 +1,168 @@
+---
+title: "OAuth2 with JWT Tokens"
+description: "Implement OAuth2 authentication in FastAPI using JWT tokens with python-jose"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Authentication & Security"]
+tags: ["FastAPI", "OAuth2", "JWT", "Authentication", "python-jose", "Token"]
+slug: "fastapi-oauth2-jwt"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## OAuth2 & JWT in FastAPI
+
+FastAPI integrates OAuth2 authentication natively through `fastapi.security`. Combined with **JWT (JSON Web Tokens)**, you get a stateless, secure authentication flow perfect for modern APIs.
+
+## Install Dependencies
+
+```bash
+pip install fastapi uvicorn python-jose[cryptography] passlib[bcrypt] python-multipart
+```
+
+| Library | Purpose |
+|---------|---------|
+| `python-jose` | JWT token creation & verification |
+| `passlib` + `bcrypt` | Password hashing |
+| `python-multipart` | Form data parsing for OAuth2 |
+
+## OAuth2PasswordBearer
+
+`OAuth2PasswordBearer` tells FastAPI that the app expects a token in the `Authorization: Bearer <token>` header:
+
+```python
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+```
+
+- `tokenUrl` points to the login endpoint that issues tokens
+- The dependency returns the **raw token string**
+- If the header is missing, FastAPI returns a **401 Unauthorized** automatically
+
+## JWT Configuration
+
+```python
+from datetime import datetime, timedelta, timezone
+from jose import JWTError, jwt
+
+SECRET_KEY = "your-secret-key-change-in-production"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+```
+
+- `SECRET_KEY` must be a cryptographically random string (use `openssl rand -hex 32`)
+- `ALGORITHM` is typically `HS256` (HMAC with SHA-256)
+- Token expiry is set per environment (shorter for production)
+
+## Create Access Token
+
+```python
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+```
+
+- The payload should contain **minimal claims**: `sub` (user identifier), `exp` (expiration)
+- Never store sensitive data (passwords, credit cards) in the token
+- Always use timezone-aware UTC timestamps for `exp`
+
+## Token Endpoint
+
+The `/token` endpoint accepts `username` and `password` form data and returns an access token:
+
+```python
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+@router.post("/token", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(fake_db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(data={"sub": user.username})
+    return Token(access_token=access_token, token_type="bearer")
+```
+
+- `OAuth2PasswordRequestForm` automatically parses `username` / `password` form fields
+- Always return `token_type: "bearer"` for OAuth2 compliance
+- The `WWW-Authenticate` header in error responses helps clients understand auth requirements
+
+## Dependency Injection for Token Verification
+
+```python
+from jose import JWTError, jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = get_user(fake_db, username=username)
+    if user is None:
+        raise credentials_exception
+    return user
+```
+
+- `Depends(oauth2_scheme)` extracts the token from the request
+- `jwt.decode()` validates signature and expiry automatically
+- The dependency is reusable across all protected routes
+
+## Protecting Routes
+
+```python
+@app.get("/users/me")
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
+```
+
+Simply inject `get_current_user` into any endpoint that requires authentication. FastAPI handles the full flow — token extraction, validation, and error responses.
+
+## Token Expiry & Refresh
+
+JWT tokens are **stateless** — you cannot revoke them before expiry. Common strategies:
+
+- **Short-lived access tokens** (15–30 minutes) limit the damage of a leaked token
+- **Refresh tokens** (long-lived, stored in DB) allow issuing new access tokens without re-login
+- A `/refresh` endpoint validates the refresh token and issues a fresh access token
+
+```python
+@router.post("/refresh")
+async def refresh_token(refresh_token: str, current_user: User = Depends(get_current_user)):
+    # Validate refresh token from DB
+    # Issue new access token
+    return Token(access_token=create_access_token(data={"sub": current_user.username}), token_type="bearer")
+```
+
+## Key Takeaways
+
+- `OAuth2PasswordBearer` extracts Bearer tokens from the `Authorization` header
+- `python-jose` handles JWT creation (`jwt.encode`) and verification (`jwt.decode`)
+- Tokens must include an `exp` claim and use a strong `SECRET_KEY`
+- The `/token` endpoint returns `access_token` + `token_type` in OAuth2 format
+- `get_current_user` is a reusable dependency injected via `Depends()` into protected routes
+- Token expiry is enforced at decode time — expired tokens are rejected automatically
+- Use short-lived access tokens with refresh tokens for production deployments

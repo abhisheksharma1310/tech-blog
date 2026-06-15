@@ -1,0 +1,358 @@
+---
+title: "Handling Form Data & File Uploads"
+description: "Process form data with Form(), upload single and multiple files with UploadFile, validate file size and type, and mix file uploads with JSON fields"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Routing & Requests"]
+tags: ["FastAPI", "Form Data", "File Uploads", "UploadFile", "Multipart"]
+slug: "fastapi-form-data-uploads"
+author: "Abhishek Sharma"
+order: 5
+---
+
+## Form Data vs JSON
+
+FastAPI handles form data and JSON differently:
+
+| Aspect | JSON (`Body`) | Form Data (`Form`) |
+|--------|--------------|-------------------|
+| Content-Type | `application/json` | `application/x-www-form-urlencoded` or `multipart/form-data` |
+| Data types | Any JSON-serializable type | Strings (files use `multipart/form-data`) |
+| File support | No | Yes (via `multipart/form-data`) |
+| Nested structures | Yes | No (flat key-value) |
+
+```
+JSON Body:
+{"name": "Alice", "age": 30, "roles": ["admin"]}
+                     ╲│╱
+              Parsed as a single payload
+
+Form Data:
+name=Alice&age=30
+                     ╲│╱
+              Parsed field by field
+```
+
+## Simple Form Data with `Form()`
+
+Use `Form()` for traditional HTML form submissions:
+
+```python
+from fastapi import FastAPI, Form
+
+app = FastAPI()
+
+
+@app.post("/login")
+def login(
+    username: str = Form(...),
+    password: str = Form(...),
+):
+    """Validate credentials from a form submission."""
+    return {"username": username}
+```
+
+```bash
+curl -X POST http://localhost:8000/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=secret123"
+```
+
+Each `Form()` parameter becomes an individual field in the form data. FastAPI parses them in order.
+
+> **Important:** You must use `Form()` explicitly — unlike JSON body parameters, form fields are not inferred from type hints alone. You also cannot mix `Body()` and `Form()` in the same handler; use separate handlers or `multipart/form-data` with `File()`.
+
+## File Uploads with `UploadFile`
+
+For file uploads, use `File()` with `UploadFile`:
+
+```python
+from fastapi import FastAPI, File, UploadFile
+
+app = FastAPI()
+
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Upload a single file."""
+    contents = await file.read()
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "size": len(contents),
+    }
+```
+
+```bash
+curl -X POST http://localhost:8000/upload \
+  -F "file=@photo.jpg"
+```
+
+### `UploadFile` Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `filename` | `str` | Original filename from the client |
+| `content_type` | `str` | MIME type (e.g., `image/jpeg`) |
+| `file` | `SpooledTemporaryFile` | Actual file object (read/write) |
+
+### `UploadFile` Methods
+
+| Method | Description |
+|--------|-------------|
+| `read(size)` | Read bytes (entire file if size omitted) |
+| `write(data)` | Write bytes to file |
+| `seek(offset)` | Seek to position |
+| `close()` | Close the file handle |
+
+### Synchronous vs Asynchronous
+
+`UploadFile` methods are async — use `await`:
+
+```python
+# ✅ Correct
+contents = await file.read()
+
+# ❌ Wrong — UploadFile requires await
+contents = file.read()
+```
+
+## Multiple File Uploads
+
+Accept multiple files with `list[UploadFile]`:
+
+```python
+from typing import list
+
+
+@app.post("/upload-multiple")
+async def upload_multiple(files: list[UploadFile] = File(...)):
+    """Upload multiple files at once."""
+    results = []
+    for file in files:
+        contents = await file.read()
+        results.append({
+            "filename": file.filename,
+            "size": len(contents),
+        })
+    return {"files": results}
+```
+
+```bash
+curl -X POST http://localhost:8000/upload-multiple \
+  -F "files=@photo.jpg" \
+  -F "files=@document.pdf"
+```
+
+### Optional File Upload
+
+```python
+@app.post("/upload-optional")
+async def upload_optional(file: UploadFile = File(None)):
+    """File upload is optional."""
+    if file is None:
+        return {"message": "No file uploaded"}
+    contents = await file.read()
+    return {"filename": file.filename, "size": len(contents)}
+```
+
+## File Validation (Size & Type)
+
+Validate uploaded files by reading their properties and content:
+
+```python
+from fastapi import FastAPI, File, UploadFile, HTTPException
+
+app = FastAPI()
+
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+ALLOWED_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "application/pdf",
+}
+
+
+@app.post("/upload-validated")
+async def upload_validated(file: UploadFile = File(...)):
+    """Upload with size and type validation."""
+
+    # Validate content type
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type {file.content_type} not allowed. "
+                   f"Allowed: {', '.join(ALLOWED_CONTENT_TYPES)}",
+        )
+
+    # Validate size
+    contents = await file.read()
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Max {MAX_FILE_SIZE // (1024*1024)} MB.",
+        )
+
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "size": len(contents),
+    }
+```
+
+### File Validation Helper
+
+Encapsulate validation in a reusable function:
+
+```python
+from dataclasses import dataclass
+
+
+@dataclass
+class FileValidation:
+    max_size: int = 5 * 1024 * 1024
+    allowed_types: set[str] = None
+
+    def __post_init__(self):
+        if self.allowed_types is None:
+            self.allowed_types = {
+                "image/jpeg", "image/png", "image/gif",
+                "application/pdf", "text/plain",
+            }
+
+    def validate(self, file: UploadFile) -> bytes:
+        if file.content_type not in self.allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Type '{file.content_type}' not allowed",
+            )
+
+        contents = file.file.read()
+        if len(contents) > self.max_size:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File exceeds {self.max_size // (1024*1024)} MB limit",
+            )
+        return contents
+
+
+validator = FileValidation()
+
+@app.post("/documents")
+async def upload_document(doc: UploadFile = File(...)):
+    contents = validator.validate(doc)
+    return {"size": len(contents), "type": doc.content_type}
+```
+
+## Mixing Files and Form Fields
+
+A single endpoint can accept both form fields and file uploads:
+
+```python
+from fastapi import Form
+from typing import Optional
+
+
+@app.post("/create-post")
+async def create_post(
+    title: str = Form(...),
+    content: str = Form(...),
+    published: bool = Form(False),
+    cover_image: UploadFile = File(None),
+    attachments: list[UploadFile] = File(default_factory=list),
+):
+    """Create a blog post with optional image and attachments."""
+    post = {
+        "title": title,
+        "content": content,
+        "published": published,
+    }
+
+    if cover_image:
+        image_data = await cover_image.read()
+        post["cover_image"] = cover_image.filename
+        post["cover_image_size"] = len(image_data)
+
+    if attachments:
+        post["attachments"] = []
+        for att in attachments:
+            data = await att.read()
+            post["attachments"].append({
+                "filename": att.filename,
+                "size": len(data),
+            })
+
+    return post
+```
+
+```bash
+curl -X POST http://localhost:8000/create-post \
+  -F "title=My Post" \
+  -F "content=Hello World" \
+  -F "published=true" \
+  -F "cover_image=@banner.png" \
+  -F "attachments=@report.pdf"
+```
+
+### Mixing Rules
+
+```
+Endpoint Parameters:
+┌────────────────────────────────────────────┐
+│  title: str = Form(...)       ── Form field│
+│  content: str = Form(...)     ── Form field│
+│  published: bool = Form(False)─ Form field │
+│  cover_image: UploadFile      ── File      │
+│  attachments: list[UploadFile]─ Files      │
+└────────────────────────────────────────────┘
+                              │
+                              ▼
+           Content-Type: multipart/form-data
+```
+
+| Parameter Type | Declaration | Media Type |
+|---------------|-------------|------------|
+| Form field | `str = Form(...)` | `multipart/form-data` (string part) |
+| Single file | `file: UploadFile = File(...)` | `multipart/form-data` (binary part) |
+| Multiple files | `files: list[UploadFile] = File(...)` | `multipart/form-data` (multiple binary parts) |
+
+## Saving Files to Disk
+
+```python
+import aiofiles
+from pathlib import Path
+
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+
+@app.post("/save-file")
+async def save_file(file: UploadFile = File(...)):
+    """Save an uploaded file to disk."""
+    file_path = UPLOAD_DIR / file.filename
+
+    # Stream to disk in chunks (memory efficient)
+    async with aiofiles.open(file_path, "wb") as f:
+        while chunk := await file.read(1024 * 1024):  # 1 MB chunks
+            await f.write(chunk)
+
+    return {"saved_to": str(file_path), "size": file_path.stat().st_size}
+```
+
+For aiofiles support, install it:
+
+```bash
+pip install aiofiles
+```
+
+## Key Takeaways
+
+- Use `Form()` for individual form fields and `File()` with `UploadFile` for file uploads
+- `UploadFile` has async methods (`read`, `write`, `seek`, `close`) — always `await` them
+- For multiple files, annotate with `list[UploadFile] = File(...)`
+- Validate file **type** via `file.content_type` and file **size** by reading the content
+- Mix form fields and file uploads in the same handler — form fields use `Form()`, files use `File()`
+- Stream large files to disk in chunks with `aiofiles` instead of reading the entire file into memory
+- Use `/upload-validated` pattern with `HTTPException` for rejected files — returns proper 4xx status codes
+- The content type must be `multipart/form-data` when mixing files and form fields

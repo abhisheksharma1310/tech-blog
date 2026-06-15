@@ -1,0 +1,231 @@
+---
+title: "Security Utilities (fastapi.security)"
+description: "Explore FastAPI's built-in security utilities — APIKeyHeader, HTTPBearer, HTTPBasic, OAuth2AuthorizationCodeBearer, and Security() vs Depends()"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Authentication & Security"]
+tags: ["FastAPI", "Security", "APIKey", "HTTPBearer", "HTTPBasic", "OAuth2", "OpenAPI"]
+slug: "fastapi-security-utilities"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## FastAPI's Security Toolbox
+
+`fastapi.security` provides a set of utility classes for common authentication schemes. They integrate automatically with **OpenAPI** (Swagger) documentation — your API docs get proper "Authorize" buttons without manual schema configuration.
+
+| Utility | Scheme | Transport |
+|---------|--------|-----------|
+| `APIKeyHeader` | API Key | HTTP Header |
+| `APIKeyQuery` | API Key | Query Parameter |
+| `HTTPBearer` | Bearer Token | HTTP Header |
+| `HTTPBasic` | Basic Auth | HTTP Header |
+| `OAuth2PasswordBearer` | OAuth2 Password | HTTP Header |
+| `OAuth2AuthorizationCodeBearer` | OAuth2 Auth Code | HTTP Header |
+
+## APIKeyHeader
+
+Use when clients authenticate via a custom header (e.g., `X-API-Key`):
+
+```python
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import APIKeyHeader
+
+app = FastAPI()
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def verify_api_key(api_key: str = Depends(api_key_header)):
+    if api_key not in VALID_API_KEYS:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+        )
+    return api_key
+
+@app.get("/secure-data")
+async def get_secure_data(api_key: str = Depends(verify_api_key)):
+    return {"data": "sensitive"}
+```
+
+- `auto_error=False` — returns `None` when the header is missing (you control the error)
+- `auto_error=True` (default) — FastAPI returns `403 Forbidden` automatically
+- Best for **server-to-server** communication (third-party API access)
+
+## APIKeyQuery
+
+API key passed as a query parameter. Use with caution — query params appear in server logs:
+
+```python
+from fastapi.security import APIKeyQuery
+
+api_key_query = APIKeyQuery(name="api_key", auto_error=False)
+
+@app.get("/public/weather")
+async def get_weather(api_key: str = Depends(api_key_query)):
+    if api_key not in VALID_API_KEYS:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return {"temp": 22, "unit": "C"}
+```
+
+- Keys in URLs are **less secure** — they appear in browser history and server logs
+- Combine with rate limiting to mitigate abuse
+- Never use for sensitive operations
+
+## HTTPBearer
+
+Extracts a Bearer token from the `Authorization: Bearer <token>` header:
+
+```python
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+bearer_scheme = HTTPBearer()
+
+@app.get("/protected")
+async def protected_route(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+    token = credentials.credentials
+    # Verify the token
+    return {"token": token[:10] + "..."}
+```
+
+- `HTTPAuthorizationCredentials` provides `credentials` (token string) and `scheme` ("Bearer")
+- Unlike `OAuth2PasswordBearer`, `HTTPBearer` is **scheme-agnostic** — it just extracts the token
+- Use this when you want full control over token validation
+
+## HTTPBasic
+
+Implements **Basic Authentication** (base64-encoded username:password):
+
+```python
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+
+basic_scheme = HTTPBasic()
+
+@app.get("/basic-protected")
+async def basic_login(credentials: HTTPBasicCredentials = Depends(basic_scheme)):
+    if credentials.username != "admin" or credentials.password != "secret":
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return {"username": credentials.username}
+```
+
+- Credentials are base64-encoded, **not encrypted** — use only over HTTPS
+- FastAPI automatically returns the `WWW-Authenticate: Basic` header on failure
+- Suitable for simple testing or monitoring endpoints
+
+## OAuth2AuthorizationCodeBearer
+
+For integration with **external OAuth2 providers** (Google, GitHub, Auth0):
+
+```python
+from fastapi.security import OAuth2AuthorizationCodeBearer
+
+oauth2_scheme = OAuth2AuthorizationCodeBearer(
+    authorizationUrl="https://accounts.google.com/o/oauth2/auth",
+    tokenUrl="https://oauth2.googleapis.com/token",
+    scopes={"openid": "OpenID", "email": "Email", "profile": "Profile"},
+)
+```
+
+- `authorizationUrl` — the provider's authorization endpoint
+- `tokenUrl` — the provider's token exchange endpoint
+- `scopes` — defines the OAuth2 scopes your app requires
+- Ideal for **social login** and **single sign-on (SSO)**
+
+## Security() vs Depends()
+
+Both `Security()` and `Depends()` can inject dependency results, but `Security()` has one critical difference — it declares **security schemes** in the OpenAPI spec.
+
+```python
+from fastapi import Security
+
+# Using Depends — works but no OpenAPI security scheme
+@app.get("/items", dependencies=[Depends(api_key_header)])
+async def get_items():
+    return [{"id": 1}]
+
+# Using Security — adds "Authorize" button in Swagger UI
+@app.get("/items-scoped")
+async def get_items_scoped(api_key: str = Security(api_key_header)):
+    return [{"id": 1}]
+
+# With scopes
+@app.get("/admin/users")
+async def admin_list_users(
+    token: str = Security(oauth2_scheme, scopes=["admin"]),
+):
+    return {"users": [...]}
+```
+
+| Feature | `Depends()` | `Security()` |
+|---------|-------------|--------------|
+| Dependency injection | ✅ | ✅ |
+| OpenAPI scheme | ❌ | ✅ |
+| Scope declaration | ❌ | ✅ |
+| Swagger "Authorize" button | ❌ | ✅ |
+
+**Rule of thumb**: Use `Security()` for authentication/authorization dependencies (so they appear in docs). Use `Depends()` for everything else (database sessions, services).
+
+## Combining Multiple Schemes
+
+```python
+from fastapi.security import APIKeyHeader, HTTPBearer
+
+api_key = APIKeyHeader(name="X-API-Key")
+bearer = HTTPBearer()
+
+@app.get("/multi-auth")
+async def multi_auth(
+    key: str = Security(api_key),
+    token: str = Security(bearer),
+):
+    # Accept either API key or Bearer token
+    if key:
+        return {"auth_method": "api_key"}
+    return {"auth_method": "bearer"}
+```
+
+## OpenAPI Security Schemes
+
+Register a global security scheme so **all** endpoints inherit it:
+
+```python
+from fastapi.openapi.models import APIKey, APIKeyIn
+
+app = FastAPI()
+
+app.add_middleware(
+    # custom middleware
+)
+
+# Global OpenAPI security scheme
+app.openapi_schema = None  # force regeneration
+
+@app.on_event("startup")
+async def customize_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    schema = app.openapi()
+    schema["components"]["securitySchemes"] = {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-API-Key",
+        },
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        },
+    }
+    schema["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = schema
+```
+
+## Key Takeaways
+
+- `APIKeyHeader`, `APIKeyQuery`, `HTTPBearer`, `HTTPBasic` cover the most common auth patterns
+- `OAuth2AuthorizationCodeBearer` is for external OAuth2 providers (Google, GitHub)
+- `Security()` adds the OpenAPI security scheme for Swagger UI docs; `Depends()` does not
+- Use `Security()` with `scopes` parameter for fine-grained OpenAPI scope documentation
+- `auto_error=False` gives you manual control over authentication errors
+- `HTTPBasic` is only safe over HTTPS — base64 is not encryption
+- Register global security schemes in `app.openapi()` for a consistent "Authorize" button experience

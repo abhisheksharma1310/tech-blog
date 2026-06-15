@@ -1,0 +1,246 @@
+---
+title: "Background Tasks"
+description: "Use FastAPI's BackgroundTasks to run operations after returning a response — email sending, cleanup jobs, and when to reach for Celery instead"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Advanced"]
+tags: ["FastAPI", "BackgroundTasks", "Async", "Celery", "Python"]
+slug: "fastapi-background-tasks"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## What Are Background Tasks?
+
+Background tasks let you run operations **after** the HTTP response has been sent to the client. This keeps API latency low while still performing work the caller doesn't need to wait for — such as sending confirmation emails, writing audit logs, or cleaning up temporary files.
+
+FastAPI provides `BackgroundTasks` out of the box with no extra dependencies:
+
+```
+Request ──► Route Handler ──► Return Response ──► Background Task Executes
+               │                                         │
+               │  ┌──────────────────────┐               │
+               └──│  User sees response   │               │
+                  └──────────────────────┘               │
+                                                         ▼
+                                                  ┌──────────────┐
+                                                  │ Send email    │
+                                                  │ Clean up file │
+                                                  │ Log activity  │
+                                                  └──────────────┘
+```
+
+## Basic Usage
+
+Inject `BackgroundTasks` into your path operation and call `add_task()`:
+
+```python
+from fastapi import FastAPI, BackgroundTasks
+
+app = FastAPI()
+
+def send_welcome_email(email: str):
+    # Simulate sending an email — runs after the response
+    with open("email_log.txt", "a") as f:
+        f.write(f"Welcome email sent to {email}\n")
+
+@app.post("/signup")
+def signup(email: str, bg_tasks: BackgroundTasks):
+    bg_tasks.add_task(send_welcome_email, email)
+    return {"message": "User created"}
+```
+
+`add_task(func, *args, **kwargs)` takes a callable and any arguments. The task runs after the response is sent.
+
+## Real-World Use Cases
+
+### Email Sending
+
+```python
+from fastapi import BackgroundTasks, FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class SignupRequest(BaseModel):
+    email: str
+    name: str
+
+def send_email(to: str, subject: str, body: str):
+    import smtplib
+    from email.mime.text import MIMEText
+
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["To"] = to
+
+    with smtplib.SMTP("smtp.example.com", 587) as server:
+        server.starttls()
+        server.login("user@example.com", "password")
+        server.send_message(msg)
+
+@app.post("/signup")
+def signup(payload: SignupRequest, bg_tasks: BackgroundTasks):
+    bg_tasks.add_task(
+        send_email,
+        payload.email,
+        "Welcome!",
+        f"Hi {payload.name}, thanks for signing up."
+    )
+    return {"message": "Signup successful"}
+```
+
+### File Cleanup
+
+```python
+import os
+import tempfile
+from fastapi import BackgroundTasks, FastAPI, UploadFile
+
+app = FastAPI()
+
+def cleanup_temp(path: str):
+    os.unlink(path)
+
+@app.post("/upload")
+async def upload_file(file: UploadFile, bg_tasks: BackgroundTasks):
+    # Write uploaded file to temp location
+    _, ext = os.path.splitext(file.filename)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+        content = await file.read()
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    # Process the file here...
+
+    # Clean up after the response is sent
+    bg_tasks.add_task(cleanup_temp, tmp_path)
+    return {"filename": file.filename, "size": len(content)}
+```
+
+### Audit Logging
+
+```python
+import time
+from fastapi import BackgroundTasks, FastAPI, Request
+
+app = FastAPI()
+
+def log_request(method: str, path: str, status: int, duration: float):
+    with open("audit.log", "a") as f:
+        f.write(f"{time.time():.0f} | {method} {path} → {status} ({duration:.3f}s)\n")
+
+@app.get("/data")
+def get_data(request: Request, bg_tasks: BackgroundTasks):
+    start = time.time()
+    # ... handler logic
+    duration = time.time() - start
+    bg_tasks.add_task(log_request, request.method, request.url.path, 200, duration)
+    return {"data": "some value"}
+```
+
+## BackgroundTasks vs Celery
+
+| Feature | BackgroundTasks | Celery |
+|---------|----------------|--------|
+| **Process** | Same process (in-memory thread) | Separate worker (multiple processes/machines) |
+| **Persistence** | None — tasks lost on crash | Redis/RabbitMQ queue — survives restarts |
+| **Scheduling** | No — runs immediately after response | Yes — cron-like periodic tasks |
+| **Concurrency** | Single thread per task | Multiple workers, prefork/gevent/threads |
+| **Retry logic** | Manual | Built-in retries with backoff |
+| **Task chaining** | No | Yes — workflows, groups, chords |
+| **Monitoring** | None | Flower dashboard |
+| **Dependencies** | None (stdlib) | Redis/RabbitMQ + celery package |
+| **Latency overhead** | None (in-process) | ~1–5ms per task (network round-trip) |
+
+### When to Use BackgroundTasks
+
+- **Low-volume, quick operations** (< 1s) — email, logging, cache invalidation
+- **No persistence required** — losing a task on crash is acceptable
+- **Parallelism not needed** — one task at a time is fine
+- **Zero infrastructure** — no Redis, no extra processes to deploy
+
+### When to Use Celery
+
+- **Long-running tasks** — video encoding, report generation, ML inference
+- **Task persistence is critical** — must survive crashes
+- **Scheduled / periodic tasks** — nightly data syncs, daily digests
+- **High throughput** — hundreds of tasks per second
+- **Task orchestration** — chaining, grouping, fan-out patterns
+
+## Error Handling in Background Tasks
+
+Background tasks run outside the request-response cycle, so exceptions **do not** propagate to the client.
+
+```python
+import logging
+from functools import wraps
+from fastapi import BackgroundTasks, FastAPI
+
+logger = logging.getLogger("background")
+
+def safe_task(func):
+    """Decorator that catches and logs exceptions in background tasks."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logger.exception(f"Background task {func.__name__} failed: {e}")
+    return wrapper
+
+@safe_task
+def send_notification_email(email: str, message: str):
+    # If this raises, the decorator logs it instead of crashing the thread
+    raise ConnectionError("SMTP server unreachable")
+```
+
+For more robust handling, use a dedicated queue (Celery/Redis Queue) with retry logic:
+
+```python
+# Example retry pattern using tenacity
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+def send_email_with_retry(to: str, body: str):
+    # Will retry up to 3 times with exponential backoff
+    ...
+```
+
+## Important Gotchas
+
+### 1. Tasks Run in the Same Process
+
+`BackgroundTasks` executes in a thread pool within your server process. A CPU-heavy task can block all other background tasks.
+
+### 2. Database Sessions Are Closed
+
+By the time your task runs, any database session created during the request may already be closed. Always create a fresh connection inside the task:
+
+```python
+def update_analytics(article_id: int):
+    from database import SessionLocal  # import inside task
+    db = SessionLocal()
+    try:
+        db.execute("UPDATE articles SET views = views + 1 WHERE id = :id", {"id": article_id})
+        db.commit()
+    finally:
+        db.close()
+
+@app.get("/articles/{article_id}")
+def read_article(article_id: int, bg_tasks: BackgroundTasks):
+    bg_tasks.add_task(update_analytics, article_id)
+    return {"article_id": article_id}
+```
+
+### 3. Tasks Are Not Available on Async Functions by Default
+
+`BackgroundTasks` works with both sync and async path operations. However, the task function itself should be sync. If you pass an async callable to `add_task()`, it will be `await`ed in the thread pool — but you lose the benefit of non-blocking I/O.
+
+## Key Takeaways
+
+- `BackgroundTasks` lets you run lightweight operations after sending the HTTP response
+- Use `add_task(func, *args, **kwargs)` to register a background task
+- Common use cases: email notifications, file cleanup, audit logging
+- `BackgroundTasks` runs in-process with no persistence — use Celery for durable, distributed, or scheduled jobs
+- Always handle exceptions inside background tasks — they won't propagate to the client
+- Create fresh database connections inside the task; the request's session may be closed

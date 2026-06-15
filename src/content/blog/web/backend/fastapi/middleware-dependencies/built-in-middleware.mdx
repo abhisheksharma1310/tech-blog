@@ -1,0 +1,132 @@
+---
+title: "Built-in Middleware (CORS, GZip)"
+description: "Explore FastAPI's built-in middleware components: CORSMiddleware, GZipMiddleware, TrustedHostMiddleware, and HTTPSRedirectMiddleware"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Middleware & Dependencies"]
+tags: ["FastAPI", "Middleware", "CORS", "GZip", "TrustedHost", "HTTPSRedirect"]
+slug: "fastapi-built-in-middleware"
+author: "Abhishek Sharma"
+order: 1
+---
+
+# Built-in Middleware (CORS, GZip, TrustedHost, HTTPSRedirect)
+
+FastAPI provides several ready-to-use middleware components via Starlette. Middleware runs on every request before it reaches your route handler and on every response before it is sent back.
+
+## CORSMiddleware
+
+Cross-Origin Resource Sharing (CORS) controls which origins are allowed to access your API from a browser. Without it, frontend apps on a different domain will be blocked.
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+origins = [
+    "https://example.com",
+    "https://api.example.com",
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+### `allow_origins` vs `allow_origin_regex`
+
+- `allow_origins` — a list of exact origin strings.
+- `allow_origin_regex` — a regex string to match origins dynamically.
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex="https://.*\.example\.com",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+> **Warning:** Never use `allow_origins=["*"]` together with `allow_credentials=True` — the browser will reject the response.
+
+### CORS Preflight
+
+For non-simple requests (e.g. `PUT`, `DELETE`, or custom headers), the browser sends an `OPTIONS` preflight request. `CORSMiddleware` handles this automatically.
+
+## GZipMiddleware
+
+Compresses responses for clients that send `Accept-Encoding: gzip`. Saves bandwidth at the cost of a small CPU overhead on compression.
+
+```python
+from fastapi.middleware.gzip import GZipMiddleware
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+```
+
+The `minimum_size` parameter (in bytes) prevents tiny responses from being compressed. Responses smaller than this threshold pass through uncompressed.
+
+## TrustedHostMiddleware
+
+Enforces that all incoming requests have a valid `Host` header. This prevents **host header injection** attacks.
+
+```python
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["example.com", "*.example.com", "localhost"],
+)
+```
+
+Requests with a `Host` header not in the list receive a **400 Bad Request** response.
+
+## HTTPSRedirectMiddleware
+
+Redirects every incoming HTTP request to the equivalent HTTPS URL (status 307).
+
+```python
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+
+app.add_middleware(HTTPSRedirectMiddleware)
+```
+
+This is useful in production behind a TLS-terminating reverse proxy. Skip it during local development.
+
+## Combining Middleware
+
+The order of `add_middleware` calls matters — they are executed in the order they are added.
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
+
+app = FastAPI()
+
+app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://example.com"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+## Key Takeaways
+
+- `CORSMiddleware` handles cross-origin requests — use specific origins in production, not `"*"`.
+- `GZipMiddleware` compresses responses larger than `minimum_size` bytes.
+- `TrustedHostMiddleware` validates the `Host` header to prevent injection attacks.
+- `HTTPSRedirectMiddleware` redirects HTTP → HTTPS automatically.
+- Middleware order determines execution sequence — place security middleware early.

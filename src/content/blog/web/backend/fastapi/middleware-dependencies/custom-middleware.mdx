@@ -1,0 +1,156 @@
+---
+title: "Custom Middleware Functions"
+description: "Learn how to build custom middleware in FastAPI using @app.middleware and BaseHTTPMiddleware for request/response modification, timing, and logging"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Middleware & Dependencies"]
+tags: ["FastAPI", "Middleware", "Custom Middleware", "BaseHTTPMiddleware", "Logging", "Timing"]
+slug: "fastapi-custom-middleware"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# Custom Middleware Functions
+
+FastAPI lets you inject custom logic into the request-response cycle. There are two approaches: the `@app.middleware("http")` decorator and the `BaseHTTPMiddleware` class from Starlette.
+
+## `@app.middleware("http")` Decorator
+
+The simplest way to add custom middleware — decorate an async function that receives a `Request` and a `call_next` function.
+
+```python
+import time
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    process_time = time.perf_counter() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
+```
+
+The `call_next` function passes the request down the middleware chain and eventually to the route handler. Whatever `call_next` returns (a `StreamingResponse`) can be modified before returning.
+
+## Request Modification
+
+Middleware can inspect or modify the request before it reaches the handler.
+
+```python
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.middleware("http")
+async def block_user_agent(request: Request, call_next):
+    user_agent = request.headers.get("user-agent", "")
+    if "curl" in user_agent.lower():
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            content={"error": "curl is not allowed"},
+            status_code=403,
+        )
+    return await call_next(request)
+```
+
+## Response Modification
+
+Headers, status codes, and body can be altered after the handler runs.
+
+```python
+from fastapi import FastAPI, Request
+from starlette.responses import Response
+
+app = FastAPI()
+
+@app.middleware("http")
+async def add_custom_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    response.headers["X-Powered-By"] = "FastAPI"
+    response.headers["X-API-Version"] = "2.0"
+    return response
+```
+
+## Logging Middleware
+
+A practical middleware that logs every request with method, path, status, and duration.
+
+```python
+import time
+import logging
+from fastapi import FastAPI, Request
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("api")
+
+app = FastAPI()
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed = time.perf_counter() - start
+    logger.info(
+        "%s %s → %d (%.3fs)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed,
+    )
+    return response
+```
+
+## `BaseHTTPMiddleware` (Class-based)
+
+Starlette's `BaseHTTPMiddleware` lets you encapsulate middleware logic in a reusable class with `dispatch`.
+
+```python
+import time
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+class TimingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        start = time.perf_counter()
+        response: Response = await call_next(request)
+        elapsed = time.perf_counter() - start
+        response.headers["X-Process-Time"] = f"{elapsed:.4f}"
+        return response
+
+# Register
+app.add_middleware(TimingMiddleware)
+```
+
+Class-based middleware is easier to parameterise (e.g. pass a logger or config) and test.
+
+## Middleware with State
+
+Pass dependencies through `request.state`.
+
+```python
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.middleware("http")
+async def inject_db(request: Request, call_next):
+    request.state.db = {"connection": "postgresql://..."}
+    response = await call_next(request)
+    return response
+
+@app.get("/items")
+async def get_items(request: Request):
+    db = request.state.db
+    return {"db_connection": db["connection"]}
+```
+
+## Key Takeaways
+
+- `@app.middleware("http")` is the simplest way to add ad-hoc middleware.
+- `BaseHTTPMiddleware` provides a reusable class interface with `dispatch`.
+- Use middleware for cross-cutting concerns: timing, logging, authentication checks, request enrichment.
+- `request.state` is the correct way to share data from middleware to route handlers.
+- Always `await call_next(request)` to avoid hanging the request pipeline.

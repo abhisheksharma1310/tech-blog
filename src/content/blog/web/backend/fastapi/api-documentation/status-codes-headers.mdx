@@ -1,0 +1,340 @@
+---
+title: "Response Status Codes & Headers"
+description: "Set HTTP status codes, attach custom headers, and use FastAPI's response classes — JSONResponse, StreamingResponse, FileResponse, RedirectResponse"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "APIs & Documentation"]
+tags: ["FastAPI", "Status Codes", "HTTP Headers", "Response Classes", "Python"]
+slug: "fastapi-status-codes-headers"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Setting Status Codes with `status_code`
+
+The simplest way to set a response status code is via the `status_code` decorator parameter. Always use the `status` module instead of raw integers for readability:
+
+```python
+from fastapi import FastAPI, status
+
+app = FastAPI()
+
+@app.post("/items", status_code=status.HTTP_201_CREATED)
+def create_item():
+    return {"message": "created"}
+
+
+@app.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_item(item_id: int):
+    return None  # 204 responses must have no body
+```
+
+| Common Codes | Constant | When to Use |
+|---|---|---|
+| 200 | `HTTP_200_OK` | GET, PUT, PATCH success |
+| 201 | `HTTP_201_CREATED` | POST — resource created |
+| 204 | `HTTP_204_NO_CONTENT` | DELETE success |
+| 400 | `HTTP_400_BAD_REQUEST` | Client error, bad payload |
+| 401 | `HTTP_401_UNAUTHORIZED` | Missing/invalid auth |
+| 403 | `HTTP_403_FORBIDDEN` | Authenticated but not allowed |
+| 404 | `HTTP_404_NOT_FOUND` | Resource doesn't exist |
+| 409 | `HTTP_409_CONFLICT` | Duplicate resource |
+| 422 | `HTTP_422_UNPROCESSABLE_ENTITY` | Validation failure |
+| 429 | `HTTP_429_TOO_MANY_REQUESTS` | Rate limited |
+| 500 | `HTTP_500_INTERNAL_SERVER_ERROR` | Server error |
+
+### Dynamic Status Codes
+
+When the status code depends on runtime logic, return a `Response` object directly:
+
+```python
+from fastapi import Response, status
+
+
+@app.post("/items")
+def create_item(duplicate: bool = False):
+    if duplicate:
+        return Response(status_code=status.HTTP_409_CONFLICT)
+    return Response(status_code=status.HTTP_201_CREATED)
+```
+
+## Using the `Response` Class
+
+The `Response` class gives you full control over the HTTP response — status, headers, media type, and body:
+
+```python
+from fastapi import Response
+from fastapi.responses import JSONResponse
+
+
+@app.get("/custom")
+def custom_response():
+    content = """<?xml version="1.0"?>
+<response>
+    <message>Hello from FastAPI</message>
+</response>"""
+    return Response(
+        content=content,
+        media_type="application/xml",
+        status_code=200,
+        headers={"X-Custom-Id": "abc123"},
+    )
+```
+
+### Setting Headers
+
+There are three ways to add headers to a response:
+
+```python
+from fastapi import Response, Header
+from typing import Annotated
+
+
+# 1. Via the Response object
+@app.get("/headers-v1")
+def headers_v1():
+    return Response(
+        content='{"ok": true}',
+        media_type="application/json",
+        headers={"X-Request-Id": "req-001", "X-Process-Time": "12ms"},
+    )
+
+
+# 2. Via the Response parameter dependency
+@app.get("/headers-v2")
+def headers_v2(response: Response):
+    response.headers["X-Request-Id"] = "req-002"
+    response.headers["X-Process-Time"] = "8ms"
+    return {"message": "Headers set via response parameter"}
+
+
+# 3. Via response_headers (declarative)
+@app.get(
+    "/headers-v3",
+    response_model=dict,
+    responses={
+        200: {
+            "headers": {
+                "X-RateLimit-Limit": {"schema": {"type": "integer"}},
+                "X-RateLimit-Remaining": {"schema": {"type": "integer"}},
+            }
+        }
+    },
+)
+def headers_v3():
+    return JSONResponse(
+        content={"ok": True},
+        headers={"X-RateLimit-Limit": "100", "X-RateLimit-Remaining": "87"},
+    )
+```
+
+### Custom Headers with `Header` Parameter
+
+Read incoming headers with the `Header` type annotation:
+
+```python
+from fastapi import Header
+
+
+@app.get("/items")
+def list_items(
+    user_agent: Annotated[str | None, Header()] = None,
+    x_trace_id: Annotated[str | None, Header(alias="X-Trace-Id")] = None,
+):
+    return {
+        "user_agent": user_agent,
+        "trace_id": x_trace_id,
+    }
+```
+
+FastAPI automatically converts `kebab-case` header names to `snake_case` parameters.
+
+## `JSONResponse`
+
+`JSONResponse` is the default return type for FastAPI routes. You can use it explicitly when you need to set status codes or headers alongside JSON data:
+
+```python
+from fastapi.responses import JSONResponse
+
+
+@app.get("/items/{item_id}")
+def get_item(item_id: int):
+    data = {"id": item_id, "name": "Widget", "price": 9.99}
+    return JSONResponse(
+        content=data,
+        status_code=200,
+        headers={"X-Item-Version": "2"},
+    )
+```
+
+### `jsonable_encoder` for Non-Serialisable Types
+
+Use `jsonable_encoder` to convert complex types (datetimes, Decimals, ObjectIds) before passing them to `JSONResponse`:
+
+```python
+from datetime import datetime
+from fastapi.encoders import jsonable_encoder
+
+
+@app.get("/now")
+def current_time():
+    return JSONResponse(
+        content=jsonable_encoder({"server_time": datetime.now()}),
+    )
+```
+
+## `StreamingResponse`
+
+Stream large responses without loading everything into memory — useful for CSV generation, log streaming, or proxying:
+
+```python
+from fastapi.responses import StreamingResponse
+import io
+
+
+@app.get("/export/csv")
+def export_csv():
+    def generate():
+        yield "id,name,price\n"
+        yield "1,Widget,9.99\n"
+        yield "2,Gadget,19.99\n"
+        yield "3,Doohickey,14.99\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=products.csv"},
+    )
+```
+
+```bash
+curl http://localhost:8000/export/csv --output products.csv
+```
+
+### Streaming a File from Disk
+
+```python
+@app.get("/download/{filename}")
+def download_file(filename: str):
+    def iterfile():
+        with open(f"/data/{filename}", "rb") as f:
+            yield from f
+
+    return StreamingResponse(
+        iterfile(),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+```
+
+## `FileResponse`
+
+`FileResponse` is optimised for sending files — it supports range requests, conditional headers (If-Modified-Since), and sets Content-Type automatically:
+
+```python
+from fastapi.responses import FileResponse
+
+
+@app.get("/download/{filename}")
+def download_file(filename: str):
+    file_path = f"/data/uploads/{filename}"
+    return FileResponse(
+        path=file_path,
+        filename=filename,  # Override the download name
+        media_type="application/pdf",
+        headers={"X-File-Size": str(get_file_size(file_path))},
+    )
+```
+
+```bash
+curl -O http://localhost:8000/download/report.pdf
+```
+
+| Feature | `FileResponse` | `StreamingResponse` |
+|---|---|---|
+| Range requests | ✅ Automatic | ❌ Manual |
+| Content-Type detection | ✅ From filename | ❌ Must set manually |
+| If-Modified-Since | ✅ Automatic | ❌ Manual |
+| Best for | Static files, downloads | Dynamic streams, CSV |
+
+## `RedirectResponse`
+
+Redirect clients to another URL with any HTTP redirect status:
+
+```python
+from fastapi.responses import RedirectResponse
+
+
+@app.get("/old-items")
+def old_items_redirect():
+    return RedirectResponse(
+        url="/items",
+        status_code=status.HTTP_301_MOVED_PERMANENTLY,
+    )
+
+
+@app.get("/legacy-page")
+def legacy_redirect():
+    return RedirectResponse(
+        url="https://example.com/new-page",
+        status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+    )
+```
+
+| Status Code | Constant | Meaning |
+|---|---|---|
+| 301 | `HTTP_301_MOVED_PERMANENTLY` | Resource moved permanently — browsers cache this |
+| 302 | `HTTP_302_FOUND` | Temporary redirect (default) |
+| 307 | `HTTP_307_TEMPORARY_REDIRECT` | Temporary, preserves HTTP method |
+| 308 | `HTTP_308_PERMANENT_REDIRECT` | Permanent, preserves HTTP method |
+
+## `PlainTextResponse` and `HTMLResponse`
+
+```python
+from fastapi.responses import PlainTextResponse, HTMLResponse
+
+
+@app.get("/healthz", response_class=PlainTextResponse)
+def health_check():
+    return "OK"
+
+
+@app.get("/greeting", response_class=HTMLResponse)
+def greeting():
+    return "<h1>Hello from FastAPI</h1>"
+```
+
+## Comparing Response Classes
+
+```
+                    ┌────────────────────────┐
+                    │    Response (base)      │
+                    └────────┬───────────────┘
+                             │
+              ┌──────────────┼──────────────┬──────────────┐
+              ▼              ▼              ▼              ▼
+       JSONResponse   HTMLResponse   PlainTextResponse   RedirectResponse
+              │                                        ┌──────────────────┐
+              └────────────────────────────────────────┤ StreamingResponse│
+                                                       │                  │
+                                                       │  FileResponse    │
+                                                       └──────────────────┘
+```
+
+| Class | Use Case |
+|---|---|
+| `Response` | Base — raw bytes, custom media types |
+| `JSONResponse` | JSON APIs (default in FastAPI) |
+| `HTMLResponse` | Returning HTML snippets |
+| `PlainTextResponse` | Health checks, simple text |
+| `RedirectResponse` | Redirecting clients |
+| `StreamingResponse` | Large/generated content (CSV, logs, proxies) |
+| `FileResponse` | File downloads with range support |
+
+## Key Takeaways
+
+- Set static status codes via the `status_code` decorator parameter using `status.HTTP_*` constants — never raw integers
+- Add custom response headers via the `Response` parameter dependency, `Response(headers=...)`, or explicit response classes
+- `JSONResponse` is the default — use it explicitly when you need to combine custom status codes and headers with JSON data
+- `StreamingResponse` streams content without buffering — ideal for large CSV exports or proxied data
+- `FileResponse` handles file downloads with automatic range request support and Content-Type detection
+- `RedirectResponse` supports 301, 302, 307, and 308 status codes for URL redirection

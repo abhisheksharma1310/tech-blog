@@ -1,0 +1,337 @@
+---
+title: "Request Validation with Pydantic"
+description: "Validate incoming request bodies with Pydantic — Field constraints, custom validators, nested models, and user-friendly error messages"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Routing & Requests"]
+tags: ["FastAPI", "Pydantic", "Validation", "Request Body", "Python"]
+slug: "fastapi-request-validation"
+author: "Abhishek Sharma"
+order: 3
+---
+
+## Why Pydantic?
+
+FastAPI uses Pydantic models to define and validate request bodies automatically. When a request arrives, FastAPI:
+
+1. Reads the JSON body
+2. Validates it against your Pydantic model
+3. Converts types automatically
+4. Returns a **422 Unprocessable Entity** with detailed error messages if validation fails
+
+```
+ Request JSON          Pydantic Model          Your Handler
+ ─────────────         ───────────────         ────────────
+ {"title": "A"}  ──►  title: str       ──►  def create(...)
+ {"price": -5}   ──►  price: confloat(         raise ValueError
+                       ge=0)            ──►
+                       │                     422 + error details
+                       ▼
+                 ValidationError
+                 (rich error response)
+```
+
+## Using `Field()` for Constraints
+
+The `Field()` function adds validation constraints, default values, and metadata to model fields:
+
+```python
+from pydantic import BaseModel, Field
+from typing import Optional
+
+
+class Item(BaseModel):
+    name: str = Field(
+        ...,                    # ... means required
+        min_length=3,
+        max_length=50,
+        description="Item name must be 3-50 characters",
+    )
+    price: float = Field(
+        ...,
+        ge=0,                   # greater than or equal to 0
+        le=10000,               # less than or equal to 10000
+    )
+    quantity: int = Field(
+        default=1,
+        ge=1,
+        le=1000,
+    )
+    code: str = Field(
+        default=None,
+        pattern=r"^[A-Z]{3}-\d{4}$",  # regex pattern
+    )
+```
+
+### Common Field Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `default` | any | Default value (use `...` for required) |
+| `default_factory` | callable | Callable that produces a default |
+| `alias` | str | JSON field name (different from Python attr) |
+| `title` | str | Human-readable title for OpenAPI |
+| `description` | str | Field description for OpenAPI |
+| `min_length` / `max_length` | int | String length constraints |
+| `gt` / `ge` / `lt` / `le` | int/float | Numeric constraints |
+| `pattern` | str | Regex pattern for strings |
+| `multiple_of` | float | Number must be a multiple of this |
+| `examples` | list | Example values for OpenAPI docs |
+
+```python
+class Product(BaseModel):
+    sku: str = Field(
+        ...,
+        pattern=r"^SKU-\d{6}$",
+        examples=["SKU-123456"],
+    )
+    rating: float = Field(
+        default=0,
+        ge=0,
+        le=5,
+        multiple_of=0.5,
+    )
+```
+
+## Custom Validators with `@validator`
+
+For validation logic beyond simple constraints, use `@validator`:
+
+```python
+from pydantic import BaseModel, Field, validator
+
+
+class Reservation(BaseModel):
+    check_in: str
+    check_out: str
+    guests: int = Field(..., ge=1, le=10)
+
+    @validator("check_out")
+    def check_out_after_check_in(cls, v, values):
+        """Ensure check_out is after check_in."""
+        if "check_in" in values and v <= values["check_in"]:
+            raise ValueError("check_out must be after check_in")
+        return v
+
+    @validator("guests")
+    def guests_within_limit(cls, v):
+        if v > 10:
+            raise ValueError("Maximum 10 guests per reservation")
+        return v
+```
+
+### Validator Parameters
+
+```python
+@validator(
+    "field_name",
+    pre=True,        # Run before type coercion
+    each_item=True,  # Validate each item in a list
+    always=True,     # Run even if field has a default
+)
+```
+
+| Parameter | Effect |
+|-----------|--------|
+| `pre=True` | Runs before Pydantic's built-in type coercion |
+| `each_item=True` | Applies validator to each element of a list |
+| `always=True` | Runs even when the field value is the default |
+
+```python
+class Order(BaseModel):
+    items: list[str]
+
+    @validator("items", each_item=True)
+    def item_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Item name cannot be blank")
+        return v.strip()
+```
+
+### Multiple Fields on One Validator
+
+```python
+class PasswordReset(BaseModel):
+    password: str = Field(..., min_length=8)
+    confirm_password: str
+
+    @validator("confirm_password")
+    def passwords_match(cls, v, values):
+        if "password" in values and v != values["password"]:
+            raise ValueError("Passwords do not match")
+        return v
+```
+
+### Pre-validators for Raw Data
+
+Use `pre=True` when you need to clean or transform raw input before standard validation:
+
+```python
+class TagInput(BaseModel):
+    tags: list[str]
+
+    @validator("tags", pre=True, each_item=True)
+    def clean_tag(cls, v):
+        if isinstance(v, str):
+            return v.strip().lower()
+        return v
+```
+
+## Nested Model Validation
+
+Pydantic handles nested models recursively — validation cascades through every level:
+
+```python
+from pydantic import BaseModel, Field
+from typing import Optional
+
+
+class Address(BaseModel):
+    street: str = Field(..., min_length=5)
+    city: str = Field(..., min_length=2)
+    zip_code: str = Field(..., pattern=r"^\d{5}(-\d{4})?$")
+    country: str = Field(default="US", min_length=2, max_length=2)
+
+
+class User(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: str = Field(..., pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+    age: int = Field(..., ge=0, le=150)
+    address: Optional[Address] = None
+    tags: list[str] = Field(default_factory=list, max_length=10)
+```
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.post("/users")
+def create_user(user: User):
+    # At this point, ALL nested validation has passed
+    return {"message": f"User {user.name} created", "address": user.address}
+```
+
+```
+Input JSON:
+{
+  "name": "Alice",
+  "email": "alice@example.com",
+  "age": 30,
+  "address": {
+    "street": "123 Main St",
+    "city": "Springfield",
+    "zip_code": "12345"
+  },
+  "tags": ["admin", "power-user"]
+}
+           │
+           ▼
+  ┌─ User ──────────────────────────┐
+  │  name: ✓ "Alice"                │
+  │  email: ✓ "alice@example.com"   │
+  │  age: ✓ 30                      │
+  │  address: ┌─ Address ────────┐  │
+  │           │ street: ✓         │  │
+  │           │ city: ✓           │  │
+  │           │ zip_code: ✓       │  │
+  │           │ country: "US" (df)│  │
+  │           └───────────────────┘  │
+  │  tags: ✓ ["admin", "power-user"]│
+  └─────────────────────────────────┘
+```
+
+### List of Nested Models
+
+```python
+class LineItem(BaseModel):
+    product_id: int
+    quantity: int = Field(..., ge=1)
+    unit_price: float = Field(..., gt=0)
+
+
+class Invoice(BaseModel):
+    invoice_id: str
+    line_items: list[LineItem]  # Each item is validated
+
+    @validator("line_items")
+    def at_least_one_item(cls, v):
+        if len(v) < 1:
+            raise ValueError("At least one line item required")
+        return v
+```
+
+## Error Messages and Customization
+
+When validation fails, FastAPI returns a 422 with structured errors:
+
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "name"],
+      "msg": "ensure this value has at least 3 characters",
+      "type": "value_error.any_str.min_length"
+    },
+    {
+      "loc": ["body", "price"],
+      "msg": "ensure this value is greater than or equal to 0",
+      "type": "value_error.number.not_ge"
+    }
+  ]
+}
+```
+
+### Custom Error Messages
+
+Raise `ValueError` or `AssertionError` inside validators to control messages:
+
+```python
+class UserCreate(BaseModel):
+    username: str = Field(..., min_length=3)
+
+    @validator("username")
+    def no_spaces(cls, v):
+        if " " in v:
+            raise ValueError("Username must not contain spaces")
+        return v
+```
+
+### Request-Level Validation
+
+Complex cross-field validation can happen at the handler level, but prefer validators when possible:
+
+```python
+@app.post("/orders")
+def create_order(order: Order):
+    # Model validators handle per-field and cross-field rules
+    # Handler-level: business logic validation (e.g., check inventory)
+    ...
+```
+
+## Validation with `constr`, `conint`, `confloat`
+
+Pydantic provides shorthand constrained types:
+
+```python
+from pydantic import BaseModel, constr, conint, confloat, conlist
+
+
+class Config(BaseModel):
+    username: constr(min_length=3, max_length=20, pattern=r"^[a-zA-Z0-9_]+$")
+    port: conint(ge=1024, le=65535) = 8000
+    threshold: confloat(gt=0, le=1.0) = 0.5
+    allowed_ips: conlist(str, min_length=1, max_length=10)
+```
+
+These behave identically to `Field()` constrained fields but use a shorter syntax.
+
+## Key Takeaways
+
+- Pydantic models define the schema and validation rules for request bodies — FastAPI validates automatically and returns 422 on failure
+- `Field()` provides inline constraints: `min_length`, `max_length`, `ge`, `le`, `gt`, `lt`, `pattern`, `multiple_of`
+- `@validator` runs custom logic — use `pre=True` for raw input, `each_item=True` for lists, `always=True` for defaults
+- Validation cascades through nested models automatically: every field at every level is checked
+- Custom error messages come from `raise ValueError("message")` inside validators
+- FastAPI's 422 error response includes `loc` (field path), `msg` (description), and `type` (error category)
+- Use constrained type shorthands (`constr`, `conint`, `confloat`, `conlist`) for concise field definitions

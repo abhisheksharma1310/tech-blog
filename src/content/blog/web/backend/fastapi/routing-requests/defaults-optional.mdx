@@ -1,0 +1,289 @@
+---
+title: "Default Values & Optional Parameters"
+description: "Handle optional path parameters, default query values, Optional and Union types, mixing required and optional fields, and Body() embed in FastAPI"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Routing & Requests"]
+tags: ["FastAPI", "Optional Parameters", "Default Values", "Query Parameters", "Path Parameters"]
+slug: "fastapi-defaults-optional"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Required vs Optional in FastAPI
+
+FastAPI determines whether a parameter is required or optional based on its type annotation and default value:
+
+| Parameter | Type | Default | Behavior |
+|-----------|------|---------|----------|
+| `item_id: int` | Path | — | Required (path param) |
+| `q: str` | Query | No default | **Required** query param |
+| `q: str = None` | Query | `None` | Optional |
+| `q: Optional[str]` | Query | `None` | Optional (same as above) |
+| `q: str = "default"` | Query | `"default"` | Optional with default |
+| `skip: int = 0` | Query | `0` | Optional with default |
+
+```python
+from fastapi import FastAPI, Query, Path, Body
+from typing import Optional, Union
+
+app = FastAPI()
+
+
+@app.get("/items")
+def list_items(
+    # Required query parameter — no default
+    category: str,
+    # Optional with default
+    sort: str = "name",
+    # Optional (explicit None)
+    direction: Optional[str] = None,
+    # Optional with default using Query()
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+):
+    ...
+```
+
+```
+/items?category=books&sort=price&page=2&size=20
+                                    └─ Optional params omitted when absent
+                                       (direction is None, page defaults to 1)
+```
+
+## Optional Path Parameters
+
+Path parameters can be made optional by giving them a default — but they must come **after** required path params:
+
+```python
+@app.get("/users/{user_id}/posts/{post_id}")
+def get_post(user_id: int, post_id: int):
+    """Both path params required."""
+    ...
+
+
+@app.get("/items/{item_id}")
+def get_item(
+    item_id: int = Path(..., title="The item ID"),
+    include_details: bool = False,
+):
+    """Path param required, query param optional."""
+    ...
+```
+
+> **Path parameters cannot truly be optional** — if the path segment doesn't exist, there's no URL to match. To simulate optional path segments, define multiple routes:
+
+```python
+@app.get("/posts")
+@app.get("/posts/{post_id}")
+def get_posts(post_id: Optional[int] = None):
+    if post_id is None:
+        return {"posts": all_posts}
+    return {"post": posts[post_id]}
+```
+
+## Query Parameters with `Query()`
+
+Use `Query()` for fine-grained control over query parameters:
+
+```python
+@app.get("/products")
+def list_products(
+    # Required query with constraints
+    category: str = Query(..., min_length=2, max_length=20),
+    # Optional with constraints
+    min_price: float = Query(None, ge=0),
+    max_price: float = Query(None, ge=0, le=100000),
+    # Optional with default
+    in_stock: bool = Query(True),
+    # List query param (e.g., ?tags=a&tags=b)
+    tags: list[str] = Query(default_factory=list),
+):
+    ...
+```
+
+### Query Parameter Behaviour
+
+| Declaration | URL Example | Value |
+|-------------|-------------|-------|
+| `q: str = "default"` | *(omitted)* | `"default"` |
+| `q: Optional[str] = None` | *(omitted)* | `None` |
+| `q: str` | *(omitted)* | **Validation error** (required) |
+| `tags: list[str] = []` | `?tags=a&tags=b` | `["a", "b"]` |
+| `active: bool = True` | `?active=0` | `False` |
+| `active: bool = True` | `?active=1` | `True` |
+
+## The `Optional` Type
+
+`Optional[X]` is equivalent to `Union[X, None]`. FastAPI treats both identically:
+
+```python
+from typing import Optional, Union
+
+
+# These are equivalent — both mean "str or None"
+def read_item(q: Optional[str] = None): ...
+def read_item(q: Union[str, None] = None): ...
+def read_item(q: str = None): ...
+```
+
+**Important nuance:**
+
+```python
+# Optional WITHOUT a default IS required
+def read_item(q: Optional[str]):   # ❌ Required (no default)
+  ...
+
+# Optional WITH a default = None IS optional
+def read_item(q: Optional[str] = None):  # ✅ Optional
+  ...
+```
+
+## `Union` Types
+
+`Union` lets a parameter accept multiple types:
+
+```python
+from typing import Union
+
+
+@app.get("/items")
+def search_items(
+    q: Union[str, int] = None,
+    # Accepts: ?q=hello  or  ?q=42
+):
+    ...
+
+
+@app.get("/config/{setting}")
+def get_setting(setting: Union[int, str]):
+    # Matches both /config/42 and /config/theme
+    ...
+```
+
+FastAPI tries each type in order and uses the first one that validates. For query params, values are strings by default, so `Union[str, int]` with `?q=42` returns the string `"42"`. For path params, type coercion works automatically.
+
+## Mixing Required and Optional
+
+You can freely mix required and optional parameters — required first is convention but not enforced:
+
+```python
+@app.post("/orders")
+def create_order(
+    # Required body params (from Pydantic model)
+    payload: OrderCreate,
+    # Optional query params
+    coupon: Optional[str] = None,
+    gift_wrap: bool = False,
+    # Required header
+    authorization: str = Header(...),
+):
+    ...
+```
+
+## `Body()` Embed
+
+When you have a single Pydantic model as a body parameter, FastAPI expects the model fields directly as JSON keys. Use `Body(embed=True)` to wrap them in a nested object:
+
+```python
+from fastapi import Body
+
+
+class ItemPrice(BaseModel):
+    price: float = Field(..., gt=0)
+    currency: str = "USD"
+
+
+# Without embed — expects: {"price": 9.99, "currency": "USD"}
+@app.put("/items/{item_id}/price")
+def update_price(item_id: int, price: ItemPrice):
+    ...
+
+
+# With embed — expects: {"price": {"price": 9.99, "currency": "USD"}}
+@app.put("/items/{item_id}/price-embed")
+def update_price_embed(item_id: int, price: ItemPrice = Body(embed=True)):
+    ...
+```
+
+| `embed=True`? | Expected JSON Body |
+|---------------|--------------------|
+| No (default) | `{"price": 9.99, "currency": "USD"}` |
+| Yes | `{"price": {"price": 9.99, "currency": "USD"}}` |
+
+## Multiple Body Parameters
+
+FastAPI automatically wraps multiple body models into a JSON object:
+
+```python
+class Item(BaseModel):
+    name: str
+    price: float
+
+class User(BaseModel):
+    username: str
+
+
+@app.put("/items/{item_id}")
+def update_item(
+    item_id: int,
+    item: Item,
+    user: User,
+    importance: int = Body(ge=1, le=5),
+):
+    """Expects: { "item": {...}, "user": {...}, "importance": 3 }"""
+    ...
+```
+
+The single body param `importance` uses `Body()` directly and is treated as a top-level key.
+
+## Default Factory Functions
+
+Use `default_factory` for mutable defaults (avoid the mutable default argument pitfall):
+
+```python
+from datetime import datetime
+from typing import Optional
+
+
+@app.get("/logs")
+def get_logs(
+    level: str = "info",
+    since: Optional[datetime] = None,
+    tags: list[str] = Query(default_factory=list),  # ✅ New list each request
+    metadata: dict = Query(default_factory=dict),    # ✅ New dict each request
+):
+    ...
+```
+
+```python
+# ❌ BAD — same list shared across requests
+def get_logs(tags: list[str] = []): ...
+
+# ✅ GOOD — fresh list per request
+def get_logs(tags: list[str] = Query(default_factory=list)): ...
+```
+
+## Summary: Declaration Cheat Sheet
+
+| Scenario | Declaration |
+|----------|-------------|
+| Required path param | `item_id: int` |
+| Required query param | `q: str = Query(...)` |
+| Optional query param | `q: Optional[str] = None` |
+| Optional with default | `q: str = "default"` |
+| Optional with constraint | `q: str = Query(None, min_length=3)` |
+| Required with constraint | `q: str = Query(..., max_length=50)` |
+| List query param | `tags: list[str] = Query(default_factory=list)` |
+| Multiple types | `q: Union[str, int] = None` |
+| Body embed single model | `model: Model = Body(embed=True)` |
+| Multiple body models | `item: Item, user: User` |
+
+## Key Takeaways
+
+- Parameters without defaults are **required**; those with defaults are **optional**
+- `Optional[X]` is sugar for `Union[X, None]` — you still need `= None` to make it optional
+- Use `Query()` and `Path()` to add constraints (ge, le, min_length) to optional parameters
+- `Body(embed=True)` wraps a single model field inside a named key in the JSON body
+- Use `default_factory=list` for mutable defaults to avoid shared-state bugs
+- `Union` types let parameters accept multiple input types — FastAPI attempts validation in order
+- Multiple body parameters are merged into a single JSON object automatically

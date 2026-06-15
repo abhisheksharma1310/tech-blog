@@ -1,0 +1,307 @@
+---
+title: "Auto-Generated Docs (Swagger UI, ReDoc)"
+description: "FastAPI generates OpenAPI-compliant documentation automatically — explore Swagger UI at /docs and ReDoc at /redoc, customize metadata, tag endpoints, and disable docs in production"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "APIs & Documentation"]
+tags: ["FastAPI", "Swagger UI", "ReDoc", "OpenAPI", "API Documentation", "Python"]
+slug: "fastapi-auto-docs"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## How FastAPI Generates the OpenAPI Spec
+
+Every route you define in FastAPI produces an **OpenAPI** (formerly Swagger) specification automatically. The framework inspects:
+
+- The **path** and **HTTP method** from the decorator
+- **Path parameters** from the function signature
+- **Query parameters** from keyword arguments with defaults
+- **Request body** from Pydantic model type hints
+- **Response model** from `response_model` or return type annotations
+
+```python
+from fastapi import FastAPI, Path, Query
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class Item(BaseModel):
+    name: str
+    price: float
+
+@app.get("/items/{item_id}")
+def read_item(
+    item_id: int = Path(ge=1),
+    q: str | None = Query(default=None, max_length=50)
+) -> Item:
+    return Item(name="Widget", price=9.99)
+```
+
+FastAPI converts this entire route into an OpenAPI operation object:
+
+```yaml
+/items/{item_id}:
+  get:
+    parameters:
+      - name: item_id
+        in: path
+        schema: { type: integer, minimum: 1 }
+      - name: q
+        in: query
+        schema: { type: string, maxLength: 50, nullable: true }
+    responses:
+      "200":
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Item" }
+```
+
+## Swagger UI (`/docs`)
+
+By default FastAPI exposes an interactive Swagger UI at **`/docs`**. You can send requests, view responses, and see schemas — all from the browser:
+
+| Feature | Behaviour |
+|---|---|
+| **Try it out** | Sends real HTTP requests to your running server |
+| **Schema viewer** | Expands models, enums, and nested objects |
+| **Auth support** | API keys, Bearer tokens, OAuth2 flows |
+| **Code samples** | Auto-generated cURL, Python, JavaScript, etc. |
+
+```python
+# Swagger UI is enabled by default — visit http://localhost:8000/docs
+app = FastAPI()
+```
+
+## ReDoc (`/redoc`)
+
+FastAPI also provides **ReDoc**, an alternative documentation UI focused on readability. It renders the entire spec in a clean, three-panel layout:
+
+```python
+# ReDoc is also enabled by default — visit http://localhost:8000/redoc
+app = FastAPI()
+```
+
+| Doc UI | URL | Best for |
+|---|---|---|
+| **Swagger UI** | `/docs` | Interactive testing, development |
+| **ReDoc** | `/redoc` | Reference docs, sharing with teams |
+
+## Customizing Metadata
+
+You can control what appears in the generated docs by passing metadata to the `FastAPI` constructor:
+
+```python
+app = FastAPI(
+    title="Shop API",
+    description="RESTful API for the online shop — product catalog, cart, checkout",
+    version="2.1.0",
+    summary="Online Shop Backend",
+    terms_of_service="https://example.com/terms",
+    contact={
+        "name": "API Support",
+        "url": "https://example.com/support",
+        "email": "api@example.com",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+)
+```
+
+This metadata is injected into the OpenAPI root object:
+
+```
+openapi: 3.1.0
+info:
+  title: Shop API
+  description: RESTful API for the online shop...
+  version: 2.1.0
+  contact:
+    name: API Support
+    email: api@example.com
+  license:
+    name: MIT
+```
+
+### Server and External Docs
+
+```python
+app = FastAPI(
+    servers=[
+        {"url": "https://api.example.com/v2", "description": "Production"},
+        {"url": "https://staging.example.com", "description": "Staging"},
+    ],
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+```
+
+## Organising Endpoints with Tags
+
+Use the `tags` parameter to group endpoints in the docs:
+
+```python
+from fastapi import APIRouter
+
+router_items = APIRouter(prefix="/items", tags=["Items"])
+router_users = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router_items.get("/")
+def list_items():
+    return [{"id": 1, "name": "Widget"}]
+
+
+@router_items.post("/")
+def create_item():
+    return {"id": 2, "name": "Gadget"}
+
+
+@router_users.get("/")
+def list_users():
+    return [{"id": 1, "name": "Alice"}]
+```
+
+Swagger UI groups these under collapsible sections:
+
+```
+┌─ Items ──────────────────────────┐
+│ GET  /items                       │
+│ POST /items                       │
+└───────────────────────────────────┘
+┌─ Users ──────────────────────────┐
+│ GET  /users                       │
+└───────────────────────────────────┘
+```
+
+You can also add a description for each tag:
+
+```python
+tags_metadata = [
+    {
+        "name": "Items",
+        "description": "Product catalogue — create, read, update, delete items",
+        "externalDocs": {
+            "description": "Inventory guide",
+            "url": "https://example.com/inventory",
+        },
+    },
+    {
+        "name": "Users",
+        "description": "User accounts and profile management",
+    },
+]
+
+app = FastAPI(openapi_tags=tags_metadata)
+```
+
+## Disabling Docs in Production
+
+You should **disable** or **restrict** documentation in production to avoid leaking API schema details:
+
+```python
+import os
+
+app = FastAPI(
+    docs_url="/docs" if os.getenv("ENV") == "development" else None,
+    redoc_url="/redoc" if os.getenv("ENV") == "development" else None,
+    openapi_url="/openapi.json" if os.getenv("ENV") == "development" else None,
+)
+```
+
+Setting these to `None` removes the corresponding routes entirely:
+
+| Parameter | Effect when `None` |
+|---|---|
+| `docs_url=None` | `/docs` returns 404 |
+| `redoc_url=None` | `/redoc` returns 404 |
+| `openapi_url=None` | OpenAPI JSON spec is not generated |
+
+### Conditional OpenAPI via Dependency
+
+For more granular control, override the OpenAPI function:
+
+```python
+from fastapi.openapi.utils import get_openapi
+
+
+def custom_openapi():
+    if os.getenv("ENV") == "production":
+        return None
+    return get_openapi(
+        title="Shop API",
+        version="2.1.0",
+        routes=app.routes,
+    )
+
+
+app.openapi = custom_openapi
+```
+
+## The Generated OpenAPI JSON
+
+Access the raw spec at `/openapi.json`:
+
+```bash
+curl http://localhost:8000/openapi.json | jq '.info'
+```
+
+```json
+{
+  "title": "Shop API",
+  "version": "2.1.0",
+  "description": "RESTful API for the online shop..."
+}
+```
+
+You can use this JSON with any OpenAPI-compatible tool — Postman, Insomnia, `openapi-generator`, or API gateways.
+
+## Customising the OpenAPI Schema
+
+Override the entire spec generation for advanced cases:
+
+```python
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="Custom API",
+        version="3.0.0",
+        description="This is a custom OpenAPI schema",
+        routes=app.routes,
+    )
+    openapi_schema["info"]["x-logo"] = {
+        "url": "https://example.com/logo.png",
+        "altText": "Company logo",
+    }
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
+```
+
+## Summary
+
+```
+┌──────────────┐      ┌──────────────────┐
+│  FastAPI App │─────►│  /openapi.json   │
+│  (type hints)│      │  (OpenAPI 3.1)   │
+└──────┬───────┘      └────────┬─────────┘
+       │                       │
+       ▼                       ▼
+┌──────────────┐      ┌──────────────────┐
+│  /docs       │      │  /redoc          │
+│  (Swagger UI)│      │  (ReDoc)         │
+└──────────────┘      └──────────────────┘
+```
+
+## Key Takeaways
+
+- FastAPI generates an **OpenAPI 3.1 specification** automatically from Python type hints, path decorators, and Pydantic models
+- Two documentation UIs are built-in: **Swagger UI** at `/docs` (interactive) and **ReDoc** at `/redoc` (reference-style)
+- Use the `FastAPI()` constructor metadata (`title`, `description`, `version`, `contact`, `license_info`) to customise the generated docs
+- **Tag** endpoints with the `tags` parameter to group them in both Swagger UI and ReDoc
+- Always **disable docs in production** by setting `docs_url`, `redoc_url`, and `openapi_url` to `None`
+- The raw OpenAPI JSON at `/openapi.json` can be consumed by any OpenAPI-compatible tool

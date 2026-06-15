@@ -1,0 +1,192 @@
+---
+title: "Exception Handling (HTTPException)"
+description: "Raise and handle HTTP exceptions in FastAPI with status codes, detail messages, and custom exception handlers"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Error Handling & Testing"]
+tags: ["FastAPI", "HTTPException", "Exception Handling", "Status Codes", "Validation"]
+slug: "fastapi-http-exception"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## Raising HTTPException
+
+FastAPI provides `HTTPException` to return HTTP error responses directly from path operations:
+
+```python
+from fastapi import FastAPI, HTTPException
+
+app = FastAPI()
+
+items = {1: "Laptop", 2: "Mouse", 3: "Keyboard"}
+
+
+@app.get("/items/{item_id}")
+async def read_item(item_id: int):
+    if item_id not in items:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"item_id": item_id, "name": items[item_id]}
+```
+
+When `HTTPException` is raised, the handler function stops immediately and FastAPI sends the JSON response.
+
+## Status Codes & Detail Messages
+
+The `status_code` parameter accepts any integer, but you should use Starlette's status constants for readability:
+
+```python
+from starlette import status
+
+
+@app.get("/products/{product_id}")
+async def read_product(product_id: int):
+    if product_id <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Product ID must be positive",
+        )
+
+    if product_id > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Product {product_id} does not exist",
+        )
+
+    return {"product_id": product_id}
+```
+
+The `detail` field can be a string, dict, or list:
+
+```python
+@app.post("/validate")
+async def validate(data: dict):
+    errors = []
+    if "name" not in data:
+        errors.append({"field": "name", "message": "Name is required"})
+    if "email" not in data:
+        errors.append({"field": "email", "message": "Email is required"})
+
+    if errors:
+        raise HTTPException(status_code=422, detail=errors)
+
+    return {"valid": True}
+```
+
+## Headers in HTTPException
+
+You can attach custom headers to the response, useful for rate-limiting or redirects:
+
+```python
+@app.get("/rate-limited")
+async def rate_limited():
+    raise HTTPException(
+        status_code=429,
+        detail="Too many requests",
+        headers={"Retry-After": "120", "X-RateLimit-Reset": "1700000000"},
+    )
+```
+
+## Custom Exception Handlers with @app.exception_handler
+
+Register a handler for a specific exception class using the `@app.exception_handler` decorator:
+
+```python
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+
+class InsufficientStockError(Exception):
+    def __init__(self, item_id: int, available: int, requested: int):
+        self.item_id = item_id
+        self.available = available
+        self.requested = requested
+
+
+@app.exception_handler(InsufficientStockError)
+async def insufficient_stock_handler(request: Request, exc: InsufficientStockError):
+    return JSONResponse(
+        status_code=400,
+        content={
+            "error": "INSUFFICIENT_STOCK",
+            "message": f"Item {exc.item_id} has only {exc.available} in stock",
+            "available": exc.available,
+            "requested": exc.requested,
+        },
+    )
+
+
+@app.post("/order")
+async def place_order(item_id: int, quantity: int):
+    stock = {1: 10, 2: 5}
+    available = stock.get(item_id, 0)
+
+    if quantity > available:
+        raise InsufficientStockError(item_id, available, quantity)
+
+    return {"success": True}
+```
+
+## Handling RequestValidationError
+
+FastAPI uses `RequestValidationError` internally when request data fails Pydantic validation. Override it to customise the 422 response:
+
+```python
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "VALIDATION_ERROR",
+            "detail": exc.errors(),
+            "body": exc.body,
+        },
+    )
+```
+
+## Overriding Default Exception Handlers
+
+You can override FastAPI's default handlers for `HTTPException` and `RequestValidationError` globally:
+
+```python
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": "HTTP_ERROR",
+            "detail": exc.detail,
+            "status_code": exc.status_code,
+        },
+    )
+```
+
+## Exception Handler Registration Order
+
+Handlers registered later override earlier ones for the same exception. More specific exceptions take priority over general ones:
+
+```python
+# General handler — catches everything
+@app.exception_handler(Exception)
+async def generic_handler(request: Request, exc: Exception):
+    return JSONResponse(status_code=500, content={"error": "Internal server error"})
+
+
+# Specific handler — takes precedence for ValueError
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    return JSONResponse(status_code=400, content={"error": str(exc)})
+```
+
+## Key Takeaways
+
+- `HTTPException` stops execution and returns a JSON error response immediately.
+- Use `status_code` constants from `starlette.status` for clarity.
+- The `detail` field accepts strings, dicts, or lists for structured errors.
+- Attach custom headers for rate-limiting info, redirects, or metadata.
+- `@app.exception_handler` registers custom handlers for any exception type.
+- Override `RequestValidationError` to customise the default 422 validation response.
+- More specific exception handlers take precedence over general ones.

@@ -1,0 +1,156 @@
+---
+title: "Introduction to FastAPI & Why It's Fast"
+description: "Learn what FastAPI is, its core features, and why it's one of the fastest Python web frameworks"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "Basics"]
+tags: ["FastAPI", "Python", "Backend", "Async", "Pydantic", "OpenAPI"]
+slug: "fastapi-introduction"
+author: "Abhishek Sharma"
+order: 1
+---
+
+## What is FastAPI?
+
+**FastAPI** is a modern, high-performance web framework for building APIs with **Python 3.8+**. It leverages Python type hints to provide automatic request validation, serialization, and interactive documentation — all with minimal boilerplate.
+
+```
+┌──────────────────────────────────────────┐
+│           Your API Application           │
+├──────────────────────────────────────────┤
+│              FastAPI                      │
+├──────────────────────────────────────────┤
+│     Starlette (ASGI) + Pydantic (data)    │
+├──────────────────────────────────────────┤
+│           Python ASGI Server              │
+│        (Uvicorn / Hypercorn / Daphne)     │
+├──────────────────────────────────────────┤
+│             Operating System              │
+└──────────────────────────────────────────┘
+```
+
+## Why "Fast" in FastAPI?
+
+The name refers to three dimensions of speed:
+
+| Dimension | What it means |
+|---|---|
+| **Runtime performance** | FastAPI is one of the fastest Python frameworks — on par with Node.js and Go for many workloads |
+| **Development speed** | Automatic validation, serialization, and docs let you build 2-3x faster |
+| **Developer feedback** | Instant Swagger UI, real-time type checking, and inline error messages |
+
+## FastAPI vs Flask vs Django
+
+| Feature | FastAPI | Flask | Django |
+|---|---|---|---|
+| **Async support** | Native (async/await) | Limited (via extensions) | Partial (async views in 3.x) |
+| **Type hints** | Core feature | Manual | Manual |
+| **Auto docs** | Swagger + ReDoc built-in | Third-party (flasgger) | Third-party (drf-yasg) |
+| **Data validation** | Pydantic (automatic) | Manual | DRF serializers |
+| **Performance** | ~50,000 req/s | ~10,000 req/s | ~12,000 req/s |
+| **Batteries included** | Minimal | Minimal | Full (ORM, admin, auth) |
+| **Learning curve** | Low | Very Low | Moderate |
+| **Best for** | APIs, microservices | Small apps, prototypes | Full-stack monoliths |
+
+*Benchmarks above are rough estimates for simple JSON responses on a single core.*
+
+## Key Features
+
+### Async Native
+
+FastAPI is built on **Starlette** (an ASGI framework), which means it natively supports Python's `async` and `await`. This allows handling thousands of concurrent connections with a single process:
+
+```python
+import asyncio
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/blocking")
+def blocking():
+    # Traditional sync endpoint — blocks the thread
+    import time; time.sleep(2)
+    return {"message": "Blocking call done"}
+
+@app.get("/async")
+async def async_endpoint():
+    # Async endpoint — frees the thread for other requests
+    await asyncio.sleep(2)
+    return {"message": "Async call done"}
+```
+
+### Automatic OpenAPI Docs
+
+Every FastAPI endpoint automatically generates OpenAPI (formerly Swagger) specifications. Visit `/docs` for an interactive UI where you can test endpoints directly from the browser:
+
+```
+┌───────────────────────────────────────────────┐
+│   GET /users/{user_id}  →  200 OK              │
+│                                                 │
+│   Parameters                                   │
+│   ┌───────────────────────────────────────┐   │
+│   │ user_id  *  integer  (path)           │   │
+│   │ limit    ?  integer  (query)          │   │
+│   └───────────────────────────────────────┘   │
+│                                                 │
+│   Responses: 200 OK, 422 Validation Error      │
+│   [Try it Out] [Cancel]                         │
+└───────────────────────────────────────────────┘
+```
+
+### Pydantic Integration
+
+FastAPI uses **Pydantic** models to define request and response schemas. Validation, serialization, and documentation are all driven from a single source of truth:
+
+```python
+from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    price: float
+    is_offer: bool | None = None
+
+# FastAPI automatically:
+# 1. Validates incoming JSON against this model
+# 2. Returns a 422 error with details on mismatch
+# 3. Generates the JSON Schema for /docs
+# 4. Serializes the response correctly
+```
+
+## Performance at a Glance
+
+FastAPI's speed comes from being built on **Starlette + Pydantic** — both written in optimized Python with careful use of C extensions:
+
+```
+Framework         Requests/sec (JSON serialization)
+────────────────────────────────────────────────────
+FastAPI (async)     ██████████████████████████  52,000
+Starlette           █████████████████████████   48,000
+Sanic               ███████████████████████    44,000
+Flask (sync)        ████████                   10,500
+Django (sync)       ██████████                 12,000
+────────────────────────────────────────────────────
+```
+
+*Source: TechEmpower benchmarks, single-core JSON test.*
+
+## When to Use FastAPI
+
+- **RESTful APIs** — anything that sends/receives JSON
+- **Microservices** — lightweight, fast, and async-ready
+- **Real-time applications** — WebSocket support via Starlette
+- **Machine learning serving** — easy to integrate with ML models
+- **Prototypes that go to production** — minimal code, production-grade output
+
+## When to Use Something Else
+
+- **Full-stack web apps with admin panels** — Django's batteries-included approach is better
+- **Very simple static or template-based sites** — Flask's simplicity wins
+- **Team already deeply invested in another stack** — consistency matters
+
+## Key Takeaways
+
+- FastAPI is a **modern, high-performance** Python web framework for building APIs
+- It is **async-native**, built on Starlette (ASGI) with Pydantic for data validation
+- Automatic **OpenAPI/Swagger docs** are generated from Python type hints — zero extra config
+- FastAPI is significantly **faster than Flask/Django** and comparable to Node.js for API workloads
+- It reduces boilerplate by merging **validation, serialization, and documentation** into type annotations

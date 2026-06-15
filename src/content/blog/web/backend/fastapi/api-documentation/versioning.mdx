@@ -1,0 +1,388 @@
+---
+title: "Versioning APIs"
+description: "Version FastAPI endpoints using URL prefixes (/v1/, /v2/), APIRouter with prefix, header-based versioning, deprecation strategies, and backward compatibility"
+date: "2026-06-13"
+category: ["Web Development", "Backend", "FastAPI", "APIs & Documentation"]
+tags: ["FastAPI", "API Versioning", "APIRouter", "Backward Compatibility", "Python"]
+slug: "fastapi-api-versioning"
+author: "Abhishek Sharma"
+order: 4
+---
+
+## Why Version APIs?
+
+API versioning lets you introduce breaking changes without disrupting existing consumers. Common reasons to version:
+
+- **Change response structure** — renaming fields, changing types
+- **Remove deprecated fields** — cleaning up technical debt
+- **Change authentication** — new auth scheme or token format
+- **Modify business logic** — different validation rules or behaviour
+
+```
+┌──────────────┐     ┌──────────────┐
+│  Mobile v1.2 │────▶│  /api/v1/    │
+└──────────────┘     └──────┬───────┘
+                            │
+┌──────────────┐     ┌──────▼───────┐
+│  Mobile v2.0 │────▶│  /api/v2/    │
+└──────────────┘     └──────────────┘
+```
+
+## URL Prefix Versioning
+
+The most common approach — embed the version in the URL path:
+
+```python
+from fastapi import FastAPI, APIRouter
+
+app = FastAPI(title="My API")
+
+# v1 router
+v1 = APIRouter(prefix="/v1")
+
+@v1.get("/users")
+def list_users_v1():
+    return [{"id": 1, "name": "Alice", "email": "alice@example.com"}]
+
+
+# v2 router
+v2 = APIRouter(prefix="/v2")
+
+@v2.get("/users")
+def list_users_v2():
+    return [
+        {
+            "id": 1,
+            "name": "Alice",
+            "email": "alice@example.com",
+            "avatar_url": "https://example.com/avatars/1.png",
+        }
+    ]
+
+
+app.include_router(v1)
+app.include_router(v2)
+```
+
+```
+GET /v1/users  →  [{"id": 1, "name": "Alice", "email": "..."}]
+GET /v2/users  →  [{"id": 1, "name": "Alice", "email": "...", "avatar_url": "..."}]
+```
+
+### Using `APIRouter` with Prefixes
+
+For larger APIs, structure each version in its own file:
+
+```python
+# app/v1/routes.py
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/v1", tags=["v1"])
+
+@router.get("/users")
+def list_users():
+    ...
+
+@router.get("/users/{user_id}")
+def get_user(user_id: int):
+    ...
+
+@router.post("/users")
+def create_user():
+    ...
+```
+
+```python
+# app/v2/routes.py
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/v2", tags=["v2"])
+
+@router.get("/users")
+def list_users():
+    ...
+
+@router.get("/users/{user_id}")
+def get_user(user_id: int):
+    ...
+
+@router.post("/users")
+def create_user():
+    ...
+```
+
+```python
+# app/main.py
+from app.v1.routes import router as v1_router
+from app.v2.routes import router as v2_router
+
+app = FastAPI(title="My API")
+app.include_router(v1_router)
+app.include_router(v2_router)
+```
+
+Directory layout:
+
+```
+app/
+├── main.py
+├── v1/
+│   ├── __init__.py
+│   └── routes.py
+└── v2/
+    ├── __init__.py
+    └── routes.py
+```
+
+### Shared Logic Between Versions
+
+Avoid duplicating code — extract shared logic into a common layer:
+
+```python
+# app/services/user_service.py
+def get_all_users():
+    return db.query(UserModel).all()
+
+
+def format_user_v1(user) -> dict:
+    return {"id": user.id, "name": user.name, "email": user.email}
+
+
+def format_user_v2(user) -> dict:
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "avatar_url": f"https://example.com/avatars/{user.id}.png",
+    }
+```
+
+```python
+# app/v1/routes.py
+from app.services.user_service import get_all_users, format_user_v1
+
+@router.get("/users")
+def list_users():
+    users = get_all_users()
+    return [format_user_v1(u) for u in users]
+```
+
+```python
+# app/v2/routes.py
+from app.services.user_service import get_all_users, format_user_v2
+
+@router.get("/users")
+def list_users():
+    users = get_all_users()
+    return [format_user_v2(u) for u in users]
+```
+
+## Header Versioning
+
+Some APIs prefer to keep the URL clean and communicate the version through a custom header:
+
+```python
+from typing import Annotated
+from fastapi import Header, HTTPException
+
+
+@app.get("/users")
+def list_users(x_api_version: Annotated[str | None, Header(alias="X-API-Version")] = None):
+    if x_api_version == "2":
+        return get_users_v2()
+    return get_users_v1()  # default to v1
+
+
+@app.get("/users/{user_id}")
+def get_user(
+    user_id: int,
+    x_api_version: Annotated[str | None, Header(alias="X-API-Version")] = None,
+):
+    if x_api_version == "2":
+        return get_user_v2(user_id)
+    return get_user_v1(user_id)
+```
+
+```bash
+curl -H "X-API-Version: 2" http://localhost:8000/users
+```
+
+### Versioning via Accept Header (Content Negotiation)
+
+```python
+@app.get("/users")
+def list_users(accept: Annotated[str | None, Header()] = None):
+    if accept and "vnd.myapi.v2" in accept:
+        return get_users_v2()
+    return get_users_v1()
+```
+
+```bash
+curl -H "Accept: application/vnd.myapi.v2+json" http://localhost:8000/users
+```
+
+| Approach | Pros | Cons |
+|---|---|---|
+| **URL prefix** (`/v1/`, `/v2/`) | Explicit, easy to route, cache-friendly | Pollutes URLs, harder to maintain long-term |
+| **Header versioning** | Clean URLs, single endpoint | Invisible to users, harder to test |
+| **Accept header** | RESTful, standardised | Complex parsing, less discoverable |
+
+## Handling Deprecation
+
+When you release a new version, signal deprecation to consumers through headers and documentation:
+
+```python
+import warnings
+from datetime import datetime
+
+
+@v1.get("/users")
+def list_users_v1(response: Response):
+    response.headers["X-API-Deprecated"] = "true"
+    response.headers["X-API-Sunset"] = "2026-12-31"
+    response.headers["X-API-Migration-Guide"] = "https://docs.example.com/migrate-v2"
+
+    users = get_all_users()
+    return [format_user_v1(u) for u in users]
+```
+
+### Sunset Header
+
+The `Sunset` HTTP header (RFC 8594) tells clients when a version will be removed:
+
+```python
+from datetime import datetime, timedelta
+
+
+@v1.get("/users")
+def list_users_v1(response: Response):
+    response.headers["Sunset"] = "Sat, 31 Dec 2026 23:59:59 GMT"
+    response.headers["Deprecation"] = "true"
+    return get_all_users()
+```
+
+```bash
+curl -I http://localhost:8000/v1/users
+
+# HTTP/1.1 200 OK
+# deprecation: true
+# sunset: Sat, 31 Dec 2026 23:59:59 GMT
+# link: <https://docs.example.com/migrate-v2>; rel="deprecation"
+```
+
+### Deprecation in OpenAPI Docs
+
+Mark deprecated routes in the OpenAPI schema:
+
+```python
+@v1.get("/users", deprecated=True)
+def list_users_v1():
+    ...
+```
+
+This adds a deprecation badge in Swagger UI and sets `deprecated: true` in the generated OpenAPI spec.
+
+## Maintaining Backward Compatibility
+
+### 1. Default to Latest Version
+
+New consumers should use the latest version. Keep old versions operational but deprecated:
+
+```python
+app = FastAPI(title="My API")
+
+app.include_router(v1_router)  # deprecated
+app.include_router(v2_router)  # current default
+```
+
+### 2. Never Remove a Published Version Abruptly
+
+Follow a deprecation timeline:
+
+```
+v1 released        ──► Jan 2026
+v2 released        ──► Jun 2026  (v1 deprecated)
+v1 sunset announced ─► Jun 2026  (sunset = Dec 2026)
+v1 removed         ──► Jan 2027  (6 months after deprecation)
+```
+
+### 3. Additive Changes Don't Require a New Version
+
+Backward-compatible additions (new optional fields, new endpoints) can be added without bumping the version:
+
+```python
+class UserV1(BaseModel):
+    id: int
+    name: str
+    email: str
+
+# Add avatar_url as optional — existing clients ignore it
+class UserV1Extended(BaseModel):
+    id: int
+    name: str
+    email: str
+    avatar_url: str | None = None
+
+
+@v1.get("/users", response_model=list[UserV1Extended])
+def list_users_v1():
+    ...
+```
+
+### 4. Support Both Versions in the Same Codebase
+
+Use internal adapters to translate between versions:
+
+```python
+def adapt_user_to_v1(user: UserModel) -> dict:
+    return {"id": user.id, "name": user.name, "email": user.email}
+
+
+def adapt_user_to_v2(user: UserModel) -> dict:
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "avatar_url": f"https://example.com/avatars/{user.id}.png",
+    }
+
+
+@v1.get("/users")
+def list_users_v1():
+    return [adapt_user_to_v1(u) for u in get_all_users()]
+
+
+@v2.get("/users")
+def list_users_v2():
+    return [adapt_user_to_v2(u) for u in get_all_users()]
+```
+
+## Versioning Strategy Summary
+
+```
+Strategy          Example                           Visibility
+──────────────────────────────────────────────────────────────
+URL Prefix        /v1/users, /v2/users              High
+Header            X-API-Version: 2                  Medium
+Accept Header     Accept: application/vnd.myapi.v2  Low
+Subdomain         v1.api.example.com/users          High
+Query Param       /users?version=2                  Low
+```
+
+### Recommended Approach
+
+For most projects, **URL prefix versioning** with `APIRouter` is the best balance of clarity, maintainability, and tooling support. Combine it with:
+
+- `deprecated=True` on old routes
+- `Sunset` and `Deprecation` response headers
+- Shared service layer to avoid code duplication
+- Clear documentation of the deprecation timeline
+
+## Key Takeaways
+
+- URL prefix versioning (`/v1/`, `/v2/`) is the most straightforward and widely adopted approach — use `APIRouter(prefix="/v1")` to organise versions
+- Header-based versioning (custom `X-API-Version` or `Accept` header) keeps URLs clean but is less discoverable
+- Mark deprecated routes with `deprecated=True` in the decorator and include `Deprecation` and `Sunset` headers in responses
+- Extract **shared business logic** into a common service layer to avoid duplicating code across versions
+- Additive changes (new optional fields, new endpoints) are backward-compatible and don't require a new API version
+- Follow a clear deprecation timeline — announce, deprecate, then remove after a reasonable grace period (e.g., 6 months)

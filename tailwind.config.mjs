@@ -1,0 +1,76 @@
+import defaultTheme from 'tailwindcss/defaultTheme'
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        mono: ['Geist Mono', ...defaultTheme.fontFamily.mono],
+      },
+      colors: {
+        ink: '#0a0a0a',
+        charcoal: '#1c1c1e',
+        slate: '#3a3a3c',
+        steel: '#5a5a5c',
+        stone: '#888888',
+        muted: '#a8a8aa',
+        canvas: '#ffffff',
+        'canvas-dark': '#0a0a0a',
+        surface: '#f7f7f7',
+        'surface-soft': '#fafafa',
+        hairline: '#e5e5e5',
+        'hairline-soft': '#ededed',
+        'brand-green': '#00d4a4',
+        'brand-green-deep': '#00b48a',
+        'brand-green-soft': '#7cebcb',
+        'brand-tag': '#3772cf',
+        'brand-error': '#d45656',
+        'testimonial-orange': '#f55a3c',
+      },
+      borderRadius: {
+        xs: '4px',
+        sm: '6px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
+        xxl: '24px',
+      },
+      spacing: {
+        xxs: '4px',
+        xs: '8px',
+        sm: '12px',
+        md: '16px',
+        lg: '20px',
+        xl: '24px',
+        xxl: '32px',
+        xxxl: '40px',
+        'section-sm': '48px',
+        section: '64px',
+        'section-lg': '96px',
+        hero: '120px',
+      },
+      maxWidth: {
+        prose: '720px',
+        content: '1280px',
+      },
+      boxShadow: {
+        card: '0 4px 12px 0 rgba(0,0,0,0.08)',
+        mockup: '0 24px 48px -8px rgba(0,0,0,0.12)',
+        'brand-glow': '0 8px 24px rgba(0,212,164,0.08)',
+      },
+      fontSize: {
+        'hero-display': ['72px', { lineHeight: '1.05', fontWeight: '600', letterSpacing: '-2px' }],
+        'display-lg': ['56px', { lineHeight: '1.10', fontWeight: '600', letterSpacing: '-1.5px' }],
+        'heading-1': ['48px', { lineHeight: '1.10', fontWeight: '600', letterSpacing: '-1px' }],
+        'heading-2': ['36px', { lineHeight: '1.20', fontWeight: '600', letterSpacing: '-0.5px' }],
+        'heading-3': ['28px', { lineHeight: '1.25', fontWeight: '600' }],
+        'heading-4': ['22px', { lineHeight: '1.30', fontWeight: '600' }],
+        'heading-5': ['18px', { lineHeight: '1.40', fontWeight: '600' }],
+      },
+    },
+  },
+  plugins: [require('@tailwindcss/typography')],
+}

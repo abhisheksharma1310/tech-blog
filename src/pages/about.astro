@@ -2,14 +2,66 @@
 import SEO from '../components/SEO.astro';
 import TermsLayout from '@/layouts/TermsLayout.astro';
 
-const title = 'About LearnCode.live';
-const description = 'LearnCode.live is a modern, interactive platform designed to help learners master web development through hands-on tutorials, quizzes, and real-world examples';
+const title = 'About LearnCode.live - Interactive Programming Tutorials';
+const description = 'LearnCode.live is a modern platform helping learners master web development, programming, DSA, cloud computing, and embedded/IoT through interactive tutorials, quizzes, and real-world examples.';
 ---
 <TermsLayout title={title} description={description}>
   <SEO title={title} description={description} />
-  <section class="hero" id="articles">
-    <h1>About LearnCode.live</h1>
-    <p>LearnCode.live is a modern, interactive platform designed to help learners master web development through hands-on tutorials, quizzes, and real-world examples.</p>
-    <p>Founded by passionate developers, our mission is to make high-quality coding education accessible, engaging, and free. Whether you're a beginner or brushing up on fundamentals, we’re here to support your journey.</p>
+
+  <section class="mb-12">
+    <h1 class="text-heading-1 text-black dark:text-white mb-4">About LearnCode.live</h1>
+    <p class="text-lg text-gray-500 dark:text-gray-400 leading-relaxed mb-8">
+      LearnCode.live is a modern, interactive platform designed to help learners master programming through hands-on tutorials, quizzes, and real-world examples.
+    </p>
+
+    <div class="grid md:grid-cols-2 gap-8 mb-12">
+      <div class="border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+        <h2 class="text-heading-4 text-black dark:text-white mb-3">Our Mission</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+          Founded by passionate developers, our mission is to make high-quality coding education accessible, engaging, and free. Whether you're a beginner or brushing up on fundamentals, we're here to support your journey.
+        </p>
+      </div>
+      <div class="border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+        <h2 class="text-heading-4 text-black dark:text-white mb-3">Our Approach</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+          We believe in learning by doing. Every concept is paired with interactive code playgrounds, real-world examples, and practice exercises to reinforce understanding.
+        </p>
+      </div>
+    </div>
+
+    <div class="mb-12">
+      <h2 class="text-heading-3 text-black dark:text-white mb-6">What We Offer</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { title: 'Tutorials', desc: 'Step-by-step guides with clear explanations and code examples.' },
+          { title: 'Exercises', desc: 'Practice problems to test your understanding after each topic.' },
+          { title: 'Cheatsheets', desc: 'Quick reference cards for syntax, commands, and best practices.' },
+          { title: 'Quizzes', desc: 'Timed assessments to measure your progress and identify gaps.' },
+        ].map((item) => (
+          <div key={item.title} class="text-center p-5 border border-gray-200 dark:border-gray-800 rounded-xl">
+            <h3 class="text-base font-semibold text-black dark:text-white mb-1">{item.title}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-heading-3 text-black dark:text-white mb-6">Topics Covered</h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        {[
+          { name: 'Web Development', items: 'HTML, CSS, JavaScript, React, Node.js, Express, FastAPI' },
+          { name: 'Programming Languages', items: 'C, C++, JavaScript, Python, TypeScript' },
+          { name: 'Data Structures & Algorithms', items: 'Arrays, Linked Lists, Trees, Graphs, Sorting, Searching' },
+          { name: 'Cloud Computing', items: 'AWS, Docker, Kubernetes, CI/CD, DevOps' },
+          { name: 'Embedded & IoT', items: 'Arduino, ESP32, Sensors, Actuators, RTOS' },
+        ].map((topic) => (
+          <div key={topic.name} class="border border-gray-200 dark:border-gray-800 rounded-xl p-5 hover:border-brand-green/30 transition-colors">
+            <h3 class="text-sm font-semibold text-black dark:text-white mb-1">{topic.name}</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{topic.items}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   </section>
 </TermsLayout>

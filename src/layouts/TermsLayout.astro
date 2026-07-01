@@ -3,10 +3,9 @@ import Header from '../components/Header.tsx';
 import Footer from '../components/Footer.tsx';
 import '../styles/global.css';
 
-const { title, description, activeSlug } = Astro.props as {
+const { title, description } = Astro.props as {
   title: string;
   description: string;
-  activeSlug?: string;
 };
 ---
 <!DOCTYPE html>
@@ -17,40 +16,33 @@ const { title, description, activeSlug } = Astro.props as {
     <title>{title}</title>
     <meta name="description" content={description} />
   </head>
-  <body>
-    <input id="mobile-menu-toggle" type="checkbox" hidden class="mobile-menu-toggle" aria-hidden="true" />
+  <body class="bg-white dark:bg-[#0a0a0a] text-black dark:text-white antialiased min-h-screen flex flex-col">
     <Header />
-    <main>
-      <section class="content"><slot /></section>
+    <main class="flex-1">
+      <div class="max-w-content mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        <div class="max-w-prose mx-auto prose-custom">
+          <slot />
+        </div>
+      </div>
     </main>
     <Footer />
-    <script type="text/javascript">
+
+    <script>
       (function () {
         var root = document.documentElement;
         var stored = localStorage.getItem('theme');
         var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         var theme = stored || (prefersDark ? 'dark' : 'light');
         root.classList.toggle('dark', theme === 'dark');
-        root.classList.toggle('light', theme === 'light');
 
-        var toggle = document.getElementById('theme-toggle');
-        if (!toggle) return;
-
-        function updateButton() {
-          var isDark = root.classList.contains('dark');
-          toggle.textContent = isDark ? '☀️' : '🌙';
-          toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        var themeBtn = document.getElementById('theme-toggle');
+        if (themeBtn) {
+          themeBtn.addEventListener('click', function () {
+            var isDark = root.classList.contains('dark');
+            root.classList.toggle('dark', !isDark);
+            localStorage.setItem('theme', !isDark ? 'dark' : 'light');
+          });
         }
-
-        updateButton();
-
-        toggle.addEventListener('click', function () {
-          var next = root.classList.contains('dark') ? 'light' : 'dark';
-          root.classList.toggle('dark', next === 'dark');
-          root.classList.toggle('light', next === 'light');
-          localStorage.setItem('theme', next);
-          updateButton();
-        });
       })();
     </script>
   </body>

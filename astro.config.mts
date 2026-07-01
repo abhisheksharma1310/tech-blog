@@ -1,21 +1,21 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
+import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   site: 'https://learncode.live',
   output: 'static',
-  integrations: [react(), mdx()],
-  
+  integrations: [react(), mdx(), tailwind()],
+
   markdown: {
     syntaxHighlight: 'prism',
-    // Prevents Prism from crashing the build when encountering unknown language tags
     remarkPlugins: [],
     rehypePlugins: [],
   },
 
   build: {
-    concurrency: 2, 
+    concurrency: 2,
     rollupOptions: {
       maxParallelFileOps: 2,
       output: {
@@ -38,20 +38,17 @@ export default defineConfig({
     },
     esbuild: {
       target: 'es2022',
-      minifyIdentifiers: false, 
+      minifyIdentifiers: false,
       minifySyntax: true,
       minifyWhitespace: true,
     },
     optimizeDeps: {
-      force: false 
+      force: false
     },
-    
-    // Add a quick global replace plugin to catch and fix the 'prisma' token error inside Vite execution threads
     plugins: [{
       name: 'prism-language-fallback',
       transform(code, id) {
         if (id.endsWith('.md') || id.endsWith('.mdx')) {
-          // Temporarily maps ```prisma code fences to standard javascript syntax highlighting tags
           return {
             code: code.replace(/```prisma/g, '```javascript'),
             map: null

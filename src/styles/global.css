@@ -82,8 +82,14 @@
     color: #9ca3af;
   }
 
-  .prose-custom ul,
+  .prose-custom ul {
+    list-style: disc;
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+    color: #1c1c1e;
+  }
   .prose-custom ol {
+    list-style: decimal;
     margin-bottom: 1rem;
     padding-left: 1.5rem;
     color: #1c1c1e;
@@ -187,6 +193,51 @@
   .dark .prose-custom td {
     color: #9ca3af;
     border-bottom-color: #374151;
+  }
+
+  /* Sidebar shortcut classes (reduce HTML bloat) */
+  .sidebar-link {
+    @apply block px-3 py-1.5 text-sm rounded-md transition-colors;
+    @apply text-gray-500 dark:text-gray-400;
+    @apply hover:text-black dark:hover:text-white;
+    @apply hover:bg-gray-100 dark:hover:bg-white/10;
+  }
+  .sidebar-link-active {
+    @apply sidebar-link;
+    @apply bg-gray-100 dark:bg-white/10 text-black dark:text-white font-medium;
+    @apply hover:text-black dark:hover:text-white;
+  }
+  .sidebar-summary {
+    @apply flex items-center gap-2 px-3 py-1.5 text-sm rounded-md cursor-pointer list-none transition-colors;
+    @apply text-gray-500 dark:text-gray-400;
+    @apply hover:text-black dark:hover:text-white;
+    @apply hover:bg-gray-100 dark:hover:bg-white/10;
+  }
+  .sidebar-summary-root {
+    @apply sidebar-summary;
+    @apply text-black dark:text-white font-semibold hover:bg-transparent dark:hover:bg-transparent;
+  }
+  .sidebar-count {
+    @apply ml-auto text-xs text-gray-400 dark:text-gray-500;
+  }
+  .sidebar-header {
+    @apply text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider;
+  }
+  .sidebar-arrow {
+    @apply shrink-0 w-3 h-3;
+  }
+  .sidebar-arrow::before {
+    content: '';
+    display: block;
+    width: 12px;
+    height: 12px;
+    background: currentColor;
+    clip-path: polygon(40% 20%, 70% 50%, 40% 80%);
+    opacity: 0.5;
+    transition: transform 0.2s;
+  }
+  details[open] > summary .sidebar-arrow::before {
+    transform: rotate(90deg);
   }
 
   /* Mobile sidebar overlay */

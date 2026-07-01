@@ -32,7 +32,7 @@ const { title, description, posts, activeSlug } = Astro.props as {
     <div class="flex-1">
       <div class="max-w-content mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:grid lg:grid-cols-[240px_1fr_200px] lg:gap-8">
-          <aside class="hidden lg:block border-r border-gray-200 dark:border-gray-800 min-h-screen pr-6">
+          <aside id="sidebar-desktop" class="hidden lg:block border-r border-gray-200 dark:border-gray-800 min-h-screen pr-6">
             <Sidebar posts={posts} activeSlug={activeSlug} />
           </aside>
           <main class="min-w-0 py-6 lg:py-10">
@@ -46,7 +46,7 @@ const { title, description, posts, activeSlug } = Astro.props as {
     </div>
     <Footer />
 
-    <!-- Mobile sidebar overlay -->
+    <!-- Mobile sidebar overlay (populated by JS cloning desktop sidebar) -->
     <div id="mobile-sidebar" class="mobile-sidebar-overlay">
       <div class="mobile-sidebar-backdrop" />
       <div class="mobile-sidebar-panel">
@@ -63,9 +63,7 @@ const { title, description, posts, activeSlug } = Astro.props as {
             </svg>
           </button>
         </div>
-        <div class="overflow-y-auto h-[calc(100vh-4rem)] px-2">
-          <Sidebar posts={posts} activeSlug={activeSlug} onLinkClick={() => document.body.classList.remove('mobile-sidebar-open')} />
-        </div>
+        <div id="mobile-sidebar-content" class="overflow-y-auto h-[calc(100vh-4rem)] px-2" />
       </div>
     </div>
 
@@ -79,29 +77,27 @@ const { title, description, posts, activeSlug } = Astro.props as {
         var theme = stored || (prefersDark ? "dark" : "light");
         root.classList.toggle("dark", theme === "dark");
 
-        //var prismLink = document.getElementById("prism-theme");
-        // if (prismLink) {
-        //   prismLink.href = theme === "dark"
-        //     ? "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
-        //     : "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css";
-        // }
-
         var themeBtn = document.getElementById("theme-toggle");
         if (themeBtn) {
           themeBtn.addEventListener("click", function () {
             var isDark = root.classList.contains("dark");
             root.classList.toggle("dark", !isDark);
             localStorage.setItem("theme", !isDark ? "dark" : "light");
-            // if (prismLink) {
-            //   prismLink.href = !isDark
-            //     ? "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
-            //     : "https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css";
-            // }
           });
         }
 
         // --- Mobile sidebar ---
-        function openSidebar() { document.body.classList.add('mobile-sidebar-open'); }
+        function openSidebar() {
+          document.body.classList.add('mobile-sidebar-open');
+          var content = document.getElementById('mobile-sidebar-content');
+          var source = document.getElementById('sidebar-desktop');
+          if (content && source && !content.hasChildNodes()) {
+            var clone = source.cloneNode(true);
+            clone.classList.remove('hidden', 'lg:block');
+            content.appendChild(clone);
+          }
+        }
+
         function closeSidebar() { document.body.classList.remove('mobile-sidebar-open'); }
 
         var menuBtn = document.getElementById("mobile-menu-btn");

@@ -1,3 +1,4 @@
+// astro.config.mts
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
@@ -19,7 +20,7 @@ export default defineConfig({
     rollupOptions: {
       maxParallelFileOps: 2,
       output: {
-        manualChunks: undefined,
+        // FIX: Removed "manualChunks: undefined" to enable code splitting asset optimization
         generatedCode: {
           preset: 'es2022'
         }
@@ -58,5 +59,5 @@ export default defineConfig({
     }]
   },
 
-  compressHTML: false,
+  compressHTML: true,
 });

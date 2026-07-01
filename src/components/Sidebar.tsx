@@ -35,30 +35,26 @@ function isActiveInNode(node: TreeNode, activeSlug?: string): boolean {
 }
 
 function renderNode(node: TreeNode, depth: number, activeSlug?: string, onLinkClick?: () => void) {
+  const children = Object.values(node.children);
+  if (children.length === 0) return null;
+
   return (
     <ul className="space-y-0.5">
-      {Object.values(node.children).map((child) => {
+      {children.map((child) => {
         const hasChildren = Object.keys(child.children).length > 0;
         const hasPosts = child.posts.length > 0;
         const open = isActiveInNode(child, activeSlug);
         const count = child.posts.length;
 
+        const isLeaf = !hasChildren;
+
         return (
           <li key={child.name}>
             <details open={open} className="group">
-              <summary className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md cursor-pointer list-none transition-colors
-                ${depth === 0
-                  ? 'text-black dark:text-white font-semibold'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10'
-                }`}
-              >
-                <svg className={`w-3 h-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                </svg>
-                <span>{child.name}</span>
-                {count > 0 && (
-                  <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{count}</span>
-                )}
+              <summary className={depth === 0 ? 'sidebar-summary-root' : 'sidebar-summary'}>
+                <span className="sidebar-arrow" />
+                <span className="flex-1 min-w-0 truncate">{child.name}</span>
+                {count > 0 && <span className="sidebar-count">{count}</span>}
               </summary>
 
               <div className="ml-3 mt-0.5 space-y-0.5">
@@ -69,11 +65,7 @@ function renderNode(node: TreeNode, depth: number, activeSlug?: string, onLinkCl
                         <a
                           href={`/${post.slug}`}
                           onClick={onLinkClick}
-                          className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
-                            post.slug === activeSlug
-                              ? 'bg-gray-100 dark:bg-white/10 text-black dark:text-white font-medium'
-                              : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10'
-                          }`}
+                          className={post.slug === activeSlug ? 'sidebar-link-active' : 'sidebar-link'}
                         >
                           {post.data.title}
                         </a>
@@ -82,7 +74,7 @@ function renderNode(node: TreeNode, depth: number, activeSlug?: string, onLinkCl
                   </ul>
                 )}
 
-                {hasChildren && renderNode(child, depth + 1, activeSlug, onLinkClick)}
+                {renderNode(child, depth + 1, activeSlug, onLinkClick)}
               </div>
             </details>
           </li>
@@ -98,9 +90,7 @@ export default function Sidebar({ posts, activeSlug, onLinkClick }: SidebarProps
   return (
     <nav className="py-4" aria-label="Course navigation">
       <div className="px-3 mb-3">
-        <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-          Courses
-        </h2>
+        <h2 className="sidebar-header">Courses</h2>
       </div>
       {renderNode(tree, 0, activeSlug, onLinkClick)}
     </nav>

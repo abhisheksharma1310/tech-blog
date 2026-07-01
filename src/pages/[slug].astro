@@ -1,7 +1,8 @@
 ---
+// src/pages/[slug].astro
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SEO from "../components/SEO.astro";
-import { getPosts } from "../data/posts";
+import { getPosts, getPostsMetadata } from "../data/posts"; // Imported metadata helper
 import CodePlayground from "@/components/CodePlayground.astro";
 
 export async function getStaticPaths() {
@@ -13,6 +14,7 @@ export async function getStaticPaths() {
 }
 
 const posts = await getPosts();
+const postsMetadata = await getPostsMetadata(); // FIX: Fetch clean metadata array here
 const slug = Astro.params.slug as string;
 const post = posts.find((p) => p.slug === slug);
 
@@ -37,7 +39,8 @@ const nextPost = currentIndex < sameCategoryPosts.length - 1 ? sameCategoryPosts
 const cleanUrl = `/${post.slug}`;
 ---
 
-<BaseLayout title={title} description={description} posts={posts} activeSlug={slug}>
+<!-- FIX: Changed posts={posts} to posts={postsMetadata} -->
+<BaseLayout title={title} description={description} posts={postsMetadata} activeSlug={slug}>
   <SEO title={title} description={description} canonical={`https://learncode.live${cleanUrl}`} />
 
   <article>
@@ -49,31 +52,6 @@ const cleanUrl = `/${post.slug}`;
       </svg>
       <span class="text-gray-500 dark:text-gray-400">{frontmatter.category.join(" / ")}</span>
     </nav>
-
-    <!-- Post Header -->
-    <!-- <header class="mb-8">
-      <div class="flex items-center gap-2 mb-4">
-        <span class="text-xs font-medium text-brand-green bg-brand-green/10 dark:bg-brand-green/20 px-2.5 py-1 rounded-full">
-          {frontmatter.category.join(" / ")}
-        </span>
-        {frontmatter.tags.slice(0, 2).map((tag: string) => (
-          <span class="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/5 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-800">
-            {tag}
-          </span>
-        ))}
-        <span class="text-xs text-gray-400 dark:text-gray-500 ml-auto">{frontmatter.date}</span>
-      </div>
-      <h1 class="text-heading-2 sm:text-heading-1 text-black dark:text-white mb-4">{frontmatter.title}</h1>
-      <p class="text-lg text-gray-500 dark:text-gray-400 leading-relaxed">{frontmatter.description}</p>
-      <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-        <div class="w-8 h-8 rounded-full bg-brand-green/20 flex items-center justify-center text-xs font-bold text-brand-green-deep dark:text-brand-green">
-          {frontmatter.author.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-        </div>
-        <div class="text-sm text-gray-500 dark:text-gray-400">
-          <span class="font-medium text-black dark:text-white">{frontmatter.author}</span>
-        </div>
-      </div>
-    </header> -->
 
     <!-- Chapter Navigation (Top) -->
     <nav class="flex items-center justify-between mb-8 p-4 border border-gray-200 dark:border-gray-800 rounded-xl bg-gray-50/50 dark:bg-white/[0.02]" aria-label="Chapter navigation">

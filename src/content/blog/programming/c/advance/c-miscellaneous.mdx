@@ -1,0 +1,345 @@
+---
+title: "Miscellaneous"
+description: "Miscellaneous topics in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Miscellaneous"]
+slug: "c-miscellaneous"
+author: "Abhishek Sharma"
+order: 8
+---
+
+# Miscellaneous Topics in C Programming
+
+In this section, we will cover some miscellaneous topics in C programming that are essential for a comprehensive understanding of the language. These topics include:
+
+1. **Command line arguments**: C programs can accept input from the command line, allowing users to pass arguments when executing the program.
+
+2. **C Graphics**: C provides libraries such as `graphics.h` for creating graphical applications, although it is not part of the standard library and may not be available on all platforms.
+
+3. **Embedded C**: C is widely used in embedded systems programming, where it is used to write software for microcontrollers and other hardware devices.
+
+## Command Line Arguments in C
+Command line arguments allow users to provide input to a C program when it is executed. The `main` function can be defined to accept two parameters: `argc` (argument count) and `argv` (argument vector). `argc` is an integer that represents the number of command line arguments, while `argv` is an array of strings (character pointers) that holds the actual arguments.
+Here is an example of a C program that uses command line arguments:
+```c
+#include <stdio.h>
+int main(int argc, char *argv[]) {
+    printf("Number of arguments: %d\n", argc);
+    for (int i = 0; i < argc; i++) {
+        printf("Argument %d: %s\n", i, argv[i]);
+    }
+    return 0;
+}
+```
+In this example, the program prints the number of command line arguments and lists each argument. When you run this program from the command line, you can pass arguments like this:
+```bash
+./program arg1 arg2 arg3
+```
+This will output:
+```bash
+Number of arguments: 4
+Argument 0: ./program
+Argument 1: arg1
+Argument 2: arg2
+Argument 3: arg3
+```
+Note that `argv[0]` is the name of the program itself, and the subsequent arguments are the ones passed by the user.
+
+## C Graphics
+C graphics programming can be done using various libraries, such as `graphics.h`, which provides functions for drawing shapes, handling colors, and managing the graphical window. However, `graphics.h` is not part of the C standard library and may not be available on all platforms. For modern graphics programming in C, you can use libraries like SDL (Simple DirectMedia Layer) or OpenGL, which offer more advanced features and better performance.
+Example of using `graphics.h` to draw a simple rectangle:
+```c
+#include <graphics.h>
+int main() {
+    int gd = DETECT, gm;
+    initgraph(&gd, &gm, "C:\\Turboc3\\BGI");
+    rectangle(100, 100, 200, 200);
+    getch();
+    closegraph();
+    return 0;
+}
+```
+In this example, we initialize the graphics mode, draw a rectangle with specified coordinates, wait for a key press, and then close the graphics window. Note that the path to the BGI driver may need to be adjusted based on your system configuration.
+
+## Embedded C
+Embedded C is a set of language extensions for the C programming language that allows developers to write software for embedded systems. Embedded C provides features that are specifically designed for programming microcontrollers and other hardware devices, such as direct access to hardware registers, support for fixed-point arithmetic, and the ability to handle interrupts. It is widely used in industries such as automotive, aerospace, and consumer electronics for developing firmware and other low-level software that interacts directly with hardware components.
+Example of a simple embedded C program to toggle an LED connected to a microcontroller:
+```c
+#include <avr/io.h>
+#include <util/delay.h>
+int main(void) {
+    DDRB |= (1 << DDB0); // Set PB0 as an output
+    while (1) {
+        PORTB ^= (1 << PORTB0); // Toggle the LED
+        _delay_ms(1000); // Wait for 1 second
+    }
+    return 0;
+}
+```
+In this example, we configure pin PB0 as an output and then enter an infinite loop where we toggle the state of the LED connected to that pin every second. This is a common pattern in embedded programming, where the program runs indefinitely and interacts with hardware components based on certain conditions or timing.
+
+### Bit Manipulation - Set, Clear, Toggle, and Read Bits
+
+Embedded programming requires direct control over individual bits in hardware registers. C provides bitwise operators (`&`, `|`, `^`, `~`, `<<`, `>>`) for this purpose.
+
+#### Bitwise operators reference
+
+| Operator | Name | Use case |
+|----------|------|----------|
+| `<<` | Left shift | Move a bit to a specific position |
+| `>>` | Right shift | Extract a bit's value |
+| `&` | AND | Clear or test bits |
+| `\|` | OR | Set bits |
+| `^` | XOR | Toggle bits |
+| `~` | NOT | Invert all bits |
+
+#### Single Bit Operations
+
+**Set a bit** - turn a specific bit to `1` without affecting others.
+
+```c
+// Set bit 3 of register (0-indexed: bit 0 = LSB)
+uint8_t reg = 0b00000000;
+reg |= (1 << 3);   // reg = 0b00001000
+```
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+
+#define SET_BIT(reg, bit)   ((reg) |= (1 << (bit)))
+
+int main() {
+    uint8_t status = 0b00000000;
+
+    printf("Initial:  0b%08b\n", status);
+
+    SET_BIT(status, 2);   // Set bit 2
+    printf("Set bit 2: 0b%08b\n", status);
+
+    SET_BIT(status, 5);   // Set bit 5
+    printf("Set bit 5: 0b%08b\n", status);
+
+    SET_BIT(status, 2);   // Setting an already-set bit is harmless
+    printf("Set bit 2: 0b%08b (no change)\n", status);
+
+    return 0;
+}
+```
+
+**Clear a bit** - turn a specific bit to `0` without affecting others.
+
+```c
+// Clear bit 3 of register
+uint8_t reg = 0b11111111;
+reg &= ~(1 << 3);  // reg = 0b11110111
+```
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+
+#define CLEAR_BIT(reg, bit) ((reg) &= ~(1 << (bit)))
+
+int main() {
+    uint8_t flags = 0b11111111;
+
+    printf("Initial:    0b%08b\n", flags);
+
+    CLEAR_BIT(flags, 0);  // Clear bit 0
+    printf("Clear bit 0: 0b%08b\n", flags);
+
+    CLEAR_BIT(flags, 7);  // Clear bit 7
+    printf("Clear bit 7: 0b%08b\n", flags);
+
+    CLEAR_BIT(flags, 0);  // Clearing an already-clear bit is harmless
+    printf("Clear bit 0: 0b%08b (no change)\n", flags);
+
+    return 0;
+}
+```
+
+**Toggle a bit** - flip a specific bit (`0` → `1` or `1` → `0`).
+
+```c
+// Toggle bit 3 of register
+uint8_t reg = 0b00001000;
+reg ^= (1 << 3);   // reg = 0b00000000
+```
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+
+#define TOGGLE_BIT(reg, bit) ((reg) ^= (1 << (bit)))
+
+int main() {
+    uint8_t ctrl = 0b00000000;
+
+    for (int i = 0; i < 6; i++) {
+        printf("Cycle %d: 0b%08b\n", i, ctrl);
+        TOGGLE_BIT(ctrl, 3);  // Toggle bit 3 each cycle
+    }
+
+    return 0;
+}
+```
+
+**Read a bit** - check whether a specific bit is `1` or `0`.
+
+```c
+// Read bit 3 of register - returns non-zero if bit is set
+uint8_t reg = 0b00001000;
+int is_set = (reg >> 3) & 1;   // is_set = 1
+```
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+
+#define READ_BIT(reg, bit)  (((reg) >> (bit)) & 1)
+
+int main() {
+    uint8_t reg = 0b01001010;
+
+    printf("Register: 0b%08b\n", reg);
+
+    for (int bit = 7; bit >= 0; bit--) {
+        printf("Bit %d: %s\n", bit,
+               READ_BIT(reg, bit) ? "SET" : "CLEAR");
+    }
+
+    return 0;
+}
+```
+
+#### Multiple Bit Operations
+
+**Set multiple bits** - set several bits at once using a mask.
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+
+#define SET_BITS(reg, mask)   ((reg) |= (mask))
+#define CLEAR_BITS(reg, mask) ((reg) &= ~(mask))
+#define TOGGLE_BITS(reg, mask)((reg) ^= (mask))
+#define READ_BITS(reg, mask)  ((reg) & (mask))
+
+int main() {
+    uint8_t reg = 0b00000000;
+
+    // Set bits 0, 2, 4 using a mask
+    SET_BITS(reg, 0b00010101);  // Bits 0, 2, 4
+    printf("After set:   0b%08b\n", reg);
+
+    // Clear bits 0 and 4
+    CLEAR_BITS(reg, 0b00010001);  // Bits 0, 4
+    printf("After clear: 0b%08b\n", reg);
+
+    // Toggle lower nibble (bits 0-3)
+    TOGGLE_BITS(reg, 0b00001111);
+    printf("After toggle:0b%08b\n", reg);
+
+    // Read multiple bits (check if any of bits 1-3 are set)
+    uint8_t result = READ_BITS(reg, 0b00001110);
+    printf("Bits 1-3: 0b%08b\n", result);
+
+    return 0;
+}
+```
+
+**Practical example - configuring an AVR microcontroller register**
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+
+// Simulated 8-bit register
+uint8_t DDRB = 0;
+uint8_t PORTB = 0;
+
+#define SET_BIT(reg, bit)   ((reg) |= (1 << (bit)))
+#define CLEAR_BIT(reg, bit) ((reg) &= ~(1 << (bit)))
+#define TOGGLE_BIT(reg, bit)((reg) ^= (1 << (bit)))
+#define READ_BIT(reg, bit)  (((reg) >> (bit)) & 1)
+
+void setup() {
+    // Set PB0, PB1, PB2 as outputs (bits 0, 1, 2)
+    SET_BIT(DDRB, 0);
+    SET_BIT(DDRB, 1);
+    SET_BIT(DDRB, 2);
+
+    // Set PB3 as input (clear bit 3)
+    CLEAR_BIT(DDRB, 3);
+}
+
+void set_leds(uint8_t pattern) {
+    // Clear lower 3 bits of PORTB, then set them to the pattern
+    PORTB = (PORTB & 0b11111000) | (pattern & 0b00000111);
+}
+
+int main() {
+    setup();
+
+    printf("DDRB after setup: 0b%08b\n", DDRB);
+
+    set_leds(0b101);  // Turn on LEDs on PB0 and PB2
+    printf("PORTB: 0b%08b\n", PORTB);
+
+    // Toggle PB1
+    TOGGLE_BIT(PORTB, 1);
+    printf("PORTB after toggle: 0b%08b\n", PORTB);
+
+    // Read PB3 (input pin)
+    int switch_state = READ_BIT(PORTB, 3);
+    printf("PB3 state: %s\n", switch_state ? "HIGH" : "LOW");
+
+    return 0;
+}
+```
+
+**Practical example - working with 16-bit hardware registers**
+
+```c
+#include <stdio.h>
+#include <stdint.h>
+
+// Simulated 16-bit timer control register
+uint16_t TCCR1A = 0;
+
+#define SET_BITS(reg, mask)   ((reg) |= (mask))
+#define CLEAR_BITS(reg, mask) ((reg) &= ~(mask))
+#define TOGGLE_BITS(reg, mask)((reg) ^= (mask))
+
+int main() {
+    // Configure timer: WGM10 and WGM11 (PWM mode) + COM1A1 (output compare)
+    uint16_t wgm_mask  = (1 << 0) | (1 << 1);   // Bits 0-1: waveform generation
+    uint16_t com_mask  = (1 << 6) | (1 << 7);   // Bits 6-7: compare output mode
+    uint16_t cs_mask   = (1 << 8) | (1 << 9);   // Bits 8-9: clock select
+
+    // Set WGM bits
+    SET_BITS(TCCR1A, wgm_mask);
+    printf("After WGM set:    0x%04x\n", TCCR1A);
+
+    // Set COM1A1 (bit 7), clear COM1A0 (bit 6)
+    SET_BITS(TCCR1A, (1 << 7));
+    CLEAR_BITS(TCCR1A, (1 << 6));
+    printf("After COM config: 0x%04x\n", TCCR1A);
+
+    // Set clock select to prescaler 64 (bits 8-9 = 0b11)
+    SET_BITS(TCCR1A, cs_mask);
+    printf("After clock set:  0x%04x\n", TCCR1A);
+
+    // Toggle the entire lower byte
+    TOGGLE_BITS(TCCR1A, 0x00FF);
+    printf("After toggle low: 0x%04x\n", TCCR1A);
+
+    return 0;
+}
+```
+
+These bit manipulation primitives are the foundation of all embedded C programming - every hardware register configuration, from GPIO to timers to interrupts, is done through these same `set`, `clear`, `toggle`, and `read` operations.
+
+In conclusion, C programming encompasses a wide range of topics beyond just variables and data types. Command line arguments, graphics programming, and embedded C are just a few examples of the miscellaneous topics that are essential for a well-rounded understanding of the language. By exploring these topics, you can enhance your skills as a C programmer and expand your capabilities in various application domains.

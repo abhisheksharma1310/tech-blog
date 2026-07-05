@@ -91,7 +91,7 @@ def get_user(user_id: int):
     return {"user_id": user_id}
 
 
-# This would FAIL — "/users/me" would never be reached
+# This would FAIL - "/users/me" would never be reached
 # @app.get("/users/{user_id}")
 # def get_user(user_id: int):
 #     return {"user_id": user_id}
@@ -132,12 +132,12 @@ curl http://127.0.0.1:8000/models/vgg
 # {"model": "VGG", "year": 2014}
 
 curl http://127.0.0.1:8000/models/inception
-# 422 Validation Error — "inception" is not a valid model
+# 422 Validation Error - "inception" is not a valid model
 ```
 
 ## Query Parameters
 
-Query parameters come after the `?` in the URL — `?key=value&key2=value2`. Any function parameter that is **not** part of the path is automatically treated as a query parameter:
+Query parameters come after the `?` in the URL - `?key=value&key2=value2`. Any function parameter that is **not** part of the path is automatically treated as a query parameter:
 
 ```python
 @app.get("/items")
@@ -213,7 +213,7 @@ curl "http://.../items?available=yes"
 
 ## Parameter Validation with Query()
 
-For more control, use FastAPI's `Query()` class — it adds validation, metadata, and documentation:
+For more control, use FastAPI's `Query()` class - it adds validation, metadata, and documentation:
 
 ```python
 from fastapi import FastAPI, Query
@@ -334,4 +334,4 @@ Each error includes the `loc` (location), `type` (rule broken), and `input` (wha
 - Optional params use **`None` defaults** or **`Optional[str]`**; required params use **`...` (Ellipsis)** with `Query()`
 - Use **`Query(ge=1, le=100, min_length=3, regex="...")`** for parameter-level validation
 - Invalid parameters return **422 Validation Error** with detailed per-field messages
-- Route order matters — place **specific routes** before parameterized ones
+- Route order matters - place **specific routes** before parameterized ones

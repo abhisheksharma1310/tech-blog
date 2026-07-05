@@ -782,121 +782,205 @@ declare module 'astro:content' {
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-arrays.mdx": {
-	id: "programming/c/c-arrays.mdx";
-  slug: "c-arrays";
+"programming/c/advance/c-dynamic-memory.mdx": {
+	id: "programming/c/advance/c-dynamic-memory.mdx";
+  slug: "c-dynamic-memory";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-conditionals.mdx": {
-	id: "programming/c/c-conditionals.mdx";
-  slug: "c-conditionals";
-  body: string;
-  collection: "blog";
-  data: InferEntrySchema<"blog">
-} & { render(): Render[".mdx"] };
-"programming/c/c-constants.mdx": {
-	id: "programming/c/c-constants.mdx";
-  slug: "c-constants";
-  body: string;
-  collection: "blog";
-  data: InferEntrySchema<"blog">
-} & { render(): Render[".mdx"] };
-"programming/c/c-enum.mdx": {
-	id: "programming/c/c-enum.mdx";
+"programming/c/advance/c-enum.mdx": {
+	id: "programming/c/advance/c-enum.mdx";
   slug: "c-enums";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-functions.mdx": {
-	id: "programming/c/c-functions.mdx";
-  slug: "c-functions";
+"programming/c/advance/c-error-handling.mdx": {
+	id: "programming/c/advance/c-error-handling.mdx";
+  slug: "c-error-handling";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-header-file.mdx": {
-	id: "programming/c/c-header-file.mdx";
+"programming/c/advance/c-file-handling.mdx": {
+	id: "programming/c/advance/c-file-handling.mdx";
+  slug: "c-file-handling";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/advance/c-generics.mdx": {
+	id: "programming/c/advance/c-generics.mdx";
+  slug: "c-generics";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/advance/c-header-file.mdx": {
+	id: "programming/c/advance/c-header-file.mdx";
   slug: "c-header-files";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-input-output.mdx": {
-	id: "programming/c/c-input-output.mdx";
-  slug: "c-input-output";
-  body: string;
-  collection: "blog";
-  data: InferEntrySchema<"blog">
-} & { render(): Render[".mdx"] };
-"programming/c/c-intro.mdx": {
-	id: "programming/c/c-intro.mdx";
-  slug: "c-intro";
-  body: string;
-  collection: "blog";
-  data: InferEntrySchema<"blog">
-} & { render(): Render[".mdx"] };
-"programming/c/c-loops.mdx": {
-	id: "programming/c/c-loops.mdx";
-  slug: "c-loops";
-  body: string;
-  collection: "blog";
-  data: InferEntrySchema<"blog">
-} & { render(): Render[".mdx"] };
-"programming/c/c-miscellaneous.mdx": {
-	id: "programming/c/c-miscellaneous.mdx";
+"programming/c/advance/c-miscellaneous.mdx": {
+	id: "programming/c/advance/c-miscellaneous.mdx";
   slug: "c-miscellaneous";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-operators.mdx": {
-	id: "programming/c/c-operators.mdx";
-  slug: "c-operators";
+"programming/c/advance/c-multithreading.mdx": {
+	id: "programming/c/advance/c-multithreading.mdx";
+  slug: "c-multithreading";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-pointers.mdx": {
-	id: "programming/c/c-pointers.mdx";
+"programming/c/advance/c-pointers.mdx": {
+	id: "programming/c/advance/c-pointers.mdx";
   slug: "c-pointers";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-preprocessor.mdx": {
-	id: "programming/c/c-preprocessor.mdx";
+"programming/c/advance/c-preprocessor.mdx": {
+	id: "programming/c/advance/c-preprocessor.mdx";
   slug: "c-preprocessor";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-strings.mdx": {
-	id: "programming/c/c-strings.mdx";
-  slug: "c-strings";
+"programming/c/advance/c-signals.mdx": {
+	id: "programming/c/advance/c-signals.mdx";
+  slug: "c-signals";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-structures.mdx": {
-	id: "programming/c/c-structures.mdx";
+"programming/c/advance/c-socket.mdx": {
+	id: "programming/c/advance/c-socket.mdx";
+  slug: "c-sockets";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/advance/c-structures.mdx": {
+	id: "programming/c/advance/c-structures.mdx";
   slug: "c-structures";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-typedef.mdx": {
-	id: "programming/c/c-typedef.mdx";
+"programming/c/advance/c-typedef.mdx": {
+	id: "programming/c/advance/c-typedef.mdx";
   slug: "c-typedef";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">
 } & { render(): Render[".mdx"] };
-"programming/c/c-variables-and-data-types.mdx": {
-	id: "programming/c/c-variables-and-data-types.mdx";
+"programming/c/advance/c-unions.mdx": {
+	id: "programming/c/advance/c-unions.mdx";
+  slug: "c-unions";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/advance/c-variadic-functions.mdx": {
+	id: "programming/c/advance/c-variadic-functions.mdx";
+  slug: "c-variadic-functions";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-arrays.mdx": {
+	id: "programming/c/basics/c-arrays.mdx";
+  slug: "c-arrays";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-conditionals.mdx": {
+	id: "programming/c/basics/c-conditionals.mdx";
+  slug: "c-conditionals";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-constants.mdx": {
+	id: "programming/c/basics/c-constants.mdx";
+  slug: "c-constants";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-data-types.mdx": {
+	id: "programming/c/basics/c-data-types.mdx";
   slug: "c-variables-and-data-type";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-functions.mdx": {
+	id: "programming/c/basics/c-functions.mdx";
+  slug: "c-functions";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-indentifiers.mdx": {
+	id: "programming/c/basics/c-indentifiers.mdx";
+  slug: "c-identifiers";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-input-output.mdx": {
+	id: "programming/c/basics/c-input-output.mdx";
+  slug: "c-input-output";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-intro.mdx": {
+	id: "programming/c/basics/c-intro.mdx";
+  slug: "c-intro";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-keywords.mdx": {
+	id: "programming/c/basics/c-keywords.mdx";
+  slug: "c-keywords";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-loops.mdx": {
+	id: "programming/c/basics/c-loops.mdx";
+  slug: "c-loops";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-operators.mdx": {
+	id: "programming/c/basics/c-operators.mdx";
+  slug: "c-operators";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-strings.mdx": {
+	id: "programming/c/basics/c-strings.mdx";
+  slug: "c-strings";
+  body: string;
+  collection: "blog";
+  data: InferEntrySchema<"blog">
+} & { render(): Render[".mdx"] };
+"programming/c/basics/c-variables.mdx": {
+	id: "programming/c/basics/c-variables.mdx";
+  slug: "c-variables";
   body: string;
   collection: "blog";
   data: InferEntrySchema<"blog">

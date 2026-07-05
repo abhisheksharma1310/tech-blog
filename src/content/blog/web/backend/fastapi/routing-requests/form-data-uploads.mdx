@@ -59,7 +59,7 @@ curl -X POST http://localhost:8000/login \
 
 Each `Form()` parameter becomes an individual field in the form data. FastAPI parses them in order.
 
-> **Important:** You must use `Form()` explicitly — unlike JSON body parameters, form fields are not inferred from type hints alone. You also cannot mix `Body()` and `Form()` in the same handler; use separate handlers or `multipart/form-data` with `File()`.
+> **Important:** You must use `Form()` explicitly - unlike JSON body parameters, form fields are not inferred from type hints alone. You also cannot mix `Body()` and `Form()` in the same handler; use separate handlers or `multipart/form-data` with `File()`.
 
 ## File Uploads with `UploadFile`
 
@@ -106,13 +106,13 @@ curl -X POST http://localhost:8000/upload \
 
 ### Synchronous vs Asynchronous
 
-`UploadFile` methods are async — use `await`:
+`UploadFile` methods are async - use `await`:
 
 ```python
 # ✅ Correct
 contents = await file.read()
 
-# ❌ Wrong — UploadFile requires await
+# ❌ Wrong - UploadFile requires await
 contents = file.read()
 ```
 
@@ -349,10 +349,10 @@ pip install aiofiles
 ## Key Takeaways
 
 - Use `Form()` for individual form fields and `File()` with `UploadFile` for file uploads
-- `UploadFile` has async methods (`read`, `write`, `seek`, `close`) — always `await` them
+- `UploadFile` has async methods (`read`, `write`, `seek`, `close`) - always `await` them
 - For multiple files, annotate with `list[UploadFile] = File(...)`
 - Validate file **type** via `file.content_type` and file **size** by reading the content
-- Mix form fields and file uploads in the same handler — form fields use `Form()`, files use `File()`
+- Mix form fields and file uploads in the same handler - form fields use `Form()`, files use `File()`
 - Stream large files to disk in chunks with `aiofiles` instead of reading the entire file into memory
-- Use `/upload-validated` pattern with `HTTPException` for rejected files — returns proper 4xx status codes
+- Use `/upload-validated` pattern with `HTTPException` for rejected files - returns proper 4xx status codes
 - The content type must be `multipart/form-data` when mixing files and form fields

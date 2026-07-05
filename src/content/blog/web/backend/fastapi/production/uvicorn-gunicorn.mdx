@@ -1,6 +1,6 @@
 ---
 title: "Running with Uvicorn & Gunicorn"
-description: "Configure Uvicorn and Gunicorn for production FastAPI deployments — process management, worker types, bind options, and logging"
+description: "Configure Uvicorn and Gunicorn for production FastAPI deployments - process management, worker types, bind options, and logging"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Production"]
 tags: ["FastAPI", "Uvicorn", "Gunicorn", "Production", "ASGI", "Deployment"]
@@ -18,7 +18,7 @@ FastAPI is an **ASGI** framework, so it requires an ASGI server. Two common appr
 | **Uvicorn directly** | `uvicorn app.main:app` | Simple deployments, containers, single-process |
 | **Gunicorn + Uvicorn workers** | `gunicorn -k uvicorn.workers.UvicornWorker` | Multi-process, production servers, process management |
 
-Uvicorn is a lightning-fast ASGI server written in Rust-backed `uvloop`. Gunicorn is a mature WSGI HTTP server that provides **process management** (worker spawning, restart, signals) — and can delegate to Uvicorn workers to handle ASGI apps.
+Uvicorn is a lightning-fast ASGI server written in Rust-backed `uvloop`. Gunicorn is a mature WSGI HTTP server that provides **process management** (worker spawning, restart, signals) - and can delegate to Uvicorn workers to handle ASGI apps.
 
 ## Running Uvicorn Directly
 
@@ -57,7 +57,7 @@ uvicorn app.main:app \
 # ❌ Never use in production
 uvicorn app.main:app --reload
 
-# ✅ Production — no reload
+# ✅ Production - no reload
 uvicorn app.main:app --workers 4
 ```
 
@@ -88,7 +88,7 @@ gunicorn app.main:app \
 |---|---|---|
 | `uvicorn.workers.UvicornWorker` | Yes | Standard FastAPI apps |
 | `uvicorn.workers.UvicornH11Worker` | Yes | Pure-Python HTTP (no httptools) |
-| `uvicorn.workers.UvicornWorker` (uvloop) | Yes | **Recommended** — fastest on Linux |
+| `uvicorn.workers.UvicornWorker` (uvloop) | Yes | **Recommended** - fastest on Linux |
 
 ```python
 # config/gunicorn.conf.py
@@ -131,10 +131,10 @@ gunicorn app.main:app -c config/gunicorn.conf.py
 └─────────────────────────────────────────────┘
 ```
 
-- **Master process** — manages workers, handles signals (HUP, TERM, USR2)
-- **Worker processes** — each runs a Uvicorn ASGI server instance
-- **Auto-restart** — if a worker crashes, the master spawns a replacement
-- **Graceful shutdown** — `TERM` signal: master stops accepting connections, waits for in-flight requests (up to `timeout`), then kills workers
+- **Master process** - manages workers, handles signals (HUP, TERM, USR2)
+- **Worker processes** - each runs a Uvicorn ASGI server instance
+- **Auto-restart** - if a worker crashes, the master spawns a replacement
+- **Graceful shutdown** - `TERM` signal: master stops accepting connections, waits for in-flight requests (up to `timeout`), then kills workers
 
 ## Signal Handling
 
@@ -266,7 +266,7 @@ For Kubernetes, add liveness and readiness probes pointing to `/health`.
 
 - Use **Uvicorn directly** (`--workers N`) in Docker/Kubernetes where the orchestrator handles process management
 - Use **Gunicorn + UvicornWorker** on bare-metal/VPS for automatic worker management, signals, and zero-downtime reloads
-- **Never use `--reload` in production** — it adds overhead and bypasses signal handling
+- **Never use `--reload` in production** - it adds overhead and bypasses signal handling
 - Set `--workers` to `2 * CPU_COUNT + 1` for most workloads; tune with `--max-requests` to prevent memory leaks
 - Configure structured JSON logging for production log aggregation (ELK, Datadog, Grafana Loki)
 - Always expose a `/health` endpoint for load balancer and orchestrator health checks

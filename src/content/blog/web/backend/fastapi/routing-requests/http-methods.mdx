@@ -1,6 +1,6 @@
 ---
 title: "Handling Different HTTP Methods (GET, POST, PUT, DELETE)"
-description: "Use FastAPI decorators to handle GET, POST, PUT, DELETE, and PATCH requests — CRUD mapping, status_code, response_model, and best practices"
+description: "Use FastAPI decorators to handle GET, POST, PUT, DELETE, and PATCH requests - CRUD mapping, status_code, response_model, and best practices"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Routing & Requests"]
 tags: ["FastAPI", "HTTP Methods", "CRUD", "REST API", "Python"]
@@ -54,7 +54,7 @@ tasks_db = {}
 next_id = 1
 ```
 
-### GET — Retrieve Resources
+### GET - Retrieve Resources
 
 ```python
 @app.get("/tasks", response_model=list[Task])
@@ -82,7 +82,7 @@ def get_task(task_id: int):
 | Resource not found | 404 Not Found |
 | Invalid ID format | 422 Unprocessable Entity |
 
-### POST — Create Resources
+### POST - Create Resources
 
 Use `status_code` to signal **201 Created**:
 
@@ -110,14 +110,14 @@ curl -X POST http://localhost:8000/tasks \
 | Resource created | 201 Created |
 | Validation failure | 422 Unprocessable Entity |
 
-### PUT — Full Replacement
+### PUT - Full Replacement
 
 PUT replaces the **entire** resource. Missing fields get reset:
 
 ```python
 @app.put("/tasks/{task_id}", response_model=Task)
 def replace_task(task_id: int, payload: TaskCreate):
-    """Fully replace a task — requires all fields."""
+    """Fully replace a task - requires all fields."""
     if task_id not in tasks_db:
         raise HTTPException(status_code=404, detail="Task not found")
     task = Task(id=task_id, **payload.model_dump())
@@ -133,14 +133,14 @@ curl -X PUT http://localhost:8000/tasks/1 \
 
 > **PUT vs PATCH:** PUT replaces the whole resource. If you omit `completed`, it resets to the model default (`False`). Use PATCH for partial updates.
 
-### PATCH — Partial Update
+### PATCH - Partial Update
 
 PATCH only modifies the fields you send:
 
 ```python
 @app.patch("/tasks/{task_id}", response_model=Task)
 def patch_task(task_id: int, payload: TaskUpdate):
-    """Partial update — only supplied fields change."""
+    """Partial update - only supplied fields change."""
     if task_id not in tasks_db:
         raise HTTPException(status_code=404, detail="Task not found")
 
@@ -160,7 +160,7 @@ curl -X PATCH http://localhost:8000/tasks/1 \
   -d '{"title": "FastAPI Advanced"}'
 ```
 
-### DELETE — Remove Resources
+### DELETE - Remove Resources
 
 ```python
 @app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -205,7 +205,7 @@ def list_tasks():
 ```python
 @app.get("/tasks/{task_id}", response_model=Task, response_model_include={"id", "title"})
 def get_task(task_id: int):
-    """Only returns id and title — no completed field."""
+    """Only returns id and title - no completed field."""
     ...
 ```
 
@@ -243,9 +243,9 @@ Client ──DELETE──► 204 No Content
 
 ## Key Takeaways
 
-- FastAPI provides `@app.get()`, `@app.post()`, `@app.put()`, `@app.patch()`, `@app.delete()` — one for each HTTP method
+- FastAPI provides `@app.get()`, `@app.post()`, `@app.put()`, `@app.patch()`, `@app.delete()` - one for each HTTP method
 - Use `status_code=status.HTTP_201_CREATED` for POST and `status.HTTP_204_NO_CONTENT` for DELETE
 - `response_model` controls serialization, filtering, and OpenAPI schema generation
 - PUT replaces the entire resource; PATCH only modifies sent fields (use `exclude_unset=True`)
-- Always return meaningful HTTP status codes — 200, 201, 204, 404, 422
+- Always return meaningful HTTP status codes - 200, 201, 204, 404, 422
 - Raise `HTTPException` for error responses instead of returning dicts manually

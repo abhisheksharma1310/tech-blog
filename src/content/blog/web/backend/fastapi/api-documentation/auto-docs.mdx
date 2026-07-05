@@ -1,6 +1,6 @@
 ---
 title: "Auto-Generated Docs (Swagger UI, ReDoc)"
-description: "FastAPI generates OpenAPI-compliant documentation automatically — explore Swagger UI at /docs and ReDoc at /redoc, customize metadata, tag endpoints, and disable docs in production"
+description: "FastAPI generates OpenAPI-compliant documentation automatically - explore Swagger UI at /docs and ReDoc at /redoc, customize metadata, tag endpoints, and disable docs in production"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "APIs & Documentation"]
 tags: ["FastAPI", "Swagger UI", "ReDoc", "OpenAPI", "API Documentation", "Python"]
@@ -58,7 +58,7 @@ FastAPI converts this entire route into an OpenAPI operation object:
 
 ## Swagger UI (`/docs`)
 
-By default FastAPI exposes an interactive Swagger UI at **`/docs`**. You can send requests, view responses, and see schemas — all from the browser:
+By default FastAPI exposes an interactive Swagger UI at **`/docs`**. You can send requests, view responses, and see schemas - all from the browser:
 
 | Feature | Behaviour |
 |---|---|
@@ -68,7 +68,7 @@ By default FastAPI exposes an interactive Swagger UI at **`/docs`**. You can sen
 | **Code samples** | Auto-generated cURL, Python, JavaScript, etc. |
 
 ```python
-# Swagger UI is enabled by default — visit http://localhost:8000/docs
+# Swagger UI is enabled by default - visit http://localhost:8000/docs
 app = FastAPI()
 ```
 
@@ -77,7 +77,7 @@ app = FastAPI()
 FastAPI also provides **ReDoc**, an alternative documentation UI focused on readability. It renders the entire spec in a clean, three-panel layout:
 
 ```python
-# ReDoc is also enabled by default — visit http://localhost:8000/redoc
+# ReDoc is also enabled by default - visit http://localhost:8000/redoc
 app = FastAPI()
 ```
 
@@ -93,7 +93,7 @@ You can control what appears in the generated docs by passing metadata to the `F
 ```python
 app = FastAPI(
     title="Shop API",
-    description="RESTful API for the online shop — product catalog, cart, checkout",
+    description="RESTful API for the online shop - product catalog, cart, checkout",
     version="2.1.0",
     summary="Online Shop Backend",
     terms_of_service="https://example.com/terms",
@@ -181,7 +181,7 @@ You can also add a description for each tag:
 tags_metadata = [
     {
         "name": "Items",
-        "description": "Product catalogue — create, read, update, delete items",
+        "description": "Product catalogue - create, read, update, delete items",
         "externalDocs": {
             "description": "Inventory guide",
             "url": "https://example.com/inventory",
@@ -255,7 +255,7 @@ curl http://localhost:8000/openapi.json | jq '.info'
 }
 ```
 
-You can use this JSON with any OpenAPI-compatible tool — Postman, Insomnia, `openapi-generator`, or API gateways.
+You can use this JSON with any OpenAPI-compatible tool - Postman, Insomnia, `openapi-generator`, or API gateways.
 
 ## Customising the OpenAPI Schema
 

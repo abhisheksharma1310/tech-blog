@@ -1,0 +1,366 @@
+---
+title: "Preprocessor"
+description: "Preprocessor in C"
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Preprocessor"]
+slug: "c-preprocessor"
+author: "Abhishek Sharma"
+order: 6
+---
+
+# C Preprocessor
+
+The C Preprocessor is a powerful tool that allows you to perform various operations on your code before it is compiled. It provides features such as macro definitions, file inclusion, conditional compilation, and more. In this blog post, we will explore the basics of the C Preprocessor and how it can be used to enhance your C programming experience.
+
+## Macro Definitions
+One of the most commonly used features of the C Preprocessor is macro definitions. A macro is a fragment of code that is given a name. Whenever the name is used in the code, it is replaced by the contents of the macro. This can be useful for defining constants, creating inline functions, and simplifying complex code. To define a macro, you use the `#define` directive. For example:
+```c
+#define PI 3.14159
+```
+In this example, we define a macro named `PI` that represents the value of pi. Whenever we use `PI` in our code, it will be replaced with `3.14159`.
+
+You can also define macros that take parameters. For example:
+```c
+#define SQUARE(x) ((x) * (x))
+```
+In this example, we define a macro named `SQUARE` that takes a parameter `x` and returns the square of `x`. Whenever we use `SQUARE(5)`, it will be replaced with `((5) * (5))`, which evaluates to `25`.
+
+Macros can be very useful for improving code readability and reducing redundancy, but they should be used with caution, as they can sometimes lead to unexpected behavior if not defined properly.
+
+## File Inclusion
+The C Preprocessor also allows you to include the contents of one file into another file using the `#include` directive. This is commonly used to include header files that contain function prototypes, type definitions, and other declarations. For example:
+```c
+#include <stdio.h>
+```
+In this example, we include the standard input/output header file `stdio.h`, which contains declarations for functions like `printf` and `scanf`.
+
+You can also include your own header files using double quotes instead of angle brackets. For example:
+```c
+#include "myheader.h"
+```
+In this case, the preprocessor will look for `myheader.h` in the current directory.
+
+File inclusion is a powerful feature that allows you to organize your code into separate files and reuse code across multiple files. It also helps to keep your code modular and easier to maintain.
+
+## Conditional Compilation Directives
+
+Conditional compilation lets the preprocessor include or exclude code based on conditions evaluated at compile time. This is essential for writing portable, debuggable, and configurable code.
+
+### #if, #else, #elif, #endif
+
+These directives work like a C `if-else` chain, but evaluated by the preprocessor. The condition must be a constant expression.
+
+```c
+#include <stdio.h>
+
+#define VERSION 3
+
+int main() {
+#if VERSION == 1
+    printf("Running version 1\n");
+#elif VERSION == 2
+    printf("Running version 2\n");
+#elif VERSION == 3
+    printf("Running version 3\n");
+#else
+    printf("Unknown version\n");
+#endif
+
+    return 0;
+}
+```
+
+Only the matching block is compiled - the rest is discarded before the compiler even sees it.
+
+### #ifdef and #ifndef
+
+`#ifdef` checks if a macro is defined. `#ifndef` checks if a macro is **not** defined.
+
+```c
+#include <stdio.h>
+
+#define DEBUG
+
+int main() {
+#ifdef DEBUG
+    printf("Debug logging is enabled\n");
+#endif
+
+#ifndef RELEASE
+    printf("This is not a release build\n");
+#endif
+
+    return 0;
+}
+```
+
+Define or undefine macros at compile time with `-D`:
+
+```bash
+gcc -DDEBUG program.c -o program    # Define DEBUG
+gcc -DRELEASE program.c -o program  # Define RELEASE
+gcc -UDEBUG program.c -o program    # Undefine DEBUG
+```
+
+### Practical example: debug logging
+
+```c
+#include <stdio.h>
+
+// #define DEBUG  // Uncomment to enable debug output
+
+#ifdef DEBUG
+    #define LOG(msg) printf("[DEBUG] %s\n", msg)
+    #define LOG_VAL(fmt, val) printf("[DEBUG] " fmt "\n", val)
+#else
+    #define LOG(msg)        // Empty - compiles to nothing
+    #define LOG_VAL(fmt, val)
+#endif
+
+int main() {
+    int result = 42;
+
+    LOG("Starting computation");
+    LOG_VAL("Result = %d", result);
+    LOG("Computation finished");
+
+    printf("Program complete\n");
+
+    return 0;
+}
+```
+
+When `DEBUG` is undefined, the `LOG` macros expand to nothing - zero runtime cost in release builds.
+
+### Practical example: platform-specific code
+
+```c
+#include <stdio.h>
+
+int main() {
+#if defined(_WIN32) || defined(_WIN64)
+    printf("Running on Windows\n");
+    // Windows-specific: Sleep(1000);
+#elif defined(__linux__)
+    printf("Running on Linux\n");
+    // Linux-specific: sleep(1);
+#elif defined(__APPLE__)
+    printf("Running on macOS\n");
+    // macOS-specific: sleep(1);
+#else
+    printf("Unknown platform\n");
+#endif
+
+    return 0;
+}
+```
+
+### #ifdef vs #if defined
+
+`#ifdef MACRO` is shorthand for `#if defined(MACRO)`. `#if defined()` is more flexible - it supports logical operators:
+
+```c
+#if defined(DEBUG) && defined(VERBOSE)
+    printf("Verbose debug output\n");
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+    printf("Windows system\n");
+#endif
+```
+
+### #undef
+
+`#undef` removes a previously defined macro. Useful for redefining or scoping macros.
+
+```c
+#include <stdio.h>
+
+#define TEMP 100
+
+int main() {
+    printf("TEMP = %d\n", TEMP);  // 100
+
+#undef TEMP
+    // printf("%d", TEMP);  // ❌ Would cause compile error - TEMP is gone
+
+#define TEMP 200
+    printf("TEMP = %d\n", TEMP);  // 200
+
+    return 0;
+}
+```
+
+Practical use - restrict a macro to a specific section:
+
+```c
+#include <stdio.h>
+
+#define MAX_BUFFER 256
+
+void process_data() {
+    char buffer[MAX_BUFFER];
+    // Use buffer...
+}
+
+#undef MAX_BUFFER  // Don't let this macro leak further
+
+int main() {
+    process_data();
+    // MAX_BUFFER is no longer defined here
+    return 0;
+}
+```
+
+### #pragma
+
+`#pragma` gives compiler-specific instructions. Its behavior varies between compilers - unknown pragmas are silently ignored.
+
+```c
+#include <stdio.h>
+
+// Suppress a specific warning (GCC/Clang)
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
+int main() {
+    int unused = 42;  // No warning
+
+#pragma message("Building main() function")
+    printf("Hello\n");
+
+    return 0;
+}
+```
+
+Common pragmas:
+
+| Pragma | Effect |
+|--------|--------|
+| `#pragma once` | Include guard - ensures header is included only once |
+| `#pragma warning(disable: ...)` | Disable specific compiler warnings (MSVC) |
+| `#pragma GCC poison printf` | Prevent use of `printf` in the code |
+| `#pragma pack(1)` | Set struct packing alignment |
+| `#pragma message("text")` | Print a message during compilation |
+
+```c
+// myheader.h
+#pragma once  // Alternative to traditional include guards
+
+struct Data {
+    int id;
+    char name[50];
+};
+```
+
+Without `#pragma once`, you'd write:
+
+```c
+#ifndef MYHEADER_H
+#define MYHEADER_H
+
+struct Data {
+    int id;
+    char name[50];
+};
+
+#endif
+```
+
+### #error
+
+`#error` prints a custom error message and stops compilation immediately. Useful for enforcing required macros or platform checks.
+
+```c
+#include <stdio.h>
+
+#ifndef VERSION
+    #error "VERSION must be defined. Use -DVERSION=1"
+#endif
+
+#if VERSION < 1 || VERSION > 3
+    #error "VERSION must be between 1 and 3"
+#endif
+
+int main() {
+    printf("Version %d\n", VERSION);
+    return 0;
+}
+```
+
+Try compiling without defining `VERSION`:
+
+```bash
+gcc program.c -o program
+# Output: error: "VERSION must be defined. Use -DVERSION=1"
+```
+
+Compile with a valid version:
+
+```bash
+gcc -DVERSION=2 program.c -o program  # OK
+```
+
+Another common pattern - check compiler or platform:
+
+```c
+#ifndef __STDC__
+    #error "This program requires an ANSI C compiler"
+#endif
+
+#if !defined(_WIN32) && !defined(__linux__) && !defined(__APPLE__)
+    #error "This program only supports Windows, Linux, and macOS"
+#endif
+```
+
+### Putting it all together
+
+```c
+#include <stdio.h>
+
+// Configuration
+#define USE_ADVANCED_FEATURES
+
+// Platform check
+#if !defined(_WIN32) && !defined(__linux__)
+    #error "Unsupported platform"
+#endif
+
+// Version check
+#ifndef API_VERSION
+    #define API_VERSION 1
+    #pragma message("API_VERSION not defined, defaulting to 1")
+#endif
+
+#if API_VERSION == 1
+    void process() {
+        printf("Using API v1\n");
+    }
+#elif API_VERSION == 2
+    void process() {
+        printf("Using API v2\n");
+    }
+#else
+    #error "Unknown API_VERSION"
+#endif
+
+int main() {
+#ifdef USE_ADVANCED_FEATURES
+    #pragma message("Advanced features enabled")
+    printf("Advanced mode\n");
+#endif
+
+    process();
+    return 0;
+}
+```
+
+## Predefined symbolic constants
+The C Preprocessor also provides several predefined symbolic constants that can be useful in your code. Some of the commonly used predefined constants include:
+- `__FILE__`: This constant expands to the name of the current source file as a string literal.
+- `__LINE__`: This constant expands to the current line number in the source file as an integer constant.
+- `__DATE__`: This constant expands to the current date as a string literal in the format "Mmm dd yyyy".
+- `__TIME__`: This constant expands to the current time as a string literal in the format "hh:mm:ss".
+- `__STDC__`: This constant is defined as 1 if the implementation conforms to the ANSI C standard, and is undefined otherwise. These predefined constants can be useful for debugging, logging, and other purposes where you need to include information about the source file, line number, date, or time in your code.
+
+In conclusion, the C Preprocessor is a powerful tool that provides various features to enhance your C programming experience. It allows you to define macros, include files, perform conditional compilation, and use predefined symbolic constants. By understanding and utilizing the capabilities of the C Preprocessor, you can write more efficient, modular, and maintainable code in C.

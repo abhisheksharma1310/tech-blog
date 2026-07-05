@@ -1,0 +1,157 @@
+---
+title: "Identifiers"
+description: "Understand Identifiers in C programming language."
+date: "2026-05-23"
+category: ["Programming", "C Language", "Basics"]
+tags: ["C", "Programming Basics",]
+slug: "c-identifiers"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# Identifiers
+
+An **identifier** is a name given to a program element such as a variable, function, array, structure, or label. Think of it like a label on a box - you use it to refer to that specific thing throughout your code.
+
+```c
+int age = 25;        // 'age' is an identifier
+float pi = 3.14;     // 'pi' is an identifier
+void greet() { }     // 'greet' is an identifier
+```
+
+Without identifiers, you'd have no way to remember where you stored your data or which block of code to call.
+
+## Rules for Naming Identifiers
+
+C has strict rules about what makes a valid identifier. Break any of these and your code won't compile.
+
+| Rule | Valid | Invalid |
+|------|-------|---------|
+| Must begin with a letter `a-z, A-Z` or underscore `_` | `count`, `_temp`, `value1` | `1value`, `@data` |
+| Can contain letters, digits, and underscores only | `total_sum`, `num2` | `total-sum`, `num#2` |
+| Cannot be a **keyword** | `myint`, `var_return` | `int`, `return` |
+| Case-sensitive | `Count` and `count` are different | - |
+| Length is not limited (but only first 31 chars are significant in C89) | - | - |
+
+Here is a practical example showing valid and invalid identifiers:
+
+```c
+#include <stdio.h>
+
+int main() {
+    int age = 25;          // Valid: starts with letter
+    int _count = 10;       // Valid: starts with underscore
+    int num1 = 5;          // Valid: digits after first char
+    int rollNumber = 101;  // Valid: mixed case
+
+    // int 1stPlace = 1;   // Invalid: starts with digit
+    // int my-name = 42;   // Invalid: hyphens not allowed
+    // int float = 3;      // Invalid: 'float' is a keyword
+
+    printf("Age: %d\n", age);
+    printf("Count: %d\n", _count);
+    printf("Number: %d\n", num1);
+    printf("Roll: %d\n", rollNumber);
+
+    return 0;
+}
+```
+
+### Examples of Identifiers
+
+| Identifier | Valid? | Reason |
+|------------|--------|--------|
+| `studentAge` | ✅ | Starts with letter, only letters |
+| `_maxValue` | ✅ | Starts with underscore |
+| `data2` | ✅ | Digits after first character |
+| `2ndPlace` | ❌ | Starts with a digit |
+| `total-amount` | ❌ | Hyphen not allowed |
+| `int` | ❌ | Reserved keyword |
+
+## Naming Conventions
+
+Rules tell you what's **allowed**. Conventions tell you what's **recommended**. Following conventions makes your code easier for others (and future you) to read.
+
+### For Variables
+
+Use `snake_case` or `camelCase` - pick one and stay consistent. Use meaningful names that describe the purpose.
+
+```c
+int student_age = 20;          // snake_case (common in C)
+float totalMarks = 98.5;       // camelCase
+int x = 5;                     // Avoid: too vague
+int number_of_students = 30;   // Good: descriptive
+```
+
+### For Functions
+
+Use `snake_case` with a verb that describes what the function does.
+
+```c
+void print_report() { /* ... */ }
+int calculate_sum(int a, int b) { return a + b; }
+int get_user_age() { return 25; }
+```
+
+### For User-defined Data Types
+
+Use `PascalCase` (capital first letter) for types created with `typedef`, `struct`, or `enum`.
+
+```c
+typedef struct {
+    char name[50];
+    int age;
+} Student;           // PascalCase
+
+typedef enum {
+    MONDAY, TUESDAY
+} WeekDay;           // PascalCase
+```
+
+Putting it all together:
+
+```c
+#include <stdio.h>
+
+typedef struct {
+    char name[50];
+    int age;
+} Student;
+
+float calculate_average(int a, int b) {
+    return (a + b) / 2.0;
+}
+
+int main() {
+    Student student1 = {"Alice", 22};
+    float result = calculate_average(85, 92);
+
+    printf("%s scored %.1f\n", student1.name, result);
+    return 0;
+}
+```
+
+## What happens if we use a keyword as an Identifier?
+
+You cannot. Keywords are reserved words that the C language uses for its own syntax - like `int`, `return`, `if`, `while`, `float`. Trying to use one as an identifier causes a **compile-time error**.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int int = 5;       // ❌ ERROR: expected identifier
+    float return = 3.14; // ❌ ERROR: expected identifier
+    int if = 10;       // ❌ ERROR: expected identifier
+
+    printf("%d", int);
+    return 0;
+}
+```
+
+If you try to compile the above code, the compiler will immediately stop and tell you something like:
+
+```
+error: expected identifier or '(' before 'int'
+```
+
+**What if you really want a variable named `int` or `return`?** You can't. Instead, use a variation like `my_int`, `return_value`, or `int_var`. This is why meaningful names matter - they avoid conflicts with reserved words.

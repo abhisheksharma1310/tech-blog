@@ -1,0 +1,520 @@
+---
+title: "Multithreading"
+description: "Multithreading in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Multithreading"]
+slug: "c-multithreading"
+author: "Abhishek Sharma"
+order: 16
+---
+
+# Multithreading in C Programming
+
+A **thread** is the smallest unit of execution within a process. While a process can have one thread (single-threaded), **multithreading** lets a process run multiple threads concurrently, sharing the same memory space and resources.
+
+C does not have built-in thread support in the language itself. The standard way to work with threads on Unix-like systems is the **POSIX threads** library (`pthreads`), defined in `<pthread.h>`.
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+
+void *print_message(void *arg) {
+    char *msg = (char*) arg;
+    printf("%s\n", msg);
+    return NULL;
+}
+
+int main() {
+    pthread_t thread;
+    pthread_create(&thread, NULL, print_message, "Hello from thread!");
+    pthread_join(thread, NULL);
+    return 0;
+}
+```
+
+Compile with the pthread library:
+
+```bash
+gcc program.c -lpthread -o program
+```
+
+## Need for Multithreading
+
+| Reason | Explanation |
+|--------|-------------|
+| **Parallelism** | Run multiple tasks simultaneously on multi-core CPUs |
+| **Responsiveness** | Keep the UI responsive while doing background work |
+| **Resource sharing** | Threads share memory - no need for complex IPC like processes |
+| **Efficiency** | Creating threads is cheaper than creating processes |
+| **Throughput** | Handle multiple clients or requests concurrently |
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <time.h>
+
+#define SIZE 10000000
+int arr[SIZE];
+
+void *fill_array(void *arg) {
+    int start = *(int*)arg;
+    int end = start + SIZE / 4;
+    for (int i = start; i < end; i++) {
+        arr[i] = i;
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[4];
+    int ranges[4] = {0, SIZE/4, SIZE/2, 3*SIZE/4};
+
+    // Single-threaded timing
+    clock_t start = clock();
+    for (int i = 0; i < SIZE; i++) arr[i] = i;
+    clock_t end = clock();
+    printf("Single thread: %.3f ms\n", 1000.0 * (end - start) / CLOCKS_PER_SEC);
+
+    // Multi-threaded timing
+    start = clock();
+    for (int i = 0; i < 4; i++) {
+        pthread_create(&threads[i], NULL, fill_array, &ranges[i]);
+    }
+    for (int i = 0; i < 4; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    end = clock();
+    printf("Four threads:  %.3f ms\n", 1000.0 * (end - start) / CLOCKS_PER_SEC);
+
+    return 0;
+}
+```
+
+## Implementing Multithreading
+
+To use pthreads, include `<pthread.h>` and link with `-lpthread`. The basic workflow:
+
+1. Declare a `pthread_t` variable for each thread
+2. Create threads with `pthread_create()`
+3. Wait for threads with `pthread_join()`
+4. (Optional) Sync with mutexes, condition variables
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <stdlib.h>
+
+typedef struct {
+    int id;
+    int iterations;
+} ThreadData;
+
+void *worker(void *arg) {
+    ThreadData *data = (ThreadData*) arg;
+    for (int i = 0; i < data->iterations; i++) {
+        printf("Thread %d: iteration %d\n", data->id, i);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+    ThreadData d1 = {1, 3};
+    ThreadData d2 = {2, 3};
+
+    pthread_create(&t1, NULL, worker, &d1);
+    pthread_create(&t2, NULL, worker, &d2);
+
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+
+    printf("Both threads finished\n");
+    return 0;
+}
+```
+
+## Creating Threads
+
+```c
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+                   void *(*start_routine)(void *), void *arg);
+```
+
+| Parameter | Purpose |
+|-----------|---------|
+| `thread` | Pointer to `pthread_t` to store the thread ID |
+| `attr` | Thread attributes (pass `NULL` for defaults) |
+| `start_routine` | Function the thread will execute |
+| `arg` | Argument passed to the start function |
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+void *count_up(void *arg) {
+    int id = *(int*)arg;
+    for (int i = 1; i <= 3; i++) {
+        printf("Thread %d: %d\n", id, i);
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t threads[3];
+    int ids[3] = {1, 2, 3};
+
+    for (int i = 0; i < 3; i++) {
+        pthread_create(&threads[i], NULL, count_up, &ids[i]);
+    }
+
+    for (int i = 0; i < 3; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    return 0;
+}
+```
+
+The thread function must return `void*` and take a `void*` argument. Pass structured data by casting a pointer to a struct.
+
+## Wait for Thread to Finish
+
+`pthread_join()` blocks the calling thread until the specified thread completes.
+
+```c
+int pthread_join(pthread_t thread, void **retval);
+```
+
+- `thread`: the thread to wait for
+- `retval`: pointer to receive the thread's return value (or `NULL`)
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <time.h>
+
+void *compute(void *arg) {
+    int n = *(int*)arg;
+    int *result = malloc(sizeof(int));
+    *result = n * n;
+    return result;
+}
+
+int main() {
+    pthread_t thread;
+    int value = 7;
+
+    pthread_create(&thread, NULL, compute, &value);
+
+    int *result;
+    pthread_join(thread, (void**)&result);
+
+    printf("Result: %d\n", *result);
+    free(result);
+
+    return 0;
+}
+```
+
+## Explicitly Terminate Thread
+
+### pthread_exit - exit the current thread
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+
+void *early_exit(void *arg) {
+    printf("Thread starting...\n");
+    pthread_exit((void*)42);
+    printf("This line never runs\n");
+    return NULL;
+}
+
+int main() {
+    pthread_t thread;
+    void *retval;
+
+    pthread_create(&thread, NULL, early_exit, NULL);
+    pthread_join(thread, &retval);
+
+    printf("Thread exited with: %ld\n", (long)retval);
+    return 0;
+}
+```
+
+### pthread_cancel - request cancellation of another thread
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+void *long_running(void *arg) {
+    int i = 0;
+    while (1) {
+        printf("Working... %d\n", i++);
+        sleep(1);
+        // pthread_testcancel();  // Cancellation point
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t thread;
+    pthread_create(&thread, NULL, long_running, NULL);
+
+    sleep(3);
+    printf("Cancelling thread...\n");
+    pthread_cancel(thread);
+    pthread_join(thread, NULL);
+    printf("Thread cancelled\n");
+
+    return 0;
+}
+```
+
+## Requests Cancellation of Thread
+
+`pthread_cancel()` sends a cancellation request to a thread. The thread doesn't stop immediately - it only terminates at a **cancellation point** (like `sleep`, `read`, `write`, `printf`).
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+void *worker(void *arg) {
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+
+    int i = 0;
+    while (1) {
+        printf("Iteration %d\n", i++);
+        sleep(1);  // Cancellation point
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t t;
+    pthread_create(&t, NULL, worker, NULL);
+    sleep(3);
+    pthread_cancel(t);
+    pthread_join(t, NULL);
+    printf("Done\n");
+    return 0;
+}
+```
+
+## Getting ID of a Thread
+
+```c
+pthread_t pthread_self(void);
+```
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+void *print_id(void *arg) {
+    printf("Thread %lu: started\n", pthread_self());
+    sleep(1);
+    printf("Thread %lu: finishing\n", pthread_self());
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+
+    pthread_create(&t1, NULL, print_id, NULL);
+    pthread_create(&t2, NULL, print_id, NULL);
+
+    printf("Main thread: %lu\n", pthread_self());
+    printf("t1 ID: %lu\n", t1);
+    printf("t2 ID: %lu\n", t2);
+
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+
+    return 0;
+}
+```
+
+You can also compare thread IDs:
+
+```c
+if (pthread_equal(t1, pthread_self())) {
+    printf("This is thread t1\n");
+}
+```
+
+## Thread Synchronization
+
+When multiple threads access shared data simultaneously, you get a **race condition** - the result depends on the unpredictable order of execution. **Mutexes** (mutual exclusion locks) ensure that only one thread accesses shared data at a time.
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+
+int counter = 0;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+void *increment(void *arg) {
+    for (int i = 0; i < 100000; i++) {
+        pthread_mutex_lock(&lock);
+        counter++;
+        pthread_mutex_unlock(&lock);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+
+    pthread_create(&t1, NULL, increment, NULL);
+    pthread_create(&t2, NULL, increment, NULL);
+
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+
+    printf("Counter: %d (expected: 200000)\n", counter);
+
+    return 0;
+}
+```
+
+Without the mutex, the result would be unpredictable - `counter` would often be less than 200000 due to race conditions.
+
+### Mutex functions
+
+| Function | Purpose |
+|----------|---------|
+| `pthread_mutex_init(&mutex, NULL)` | Initialize a mutex dynamically |
+| `pthread_mutex_lock(&mutex)` | Lock the mutex (block if already locked) |
+| `pthread_mutex_trylock(&mutex)` | Attempt to lock (returns immediately) |
+| `pthread_mutex_unlock(&mutex)` | Unlock the mutex |
+| `pthread_mutex_destroy(&mutex)` | Destroy a mutex |
+
+### Condition variables
+
+Condition variables let threads wait for a specific condition to become true.
+
+```c
+#include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+int ready = 0;
+
+void *waiter(void *arg) {
+    pthread_mutex_lock(&lock);
+    while (!ready) {
+        printf("Waiter: waiting...\n");
+        pthread_cond_wait(&cond, &lock);
+    }
+    printf("Waiter: notified!\n");
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
+
+void *signaler(void *arg) {
+    sleep(1);
+    pthread_mutex_lock(&lock);
+    ready = 1;
+    printf("Signaler: sending signal\n");
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&lock);
+    return NULL;
+}
+
+int main() {
+    pthread_t t1, t2;
+    pthread_create(&t1, NULL, waiter, NULL);
+    pthread_create(&t2, NULL, signaler, NULL);
+    pthread_join(t1, NULL);
+    pthread_join(t2, NULL);
+    return 0;
+}
+```
+
+## Common Issues in Multithreading
+
+### Race conditions
+
+Occurs when multiple threads read/write shared data without synchronization. The fix is a mutex.
+
+```c
+// ❌ Race condition
+void *bad_increment(void *arg) {
+    for (int i = 0; i < 100000; i++) counter++;  // Not atomic!
+    return NULL;
+}
+```
+
+### Deadlock
+
+Two or more threads each hold a lock the other needs, and neither can proceed.
+
+```c
+// Thread 1                         // Thread 2
+pthread_mutex_lock(&lock_a);        pthread_mutex_lock(&lock_b);
+pthread_mutex_lock(&lock_b);        pthread_mutex_lock(&lock_a);
+// Both threads now wait forever
+```
+
+**Avoidance**: Always acquire locks in the same order across all threads.
+
+### Data races with non-atomic variables
+
+Without proper synchronization, the compiler or CPU may reorder operations, causing unexpected results. Use mutexes or atomic operations.
+
+### Thread-safe return values
+
+Never return a pointer to a local variable from a thread function - it's on the stack and will be destroyed.
+
+```c
+// ❌ Wrong: returning pointer to local
+void *bad_return(void *arg) {
+    int result = 42;
+    return &result;  // Local variable destroyed after return
+}
+
+// ✅ Correct: return a heap-allocated value
+void *good_return(void *arg) {
+    int *result = malloc(sizeof(int));
+    *result = 42;
+    return result;
+}
+```
+
+### Forgetting to join or detach
+
+Threads that are not joined and not detached become **zombie threads**, leaking system resources.
+
+```c
+pthread_detach(thread_id);  // Thread cleans up automatically when done
+```
+
+### Common pthreads function reference
+
+| Function | Purpose |
+|----------|---------|
+| `pthread_create()` | Create a new thread |
+| `pthread_join()` | Wait for a thread to finish |
+| `pthread_exit()` | Exit the current thread |
+| `pthread_cancel()` | Request cancellation of a thread |
+| `pthread_self()` | Get the calling thread's ID |
+| `pthread_equal()` | Compare two thread IDs |
+| `pthread_detach()` | Make a thread detach (auto-cleanup) |
+| `pthread_mutex_lock()` | Lock a mutex |
+| `pthread_mutex_unlock()` | Unlock a mutex |
+| `pthread_cond_wait()` | Wait on a condition variable |
+| `pthread_cond_signal()` | Wake one waiting thread |
+| `pthread_cond_broadcast()` | Wake all waiting threads |

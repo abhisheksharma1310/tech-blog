@@ -1,0 +1,367 @@
+---
+title: "Generics in C"
+description: "Understanding generics in C."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Generics"]
+slug: "c-generics"
+author: "Abhishek Sharma"
+order: 15
+---
+
+# Generics in C Programming
+
+C does not have templates like C++ or generics like Java. However, C11 introduced the `_Generic` keyword, which lets you write **type-generic** code by selecting different expressions based on the type of an argument.
+
+At compile time, `_Generic` inspects the type of a controlling expression and picks the corresponding result. It's like a `switch` statement, but for types.
+
+```c
+#define describe(x) _Generic((x), \
+    int: "integer",              \
+    float: "float",              \
+    double: "double",            \
+    char*: "string"              \
+)
+```
+
+## Syntax
+
+```c
+_Generic(expression, type1: result1, type2: result2, ..., default: result)
+```
+
+- `expression` - the value whose type is checked (not evaluated at runtime)
+- `type: result` - pairs of type and the corresponding result expression
+- `default` - optional fallback for unlisted types
+
+The type matching is done at compile time. The expression itself is never executed - only its type matters.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int x = 10;
+    float y = 3.14;
+    char *s = "hello";
+
+    printf("%s\n", _Generic(x, int: "int", default: "other"));   // int
+    printf("%s\n", _Generic(y, int: "int", default: "other"));   // other
+    printf("%s\n", _Generic(s, char*: "string", default: "??")); // string
+
+    return 0;
+}
+```
+
+## Example Code
+
+### Basic type dispatch
+
+```c
+#include <stdio.h>
+
+void print_int(int x)    { printf("int: %d\n", x); }
+void print_float(float x){ printf("float: %f\n", x); }
+void print_str(char *x)  { printf("string: %s\n", x); }
+
+#define print(x) _Generic((x), \
+    int:    print_int,         \
+    float:  print_float,       \
+    char*:  print_str          \
+)(x)
+
+int main() {
+    print(42);         // int: 42
+    print(3.14f);      // float: 3.140000
+    print("hello");    // string: hello
+
+    return 0;
+}
+```
+
+Each case in `_Generic` must be a valid expression. Here, each case evaluates to a function pointer, and then `(x)` calls that function with the argument.
+
+### Type-generic square function
+
+```c
+#include <stdio.h>
+
+int square_int(int x)         { return x * x; }
+double square_double(double x){ return x * x; }
+float square_float(float x)   { return x * x; }
+
+#define SQUARE(x) _Generic((x),    \
+    int:    square_int(x),          \
+    double: square_double(x),       \
+    float:  square_float(x)         \
+)
+
+int main() {
+    printf("int: %d\n", SQUARE(5));
+    printf("double: %.2f\n", SQUARE(3.5));
+    printf("float: %.2f\n", SQUARE(2.5f));
+
+    return 0;
+}
+```
+
+### Type-safe max macro
+
+```c
+#include <stdio.h>
+
+#define MAX(x, y) _Generic((x), \
+    int:    max_int(x, y),      \
+    double: max_double(x, y),   \
+    float:  max_float(x, y)     \
+)
+
+int max_int(int a, int b)         { return a > b ? a : b; }
+double max_double(double a, double b){ return a > b ? a : b; }
+float max_float(float a, float b) { return a > b ? a : b; }
+
+int main() {
+    printf("Max int: %d\n", MAX(10, 20));
+    printf("Max double: %.1f\n", MAX(3.5, 2.1));
+
+    return 0;
+}
+```
+
+### Handling multiple types with default
+
+```c
+#include <stdio.h>
+
+#define type_name(x) _Generic((x), \
+    int:       "int",              \
+    long:      "long",             \
+    float:     "float",            \
+    double:    "double",           \
+    char:      "char",             \
+    char*:     "string",           \
+    default:   "unknown"           \
+)
+
+int main() {
+    printf("type of 42:       %s\n", type_name(42));
+    printf("type of 3.14f:    %s\n", type_name(3.14f));
+    printf("type of 3.14:     %s\n", type_name(3.14));
+    printf("type of 'A':      %s\n", type_name('A'));
+    printf("type of \"hello\": %s\n", type_name("hello"));
+    printf("type of 42L:      %s\n", type_name(42L));
+
+    return 0;
+}
+```
+
+Output:
+```
+type of 42:       int
+type of 3.14f:    float
+type of 3.14:     double
+type of 'A':      char
+type of "hello":  string
+type of 42L:      long
+```
+
+### Generic math operations
+
+```c
+#include <stdio.h>
+#include <math.h>
+
+double add_double(double a, double b) { return a + b; }
+int add_int(int a, int b)             { return a + b; }
+
+double multiply_double(double a, double b) { return a * b; }
+int multiply_int(int a, int b)             { return a * b; }
+
+#define ADD(x, y) _Generic((x),           \
+    int:    add_int(x, y),                \
+    double: add_double(x, y)              \
+)
+
+#define MUL(x, y) _Generic((x),           \
+    int:    multiply_int(x, y),           \
+    double: multiply_double(x, y)         \
+)
+
+int main() {
+    printf("int add: %d\n", ADD(10, 20));
+    printf("double add: %.2f\n", ADD(3.5, 2.5));
+    printf("int mul: %d\n", MUL(4, 5));
+    printf("double mul: %.2f\n", MUL(2.5, 4.0));
+
+    return 0;
+}
+```
+
+## _Generic in Macros
+
+The real power of `_Generic` comes when you embed it inside macros to create type-generic interfaces that look like native functions.
+
+### A generic printf-style debug macro
+
+```c
+#include <stdio.h>
+
+void debug_int(int x)       { fprintf(stderr, "[DEBUG] %d\n", x); }
+void debug_double(double x) { fprintf(stderr, "[DEBUG] %f\n", x); }
+void debug_str(char *x)     { fprintf(stderr, "[DEBUG] %s\n", x); }
+void debug_ptr(void *x)     { fprintf(stderr, "[DEBUG] %p\n", x); }
+
+#define DEBUG(x) _Generic((x),      \
+    int:    debug_int(x),           \
+    double: debug_double(x),        \
+    char*:  debug_str(x),           \
+    default: debug_ptr(x)           \
+)
+
+int main() {
+    DEBUG(42);
+    DEBUG(3.14);
+    DEBUG("hello");
+    DEBUG(&main);
+
+    return 0;
+}
+```
+
+### Generic type conversion macro
+
+```c
+#include <stdio.h>
+#include <math.h>
+
+#define TO_DOUBLE(x) _Generic((x),   \
+    int:    (double)(x),             \
+    float:  (double)(x),             \
+    double: (x),                     \
+    long:   (double)(x)              \
+)
+
+#define TO_INT(x) _Generic((x),      \
+    double: (int)round(x),           \
+    float:  (int)round(x),           \
+    int:    (x),                     \
+    long:   (int)(x)                 \
+)
+
+int main() {
+    printf("int 42 -> double: %f\n", TO_DOUBLE(42));
+    printf("float 3.14f -> double: %f\n", TO_DOUBLE(3.14f));
+    printf("double 3.9 -> int: %d\n", TO_INT(3.9));
+
+    return 0;
+}
+```
+
+### Type-generic container (type-safe)
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+typedef struct {
+    void *data;
+    size_t size;
+} Container;
+
+#define CONTAINER_SET(c, val) do {                              \
+    __typeof__(val) _v = val;                                   \
+    (c).data = malloc(sizeof(_v));                              \
+    memcpy((c).data, &_v, sizeof(_v));                          \
+    (c).size = sizeof(_v);                                      \
+} while(0)
+
+#define CONTAINER_AS(c, type) (*(type*)((c).data))
+
+int main() {
+    Container c;
+
+    CONTAINER_SET(c, 42);
+    printf("int: %d\n", CONTAINER_AS(c, int));
+
+    CONTAINER_SET(c, 3.14);
+    printf("double: %.2f\n", CONTAINER_AS(c, double));
+
+    free(c.data);
+    return 0;
+}
+```
+
+## Advantages of _Generic
+
+| Advantage | Explanation |
+|-----------|-------------|
+| **Type safety** | The compiler checks types at compile time - no runtime type errors |
+| **No macros needed** | Reduces reliance on error-prone preprocessor macros |
+| **Readable** | Cleaner than manual `if-else` type dispatch |
+| **Reusable** | Write one generic interface, use it for multiple types |
+| **Zero runtime cost** | Everything is resolved at compile time - no function pointer overhead |
+| **Works with any type** | Supports `int`, `float`, pointers, structs, arrays |
+
+```c
+#include <stdio.h>
+
+// Without _Generic - manual dispatch is messy
+void print_value_int(int x) { printf("int: %d\n", x); }
+void print_value_double(double x) { printf("double: %f\n", x); }
+
+// With _Generic - clean and extensible
+#define PRINT(x) _Generic((x),      \
+    int:    print_value_int(x),     \
+    double: print_value_double(x)   \
+)
+
+int main() {
+    PRINT(42);
+    PRINT(3.14);
+    return 0;
+}
+```
+
+## Disadvantages of _Generic
+
+| Disadvantage | Explanation |
+|-------------|-------------|
+| **Limited to C11+** | Older compilers (C89/C99) do not support `_Generic` |
+| **Each type needs its own function** | You still must write separate implementations for each type |
+| **No type deduction** | `_Generic` only matches exact types - `const int` is different from `int` |
+| **No variadic generics** | Cannot create truly generic functions like C++ templates |
+| **Macro boilerplate** | Often requires macros, which can be difficult to debug |
+| **Qualifier sensitivity** | `int`, `const int`, `volatile int` are all different types |
+
+```c
+#include <stdio.h>
+
+#define describe(x) _Generic((x),  \
+    int:       "int",              \
+    const int: "const int",        \
+    default:   "other"             \
+)
+
+int main() {
+    int a = 1;
+    const int b = 2;
+
+    printf("a: %s\n", describe(a));  // int
+    printf("b: %s\n", describe(b));  // const int
+
+    return 0;
+}
+```
+
+### Compatibility note
+
+`_Generic` was introduced in **C11**. To use it, compile with the appropriate standard flag:
+
+```bash
+gcc -std=c11 program.c -o program
+# or
+gcc -std=c17 program.c -o program
+# or just (GCC defaults to a recent standard)
+gcc program.c -o program
+```
+
+If you're working in a C89/C99 codebase, `_Generic` is not available - you'll need alternative approaches like function pointer tables or macros with type suffixes.

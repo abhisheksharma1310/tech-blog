@@ -169,13 +169,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 Handlers registered later override earlier ones for the same exception. More specific exceptions take priority over general ones:
 
 ```python
-# General handler — catches everything
+# General handler - catches everything
 @app.exception_handler(Exception)
 async def generic_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "Internal server error"})
 
 
-# Specific handler — takes precedence for ValueError
+# Specific handler - takes precedence for ValueError
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
     return JSONResponse(status_code=400, content={"error": str(exc)})

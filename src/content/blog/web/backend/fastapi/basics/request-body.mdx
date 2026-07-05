@@ -13,11 +13,11 @@ order: 5
 
 FastAPI uses **Pydantic models** to define the structure of request and response data. This gives you:
 
-- **Automatic validation** — invalid data is rejected before your code runs
-- **Automatic parsing** — JSON strings become Python types (datetime, UUID, etc.)
-- **Editor support** — autocomplete and type checking in your IDE
-- **Auto-generated docs** — schemas appear in Swagger UI automatically
-- **Serialization** — Python objects → JSON response, no manual conversion
+- **Automatic validation** - invalid data is rejected before your code runs
+- **Automatic parsing** - JSON strings become Python types (datetime, UUID, etc.)
+- **Editor support** - autocomplete and type checking in your IDE
+- **Auto-generated docs** - schemas appear in Swagger UI automatically
+- **Serialization** - Python objects → JSON response, no manual conversion
 
 ## POST Endpoint with a Pydantic Model
 
@@ -99,7 +99,7 @@ curl -X POST http://127.0.0.1:8000/items \
 }
 ```
 
-The request is rejected **before** your function runs — no manual `if` checks needed.
+The request is rejected **before** your function runs - no manual `if` checks needed.
 
 ## Nested Models
 
@@ -158,17 +158,17 @@ Test with a nested payload:
 }
 ```
 
-FastAPI validates every level — missing required fields inside nested models also return 422.
+FastAPI validates every level - missing required fields inside nested models also return 422.
 
 ## Optional Fields with Optional / None
 
 | Declaration | Required? | Default if omitted |
 |---|---|---|
-| `name: str` | Yes | — |
+| `name: str` | Yes | - |
 | `name: str = "Default"` | No | `"Default"` |
 | `name: str = None` | No | `None` |
 | `name: str = Field(None)` | No | `None` |
-| `name: str = Field(...)` | **Yes** | — (Ellipsis means required) |
+| `name: str = Field(...)` | **Yes** | - (Ellipsis means required) |
 
 ```python
 from pydantic import BaseModel, Field
@@ -184,7 +184,7 @@ class User(BaseModel):
 
 ## Field() Validation
 
-Pydantic's `Field()` provides per-field constraints — the same power as `Query()` for body data:
+Pydantic's `Field()` provides per-field constraints - the same power as `Query()` for body data:
 
 | Parameter | Applies to | Example |
 |---|---|---|
@@ -228,7 +228,7 @@ class Config(BaseModel):
 
 ## Response Model
 
-Use the `response_model` parameter to control what gets sent back — useful for hiding sensitive fields:
+Use the `response_model` parameter to control what gets sent back - useful for hiding sensitive fields:
 
 ```python
 from pydantic import BaseModel
@@ -332,10 +332,10 @@ Incoming Request
 
 ## Key Takeaways
 
-- Define request bodies with **Pydantic `BaseModel`** classes — validation comes free
+- Define request bodies with **Pydantic `BaseModel`** classes - validation comes free
 - POST endpoints accept the model as a parameter: **`def create_item(item: Item)`**
 - Use **`Field()`** for constraints like `ge`, `le`, `min_length`, `max_length`, `regex`
-- Nested models are validated recursively — every level is checked
+- Nested models are validated recursively - every level is checked
 - Optional fields use **`= None`**, required fields have no default (or **`Field(...)`**)
 - Combine path params, query params, and body in one endpoint by ordering function parameters
 - Use **`response_model`** to control what fields are returned to the client

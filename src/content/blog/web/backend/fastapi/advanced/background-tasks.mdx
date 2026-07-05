@@ -1,6 +1,6 @@
 ---
 title: "Background Tasks"
-description: "Use FastAPI's BackgroundTasks to run operations after returning a response — email sending, cleanup jobs, and when to reach for Celery instead"
+description: "Use FastAPI's BackgroundTasks to run operations after returning a response - email sending, cleanup jobs, and when to reach for Celery instead"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Advanced"]
 tags: ["FastAPI", "BackgroundTasks", "Async", "Celery", "Python"]
@@ -11,7 +11,7 @@ order: 1
 
 ## What Are Background Tasks?
 
-Background tasks let you run operations **after** the HTTP response has been sent to the client. This keeps API latency low while still performing work the caller doesn't need to wait for — such as sending confirmation emails, writing audit logs, or cleaning up temporary files.
+Background tasks let you run operations **after** the HTTP response has been sent to the client. This keeps API latency low while still performing work the caller doesn't need to wait for - such as sending confirmation emails, writing audit logs, or cleaning up temporary files.
 
 FastAPI provides `BackgroundTasks` out of the box with no extra dependencies:
 
@@ -39,7 +39,7 @@ from fastapi import FastAPI, BackgroundTasks
 app = FastAPI()
 
 def send_welcome_email(email: str):
-    # Simulate sending an email — runs after the response
+    # Simulate sending an email - runs after the response
     with open("email_log.txt", "a") as f:
         f.write(f"Welcome email sent to {email}\n")
 
@@ -143,29 +143,29 @@ def get_data(request: Request, bg_tasks: BackgroundTasks):
 | Feature | BackgroundTasks | Celery |
 |---------|----------------|--------|
 | **Process** | Same process (in-memory thread) | Separate worker (multiple processes/machines) |
-| **Persistence** | None — tasks lost on crash | Redis/RabbitMQ queue — survives restarts |
-| **Scheduling** | No — runs immediately after response | Yes — cron-like periodic tasks |
+| **Persistence** | None - tasks lost on crash | Redis/RabbitMQ queue - survives restarts |
+| **Scheduling** | No - runs immediately after response | Yes - cron-like periodic tasks |
 | **Concurrency** | Single thread per task | Multiple workers, prefork/gevent/threads |
 | **Retry logic** | Manual | Built-in retries with backoff |
-| **Task chaining** | No | Yes — workflows, groups, chords |
+| **Task chaining** | No | Yes - workflows, groups, chords |
 | **Monitoring** | None | Flower dashboard |
 | **Dependencies** | None (stdlib) | Redis/RabbitMQ + celery package |
 | **Latency overhead** | None (in-process) | ~1–5ms per task (network round-trip) |
 
 ### When to Use BackgroundTasks
 
-- **Low-volume, quick operations** (< 1s) — email, logging, cache invalidation
-- **No persistence required** — losing a task on crash is acceptable
-- **Parallelism not needed** — one task at a time is fine
-- **Zero infrastructure** — no Redis, no extra processes to deploy
+- **Low-volume, quick operations** (< 1s) - email, logging, cache invalidation
+- **No persistence required** - losing a task on crash is acceptable
+- **Parallelism not needed** - one task at a time is fine
+- **Zero infrastructure** - no Redis, no extra processes to deploy
 
 ### When to Use Celery
 
-- **Long-running tasks** — video encoding, report generation, ML inference
-- **Task persistence is critical** — must survive crashes
-- **Scheduled / periodic tasks** — nightly data syncs, daily digests
-- **High throughput** — hundreds of tasks per second
-- **Task orchestration** — chaining, grouping, fan-out patterns
+- **Long-running tasks** - video encoding, report generation, ML inference
+- **Task persistence is critical** - must survive crashes
+- **Scheduled / periodic tasks** - nightly data syncs, daily digests
+- **High throughput** - hundreds of tasks per second
+- **Task orchestration** - chaining, grouping, fan-out patterns
 
 ## Error Handling in Background Tasks
 
@@ -234,13 +234,13 @@ def read_article(article_id: int, bg_tasks: BackgroundTasks):
 
 ### 3. Tasks Are Not Available on Async Functions by Default
 
-`BackgroundTasks` works with both sync and async path operations. However, the task function itself should be sync. If you pass an async callable to `add_task()`, it will be `await`ed in the thread pool — but you lose the benefit of non-blocking I/O.
+`BackgroundTasks` works with both sync and async path operations. However, the task function itself should be sync. If you pass an async callable to `add_task()`, it will be `await`ed in the thread pool - but you lose the benefit of non-blocking I/O.
 
 ## Key Takeaways
 
 - `BackgroundTasks` lets you run lightweight operations after sending the HTTP response
 - Use `add_task(func, *args, **kwargs)` to register a background task
 - Common use cases: email notifications, file cleanup, audit logging
-- `BackgroundTasks` runs in-process with no persistence — use Celery for durable, distributed, or scheduled jobs
-- Always handle exceptions inside background tasks — they won't propagate to the client
+- `BackgroundTasks` runs in-process with no persistence - use Celery for durable, distributed, or scheduled jobs
+- Always handle exceptions inside background tasks - they won't propagate to the client
 - Create fresh database connections inside the task; the request's session may be closed

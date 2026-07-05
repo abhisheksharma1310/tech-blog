@@ -1,0 +1,425 @@
+---
+title: "Structures"
+description: "Structures in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Structures"]
+slug: "c-structures"
+author: "Abhishek Sharma"
+order: 2
+---
+
+# Structures
+
+Structures, also known as structs, are a user-defined data type in C programming that allows you to group together different types of variables under a single name. A structure can contain variables of different types, including other structures, arrays, and pointers. Structures are useful for representing complex data and organizing related information in a more meaningful way.
+
+## Declaring Structures
+To declare a structure in C, you use the `struct` keyword followed by the name of the structure and a list of member variables enclosed in curly braces. For example:
+```c
+struct Person {
+    char name[50];
+    int age;
+    float height;
+};
+```
+In this example, we declare a structure named `Person` with three member variables: `name`, `age`, and `height`. The `name` member is an array of characters that can hold a string of up to 49 characters (plus the null terminator), the `age` member is an integer that can hold the person's age, and the `height` member is a floating-point number that can hold the person's height in meters.
+
+## Using Structures
+Once you have declared a structure, you can create variables of that structure type and access its members using the dot operator (`.`). For example:
+```c
+struct Person person1;
+strcpy(person1.name, "Alice");
+person1.age = 30;
+person1.height = 1.65;
+printf("Name: %s\n", person1.name);
+printf("Age: %d\n", person1.age);
+printf("Height: %.2f meters\n", person1.height);
+```
+In this example, we create a variable `person1` of type `struct Person`, assign values to its members, and then print those values to the console. The `strcpy` function is used to copy the string "Alice" into the `name` member of `person1`.
+
+You can also create **multiple variables of the same structure type** and access their members in the same way. For example:
+```c
+struct Person person2;
+strcpy(person2.name, "Bob");
+person2.age = 25;
+person2.height = 1.80;
+printf("Name: %s\n", person2.name);
+printf("Age: %d\n", person2.age);
+printf("Height: %.2f meters\n", person2.height);
+```
+In this example, we create another variable `person2` of type `struct Person`, assign values to its members, and print those values to the console.
+
+**Structures can also be nested**, meaning that a structure can contain another structure as a member. For example:
+```c
+struct Address {
+    char street[100];
+    char city[50];
+    char state[20];
+    char zip[10];
+};
+struct Person {
+    char name[50];
+    int age;
+    float height;
+    struct Address address;
+};
+```
+In this example, we declare a structure named `Address` and then include it as a member of the `Person` structure. This allows us to represent a person's address as part of their information.
+
+We can then create a variable of type `struct Person` and assign values to its members, including the nested `address` member. For example:
+```c
+struct Person person1;
+strcpy(person1.name, "Alice");
+person1.age = 30;
+person1.height = 1.65;
+strcpy(person1.address.street, "123 Main St");
+strcpy(person1.address.city, "Anytown");
+strcpy(person1.address.state, "CA");
+strcpy(person1.address.zip, "12345");
+printf("Name: %s\n", person1.name);
+printf("Age: %d\n", person1.age);
+printf("Height: %.2f meters\n", person1.height);
+printf("Address: %s, %s, %s %s\n", person1.address.street, person1.address.city, person1.address.state, person1.address.zip);
+```
+In this example, we assign values to the members of `person1`, including the nested `address` member, and then print all of the information to the console. Structures are a powerful feature in C programming that allow you to create complex data types and organize related information in a more meaningful way. 
+
+You can also use the `sizeof` operator to determine the size of a structure in bytes. For example:
+```c
+struct Person {
+    char name[50];
+    int age;
+    float height;
+};
+printf("Size of struct Person: %lu bytes\n", sizeof(struct Person));
+```
+In this example, we declare a structure named `Person` and then use the `sizeof` operator to print the size of the structure in bytes. The output will depend on the implementation and may vary between different compilers and platforms. It's important to be aware of the size of your structures, especially when working with large structures or when you need to optimize memory usage in your program. The size of a structure can be affected by factors such as padding and alignment, which are used by the compiler to optimize memory access. Therefore, it's important to consider the layout of your structure and the types of its members when designing your data structures in C programming.
+
+## Arrays of type struct
+You can also create arrays of structures to store multiple instances of a structure type. For example:
+```c
+struct Person {
+    char name[50];
+    int age;
+    float height;
+};
+struct Person people[10]; // Array of 10 Person structures
+```
+In this example, we declare an array named `people` that can hold 10 instances of the `Person` structure.
+
+You can then access and assign values to the members of each structure in the array using the index and the dot operator. For example:
+```c
+strcpy(people[0].name, "Alice");
+people[0].age = 30;
+people[0].height = 1.65;
+strcpy(people[1].name, "Bob");
+people[1].age = 25;
+people[1].height = 1.80;
+```
+In this example, we assign values to the members of the first two `Person` structures in the `people` array.
+
+You can then access and print the values of the members for each structure in the array as needed. For example:
+```c
+for (int i = 0; i < 2; i++) {
+    printf("Name: %s\n", people[i].name);
+    printf("Age: %d\n", people[i].age);
+    printf("Height: %.2f meters\n", people[i].height);
+}
+```
+In this example, we use a loop to iterate through the first two `Person` structures in the `people` array and print their member values to the console. Arrays of structures can be useful for storing and managing collections of related data, such as a list of people, products, or any other type of entity that can be represented as a structure in C programming. However, it's important to be mindful of the size of your structures and the number of instances you need to store, as large arrays of structures can consume a lot of memory if not used carefully.
+
+## Pointer in structures
+Structures can also contain pointers as members, which allows you to create more dynamic and flexible data structures. For example:
+```c
+struct Person {
+    char name[50];
+    int age;
+    float height;
+    char *hobby; // Pointer to a string representing the person's hobby
+};
+```
+In this example, we declare a structure named `Person` that includes a pointer member `hobby`, which can point to a string representing the person's hobby. You can then assign a string to the `hobby` pointer for each instance of the `Person` structure. For example:
+```c
+struct Person person1;
+strcpy(person1.name, "Alice");
+person1.age = 30;   
+person1.height = 1.65;
+person1.hobby = "Reading";
+```
+In this example, we assign the string "Reading" to the `hobby` pointer of `person1`. You can then access and print the value of the `hobby` member for each instance of the `Person` structure as needed. For example:
+```c
+printf("Name: %s\n", person1.name);
+printf("Age: %d\n", person1.age);
+printf("Height: %.2f meters\n", person1.height);
+printf("Hobby: %s\n", person1.hobby);
+```
+In this example, we print the values of all the members of `person1`, including the `hobby` member, to the console. Using pointers in structures can provide more flexibility in managing data, as it allows you to dynamically allocate memory for certain members or to point to existing data without having to copy it. However, it's important to be careful when using pointers in structures, as they can lead to issues such as memory leaks or dangling pointers if not managed properly. Always ensure that you allocate and free memory correctly when using pointers in structures to avoid potential problems in your C programs.
+
+## Structure Member Alignment, Padding and Data Packing
+
+The compiler does not always pack structure members tightly together. It may insert extra unused bytes - called **padding** - between members to align them to memory addresses that the CPU can access more efficiently. This is called **alignment**.
+
+```c
+#include <stdio.h>
+
+struct Packed {
+    char c;    // 1 byte
+    int i;     // 4 bytes
+    char d;    // 1 byte
+};
+
+int main() {
+    printf("Size of struct: %zu bytes\n", sizeof(struct Packed));
+    // Likely 12, not 1 + 4 + 1 = 6
+
+    return 0;
+}
+```
+
+### Why does this happen?
+
+CPUs read memory most efficiently when data starts at an address that is a multiple of its size. A 4-byte `int` is fastest when placed at an address divisible by 4. The compiler inserts padding to satisfy these alignment rules.
+
+Memory layout of `struct Packed`:
+```
+Offset:  0   1   2   3   4   5   6   7   8   9  10  11
+        [c] [pad] [pad] [pad] [  i  ] [d] [pad] [pad] [pad]
+```
+
+- `c` (1 byte) at offset 0
+- 3 bytes of padding to align `i` to offset 4
+- `i` (4 bytes) at offset 4
+- `d` (1 byte) at offset 8
+- 3 bytes of padding at the end so the struct size is a multiple of 4
+
+### Reducing padding
+
+Reorder members to minimize padding - put the largest members first.
+
+```c
+#include <stdio.h>
+
+struct BadOrder {
+    char c;     // 1 byte + 3 padding
+    int i;      // 4 bytes
+    char d;     // 1 byte + 3 padding
+};              // Total: 12 bytes
+
+struct GoodOrder {
+    int i;      // 4 bytes
+    char c;     // 1 byte
+    char d;     // 1 byte + 2 padding
+};              // Total: 8 bytes
+
+int main() {
+    printf("BadOrder size:  %zu bytes\n", sizeof(struct BadOrder));
+    printf("GoodOrder size: %zu bytes\n", sizeof(struct GoodOrder));
+
+    return 0;
+}
+```
+
+### Forcing tight packing with `__attribute__((packed))`
+
+Some compilers (GCC, Clang) let you pack a struct with no padding:
+
+```c
+#include <stdio.h>
+
+struct __attribute__((packed)) PackedStruct {
+    char c;     // 1 byte
+    int i;      // 4 bytes
+    char d;     // 1 byte
+};              // Total: 6 bytes (no padding)
+
+int main() {
+    printf("Packed size: %zu bytes\n", sizeof(struct PackedStruct));
+
+    return 0;
+}
+```
+
+⚠️ Packed structs save memory but can cause slower access or even crashes on some CPUs if unaligned access is not supported.
+
+### When padding matters
+
+- **Saving memory**: Large arrays of structs waste significant space with padding.
+- **File I/O / network protocols**: Writing a struct directly to a file or socket requires predictable layout - padding causes corruption. Use packed structs or serialize member by member.
+- **Embedded systems**: Memory is tight, and unaligned access may not be supported at all.
+
+## Structure Bitfields
+
+**Bitfields** let you specify the exact number of bits a member should occupy inside a structure. This is useful when you're working with tightly packed data - flags, hardware registers, network protocols, or anything where every bit matters.
+
+A bitfield member is declared by adding a colon and the bit width after the member name:
+
+```c
+struct Flags {
+    unsigned int is_visible : 1;   // 1 bit: 0 or 1
+    unsigned int is_editable : 1;  // 1 bit
+    unsigned int color_depth : 4;  // 4 bits: 0–15
+    unsigned int : 4;              // 4 bits of padding (unnamed)
+};
+```
+
+The base type must be `int`, `unsigned int`, or `signed int`. The bit width cannot exceed the size of the base type.
+
+### Why use bitfields?
+
+Without bitfields, storing 3 boolean flags would take at least 3 bytes (or more with padding). With bitfields, they fit in a single bit each:
+
+```c
+#include <stdio.h>
+
+struct WithoutBitfield {
+    int is_visible;    // 4 bytes
+    int is_editable;   // 4 bytes
+    int is_locked;     // 4 bytes - Total: 12 bytes
+};
+
+struct WithBitfield {
+    unsigned int is_visible  : 1;
+    unsigned int is_editable : 1;
+    unsigned int is_locked   : 1;
+    // Remaining 29 bits can be used for other fields
+};
+
+int main() {
+    printf("Without bitfield: %zu bytes\n", sizeof(struct WithoutBitfield));
+    printf("With bitfield:    %zu bytes\n", sizeof(struct WithBitfield));
+
+    return 0;
+}
+```
+
+Output:
+```
+Without bitfield: 12 bytes
+With bitfield:    4 bytes
+```
+
+### Practical example: hardware register simulation
+
+Bitfields shine when modeling hardware registers where each bit has a specific meaning:
+
+```c
+#include <stdio.h>
+
+struct CPUFlags {
+    unsigned int carry     : 1;
+    unsigned int zero      : 1;
+    unsigned int interrupt : 1;
+    unsigned int decimal   : 1;
+    unsigned int overflow  : 1;
+    unsigned int unused    : 3;  // Padding to complete the byte
+};
+
+int main() {
+    struct CPUFlags flags = {0};
+
+    flags.zero = 1;
+    flags.carry = 1;
+
+    if (flags.zero) {
+        printf("Zero flag is set\n");
+    }
+
+    printf("Flags size: %zu byte\n", sizeof(flags));  // 1 byte
+
+    return 0;
+}
+```
+
+### Storing date in minimal space
+
+```c
+#include <stdio.h>
+
+struct Date {
+    unsigned int day   : 5;   // 1–31 (5 bits)
+    unsigned int month : 4;   // 1–12 (4 bits)
+    unsigned int year  : 11;  // 0–2047 (11 bits)
+};  // Total: 20 bits = 3 bytes (rounded up to 4 due to padding)
+
+int main() {
+    struct Date d = {15, 7, 2024};
+
+    printf("Date: %d/%d/%d\n", d.day, d.month, d.year);
+    printf("Size: %zu bytes\n", sizeof(d));
+
+    return 0;
+}
+```
+
+Without bitfields, three `int` members would take 12 bytes. With bitfields, the date fits in 4 bytes (or even 2–3 on some compilers).
+
+### Bitfields and portability
+
+| Consideration | Detail |
+|---------------|--------|
+| **Sign bit** | Whether `int` bitfields are signed or unsigned is implementation-defined. Always use `unsigned int` for flags. |
+| **Bit order** | The order of bits within a byte depends on the CPU endianness. |
+| **Address of bitfield** | You cannot take the address of a bitfield member (`&d.month` is invalid). |
+| **Array of bitfields** | Bitfields cannot be array elements. |
+| **Overflow** | Assigning a value that exceeds the bit width truncates to the lower bits. |
+
+```c
+#include <stdio.h>
+
+struct BitExample {
+    unsigned int small : 2;  // Can store 0–3
+};
+
+int main() {
+    struct BitExample b;
+
+    b.small = 2;    // Binary: 10 - OK
+    printf("2: %d\n", b.small);
+
+    b.small = 5;    // Binary: 101 - truncated to 01 = 1
+    printf("5 (truncated): %d\n", b.small);
+
+    // Cannot take address:
+    // int *p = &b.small;  // ❌ Compile error
+
+    return 0;
+}
+```
+
+### Named and unnamed padding
+
+Use unnamed bitfields to skip bits for alignment or to match a specific hardware layout:
+
+```c
+struct HardwareReg {
+    unsigned int status : 4;
+    unsigned int : 2;           // Skip 2 bits (unnamed)
+    unsignedint  enable  : 1;
+    unsigned int : 1;           // Skip 1 bit (unnamed)
+    unsigned int error   : 8;
+};
+
+// Zero-width unnamed field forces alignment to the next storage unit
+struct Aligned {
+    unsigned int low  : 4;
+    unsigned int : 0;           // Force alignment to next unsigned int boundary
+    unsigned int high : 4;      // Starts in a new unsigned int
+};
+```
+
+```c
+#include <stdio.h>
+
+struct WithGap {
+    unsigned int a : 3;
+    unsigned int   : 4;   // 4 bits of unnamed padding
+    unsigned int b : 1;
+};
+
+int main() {
+    printf("Size with gap: %zu byte\n", sizeof(struct WithGap));
+
+    return 0;
+}
+```
+
+Bitfields give you precise control over memory layout at the bit level - essential for embedded systems, protocol parsing, and performance-critical data structures.

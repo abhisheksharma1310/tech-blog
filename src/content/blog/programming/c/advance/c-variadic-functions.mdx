@@ -1,0 +1,323 @@
+---
+title: "Variadic Functions"
+description: "Variadic functions in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Variadic Functions"]
+slug: "c-variadic-functions"
+author: "Abhishek Sharma"
+order: 12
+---
+
+# Variadic Functions in C Programming
+
+A **variadic function** is a function that accepts a variable number of arguments. The most famous example is `printf` - it can take one argument or many, with different types each time.
+
+```c
+printf("Hello\n");                  // 1 argument
+printf("%d + %d = %d\n", 2, 3, 5); // 4 arguments
+```
+
+C provides the `<stdarg.h>` header with macros that let you write your own variadic functions.
+
+## Accessing Variable Arguments
+
+To create a variadic function, you use four macros from `<stdarg.h>`:
+
+| Macro | Purpose |
+|-------|---------|
+| `va_list` | Type that holds the argument list |
+| `va_start` | Initialize the list (must know the last fixed parameter) |
+| `va_arg` | Retrieve the next argument (must know its type) |
+| `va_end` | Clean up the list |
+
+The basic pattern is always the same:
+
+```c
+#include <stdarg.h>
+
+return_type function_name(fixed_param, ...) {
+    va_list args;
+    va_start(args, fixed_param);
+
+    // Use va_arg(args, type) to get each argument
+
+    va_end(args);
+}
+```
+
+The `...` (ellipsis) must come after at least one fixed parameter. The function needs a way to know how many arguments were passed and what their types are - that information must come from the fixed parameters.
+
+```c
+#include <stdio.h>
+#include <stdarg.h>
+
+int sum(int count, ...) {
+    va_list args;
+    va_start(args, count);  // 'count' is the last fixed parameter
+
+    int total = 0;
+    for (int i = 0; i < count; i++) {
+        total += va_arg(args, int);  // Get next int argument
+    }
+
+    va_end(args);
+    return total;
+}
+
+int main() {
+    printf("Sum: %d\n", sum(3, 10, 20, 30));   // 60
+    printf("Sum: %d\n", sum(5, 1, 2, 3, 4, 5)); // 15
+
+    return 0;
+}
+```
+
+## Examples of Variadic Functions
+
+### Example 1: Find the maximum
+
+```c
+#include <stdio.h>
+#include <stdarg.h>
+
+int max(int count, ...) {
+    va_list args;
+    va_start(args, count);
+
+    int greatest = va_arg(args, int);
+
+    for (int i = 1; i < count; i++) {
+        int current = va_arg(args, int);
+        if (current > greatest) {
+            greatest = current;
+        }
+    }
+
+    va_end(args);
+    return greatest;
+}
+
+int main() {
+    printf("Max: %d\n", max(3, 10, 50, 30));       // 50
+    printf("Max: %d\n", max(5, 7, 2, 9, 4, 1));    // 9
+    printf("Max: %d\n", max(1, 100));               // 100
+
+    return 0;
+}
+```
+
+### Example 2: Concatenate strings
+
+```c
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+
+void concat(char *result, int count, ...) {
+    va_list args;
+    va_start(args, count);
+
+    result[0] = '\0';  // Start with empty string
+
+    for (int i = 0; i < count; i++) {
+        char *str = va_arg(args, char*);
+        strcat(result, str);
+    }
+
+    va_end(args);
+}
+
+int main() {
+    char buffer[200];
+
+    concat(buffer, 3, "Hello", " ", "World!");
+    printf("%s\n", buffer);  // Hello World!
+
+    concat(buffer, 4, "C", " is ", "variadic", "!");
+    printf("%s\n", buffer);  // C is variadic!
+
+    return 0;
+}
+```
+
+### Example 3: Multiply all arguments
+
+```c
+#include <stdio.h>
+#include <stdarg.h>
+
+long long multiply(int count, ...) {
+    va_list args;
+    va_start(args, count);
+
+    long long product = 1;
+
+    for (int i = 0; i < count; i++) {
+        product *= va_arg(args, int);
+    }
+
+    va_end(args);
+    return product;
+}
+
+int main() {
+    printf("Product: %lld\n", multiply(3, 2, 3, 4));     // 24
+    printf("Product: %lld\n", multiply(5, 1, 2, 3, 4, 5)); // 120
+
+    return 0;
+}
+```
+
+## Variadic Function with Mixed Arguments
+
+When arguments have different types, you need a way to tell the function what type each argument is. The `printf` format string does exactly this - each `%d`, `%f`, `%s` tells `va_arg` which type to extract.
+
+Here is a custom logging function that handles `int`, `double`, and `char*`:
+
+```c
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+
+typedef enum {
+    TYPE_INT,
+    TYPE_DOUBLE,
+    TYPE_STRING
+} ArgType;
+
+void log_message(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    printf("[LOG] ");
+
+    for (const char *p = format; *p != '\0'; p++) {
+        if (*p == '%') {
+            p++;
+            switch (*p) {
+                case 'd':
+                    printf("%d", va_arg(args, int));
+                    break;
+                case 'f':
+                    printf("%.2f", va_arg(args, double));
+                    break;
+                case 's':
+                    printf("%s", va_arg(args, char*));
+                    break;
+                default:
+                    putchar(*p);
+            }
+        } else {
+            putchar(*p);
+        }
+    }
+
+    printf("\n");
+    va_end(args);
+}
+
+int main() {
+    log_message("User %s scored %d out of %d", "Alice", 95, 100);
+    log_message("Temperature: %.1f%s", 36.6, "C");
+    log_message("Simple message without args");
+
+    return 0;
+}
+```
+
+Output:
+```
+[LOG] User Alice scored 95 out of 100
+[LOG] Temperature: 36.6C
+[LOG] Simple message without args
+```
+
+### Passing a format string with mixed types
+
+Here is a more practical example that mimics `printf` behavior - storing formatted output into a buffer:
+
+```c
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+
+void pretty_print(const char *label, const char *types, ...) {
+    va_list args;
+    va_start(args, types);
+
+    printf("[%s] ", label);
+
+    for (const char *p = types; *p != '\0'; p++) {
+        switch (*p) {
+            case 'i':
+                printf("%d ", va_arg(args, int));
+                break;
+            case 'f':
+                printf("%.2f ", va_arg(args, double));
+                break;
+            case 's':
+                printf("'%s' ", va_arg(args, char*));
+                break;
+            case 'c':
+                printf("%c ", va_arg(args, int));  // char promotes to int
+                break;
+            default:
+                putchar(*p);
+        }
+    }
+
+    printf("\n");
+    va_end(args);
+}
+
+int main() {
+    pretty_print("INFO", "isf", 42, "hello", 3.14);
+    pretty_print("DATA", "ic", 100, 'A');
+
+    return 0;
+}
+```
+
+### Important rules for variadic functions
+
+| Rule | Explanation |
+|------|-------------|
+| At least one fixed parameter | The `...` must always follow at least one named parameter |
+| Know the count or use a sentinel | The function must know where arguments end - either pass a count or use a terminating value like `-1` or `NULL` |
+| Default argument promotions | `char` → `int`, `float` → `double` inside variadic arguments |
+| No type safety | The compiler cannot check types of variadic arguments - mistakes cause undefined behavior |
+| One `va_start` per `va_end` | Always pair them; calling `va_start` again without `va_end` is undefined |
+
+```c
+#include <stdio.h>
+#include <stdarg.h>
+
+// Using a sentinel value (0) to mark the end
+int sum_sentinel(int first, ...) {
+    if (first == 0) return 0;
+
+    va_list args;
+    va_start(args, first);
+
+    int total = first;
+    while (1) {
+        int next = va_arg(args, int);
+        if (next == 0) break;
+        total += next;
+    }
+
+    va_end(args);
+    return total;
+}
+
+int main() {
+    printf("Sum: %d\n", sum_sentinel(10, 20, 30, 0));     // 60
+    printf("Sum: %d\n", sum_sentinel(5, 10, 15, 20, 0));  // 50
+    printf("Sum: %d\n", sum_sentinel(0));                  // 0 (no args)
+
+    return 0;
+}
+```
+
+Using a sentinel (`0`, `NULL`, `-1`) avoids passing an explicit count - the function reads arguments until it hits the sentinel.

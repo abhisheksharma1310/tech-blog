@@ -11,7 +11,7 @@ order: 3
 
 # Dependency Injection System
 
-**Dependency Injection (DI)** is a core feature of FastAPI that lets you declare what your route needs — parameters, database sessions, auth tokens — and FastAPI resolves them automatically.
+**Dependency Injection (DI)** is a core feature of FastAPI that lets you declare what your route needs - parameters, database sessions, auth tokens - and FastAPI resolves them automatically.
 
 ## What is DI in FastAPI?
 
@@ -34,7 +34,7 @@ async def read_users(params: dict = Depends(common_params)):
     return params
 ```
 
-Dependencies are **cache**d per request by default — if two routes call the same dependency within one request, it runs only once.
+Dependencies are **cache**d per request by default - if two routes call the same dependency within one request, it runs only once.
 
 ## How It Compares to Express (Node.js)
 
@@ -46,11 +46,11 @@ Dependencies are **cache**d per request by default — if two routes call the sa
 | Sub-deps | Nested `Depends()` | Nested middleware |
 | OpenAPI | Automatically documented | Manual |
 
-FastAPI's DI is **type-aware** — the dependency's return type is part of the OpenAPI schema.
+FastAPI's DI is **type-aware** - the dependency's return type is part of the OpenAPI schema.
 
 ## Async Dependencies
 
-Dependencies support `async`/`await` natively — no special setup required.
+Dependencies support `async`/`await` natively - no special setup required.
 
 ```python
 import httpx
@@ -71,7 +71,7 @@ async def get_user(user: dict = Depends(fetch_user)):
 
 ## Class-based Dependencies
 
-Dependencies can be classes — FastAPI calls the class as a constructor.
+Dependencies can be classes - FastAPI calls the class as a constructor.
 
 ```python
 from fastapi import FastAPI, Depends, Query
@@ -88,7 +88,7 @@ async def list_items(pag: Pagination = Depends()):
     return {"skip": pag.skip, "limit": pag.limit}
 ```
 
-When the dependency callable is a class, `Depends()` can be used without arguments — FastAPI treats the class itself as the dependency.
+When the dependency callable is a class, `Depends()` can be used without arguments - FastAPI treats the class itself as the dependency.
 
 ## Sharing Data Between Dependencies
 
@@ -120,9 +120,9 @@ The `verify_token` dependency runs first, then its result is injected into `get_
 
 FastAPI supports several scopes for registering dependencies:
 
-- **Route-level** — `Depends()` in the route signature.
-- **Decorator-level** — `dependencies=[Depends(...)]` on a path decorator.
-- **App-level** — `app = FastAPI(dependencies=[Depends(...)])`.
+- **Route-level** - `Depends()` in the route signature.
+- **Decorator-level** - `dependencies=[Depends(...)]` on a path decorator.
+- **App-level** - `app = FastAPI(dependencies=[Depends(...)])`.
 
 ```python
 from fastapi import FastAPI, Depends, HTTPException
@@ -136,7 +136,7 @@ app = FastAPI(dependencies=[Depends(require_https)])
 
 ## Key Takeaways
 
-- `Depends()` connects route signatures to reusable callables — resolution is automatic.
+- `Depends()` connects route signatures to reusable callables - resolution is automatic.
 - Dependencies can be sync/async functions, classes, or generators.
 - Sub-dependencies compose naturally: one dependency can call `Depends()` on another.
 - FastAPI caches dependency results per request to avoid redundant work.

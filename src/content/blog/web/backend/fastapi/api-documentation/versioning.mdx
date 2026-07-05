@@ -13,10 +13,10 @@ order: 4
 
 API versioning lets you introduce breaking changes without disrupting existing consumers. Common reasons to version:
 
-- **Change response structure** — renaming fields, changing types
-- **Remove deprecated fields** — cleaning up technical debt
-- **Change authentication** — new auth scheme or token format
-- **Modify business logic** — different validation rules or behaviour
+- **Change response structure** - renaming fields, changing types
+- **Remove deprecated fields** - cleaning up technical debt
+- **Change authentication** - new auth scheme or token format
+- **Modify business logic** - different validation rules or behaviour
 
 ```
 ┌──────────────┐     ┌──────────────┐
@@ -30,7 +30,7 @@ API versioning lets you introduce breaking changes without disrupting existing c
 
 ## URL Prefix Versioning
 
-The most common approach — embed the version in the URL path:
+The most common approach - embed the version in the URL path:
 
 ```python
 from fastapi import FastAPI, APIRouter
@@ -136,7 +136,7 @@ app/
 
 ### Shared Logic Between Versions
 
-Avoid duplicating code — extract shared logic into a common layer:
+Avoid duplicating code - extract shared logic into a common layer:
 
 ```python
 # app/services/user_service.py
@@ -316,7 +316,7 @@ class UserV1(BaseModel):
     name: str
     email: str
 
-# Add avatar_url as optional — existing clients ignore it
+# Add avatar_url as optional - existing clients ignore it
 class UserV1Extended(BaseModel):
     id: int
     name: str
@@ -380,9 +380,9 @@ For most projects, **URL prefix versioning** with `APIRouter` is the best balanc
 
 ## Key Takeaways
 
-- URL prefix versioning (`/v1/`, `/v2/`) is the most straightforward and widely adopted approach — use `APIRouter(prefix="/v1")` to organise versions
+- URL prefix versioning (`/v1/`, `/v2/`) is the most straightforward and widely adopted approach - use `APIRouter(prefix="/v1")` to organise versions
 - Header-based versioning (custom `X-API-Version` or `Accept` header) keeps URLs clean but is less discoverable
 - Mark deprecated routes with `deprecated=True` in the decorator and include `Deprecation` and `Sunset` headers in responses
 - Extract **shared business logic** into a common service layer to avoid duplicating code across versions
 - Additive changes (new optional fields, new endpoints) are backward-compatible and don't require a new API version
-- Follow a clear deprecation timeline — announce, deprecate, then remove after a reasonable grace period (e.g., 6 months)
+- Follow a clear deprecation timeline - announce, deprecate, then remove after a reasonable grace period (e.g., 6 months)

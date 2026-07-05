@@ -1,0 +1,266 @@
+---
+title: "Variables"
+description: "Understand Variables in C programming language."
+date: "2026-05-23"
+category: ["Programming", "C Language", "Basics"]
+tags: ["C", "Programming Basics",]
+slug: "c-variables"
+author: "Abhishek Sharma"
+order: 4
+---
+
+# Variables
+
+A **variable** is a named storage location in memory that holds a value which can change during program execution. Think of it as a labeled box - you put data in, take data out, and replace it with new data as needed.
+
+```c
+int score = 10;   // 'score' is a box that holds an integer
+score = 20;       // Replace the contents with 20
+```
+
+Every variable in C has three things: a **name** (how you refer to it), a **type** (what kind of data it holds), and a **value** (the actual data stored).
+
+## Variable Naming Rules in C:
+- Variable names must begin with a letter (A-Z or a-z) or an underscore (_).
+- Variable names can contain letters, digits (0-9), and underscores.
+- Variable names are case-sensitive (e.g., `age` and `Age` are different variables).
+- Variable names cannot be the same as C keywords (e.g., `int`, `float`, `return`, etc.).
+
+## Variable Declaration
+
+Declaration tells the compiler about a variable's name and type, but does not assign a value yet.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int age;        // Declaration: age will hold an integer
+    float price;    // Declaration: price will hold a decimal
+    char grade;     // Declaration: grade will hold a single character
+
+    // At this point, these variables contain garbage values (whatever was in that memory location)
+    printf("Age (uninitialized): %d\n", age);  // ⚠️ unpredictable output
+
+    return 0;
+}
+```
+
+You can also declare multiple variables of the same type in one line:
+
+```c
+int a, b, c;
+float x, y, z;
+```
+
+## Variable Initialization
+
+Initialization is when you give a variable its first value at the time of declaration. This is the safest approach - uninitialized variables contain garbage values that can lead to bugs.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int age = 25;            // Declare and initialize
+    float price = 49.99;     // Declare and initialize
+    char grade = 'A';        // Declare and initialize
+
+    printf("Age: %d\n", age);
+    printf("Price: %.2f\n", price);
+    printf("Grade: %c\n", grade);
+
+    // You can also declare first, then initialize later:
+    int count;
+    count = 10;              // Assignment (not initialization)
+    printf("Count: %d\n", count);
+
+    return 0;
+}
+```
+
+| Approach | Code | Value before assignment |
+|----------|------|------------------------|
+| Declaration only | `int x;` | Garbage (unpredictable) |
+| Declaration + initialization | `int x = 5;` | 5 |
+| Declaration then assignment | `int x; x = 5;` | Garbage until line 2 |
+
+## Accessing Variables
+
+Once a variable is declared and has a value, you access it by using its name in expressions or functions.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int length = 10;
+    int width = 5;
+
+    // Access variables to compute area
+    int area = length * width;
+
+    // Access variables in printf
+    printf("Length: %d\n", length);
+    printf("Width: %d\n", width);
+    printf("Area: %d\n", area);
+
+    return 0;
+}
+```
+
+You can also use variables directly in conditions:
+
+```c
+#include <stdio.h>
+
+int main() {
+    int marks = 85;
+
+    if (marks >= 75) {
+        printf("Passed with distinction\n");
+    }
+
+    return 0;
+}
+```
+
+## Changing Stored Values
+
+Variables are called **variables** because their values can change during program execution. You change a value using the assignment operator `=`.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int score = 50;
+    printf("Initial score: %d\n", score);
+
+    score = 75;                  // Change value
+    printf("After update: %d\n", score);
+
+    score = score + 10;          // Use current value to compute new value
+    printf("After increment: %d\n", score);
+
+    score += 20;                 // Shorthand: same as score = score + 20
+    printf("After += 20: %d\n", score);
+
+    score *= 2;                  // Shorthand: same as score = score * 2
+    printf("After doubling: %d\n", score);
+
+    return 0;
+}
+```
+
+Common shorthand operators:
+
+| Operator | Meaning | Example |
+|----------|---------|---------|
+| `+=` | Add and assign | `x += 5` → `x = x + 5` |
+| `-=` | Subtract and assign | `x -= 3` → `x = x - 3` |
+| `*=` | Multiply and assign | `x *= 2` → `x = x * 2` |
+| `/=` | Divide and assign | `x /= 4` → `x = x / 4` |
+| `++` | Increment by 1 | `x++` → `x = x + 1` |
+| `--` | Decrement by 1 | `x--` → `x = x - 1` |
+
+```c
+#include <stdio.h>
+
+int main() {
+    int count = 0;
+
+    count++;     // 1
+    count++;     // 2
+    count++;     // 3
+    printf("Count: %d\n", count);
+
+    count--;     // 2
+    printf("Count: %d\n", count);
+
+    return 0;
+}
+```
+
+## Variable scope:
+Variable scope refers to the region of a program where a variable is defined and can be accessed. In C, there are three main types of variable scope:
+
+1. **Local Scope**: Variables declared inside a function or block are local to that function or block and cannot be accessed outside of it.
+Example:
+```c
+#include <stdio.h>
+void myFunction() {
+    int localVar = 10; // local variable
+    printf("Local variable: %d\n", localVar);
+}
+int main() {
+    myFunction();
+    // printf("%d", localVar); // This will cause an error because localVar is not accessible here
+    return 0;
+}
+```
+
+2. **Global Scope**: Variables declared outside of all functions are global and can be accessed from any function in the program.
+Example:
+```c
+#include <stdio.h>
+int globalVar = 20; // global variable
+void myFunction() {
+    printf("Global variable: %d\n", globalVar);
+}
+int main() {
+    myFunction();
+    printf("Global variable in main: %d\n", globalVar);
+    return 0;
+}
+```
+
+3. **Static Scope**: Variables declared with the `static` keyword inside a function retain their value between function calls and are only accessible within that function.
+Example:
+```c
+#include <stdio.h>
+void myFunction() {
+    static int staticVar = 0; // static variable
+    staticVar++;
+    printf("Static variable: %d\n", staticVar);
+}
+int main() {
+    myFunction(); // Output: Static variable: 1
+    myFunction(); // Output: Static variable: 2
+    return 0;
+}
+```
+
+## Variable Lifetime
+
+**Lifetime** refers to how long a variable exists in memory while your program runs. Different variables are born and die at different times.
+
+| Scope | Keyword | Lifetime | Created | Destroyed |
+|-------|---------|----------|---------|-----------|
+| Local | (none) | Until the block ends | At block entry | At block exit |
+| Global | (none) | Entire program run | Program start | Program exit |
+| Static | `static` | Entire program run | Program start | Program exit |
+
+```c
+#include <stdio.h>
+
+int global = 1;       // Lifetime: entire program
+
+void demo() {
+    int local = 2;        // Lifetime: only inside demo()
+    static int st = 3;    // Lifetime: entire program, but only accessible here
+    local++;
+    st++;
+    printf("local=%d, static=%d, global=%d\n", local, st, global);
+}
+
+int main() {
+    demo();   // local=3, static=4, global=1
+    demo();   // local=3, static=5, global=1
+    demo();   // local=3, static=6, global=1
+
+    // printf("%d", local);  // ❌ Error: local doesn't exist here
+    // printf("%d", st);     // ❌ Error: st doesn't exist here
+    printf("global=%d\n", global);  // ✅ global exists everywhere
+
+    return 0;
+}
+```
+
+Notice that `local` resets to 2 each call (created fresh), while `st` keeps incrementing (lives across calls). `global` is always accessible from anywhere.

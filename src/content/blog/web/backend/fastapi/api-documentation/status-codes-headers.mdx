@@ -1,6 +1,6 @@
 ---
 title: "Response Status Codes & Headers"
-description: "Set HTTP status codes, attach custom headers, and use FastAPI's response classes — JSONResponse, StreamingResponse, FileResponse, RedirectResponse"
+description: "Set HTTP status codes, attach custom headers, and use FastAPI's response classes - JSONResponse, StreamingResponse, FileResponse, RedirectResponse"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "APIs & Documentation"]
 tags: ["FastAPI", "Status Codes", "HTTP Headers", "Response Classes", "Python"]
@@ -31,7 +31,7 @@ def delete_item(item_id: int):
 | Common Codes | Constant | When to Use |
 |---|---|---|
 | 200 | `HTTP_200_OK` | GET, PUT, PATCH success |
-| 201 | `HTTP_201_CREATED` | POST — resource created |
+| 201 | `HTTP_201_CREATED` | POST - resource created |
 | 204 | `HTTP_204_NO_CONTENT` | DELETE success |
 | 400 | `HTTP_400_BAD_REQUEST` | Client error, bad payload |
 | 401 | `HTTP_401_UNAUTHORIZED` | Missing/invalid auth |
@@ -59,7 +59,7 @@ def create_item(duplicate: bool = False):
 
 ## Using the `Response` Class
 
-The `Response` class gives you full control over the HTTP response — status, headers, media type, and body:
+The `Response` class gives you full control over the HTTP response - status, headers, media type, and body:
 
 ```python
 from fastapi import Response
@@ -184,7 +184,7 @@ def current_time():
 
 ## `StreamingResponse`
 
-Stream large responses without loading everything into memory — useful for CSV generation, log streaming, or proxying:
+Stream large responses without loading everything into memory - useful for CSV generation, log streaming, or proxying:
 
 ```python
 from fastapi.responses import StreamingResponse
@@ -228,7 +228,7 @@ def download_file(filename: str):
 
 ## `FileResponse`
 
-`FileResponse` is optimised for sending files — it supports range requests, conditional headers (If-Modified-Since), and sets Content-Type automatically:
+`FileResponse` is optimised for sending files - it supports range requests, conditional headers (If-Modified-Since), and sets Content-Type automatically:
 
 ```python
 from fastapi.responses import FileResponse
@@ -282,7 +282,7 @@ def legacy_redirect():
 
 | Status Code | Constant | Meaning |
 |---|---|---|
-| 301 | `HTTP_301_MOVED_PERMANENTLY` | Resource moved permanently — browsers cache this |
+| 301 | `HTTP_301_MOVED_PERMANENTLY` | Resource moved permanently - browsers cache this |
 | 302 | `HTTP_302_FOUND` | Temporary redirect (default) |
 | 307 | `HTTP_307_TEMPORARY_REDIRECT` | Temporary, preserves HTTP method |
 | 308 | `HTTP_308_PERMANENT_REDIRECT` | Permanent, preserves HTTP method |
@@ -322,7 +322,7 @@ def greeting():
 
 | Class | Use Case |
 |---|---|
-| `Response` | Base — raw bytes, custom media types |
+| `Response` | Base - raw bytes, custom media types |
 | `JSONResponse` | JSON APIs (default in FastAPI) |
 | `HTMLResponse` | Returning HTML snippets |
 | `PlainTextResponse` | Health checks, simple text |
@@ -332,9 +332,9 @@ def greeting():
 
 ## Key Takeaways
 
-- Set static status codes via the `status_code` decorator parameter using `status.HTTP_*` constants — never raw integers
+- Set static status codes via the `status_code` decorator parameter using `status.HTTP_*` constants - never raw integers
 - Add custom response headers via the `Response` parameter dependency, `Response(headers=...)`, or explicit response classes
-- `JSONResponse` is the default — use it explicitly when you need to combine custom status codes and headers with JSON data
-- `StreamingResponse` streams content without buffering — ideal for large CSV exports or proxied data
+- `JSONResponse` is the default - use it explicitly when you need to combine custom status codes and headers with JSON data
+- `StreamingResponse` streams content without buffering - ideal for large CSV exports or proxied data
 - `FileResponse` handles file downloads with automatic range request support and Content-Type detection
 - `RedirectResponse` supports 301, 302, 307, and 308 status codes for URL redirection

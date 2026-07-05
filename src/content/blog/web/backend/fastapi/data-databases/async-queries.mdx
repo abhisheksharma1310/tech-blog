@@ -11,7 +11,7 @@ order: 3
 
 ## Why Async Matters for FastAPI
 
-FastAPI is an **ASGI** framework — it can handle thousands of concurrent connections with a single process. But only if your database queries don't block the event loop.
+FastAPI is an **ASGI** framework - it can handle thousands of concurrent connections with a single process. But only if your database queries don't block the event loop.
 
 ```
 Time (seconds)        0────1────2────3────4────5
@@ -179,7 +179,7 @@ Serverless environments (AWS Lambda, Cloud Functions) should use `NullPool` or a
 
 ## The N+1 Problem
 
-N+1 happens when you load a parent object, then loop over its children — issuing one query for the parent and **N** queries for N children.
+N+1 happens when you load a parent object, then loop over its children - issuing one query for the parent and **N** queries for N children.
 
 ### The Problem
 
@@ -219,7 +219,7 @@ async def list_posts(db: AsyncSession = Depends(get_db)):
     ]
 ```
 
-This issues **2 queries** total — one for posts, one for all related authors via `WHERE id IN (...)`.
+This issues **2 queries** total - one for posts, one for all related authors via `WHERE id IN (...)`.
 
 ### Loading Strategies
 
@@ -268,14 +268,14 @@ result = await db.execute(
 | **Caveats** | Thread pool exhaustion | Must `await` everything |
 | **Serverless** | Better cold start (no event loop overhead) | Better throughput under concurrency |
 
-> **Rule of thumb:** If your FastAPI app handles I/O-bound workloads (DB calls, HTTP requests, file uploads), use async every time. If you're CPU-bound (ML inference, image processing), sync is fine — offload to a thread pool.
+> **Rule of thumb:** If your FastAPI app handles I/O-bound workloads (DB calls, HTTP requests, file uploads), use async every time. If you're CPU-bound (ML inference, image processing), sync is fine - offload to a thread pool.
 
 ## Key Takeaways
 
-- Async prevents the event loop from blocking during database I/O — critical for FastAPI's concurrency model
+- Async prevents the event loop from blocking during database I/O - critical for FastAPI's concurrency model
 - Use `AsyncSession` from SQLAlchemy's `ext.asyncio` module; every DB call must be `await`ed
 - Pool connections with `pool_size` and `max_overflow`; use `NullPool` for serverless environments
 - Use `asyncio.gather` to run independent queries in parallel for dashboards and complex endpoints
-- **Avoid N+1** — use `selectinload` for one-to-many and `joinedload` for many-to-one relationships
+- **Avoid N+1** - use `selectinload` for one-to-many and `joinedload` for many-to-one relationships
 - Sync queries block the thread and limit concurrency; async queries yield the event loop for higher throughput
 - Streaming large result sets with `async for` prevents memory exhaustion

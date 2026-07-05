@@ -1,0 +1,464 @@
+---
+title: "File Handling"
+description: "Understanding file handling in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "File Handling"]
+slug: "c-file-handling"
+author: "Abhishek Sharma"
+order: 10
+---
+
+# File Handling in C Programming
+
+File handling lets you store data permanently - beyond the lifetime of your program. Instead of typing data each time the program runs, you can read from and write to files on disk.
+
+C handles files through a special type called `FILE*`, defined in `<stdio.h>`. You don't create `FILE` variables directly - you get a pointer to one by calling `fopen()`.
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("example.txt", "w");  // Open for writing
+
+    if (fp == NULL) {
+        printf("Could not open file\n");
+        return 1;
+    }
+
+    fprintf(fp, "Hello, File!\n");
+    fclose(fp);  // Always close when done
+
+    return 0;
+}
+```
+
+## Open a File in C
+
+`fopen()` opens a file and returns a `FILE*` pointer. If it fails, it returns `NULL`.
+
+```c
+FILE *fopen(const char *filename, const char *mode);
+```
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("data.txt", "r");
+
+    if (fp == NULL) {
+        printf("File not found or cannot be opened\n");
+        return 1;
+    }
+
+    printf("File opened successfully\n");
+    fclose(fp);
+    return 0;
+}
+```
+
+Always check if `fopen` returns `NULL` - the file might not exist, lack permissions, or the disk could be full.
+
+### File Opening Modes
+
+| Mode | Meaning | If file exists | If file doesn't exist |
+|------|---------|----------------|----------------------|
+| `"r"` | Read (text) | Read from start | Returns NULL |
+| `"w"` | Write (text) | Overwrite contents | Creates new file |
+| `"a"` | Append (text) | Write at end | Creates new file |
+| `"r+"` | Read + Write (text) | Read/write from start | Returns NULL |
+| `"w+"` | Read + Write (text) | Overwrite contents | Creates new file |
+| `"a+"` | Read + Append (text) | Read from start, write at end | Creates new file |
+| `"rb"` | Read (binary) | Read from start | Returns NULL |
+| `"wb"` | Write (binary) | Overwrite contents | Creates new file |
+| `"ab"` | Append (binary) | Write at end | Creates new file |
+
+## Create a File
+
+Use `"w"` or `"w+"` mode - the file is created if it doesn't exist.
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("newfile.txt", "w");
+
+    if (fp == NULL) {
+        printf("Failed to create file\n");
+        return 1;
+    }
+
+    printf("File created successfully\n");
+    fclose(fp);
+    return 0;
+}
+```
+
+## Write to a File
+
+C provides several functions to write data:
+
+### fprintf - formatted output
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("students.txt", "w");
+    if (fp == NULL) return 1;
+
+    fprintf(fp, "Name: %s, Age: %d, Grade: %.1f\n", "Alice", 20, 92.5);
+    fprintf(fp, "Name: %s, Age: %d, Grade: %.1f\n", "Bob", 22, 85.0);
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### fputc - write a single character
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("letters.txt", "w");
+    if (fp == NULL) return 1;
+
+    for (char ch = 'A'; ch <= 'Z'; ch++) {
+        fputc(ch, fp);
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### fputs - write a string
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("quotes.txt", "w");
+    if (fp == NULL) return 1;
+
+    fputs("C is a powerful language.\n", fp);
+    fputs("File handling is essential.\n", fp);
+
+    fclose(fp);
+    return 0;
+}
+```
+
+## Read from a File
+
+### fscanf - formatted input
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("students.txt", "r");
+    if (fp == NULL) return 1;
+
+    char name[50];
+    int age;
+    float grade;
+
+    while (fscanf(fp, "Name: %s, Age: %d, Grade: %f\n", name, &age, &grade) == 3) {
+        printf("%s is %d years old (%.1f%%)\n", name, age, grade);
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### fgetc - read a single character
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("letters.txt", "r");
+    if (fp == NULL) return 1;
+
+    char ch;
+    while ((ch = fgetc(fp)) != EOF) {
+        putchar(ch);
+    }
+    printf("\n");
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### fgets - read a line
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("quotes.txt", "r");
+    if (fp == NULL) return 1;
+
+    char line[100];
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        printf("Read: %s", line);
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+## Close a File
+
+Always close files when you're done. `fclose()` flushes any buffered data and releases system resources.
+
+```c
+int fclose(FILE *fp);
+```
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("example.txt", "w");
+    if (fp == NULL) return 1;
+
+    fprintf(fp, "This data needs to be saved\n");
+
+    if (fclose(fp) != 0) {
+        printf("Error closing file\n");
+        return 1;
+    }
+
+    printf("File closed successfully\n");
+    return 0;
+}
+```
+
+If you don't call `fclose`, data may be lost if the program crashes before the buffer is flushed.
+
+## Move File Pointer
+
+Every open file has an internal **file position indicator** that tracks where the next read or write will occur. You can move it with `fseek`, `ftell`, and `rewind`.
+
+### ftell - get current position
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("example.txt", "w");
+    if (fp == NULL) return 1;
+
+    fprintf(fp, "Hello World");
+
+    long pos = ftell(fp);
+    printf("Current position: %ld bytes from start\n", pos);  // 11
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### fseek - move to a specific position
+
+```c
+int fseek(FILE *fp, long offset, int whence);
+```
+
+| whence | Meaning |
+|--------|---------|
+| `SEEK_SET` | From the beginning of the file |
+| `SEEK_CUR` | From the current position |
+| `SEEK_END` | From the end of the file |
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("example.txt", "w+");
+    if (fp == NULL) return 1;
+
+    fprintf(fp, "0123456789");
+
+    // Read character at position 4
+    fseek(fp, 4, SEEK_SET);
+    printf("Char at 4: %c\n", fgetc(fp));  // '4'
+
+    // Go back 2 from current position
+    fseek(fp, -2, SEEK_CUR);
+    printf("Char at -2 from current: %c\n", fgetc(fp));  // '3'
+
+    // Read last character
+    fseek(fp, -1, SEEK_END);
+    printf("Last char: %c\n", fgetc(fp));  // '9'
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### rewind - go back to the start
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("example.txt", "w+");
+    if (fp == NULL) return 1;
+
+    fprintf(fp, "Data at the end");
+    rewind(fp);  // Move back to the beginning
+
+    char buf[50];
+    fgets(buf, sizeof(buf), fp);
+    printf("Read after rewind: %s\n", buf);
+
+    fclose(fp);
+    return 0;
+}
+```
+
+## Delete a File
+
+Use `remove()` to delete a file. Returns 0 on success.
+
+```c
+#include <stdio.h>
+
+int main() {
+    if (remove("temp.txt") == 0) {
+        printf("File deleted successfully\n");
+    } else {
+        printf("Failed to delete file\n");
+    }
+
+    return 0;
+}
+```
+
+## Rename a File
+
+Use `rename()` to rename a file. Returns 0 on success.
+
+```c
+#include <stdio.h>
+
+int main() {
+    if (rename("oldname.txt", "newname.txt") == 0) {
+        printf("File renamed successfully\n");
+    } else {
+        printf("Failed to rename file\n");
+    }
+
+    return 0;
+}
+```
+
+## Read and Write in a Binary File
+
+Text files store data as human-readable characters. Binary files store data in the same format it's stored in memory - more compact and exact.
+
+### Writing to a Binary File
+
+Use `fwrite()` to write blocks of data to a binary file.
+
+```c
+#include <stdio.h>
+
+typedef struct {
+    int id;
+    char name[50];
+    float salary;
+} Employee;
+
+int main() {
+    Employee emp = {101, "Alice", 75000.50};
+
+    FILE *fp = fopen("employee.bin", "wb");
+    if (fp == NULL) return 1;
+
+    fwrite(&emp, sizeof(Employee), 1, fp);
+
+    fclose(fp);
+    printf("Employee written to binary file\n");
+
+    return 0;
+}
+```
+
+### Reading from a Binary File
+
+Use `fread()` to read blocks of data from a binary file.
+
+```c
+#include <stdio.h>
+
+typedef struct {
+    int id;
+    char name[50];
+    float salary;
+} Employee;
+
+int main() {
+    Employee emp;
+
+    FILE *fp = fopen("employee.bin", "rb");
+    if (fp == NULL) return 1;
+
+    fread(&emp, sizeof(Employee), 1, fp);
+
+    printf("ID: %d\n", emp.id);
+    printf("Name: %s\n", emp.name);
+    printf("Salary: %.2f\n", emp.salary);
+
+    fclose(fp);
+    return 0;
+}
+```
+
+Binary files are ideal for structured data like arrays of structs - they're faster to read/write and take less space than text equivalents.
+
+## More Functions for C File Operations
+
+| Function | Description |
+|----------|-------------|
+| `feof(fp)` | Returns non-zero if end-of-file is reached |
+| `ferror(fp)` | Returns non-zero if an error occurred |
+| `perror(msg)` | Prints a descriptive error message to stderr |
+| `fflush(fp)` | Forces buffered data to be written to disk |
+| `tmpfile()` | Creates a temporary file that auto-deletes on close |
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("data.txt", "r");
+    if (fp == NULL) {
+        perror("Failed to open file");  // Prints: Failed to open file: No such file or directory
+        return 1;
+    }
+
+    char ch;
+    while ((ch = fgetc(fp)) != EOF) {
+        putchar(ch);
+    }
+
+    if (feof(fp)) {
+        printf("\n--- End of file reached ---\n");
+    }
+
+    if (ferror(fp)) {
+        printf("An error occurred while reading\n");
+    }
+
+    fclose(fp);
+    return 0;
+}
+```

@@ -61,7 +61,7 @@ class Article(Base):
 
 ## Pydantic Schemas
 
-Separate schemas for Create, Update, and Read — the **three-schema pattern**:
+Separate schemas for Create, Update, and Read - the **three-schema pattern**:
 
 ```python
 # app/schemas.py
@@ -152,7 +152,7 @@ curl -X POST http://localhost:8000/articles \
 # {"id":1,"title":"Async FastAPI","content":"Deep dive...","published":false,...}
 ```
 
-### READ — Single
+### READ - Single
 
 ```python
 @router.get("/{article_id}", response_model=ArticleWithAuthor)
@@ -169,7 +169,7 @@ async def get_article(article_id: int, db: AsyncSession = Depends(get_db)):
     return article
 ```
 
-### READ — List with Pagination
+### READ - List with Pagination
 
 ```python
 @router.get("/", response_model=dict)
@@ -213,7 +213,7 @@ curl "http://localhost:8000/articles?skip=0&limit=5&published=true"
 # }
 ```
 
-### UPDATE — Full Replacement (PUT)
+### UPDATE - Full Replacement (PUT)
 
 ```python
 @router.put("/{article_id}", response_model=ArticleRead)
@@ -231,7 +231,7 @@ async def replace_article(article_id: int, payload: ArticleCreate, db: AsyncSess
     return article
 ```
 
-### UPDATE — Partial (PATCH)
+### UPDATE - Partial (PATCH)
 
 ```python
 @router.patch("/{article_id}", response_model=ArticleRead)
@@ -423,7 +423,7 @@ DELETE /api/v1/articles/42   # Delete
 
 ## Key Takeaways
 
-- Use the **three-schema pattern** — `Create`, `Update`, and `Read` Pydantic schemas — to separate input validation from output serialization
+- Use the **three-schema pattern** - `Create`, `Update`, and `Read` Pydantic schemas - to separate input validation from output serialization
 - Set `response_model` on every endpoint; it filters fields, generates OpenAPI docs, and enables serialization
 - Use correct **status codes**: 201 for POST, 204 for DELETE, 200 for everything else
 - Paginate list endpoints with `offset`/`limit` (or cursor-based); always return `total` count

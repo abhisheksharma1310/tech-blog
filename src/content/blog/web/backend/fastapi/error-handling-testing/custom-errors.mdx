@@ -261,6 +261,6 @@ async def handle_unhandled(request: Request, exc: Exception):
 - A unified error format makes client-side error handling predictable.
 - Domain-specific exception classes (`NotFoundError`, `BadRequestError`, etc.) keep code readable and reusable.
 - Use a base `AppException` with a single global handler instead of one handler per exception.
-- Never leak stack traces — catch all unhandled exceptions and return a generic 500 response.
+- Never leak stack traces - catch all unhandled exceptions and return a generic 500 response.
 - Override `RequestValidationError` to convert Pydantic's default format into your unified schema.
 - Register exception handlers in order of specificity; the most specific match wins.

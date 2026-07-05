@@ -30,7 +30,7 @@ order: 5
                     └───────────┘
 ```
 
-Each stage gates the next — a failed lint blocks tests, failed tests block the build.
+Each stage gates the next - a failed lint blocks tests, failed tests block the build.
 
 ## Pre-commit Hooks
 
@@ -401,7 +401,7 @@ fix/* ─────────────► PR to develop
 
 | Branch | CI Trigger | Deploy To |
 |---|---|---|
-| `feature/*` | Lint + Test | — |
+| `feature/*` | Lint + Test | - |
 | `develop` | Lint + Test + Build | Staging |
 | `main` | Lint + Test + Build | Production |
 | Tags (`v*`) | Build + Push + Deploy | Production |
@@ -462,7 +462,7 @@ rollback:
 
 - [ ] Pre-commit hooks installed in repo (ruff, mypy, bandit)
 - [ ] Pytest configured with async support, coverage, and JUnit XML
-- [ ] CI runs lint → test → build — each stage gates the next
+- [ ] CI runs lint → test → build - each stage gates the next
 - [ ] Docker build uses layer caching for speed
 - [ ] Secrets stored in GitHub Actions secrets, never in code
 - [ ] Deploy jobs scoped to protected environments (production requires approval)
@@ -471,8 +471,8 @@ rollback:
 
 ## Key Takeaways
 
-- **Gate every stage** — lint fails before tests run, tests fail before the image builds, build fails before deploy triggers
-- **Use pre-commit hooks** (ruff, mypy, bandit) to catch issues locally before they reach CI — this saves minutes per iteration
+- **Gate every stage** - lint fails before tests run, tests fail before the image builds, build fails before deploy triggers
+- **Use pre-commit hooks** (ruff, mypy, bandit) to catch issues locally before they reach CI - this saves minutes per iteration
 - **Run FastAPI tests with httpx's AsyncClient** against a real test database in CI service containers (Postgres, Redis)
 - **Build Docker images with layer caching** (`type=gha`) to keep build times under a minute for small changes
 - **Protect production deploys** with GitHub Environments, manual approval gates, and automated rollback on failure

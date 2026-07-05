@@ -119,7 +119,7 @@ The code after `yield` runs even if the route handler raised an exception. This 
 
 ## Sub-dependencies
 
-Dependencies can declare their own dependencies — FastAPI resolves the full tree.
+Dependencies can declare their own dependencies - FastAPI resolves the full tree.
 
 ```python
 from fastapi import FastAPI, Depends, Header, HTTPException
@@ -169,8 +169,8 @@ router = APIRouter(dependencies=[Depends(some_dep)])
 
 ## Key Takeaways
 
-- `Depends(pagination)` — share query parameter logic across routes.
+- `Depends(pagination)` - share query parameter logic across routes.
 - Auth dependencies extract tokens, validate them, and raise `HTTPException` on failure.
 - Database sessions use `yield` for reliable cleanup after the response.
-- Sub-dependencies compose into a tree — FastAPI resolves depth-first.
+- Sub-dependencies compose into a tree - FastAPI resolves depth-first.
 - Global dependencies via `FastAPI(dependencies=[...])` guard every route.

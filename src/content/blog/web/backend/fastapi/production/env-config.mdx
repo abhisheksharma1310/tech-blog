@@ -11,7 +11,7 @@ order: 3
 
 ## Why Config Management Matters
 
-The **12-Factor App** methodology states: *"Store config in the environment."* Hardcoding configuration — database URLs, API keys, secret keys — is a security risk and makes your app inflexible across environments.
+The **12-Factor App** methodology states: *"Store config in the environment."* Hardcoding configuration - database URLs, API keys, secret keys - is a security risk and makes your app inflexible across environments.
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -125,7 +125,7 @@ SENDGRID_API_KEY=SG....
 ```
 
 ```
-# .env.example (committed to git — shows required vars without secrets)
+# .env.example (committed to git - shows required vars without secrets)
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/myapp
 SECRET_KEY=change-me-in-production
 REDIS_URL=redis://localhost:6379/0
@@ -160,9 +160,9 @@ class Settings(BaseSettings):
 File structure:
 
 ```
-.env.development      # Local dev — DEBUG=True, local DB
-.env.staging          # Staging — staging DB, test API keys
-.env.production       # Production — prod DB, real keys
+.env.development      # Local dev - DEBUG=True, local DB
+.env.staging          # Staging - staging DB, test API keys
+.env.production       # Production - prod DB, real keys
 ```
 
 Override any value with direct environment variables:
@@ -306,8 +306,8 @@ def get_config(settings: Settings = Depends(get_settings)):
 
 ## Key Takeaways
 
-- Use **Pydantic BaseSettings** to load, validate, and type-coerce environment variables — it replaces `os.getenv()` with proper schema validation
+- Use **Pydantic BaseSettings** to load, validate, and type-coerce environment variables - it replaces `os.getenv()` with proper schema validation
 - Keep `.env` files per environment (`.env.development`, `.env.production`) and commit only `.env.example` with placeholder values
-- **Validate critical config at startup** — catch missing or misconfigured secrets before the server accepts traffic
+- **Validate critical config at startup** - catch missing or misconfigured secrets before the server accepts traffic
 - Use a **secrets manager** (Vault, AWS Secrets Manager, Docker secrets) in production; never bake secrets into images or source
 - Inject `Settings` via **FastAPI dependencies** rather than importing a global singleton for testability

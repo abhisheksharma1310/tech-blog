@@ -139,11 +139,11 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 ```
 
-Simply inject `get_current_user` into any endpoint that requires authentication. FastAPI handles the full flow — token extraction, validation, and error responses.
+Simply inject `get_current_user` into any endpoint that requires authentication. FastAPI handles the full flow - token extraction, validation, and error responses.
 
 ## Token Expiry & Refresh
 
-JWT tokens are **stateless** — you cannot revoke them before expiry. Common strategies:
+JWT tokens are **stateless** - you cannot revoke them before expiry. Common strategies:
 
 - **Short-lived access tokens** (15–30 minutes) limit the damage of a leaked token
 - **Refresh tokens** (long-lived, stored in DB) allow issuing new access tokens without re-login
@@ -164,5 +164,5 @@ async def refresh_token(refresh_token: str, current_user: User = Depends(get_cur
 - Tokens must include an `exp` claim and use a strong `SECRET_KEY`
 - The `/token` endpoint returns `access_token` + `token_type` in OAuth2 format
 - `get_current_user` is a reusable dependency injected via `Depends()` into protected routes
-- Token expiry is enforced at decode time — expired tokens are rejected automatically
+- Token expiry is enforced at decode time - expired tokens are rejected automatically
 - Use short-lived access tokens with refresh tokens for production deployments

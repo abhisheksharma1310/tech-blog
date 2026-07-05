@@ -1,0 +1,489 @@
+---
+title: "Dynamic Memory Allocation"
+description: "Dynamic memory allocation in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Pointers"]
+slug: "c-dynamic-memory"
+author: "Abhishek Sharma"
+order: 9
+---
+
+# Dynamic Memory Allocation
+
+So far, all the variables you've seen were allocated automatically - their size was fixed at compile time. **Dynamic memory allocation** lets you request memory at runtime, giving you control over how much memory your program uses and when it's freed.
+
+C provides four functions in `<stdlib.h>` to manage dynamic memory: `malloc`, `calloc`, `realloc`, and `free`.
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *ptr = (int*) malloc(sizeof(int));  // Ask for memory for one int
+
+    if (ptr == NULL) {
+        printf("Memory allocation failed\n");
+        return 1;
+    }
+
+    *ptr = 42;
+    printf("Value: %d\n", *ptr);
+
+    free(ptr);  // Always free what you allocate
+    return 0;
+}
+```
+
+## malloc()
+
+`malloc()` (memory allocation) allocates a block of uninitialized memory and returns a pointer to it.
+
+```c
+void *malloc(size_t size);
+```
+
+- Takes the number of bytes to allocate
+- Returns a `void*` pointer (cast to your type)
+- Returns `NULL` if allocation fails
+- Memory is **not initialized** - it contains garbage values
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int n = 5;
+    int *arr = (int*) malloc(n * sizeof(int));
+
+    if (arr == NULL) {
+        printf("Memory allocation failed\n");
+        return 1;
+    }
+
+    // Memory contains garbage - always initialize
+    for (int i = 0; i < n; i++) {
+        arr[i] = i * 10;
+    }
+
+    for (int i = 0; i < n; i++) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+
+    free(arr);
+    return 0;
+}
+```
+
+Always check if `malloc` returned `NULL` - it means the system ran out of memory.
+
+## calloc()
+
+`calloc()` (contiguous allocation) is like `malloc` but **zero-initializes** the memory.
+
+```c
+void *calloc(size_t num, size_t size);
+```
+
+- Takes the number of elements and the size of each element
+- Returns a zero-initialized block of memory
+- Returns `NULL` on failure
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int n = 5;
+    int *arr = (int*) calloc(n, sizeof(int));
+
+    if (arr == NULL) {
+        printf("Memory allocation failed\n");
+        return 1;
+    }
+
+    // All elements are already set to 0
+    for (int i = 0; i < n; i++) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+
+    free(arr);
+    return 0;
+}
+```
+
+### malloc vs calloc
+
+| Feature | malloc | calloc |
+|---------|--------|--------|
+| Arguments | One: `size` | Two: `count`, `size` |
+| Initialization | Garbage (uninitialized) | Zero-initialized |
+| Performance | Faster (no zeroing) | Slower (writes zeros) |
+| Use case | When you'll fill immediately | When you need clean memory |
+
+## realloc()
+
+`realloc()` resizes an existing dynamically allocated block of memory - either expanding or shrinking it.
+
+```c
+void *realloc(void *ptr, size_t new_size);
+```
+
+- Takes an existing pointer and the new size in bytes
+- Returns a pointer to the resized block (may be a different address)
+- Copies the old data to the new location automatically
+- Returns `NULL` on failure (original block is still valid)
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *arr = (int*) malloc(3 * sizeof(int));
+    if (arr == NULL) return 1;
+
+    arr[0] = 10; arr[1] = 20; arr[2] = 30;
+
+    // Expand to hold 5 integers
+    int *temp = (int*) realloc(arr, 5 * sizeof(int));
+    if (temp == NULL) {
+        printf("Reallocation failed\n");
+        free(arr);
+        return 1;
+    }
+    arr = temp;
+
+    arr[3] = 40;
+    arr[4] = 50;
+
+    for (int i = 0; i < 5; i++) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+
+    free(arr);
+    return 0;
+}
+```
+
+⚠️ Always use a temporary pointer for `realloc`. If it fails, you still have the original pointer. If you do `arr = realloc(arr, ...)` and it fails, you lose the reference to the original memory.
+
+## free()
+
+`free()` releases dynamically allocated memory back to the system. Memory that is not freed leads to **memory leaks**.
+
+```c
+void free(void *ptr);
+```
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *p = (int*) malloc(sizeof(int));
+    *p = 100;
+    printf("%d\n", *p);
+
+    free(p);      // Release memory
+    // p is now a dangling pointer - don't use it
+    p = NULL;     // Good practice: set to NULL after freeing
+
+    return 0;
+}
+```
+
+Rules for `free`:
+- Only call `free` on memory returned by `malloc`, `calloc`, or `realloc`
+- Never call `free` twice on the same pointer (**double free**)
+- After freeing, set the pointer to `NULL` to avoid accidental use
+- Freeing `NULL` is safe (it's a no-op)
+
+## Issues Associated with Dynamic Memory Allocation
+
+Dynamic memory is powerful but error-prone. Here are the most common problems:
+
+### 1. Memory Leak
+
+Memory is allocated but never freed. Over time, the program consumes more and more memory until the system runs out.
+
+```c
+void leaky_function() {
+    int *p = (int*) malloc(100 * sizeof(int));
+    // Forgot to call free(p) - memory leaked
+}
+```
+
+### 2. Dangling Pointer
+
+A pointer that references memory that has already been freed. Using it causes **undefined behavior**.
+
+```c
+int *p = (int*) malloc(sizeof(int));
+free(p);
+*p = 42;  // ❌ Undefined behavior - p is dangling
+```
+
+### 3. Double Free
+
+Calling `free` twice on the same pointer corrupts the heap manager's bookkeeping.
+
+```c
+int *p = (int*) malloc(sizeof(int));
+free(p);
+free(p);  // ❌ Double free - undefined behavior
+```
+
+### 4. Buffer Overflow
+
+Writing beyond the allocated memory corrupts adjacent memory.
+
+```c
+int *arr = (int*) malloc(5 * sizeof(int));
+arr[5] = 42;  // ❌ Out of bounds - corrupts memory
+```
+
+## What is Memory Leak? How can we avoid?
+
+A **memory leak** occurs when dynamically allocated memory is no longer reachable but has not been freed. The program can never release that memory, so it remains allocated until the program exits.
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+void create_leak() {
+    int *p = (int*) malloc(sizeof(int));
+    *p = 100;
+    // p goes out of scope here - memory is leaked
+}
+
+int main() {
+    create_leak();
+    // 4 bytes are now leaked forever
+
+    // Another common leak: overwriting a pointer
+    int *q = (int*) malloc(sizeof(int));
+    q = (int*) malloc(sizeof(int));  // ❌ First allocation leaked!
+    free(q);
+
+    return 0;
+}
+```
+
+### How to avoid memory leaks
+
+| Practice | Why |
+|----------|-----|
+| Always pair `malloc` with `free` | Every allocation should have a matching deallocation |
+| Set pointer to `NULL` after `free` | Prevents dangling pointer use |
+| Use a consistent ownership model | Decide which function owns and frees each allocation |
+| Use tools like `valgrind` | Detects leaks at runtime |
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int* create_array(int n) {
+    int *arr = (int*) malloc(n * sizeof(int));
+    return arr;  // Caller owns the memory
+}
+
+void destroy_array(int *arr) {
+    free(arr);
+}
+
+int main() {
+    int *data = create_array(10);
+    if (data == NULL) return 1;
+
+    for (int i = 0; i < 10; i++) {
+        data[i] = i * i;
+    }
+
+    destroy_array(data);   // Clean up
+    data = NULL;
+
+    return 0;
+}
+```
+
+## Memory Layout of C Programs
+
+When a C program runs, its memory is divided into several segments. Understanding this layout helps you write more efficient and bug-free code.
+
+```
+        +------------------+
+High    |     Stack        |  Local variables, function calls
+Address |        |         |
+        |        v         |
+        |                  |
+        |        ^         |
+        |        |         |
+        |      Heap        |  Dynamically allocated memory
+        +------------------+
+        |  Data (BSS)      |  Uninitialized global/static variables
+        +------------------+
+        |  Data (init)     |  Initialized global/static variables
+        +------------------+
+Low     |    Text (Code)   |  Program instructions (read-only)
+Address +------------------+
+```
+
+## Text Segment
+
+The **text segment** (also called the code segment) contains the compiled machine code of your program. It is typically **read-only** to prevent accidental modification.
+
+- Contains all function instructions
+- Usually shared between multiple processes running the same program
+- Attempting to write here causes a segmentation fault
+
+## Data Segment
+
+The data segment holds global and static variables. It has two parts:
+
+### Initialized Data Segment
+
+Stores global and static variables that are explicitly initialized by the programmer.
+
+```c
+#include <stdio.h>
+
+int global = 100;           // Stored in initialized data
+static int count = 5;       // Stored in initialized data
+
+int main() {
+    static int local = 10;  // Stored in initialized data
+    printf("%d %d %d\n", global, count, local);
+    return 0;
+}
+```
+
+### Uninitialized Data Segment (BSS)
+
+Stores global and static variables that are not explicitly initialized. The kernel initializes them to zero before the program runs.
+
+```c
+#include <stdio.h>
+
+int global;                 // Stored in BSS (value = 0)
+static int count;           // Stored in BSS (value = 0)
+
+int main() {
+    static int local;       // Stored in BSS (value = 0)
+    printf("%d %d %d\n", global, count, local);
+    return 0;
+}
+```
+
+BSS stands for "Block Started by Symbol" - a historical term from assembly language.
+
+## Stack Segment
+
+The **stack** stores local variables, function parameters, and return addresses. It grows downward as functions are called and shrinks as they return.
+
+- Each function call creates a **stack frame** on the stack
+- Local variables are automatically destroyed when the function returns
+- Stack size is limited (typically 1-8 MB) - deep recursion can cause a **stack overflow**
+
+```c
+#include <stdio.h>
+
+void func(int n) {
+    int local = n;              // Stored on the stack
+    printf("func(%d): local at %p\n", n, (void*)&local);
+
+    if (n > 0) {
+        func(n - 1);            // Each call adds a frame to the stack
+    }
+}
+
+int main() {
+    func(3);
+    return 0;
+}
+```
+
+## Heap Segment
+
+The **heap** is used for dynamic memory allocation (`malloc`, `calloc`, `realloc`). It grows upward and is managed manually by the programmer.
+
+- Much larger than the stack (limited only by system memory)
+- Memory persists until explicitly freed with `free()`
+- Slower to allocate/free than stack allocation
+- Prone to fragmentation, leaks, and corruption if not managed carefully
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    // Heap allocation
+    int *arr = (int*) malloc(5 * sizeof(int));
+    if (arr == NULL) return 1;
+
+    for (int i = 0; i < 5; i++) {
+        arr[i] = i;
+        printf("arr[%d] = %d (stored at %p)\n", i, arr[i], (void*)&arr[i]);
+    }
+
+    free(arr);  // Must free heap memory explicitly
+    return 0;
+}
+```
+
+## Example to Verify the Memory Layout
+
+Here is a complete program that shows where different types of variables live in memory:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int global_init = 100;          // Initialized data segment
+int global_uninit;              // BSS segment
+
+void print_segment(const char *name, void *ptr) {
+    printf("%-20s %p\n", name, ptr);
+}
+
+void func() {
+    int local = 50;             // Stack
+    static int static_local = 200;  // Initialized data
+    print_segment("Stack (local)", &local);
+    print_segment("Data (static)", &static_local);
+}
+
+int main() {
+    int local_main = 10;                       // Stack
+    int *heap = (int*) malloc(sizeof(int));    // Heap
+    static int static_main = 300;              // Data segment
+
+    printf("--- Memory Layout ---\n");
+    print_segment("Text (main func)", main);
+    print_segment("Data (init global)", &global_init);
+    print_segment("BSS (uninit global)", &global_uninit);
+    print_segment("Data (static main)", &static_main);
+    print_segment("Stack (local main)", &local_main);
+    print_segment("Heap (malloc)", heap);
+
+    func();
+
+    printf("\nNote: Lower addresses = text,\n");
+    printf("      Higher addresses = stack/heap\n");
+
+    free(heap);
+    return 0;
+}
+```
+
+Sample output (addresses will vary):
+```
+--- Memory Layout ---
+Text (main func)     0x5578a1b001a9
+Data (init global)   0x5578a1b04010
+BSS (uninit global)  0x5578a1b0401c
+Data (static main)   0x5578a1b04018
+Stack (local main)   0x7ffd4c2b3a4c
+Heap (malloc)        0x5578a1b056a0
+```
+
+The addresses confirm the layout: text (lowest) < data < heap < stack (highest).

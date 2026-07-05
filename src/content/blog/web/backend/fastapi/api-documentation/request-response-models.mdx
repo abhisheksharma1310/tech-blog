@@ -1,6 +1,6 @@
 ---
 title: "Request & Response Models"
-description: "Control API input and output with Pydantic models — response_model for filtering, exclude_unset, include/exclude, schema nesting, Config ORM mode, and best practices"
+description: "Control API input and output with Pydantic models - response_model for filtering, exclude_unset, include/exclude, schema nesting, Config ORM mode, and best practices"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "APIs & Documentation"]
 tags: ["FastAPI", "Pydantic", "Response Model", "Data Validation", "ORM", "Python"]
@@ -43,15 +43,15 @@ def create_user(payload: UserCreate):
     return user  # password is excluded because UserResponse has no password field
 ```
 
-This guarantees the `password` field is stripped before the response reaches the client — even if you accidentally return the full database object.
+This guarantees the `password` field is stripped before the response reaches the client - even if you accidentally return the full database object.
 
 ## Using `response_model` to Filter Output
 
 The `response_model` parameter tells FastAPI how to serialise the return value. It serves two purposes:
 
-1. **Serialisation** — converts Python objects to JSON-compatible dicts
-2. **Filtering** — only fields present on the response_model are included
-3. **Documentation** — the model appears in OpenAPI schemas
+1. **Serialisation** - converts Python objects to JSON-compatible dicts
+2. **Filtering** - only fields present on the response_model are included
+3. **Documentation** - the model appears in OpenAPI schemas
 
 ```python
 from pydantic import BaseModel
@@ -124,7 +124,7 @@ curl -X POST http://localhost:8000/tasks \
 
 ## `response_model_include` / `response_model_exclude`
 
-Selectively include or exclude fields at the route level — useful for quick overrides without creating a new model:
+Selectively include or exclude fields at the route level - useful for quick overrides without creating a new model:
 
 ```python
 # Only return id and title
@@ -150,7 +150,7 @@ These accept a `set` of strings or a `dict` with the same structure for nested f
 response_model_exclude={"owner": {"password", "ssn"}}
 ```
 
-> Prefer dedicated response models over `include`/`exclude` for public endpoints — they make the contract explicit and are easier to maintain.
+> Prefer dedicated response models over `include`/`exclude` for public endpoints - they make the contract explicit and are easier to maintain.
 
 ## Schema Nesting and Sub-models
 
@@ -300,7 +300,7 @@ When `response_model` is set, FastAPI calls `model_validate()` (v2) or `from_orm
 ```python
 @app.get("/users", response_model=list[User])
 def list_users():
-    # Return SQLAlchemy objects — FastAPI + Pydantic handle the rest
+    # Return SQLAlchemy objects - FastAPI + Pydantic handle the rest
     return db.query(UserModel).all()
 ```
 
@@ -349,9 +349,9 @@ def create_item(payload: ItemCreate):
 
 ## Key Takeaways
 
-- Use **separate request and response models** to avoid leaking sensitive fields like passwords — the request model can have extra fields the response omits
-- `response_model` controls serialisation, field filtering, and OpenAPI documentation — always set it on endpoints that return data
+- Use **separate request and response models** to avoid leaking sensitive fields like passwords - the request model can have extra fields the response omits
+- `response_model` controls serialisation, field filtering, and OpenAPI documentation - always set it on endpoints that return data
 - `response_model_exclude_unset=True` omits fields with default values that the client didn't explicitly send
 - `response_model_include` and `response_model_exclude` provide quick field filtering without creating new model classes
-- **Nested Pydantic models** are automatically validated and serialised — including recursive self-referencing structures
+- **Nested Pydantic models** are automatically validated and serialised - including recursive self-referencing structures
 - Enable **ORM mode** with `model_config = {"from_attributes": True}` (Pydantic v2) or `class Config: orm_mode = True` (v1) to return database objects directly

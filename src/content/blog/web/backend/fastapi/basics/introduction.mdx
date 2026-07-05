@@ -11,7 +11,7 @@ order: 1
 
 ## What is FastAPI?
 
-**FastAPI** is a modern, high-performance web framework for building APIs with **Python 3.8+**. It leverages Python type hints to provide automatic request validation, serialization, and interactive documentation — all with minimal boilerplate.
+**FastAPI** is a modern, high-performance web framework for building APIs with **Python 3.8+**. It leverages Python type hints to provide automatic request validation, serialization, and interactive documentation - all with minimal boilerplate.
 
 ```
 ┌──────────────────────────────────────────┐
@@ -34,7 +34,7 @@ The name refers to three dimensions of speed:
 
 | Dimension | What it means |
 |---|---|
-| **Runtime performance** | FastAPI is one of the fastest Python frameworks — on par with Node.js and Go for many workloads |
+| **Runtime performance** | FastAPI is one of the fastest Python frameworks - on par with Node.js and Go for many workloads |
 | **Development speed** | Automatic validation, serialization, and docs let you build 2-3x faster |
 | **Developer feedback** | Instant Swagger UI, real-time type checking, and inline error messages |
 
@@ -67,13 +67,13 @@ app = FastAPI()
 
 @app.get("/blocking")
 def blocking():
-    # Traditional sync endpoint — blocks the thread
+    # Traditional sync endpoint - blocks the thread
     import time; time.sleep(2)
     return {"message": "Blocking call done"}
 
 @app.get("/async")
 async def async_endpoint():
-    # Async endpoint — frees the thread for other requests
+    # Async endpoint - frees the thread for other requests
     await asyncio.sleep(2)
     return {"message": "Async call done"}
 ```
@@ -118,7 +118,7 @@ class Item(BaseModel):
 
 ## Performance at a Glance
 
-FastAPI's speed comes from being built on **Starlette + Pydantic** — both written in optimized Python with careful use of C extensions:
+FastAPI's speed comes from being built on **Starlette + Pydantic** - both written in optimized Python with careful use of C extensions:
 
 ```
 Framework         Requests/sec (JSON serialization)
@@ -135,22 +135,22 @@ Django (sync)       ██████████                 12,000
 
 ## When to Use FastAPI
 
-- **RESTful APIs** — anything that sends/receives JSON
-- **Microservices** — lightweight, fast, and async-ready
-- **Real-time applications** — WebSocket support via Starlette
-- **Machine learning serving** — easy to integrate with ML models
-- **Prototypes that go to production** — minimal code, production-grade output
+- **RESTful APIs** - anything that sends/receives JSON
+- **Microservices** - lightweight, fast, and async-ready
+- **Real-time applications** - WebSocket support via Starlette
+- **Machine learning serving** - easy to integrate with ML models
+- **Prototypes that go to production** - minimal code, production-grade output
 
 ## When to Use Something Else
 
-- **Full-stack web apps with admin panels** — Django's batteries-included approach is better
-- **Very simple static or template-based sites** — Flask's simplicity wins
-- **Team already deeply invested in another stack** — consistency matters
+- **Full-stack web apps with admin panels** - Django's batteries-included approach is better
+- **Very simple static or template-based sites** - Flask's simplicity wins
+- **Team already deeply invested in another stack** - consistency matters
 
 ## Key Takeaways
 
 - FastAPI is a **modern, high-performance** Python web framework for building APIs
 - It is **async-native**, built on Starlette (ASGI) with Pydantic for data validation
-- Automatic **OpenAPI/Swagger docs** are generated from Python type hints — zero extra config
+- Automatic **OpenAPI/Swagger docs** are generated from Python type hints - zero extra config
 - FastAPI is significantly **faster than Flask/Django** and comparable to Node.js for API workloads
 - It reduces boilerplate by merging **validation, serialization, and documentation** into type annotations

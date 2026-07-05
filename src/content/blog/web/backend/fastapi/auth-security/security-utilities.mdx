@@ -1,6 +1,6 @@
 ---
 title: "Security Utilities (fastapi.security)"
-description: "Explore FastAPI's built-in security utilities — APIKeyHeader, HTTPBearer, HTTPBasic, OAuth2AuthorizationCodeBearer, and Security() vs Depends()"
+description: "Explore FastAPI's built-in security utilities - APIKeyHeader, HTTPBearer, HTTPBasic, OAuth2AuthorizationCodeBearer, and Security() vs Depends()"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Authentication & Security"]
 tags: ["FastAPI", "Security", "APIKey", "HTTPBearer", "HTTPBasic", "OAuth2", "OpenAPI"]
@@ -11,7 +11,7 @@ order: 4
 
 ## FastAPI's Security Toolbox
 
-`fastapi.security` provides a set of utility classes for common authentication schemes. They integrate automatically with **OpenAPI** (Swagger) documentation — your API docs get proper "Authorize" buttons without manual schema configuration.
+`fastapi.security` provides a set of utility classes for common authentication schemes. They integrate automatically with **OpenAPI** (Swagger) documentation - your API docs get proper "Authorize" buttons without manual schema configuration.
 
 | Utility | Scheme | Transport |
 |---------|--------|-----------|
@@ -47,13 +47,13 @@ async def get_secure_data(api_key: str = Depends(verify_api_key)):
     return {"data": "sensitive"}
 ```
 
-- `auto_error=False` — returns `None` when the header is missing (you control the error)
-- `auto_error=True` (default) — FastAPI returns `403 Forbidden` automatically
+- `auto_error=False` - returns `None` when the header is missing (you control the error)
+- `auto_error=True` (default) - FastAPI returns `403 Forbidden` automatically
 - Best for **server-to-server** communication (third-party API access)
 
 ## APIKeyQuery
 
-API key passed as a query parameter. Use with caution — query params appear in server logs:
+API key passed as a query parameter. Use with caution - query params appear in server logs:
 
 ```python
 from fastapi.security import APIKeyQuery
@@ -67,7 +67,7 @@ async def get_weather(api_key: str = Depends(api_key_query)):
     return {"temp": 22, "unit": "C"}
 ```
 
-- Keys in URLs are **less secure** — they appear in browser history and server logs
+- Keys in URLs are **less secure** - they appear in browser history and server logs
 - Combine with rate limiting to mitigate abuse
 - Never use for sensitive operations
 
@@ -88,7 +88,7 @@ async def protected_route(credentials: HTTPAuthorizationCredentials = Depends(be
 ```
 
 - `HTTPAuthorizationCredentials` provides `credentials` (token string) and `scheme` ("Bearer")
-- Unlike `OAuth2PasswordBearer`, `HTTPBearer` is **scheme-agnostic** — it just extracts the token
+- Unlike `OAuth2PasswordBearer`, `HTTPBearer` is **scheme-agnostic** - it just extracts the token
 - Use this when you want full control over token validation
 
 ## HTTPBasic
@@ -107,7 +107,7 @@ async def basic_login(credentials: HTTPBasicCredentials = Depends(basic_scheme))
     return {"username": credentials.username}
 ```
 
-- Credentials are base64-encoded, **not encrypted** — use only over HTTPS
+- Credentials are base64-encoded, **not encrypted** - use only over HTTPS
 - FastAPI automatically returns the `WWW-Authenticate: Basic` header on failure
 - Suitable for simple testing or monitoring endpoints
 
@@ -125,24 +125,24 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
 )
 ```
 
-- `authorizationUrl` — the provider's authorization endpoint
-- `tokenUrl` — the provider's token exchange endpoint
-- `scopes` — defines the OAuth2 scopes your app requires
+- `authorizationUrl` - the provider's authorization endpoint
+- `tokenUrl` - the provider's token exchange endpoint
+- `scopes` - defines the OAuth2 scopes your app requires
 - Ideal for **social login** and **single sign-on (SSO)**
 
 ## Security() vs Depends()
 
-Both `Security()` and `Depends()` can inject dependency results, but `Security()` has one critical difference — it declares **security schemes** in the OpenAPI spec.
+Both `Security()` and `Depends()` can inject dependency results, but `Security()` has one critical difference - it declares **security schemes** in the OpenAPI spec.
 
 ```python
 from fastapi import Security
 
-# Using Depends — works but no OpenAPI security scheme
+# Using Depends - works but no OpenAPI security scheme
 @app.get("/items", dependencies=[Depends(api_key_header)])
 async def get_items():
     return [{"id": 1}]
 
-# Using Security — adds "Authorize" button in Swagger UI
+# Using Security - adds "Authorize" button in Swagger UI
 @app.get("/items-scoped")
 async def get_items_scoped(api_key: str = Security(api_key_header)):
     return [{"id": 1}]
@@ -227,5 +227,5 @@ async def customize_openapi():
 - `Security()` adds the OpenAPI security scheme for Swagger UI docs; `Depends()` does not
 - Use `Security()` with `scopes` parameter for fine-grained OpenAPI scope documentation
 - `auto_error=False` gives you manual control over authentication errors
-- `HTTPBasic` is only safe over HTTPS — base64 is not encryption
+- `HTTPBasic` is only safe over HTTPS - base64 is not encryption
 - Register global security schemes in `app.openapi()` for a consistent "Authorize" button experience

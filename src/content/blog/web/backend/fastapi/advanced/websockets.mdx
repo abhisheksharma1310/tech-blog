@@ -1,6 +1,6 @@
 ---
 title: "WebSockets for Real-Time Apps"
-description: "Build real-time features with FastAPI WebSockets — connection handling, broadcast patterns, disconnect management, and authenticating WebSocket connections with OAuth2"
+description: "Build real-time features with FastAPI WebSockets - connection handling, broadcast patterns, disconnect management, and authenticating WebSocket connections with OAuth2"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Advanced"]
 tags: ["FastAPI", "WebSockets", "Real-Time", "OAuth2", "Python"]
@@ -11,14 +11,14 @@ order: 2
 
 ## What Are WebSockets?
 
-WebSockets provide a **full-duplex**, persistent connection between client and server. Unlike HTTP (request-response), both sides can push messages at any time — ideal for chat apps, live notifications, collaborative editing, and real-time dashboards.
+WebSockets provide a **full-duplex**, persistent connection between client and server. Unlike HTTP (request-response), both sides can push messages at any time - ideal for chat apps, live notifications, collaborative editing, and real-time dashboards.
 
 ```
 HTTP:    Client ──request──► Server ──response──► Client  (close)
 WebSocket: Client ──open──► Server ◄══messages══► Client  (persistent)
 ```
 
-FastAPI supports WebSockets natively through Starlette's ASGI foundation — no additional libraries required.
+FastAPI supports WebSockets natively through Starlette's ASGI foundation - no additional libraries required.
 
 ## Basic WebSocket Endpoint
 
@@ -53,9 +53,9 @@ async def websocket_endpoint(websocket: WebSocket):
 | `receive_text()` | `str` | JSON / plain text |
 | `receive_bytes()` | `bytes` | Binary (images, protobuf) |
 | `receive_json()` | `dict/list` | Auto-parsed JSON |
-| `send_text(data)` | — | Text response |
-| `send_bytes(data)` | — | Binary response |
-| `send_json(data)` | — | Auto-serialized JSON |
+| `send_text(data)` | - | Text response |
+| `send_bytes(data)` | - | Binary response |
+| `send_json(data)` | - | Auto-serialized JSON |
 
 ```python
 @app.websocket("/ws-json")
@@ -91,7 +91,7 @@ async def websocket_endpoint(websocket: WebSocket):
         active_connections.discard(websocket)
 ```
 
-Without the `try/except`, the connection would leak — the socket stays in `active_connections` even after the client disconnects.
+Without the `try/except`, the connection would leak - the socket stays in `active_connections` even after the client disconnects.
 
 ## Broadcast Pattern
 
@@ -273,9 +273,9 @@ async def deps_websocket(websocket: WebSocket, user_id: str = Depends(verify_tok
 
 FastAPI's `/docs` (Swagger UI) does not natively support WebSocket testing. However, the WebSocket path will appear in the OpenAPI schema generated at `/openapi.json`. For manual testing, use:
 
-- **Postman** — supports WebSocket connections
-- **websocat** — CLI WebSocket client (`websocat ws://localhost:8000/ws`)
-- **A simple HTML page** — embed a `<script>` block with `new WebSocket(...)`
+- **Postman** - supports WebSocket connections
+- **websocat** - CLI WebSocket client (`websocat ws://localhost:8000/ws`)
+- **A simple HTML page** - embed a `<script>` block with `new WebSocket(...)`
 
 ## Error Handling and Reconnection
 
@@ -322,9 +322,9 @@ connect();
 
 ## Key Takeaways
 
-- Use `@app.websocket()` to declare a WebSocket endpoint — `accept()` then loop over `receive_*()` / `send_*()`
+- Use `@app.websocket()` to declare a WebSocket endpoint - `accept()` then loop over `receive_*()` / `send_*()`
 - Always catch `WebSocketDisconnect` to clean up server-side resources
-- Use a `ConnectionManager` class for the broadcast pattern — iterate over active connections
+- Use a `ConnectionManager` class for the broadcast pattern - iterate over active connections
 - For multi-process deployments, replace in-memory broadcast with Redis Pub/Sub
 - Pass OAuth2 tokens via query parameter (WebSocket handshake cannot set custom headers)
 - Implement heartbeat pings and client-side reconnection for production reliability

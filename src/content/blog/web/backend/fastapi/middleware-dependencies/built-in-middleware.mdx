@@ -40,8 +40,8 @@ app.add_middleware(
 
 ### `allow_origins` vs `allow_origin_regex`
 
-- `allow_origins` — a list of exact origin strings.
-- `allow_origin_regex` — a regex string to match origins dynamically.
+- `allow_origins` - a list of exact origin strings.
+- `allow_origin_regex` - a regex string to match origins dynamically.
 
 ```python
 app.add_middleware(
@@ -53,7 +53,7 @@ app.add_middleware(
 )
 ```
 
-> **Warning:** Never use `allow_origins=["*"]` together with `allow_credentials=True` — the browser will reject the response.
+> **Warning:** Never use `allow_origins=["*"]` together with `allow_credentials=True` - the browser will reject the response.
 
 ### CORS Preflight
 
@@ -100,7 +100,7 @@ This is useful in production behind a TLS-terminating reverse proxy. Skip it dur
 
 ## Combining Middleware
 
-The order of `add_middleware` calls matters — they are executed in the order they are added.
+The order of `add_middleware` calls matters - they are executed in the order they are added.
 
 ```python
 from fastapi import FastAPI
@@ -125,8 +125,8 @@ app.add_middleware(
 
 ## Key Takeaways
 
-- `CORSMiddleware` handles cross-origin requests — use specific origins in production, not `"*"`.
+- `CORSMiddleware` handles cross-origin requests - use specific origins in production, not `"*"`.
 - `GZipMiddleware` compresses responses larger than `minimum_size` bytes.
 - `TrustedHostMiddleware` validates the `Host` header to prevent injection attacks.
 - `HTTPSRedirectMiddleware` redirects HTTP → HTTPS automatically.
-- Middleware order determines execution sequence — place security middleware early.
+- Middleware order determines execution sequence - place security middleware early.

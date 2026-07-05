@@ -1,6 +1,6 @@
 ---
 title: "Dependency Overrides for Testing"
-description: "Swap out real dependencies during testing with app.dependency_overrides — override auth, database, and external services without modifying application code"
+description: "Swap out real dependencies during testing with app.dependency_overrides - override auth, database, and external services without modifying application code"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Advanced"]
 tags: ["FastAPI", "Testing", "Dependency Injection", "Mocking", "Python"]
@@ -11,7 +11,7 @@ order: 3
 
 ## Why Dependency Overrides?
 
-FastAPI's dependency injection system is designed to be **swappable** — you can replace any dependency at runtime without modifying your route handlers. This is invaluable during testing:
+FastAPI's dependency injection system is designed to be **swappable** - you can replace any dependency at runtime without modifying your route handlers. This is invaluable during testing:
 
 - Replace a real database with an in-memory SQLite or a mock
 - Bypass authentication to test endpoints without real tokens
@@ -51,7 +51,7 @@ Now every route depending on `get_current_user` receives the overridden value.
 
 ## Overriding Authentication Dependencies
 
-This is the most common use case — bypassing auth in tests:
+This is the most common use case - bypassing auth in tests:
 
 ```python
 # app/auth.py
@@ -336,7 +336,7 @@ This keeps your override code clean and prevents accidental name mismatches.
 
 - `app.dependency_overrides[original] = mock` replaces any dependency without touching route code
 - Most common use: override auth to test roles, override DB to use in-memory SQLite
-- Always reset overrides between tests — use `clear()` or a context manager
+- Always reset overrides between tests - use `clear()` or a context manager
 - For `yield`-based dependencies, the override must also be a generator
 - Centralize dependency references in a `Deps` class to make overrides easier to manage
 - Use pytest fixtures with autouse cleanup to prevent test leakage

@@ -1,0 +1,417 @@
+---
+title: "Socket Programming"
+description: "Understanding socket programming in C."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Sockets"]
+slug: "c-sockets"
+author: "Abhishek Sharma"
+order: 14
+---
+
+# Socket Programming in C
+
+A **socket** is an endpoint for communication between two programs over a network. Sockets let you send data between processes on the same machine or across the internet. Everything you do on the web - browsing, streaming, messaging - relies on sockets.
+
+C provides the Berkeley sockets API ( `<sys/socket.h>` ) for network programming. This tutorial covers **TCP sockets** - reliable, connection-oriented communication.
+
+## Components of Socket Programming
+
+### Sockets
+
+A socket is created with the `socket()` system call and identified by an **address family** and a **socket type**.
+
+```c
+int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+```
+
+| Parameter | Options | Meaning |
+|-----------|---------|---------|
+| Domain | `AF_INET` (IPv4), `AF_INET6` (IPv6), `AF_UNIX` (local) | Address family |
+| Type | `SOCK_STREAM` (TCP), `SOCK_DGRAM` (UDP), `SOCK_RAW` | Communication type |
+| Protocol | `0` (auto) or `IPPROTO_TCP`, `IPPROTO_UDP` | Protocol |
+
+The function returns a file descriptor (a small integer) on success, or `-1` on failure.
+
+#### Socket Types
+
+| Type | Protocol | Description |
+|------|----------|-------------|
+| `SOCK_STREAM` | TCP | Reliable, ordered, connection-based byte stream |
+| `SOCK_DGRAM` | UDP | Unreliable, connectionless datagrams |
+| `SOCK_RAW` | IP | Direct access to lower-layer protocols (requires root) |
+
+```c
+#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int main() {
+    int tcp_sock = socket(AF_INET, SOCK_STREAM, 0);
+    int udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if (tcp_sock < 0 || udp_sock < 0) {
+        perror("socket creation failed");
+        return 1;
+    }
+
+    printf("TCP socket: %d\n", tcp_sock);
+    printf("UDP socket: %d\n", udp_sock);
+
+    close(tcp_sock);
+    close(udp_sock);
+    return 0;
+}
+```
+
+## Client-Server Model
+
+Socket communication follows a **client-server model**:
+
+1. The **server** creates a socket, binds it to an address and port, listens for connections, and accepts them.
+2. The **client** creates a socket and connects to the server's address and port.
+3. Once connected, both sides can **send** and **receive** data.
+
+```
+  Server                          Client
+    |                               |
+    |  socket()                     |
+    |  bind()                       |
+    |  listen()                     |
+    |  accept()  <---connect()---   |  socket()  connect()
+    |                               |
+    |  <--- send/recv --->          |
+    |                               |
+    |  close()                  close()
+```
+
+## Creating a Server-Side Process
+
+A TCP server follows these steps:
+
+1. `socket()` - create an endpoint
+2. `bind()` - associate the socket with an IP and port
+3. `listen()` - mark the socket as passive (waiting for clients)
+4. `accept()` - block until a client connects, then return a new socket for that client
+5. `send()` / `recv()` - communicate with the client
+6. `close()` - clean up
+
+### Server.c
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#define PORT 8080
+
+int main() {
+    int server_fd, client_fd;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+    char buffer[1024] = {0};
+    char *response = "Hello from server!";
+
+    // 1. Create socket
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 2. Set socket options (reuse address)
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // 3. Bind to port
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;  // Listen on all interfaces
+    address.sin_port = htons(PORT);        // Convert to network byte order
+
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // 4. Listen for connections
+    if (listen(server_fd, 3) < 0) {  // Backlog of 3
+        perror("listen");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Server listening on port %d...\n", PORT);
+
+    // 5. Accept a client connection
+    client_fd = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+    if (client_fd < 0) {
+        perror("accept");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // 6. Read from client
+    read(client_fd, buffer, sizeof(buffer));
+    printf("Client says: %s\n", buffer);
+
+    // 7. Send response
+    send(client_fd, response, strlen(response), 0);
+    printf("Response sent\n");
+
+    // 8. Close
+    close(client_fd);
+    close(server_fd);
+    return 0;
+}
+```
+
+Compile and run the server:
+
+```bash
+gcc server.c -o server
+./server
+```
+
+## Creating a Client-Side Process
+
+A TCP client follows these steps:
+
+1. `socket()` - create an endpoint
+2. `connect()` - connect to the server
+3. `send()` / `recv()` - communicate
+4. `close()` - clean up
+
+### Client.c
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+
+int main() {
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    char *message = "Hello from client!";
+    char buffer[1024] = {0};
+
+    // 1. Create socket
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 2. Set server address
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    // Convert IP from text to binary
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        perror("invalid address");
+        close(sock);
+        exit(EXIT_FAILURE);
+    }
+
+    // 3. Connect to server
+    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("connection failed");
+        close(sock);
+        exit(EXIT_FAILURE);
+    }
+
+    // 4. Send message
+    send(sock, message, strlen(message), 0);
+    printf("Message sent\n");
+
+    // 5. Read response
+    read(sock, buffer, sizeof(buffer));
+    printf("Server says: %s\n", buffer);
+
+    // 6. Close
+    close(sock);
+    return 0;
+}
+```
+
+Compile and run the client (after starting the server):
+
+```bash
+gcc client.c -o client
+./client
+```
+
+Expected output:
+
+**Server terminal:**
+```
+Server listening on port 8080...
+Client says: Hello from client!
+Response sent
+```
+
+**Client terminal:**
+```
+Message sent
+Server says: Hello from server!
+```
+
+### A multi-client server using fork
+
+A real server handles multiple clients simultaneously. Here is a simple approach using `fork()`:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <signal.h>
+
+#define PORT 8080
+
+void handle_client(int client_fd) {
+    char buffer[1024] = {0};
+    char *response = "Hello from server!";
+
+    read(client_fd, buffer, sizeof(buffer));
+    printf("Client says: %s\n", buffer);
+    send(client_fd, response, strlen(response), 0);
+
+    close(client_fd);
+    exit(0);
+}
+
+int main() {
+    int server_fd, client_fd;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+
+    // Ignore SIGCHLD to prevent zombie processes
+    signal(SIGCHLD, SIG_IGN);
+
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) { perror("socket"); exit(1); }
+
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    bind(server_fd, (struct sockaddr*)&address, sizeof(address));
+    listen(server_fd, 5);
+
+    printf("Multi-client server on port %d\n", PORT);
+
+    while (1) {
+        client_fd = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+        if (client_fd < 0) continue;
+
+        pid_t pid = fork();
+        if (pid == 0) {
+            // Child process: handle client
+            close(server_fd);
+            handle_client(client_fd);
+        } else {
+            // Parent: close client socket and continue listening
+            close(client_fd);
+        }
+    }
+
+    close(server_fd);
+    return 0;
+}
+```
+
+## Common Issues and their Fixes in Socket Programming
+
+### "Address already in use"
+
+When the server crashes and restarts quickly, the old socket may still be in a `TIME_WAIT` state.
+
+```c
+int opt = 1;
+setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+```
+
+Add `SO_REUSEADDR` before `bind()` - it allows the address to be reused immediately.
+
+### "Connection refused"
+
+The client tried to connect but no server is listening on that IP/port.
+
+- Make sure the server is running
+- Check the port number matches between client and server
+- Verify the server is listening on the expected interface (`INADDR_ANY` vs specific IP)
+
+### "Broken pipe" (SIGPIPE)
+
+The client disconnected while the server tried to write to the socket.
+
+```c
+signal(SIGPIPE, SIG_IGN);  // Ignore the signal
+```
+
+Or handle the return value of `send()` - it returns `-1` on error.
+
+### Segmentation fault
+
+Often caused by passing the wrong size to `bind()` or `accept()`:
+
+```c
+// ❌ Wrong: passing size of pointer
+bind(sock, (struct sockaddr*)&addr, sizeof(&addr));
+
+// ✅ Correct: passing size of struct
+bind(sock, (struct sockaddr*)&addr, sizeof(addr));
+```
+
+### Byte ordering (endianness)
+
+Network protocols use **big-endian** byte order. Use these functions to convert:
+
+| Function | Converts |
+|----------|----------|
+| `htons()` | Host to Network **short** (16-bit, e.g., port) |
+| `htonl()` | Host to Network **long** (32-bit, e.g., IP) |
+| `ntohs()` | Network to Host **short** |
+| `ntohl()` | Network to Host **long** |
+
+```c
+address.sin_port = htons(8080);        // Port 8080 in network byte order
+address.sin_addr.s_addr = htonl(INADDR_ANY);  // Or use INADDR_ANY
+```
+
+### Key socket functions reference
+
+| Function | Header | Purpose |
+|----------|--------|---------|
+| `socket()` | `<sys/socket.h>` | Create a socket endpoint |
+| `bind()` | `<sys/socket.h>` | Assign address and port to socket |
+| `listen()` | `<sys/socket.h>` | Wait for incoming connections |
+| `accept()` | `<sys/socket.h>` | Accept a client connection |
+| `connect()` | `<sys/socket.h>` | Connect to a server |
+| `send()` | `<sys/socket.h>` | Send data over a connected socket |
+| `recv()` | `<sys/socket.h>` | Receive data from a connected socket |
+| `read()` / `write()` | `<unistd.h>` | Read/write from/to a socket (file descriptor) |
+| `close()` | `<unistd.h>` | Close a socket |
+| `inet_pton()` | `<arpa/inet.h>` | Convert IP string to binary |
+| `inet_ntop()` | `<arpa/inet.h>` | Convert binary IP to string |
+| `setsockopt()` | `<sys/socket.h>` | Set socket options |

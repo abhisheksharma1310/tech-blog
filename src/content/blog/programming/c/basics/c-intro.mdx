@@ -1,0 +1,164 @@
+---
+title: "Intro"
+description: "Understand the fundamentals of the C programming language."
+date: "2026-05-23"
+category: ["Programming", "C Language", "Basics"]
+tags: ["C", "Programming Basics",]
+slug: "c-intro"
+author: "Abhishek Sharma"
+order: 1
+---
+# Introduction to C Programming
+
+C is a powerful and widely-used programming language that has been around since the early 1970s. It was developed by Dennis Ritchie at Bell Labs and has since become one of the most influential programming languages in the history of computing. C is known for its efficiency, portability, and low-level access to memory, making it a popular choice for system programming, embedded systems, and performance-critical applications.
+
+C is a compiled language, which means that the source code you write in C is transformed into machine code that can be executed directly by the computer's hardware. This allows C programs to run very fast and efficiently, making it ideal for applications where performance is a concern.
+
+C is not an object-oriented language, but it provides a rich set of features that allow programmers to write structured and modular code. It supports functions, pointers, and dynamic memory allocation, which gives developers a lot of control over how their programs manage resources.
+
+C is not garbage collected, which means that programmers are responsible for managing memory manually. This can lead to issues such as memory leaks and buffer overflows if not handled carefully, but it also allows for greater control and efficiency in memory usage.
+
+## Example of a simple C program:
+
+```c
+#include <stdio.h>
+
+int main() {
+    printf("Hello, World!\n");
+    return 0;
+}
+```
+In this example, we include the standard input/output library `stdio.h`, which allows us to use the `printf` function to print "Hello, World!" to the console. The `main` function is the entry point of the program, and it returns 0 to indicate that the program finished successfully.
+
+## Structure of the C program
+
+### Header Files
+
+Header files in C have the `.h` extension and contain declarations of functions, macros, and constants that can be shared across multiple source files. The `#include` directive is used to include the contents of a header file into your program.
+
+```c
+#include <stdio.h>   // Standard input/output functions
+#include <stdlib.h>  // Memory allocation, random numbers
+#include <string.h>  // String manipulation functions
+#include <math.h>    // Mathematical functions
+```
+
+There are two ways to include header files:
+- **Angle brackets `< >`**: Used for standard library headers. The compiler searches in the system's standard include directories.
+- **Double quotes `" "`**: Used for user-defined headers. The compiler searches in the current directory first.
+
+### Main Function
+
+The `main` function is the entry point of every C program. When you run your program, the operating system calls this function. It must return an integer value, which indicates the exit status of the program.
+
+```c
+int main() {
+    // Your code here
+    return 0;
+}
+```
+
+The `main` function can also accept command-line arguments:
+
+```c
+int main(int argc, char *argv[]) {
+    // argc: number of arguments
+    // argv: array of argument strings
+    return 0;
+}
+```
+
+### Comments
+
+Comments are used to document your code and are ignored by the compiler. C supports two types of comments:
+
+```c
+// Single-line comment - starts with two forward slashes
+
+/* Multi-line comment
+   can span multiple lines
+   and ends with */
+```
+
+Use comments to explain why you did something, not what the code does. Well-documented code is easier to maintain and debug.
+
+### Return Statement
+
+The `return` statement exits a function and optionally returns a value to the caller. In the `main` function, returning `0` conventionally means the program executed successfully, while a non-zero value indicates an error or abnormal termination.
+
+```c
+return 0;   // Success
+return 1;   // Error or abnormal termination
+```
+
+When used in other functions, `return` sends a value back to the caller:
+
+```c
+int add(int a, int b) {
+    return a + b;  // Returns the sum to the caller
+}
+```
+
+## How do we execute a C program?
+
+To execute a C program, you need to follow these steps:
+1. Write your C code in a text editor and save it with a `.c` extension, for example, `hello.c`.
+2. Open a terminal and navigate to the directory where your C file is located.
+3. Compile the C program using a C compiler like `gcc`. You can do this by running the command:
+
+   ```c
+   gcc hello.c -o hello
+   ```
+   This command compiles `hello.c` and creates an executable file named `hello`.
+4. Finally, you can run the compiled program by executing:
+   ```c
+   ./hello
+   ```
+   This will execute the `hello` program, and you should see the output "Hello, World!" in the terminal.
+
+## Application of C Language
+
+### Operating Systems
+
+C is the primary language used to develop operating systems. The Linux kernel, Windows kernel, and macOS kernel are all written predominantly in C. Operating systems need direct hardware access, memory management, and high performance - all areas where C excels.
+
+### Embedded Systems
+
+C is the dominant language in embedded systems programming - from microcontrollers in washing machines to the firmware in medical devices. Its low-level capabilities, minimal runtime overhead, and predictable performance make it ideal for resource-constrained environments.
+
+### System Software
+
+Compilers, assemblers, linkers, loaders, and device drivers are commonly written in C. These tools form the foundation of the software development ecosystem and require the fine-grained control over hardware that C provides.
+
+### Game Development
+
+Many game engines and graphics libraries are written in C for performance reasons. Popular game engines like Unreal Engine have roots in C, and libraries like SDL and OpenGL provide C interfaces for graphics, audio, and input handling.
+
+### Compilers and Interpreters
+
+C is often used to implement compilers for other languages. The first C++ compiler, for example, was written in C. Tools like Lex and Yacc (or their modern equivalents Flex and Bison) generate C code for lexical analysis and parsing.
+
+### Networking
+
+Network protocol stacks, web servers (like Apache and Nginx), and network utilities are built in C. Its ability to work directly with sockets and manage memory efficiently makes it well-suited for high-performance network programming.
+
+### Database Management Systems
+
+Popular databases such as MySQL, PostgreSQL, and SQLite are implemented in C. These systems demand high throughput, low latency, and efficient storage management - all strengths of C.
+
+### Scientific Computing
+
+C is used in scientific simulation software, numerical analysis libraries, and high-performance computing (HPC). Libraries like GNU Scientific Library (GSL) provide mathematical routines implemented in C for maximum performance.
+
+### Graphics and Multimedia
+
+Graphics libraries, image processing tools, and multimedia frameworks rely on C for pixel-level manipulation and real-time processing. Libraries like OpenCV, FFmpeg, and Cairo are written in C or have C interfaces.
+
+### GUI Development
+
+While not as common for GUI development today, C underpins several GUI toolkits. GTK (used by GNOME) is written in C, and many embedded GUI frameworks use C for its minimal footprint.
+
+### Cybersecurity Tools
+
+C is widely used in cybersecurity - from packet sniffers like Wireshark to penetration testing frameworks. Understanding C is also essential for reverse engineering and exploit development, as many vulnerabilities originate from C's manual memory management.
+

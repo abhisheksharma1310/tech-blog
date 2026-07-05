@@ -1,6 +1,6 @@
 ---
 title: "Event Handlers (Startup/Shutdown)"
-description: "Run code when your FastAPI application starts and stops — connect to databases, initialize clients, and clean up resources gracefully"
+description: "Run code when your FastAPI application starts and stops - connect to databases, initialize clients, and clean up resources gracefully"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Advanced"]
 tags: ["FastAPI", "Startup", "Shutdown", "Lifespan", "ASGI", "Python"]
@@ -31,7 +31,7 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup():
-    print("Starting up — initializing resources...")
+    print("Starting up - initializing resources...")
     # Connect to database
     # Initialize Redis client
     # Load ML model into memory
@@ -43,7 +43,7 @@ async def startup():
 ```python
 @app.on_event("shutdown")
 async def shutdown():
-    print("Shutting down — cleaning up...")
+    print("Shutting down - cleaning up...")
     # Close database connections
     # Gracefully close Redis
     # Flush logs
@@ -110,8 +110,8 @@ app = FastAPI(lifespan=app_lifespan)
 
 | Aspect | `@app.on_event()` | Lifespan |
 |--------|-------------------|----------|
-| Grouping | Startup and shutdown are separate decorators | Both phases in one function — paired |
-| Error safety | Exception in startup may skip shutdown | `finally` semantics — cleanup always runs if setup succeeded |
+| Grouping | Startup and shutdown are separate decorators | Both phases in one function - paired |
+| Error safety | Exception in startup may skip shutdown | `finally` semantics - cleanup always runs if setup succeeded |
 | Type safety | `app.state` is typed as `State` | Same, but more explicit about initialization order |
 | Testing | Harder to trigger startup/shutdown in tests | Directly callable in test fixtures |
 | ASGI compliance | Custom FastAPI extension | Native ASGI lifespan protocol |
@@ -178,7 +178,7 @@ async def model_lifespan(app: FastAPI):
     app.state.model = joblib.load(model_path)
     app.state.vectorizer = joblib.load(Path("models/vectorizer.pkl"))
     yield
-    # Models are read-only — no explicit cleanup needed
+    # Models are read-only - no explicit cleanup needed
 
 app = FastAPI(lifespan=model_lifespan)
 
@@ -295,7 +295,7 @@ async def complex_lifespan(app: FastAPI):
 
 ## Mixing `on_event` and Lifespan
 
-FastAPI allows both, but **do not mix them** — the behavior is undefined:
+FastAPI allows both, but **do not mix them** - the behavior is undefined:
 
 ```python
 # ❌ BAD: mixing both approaches
@@ -340,8 +340,8 @@ def test_on_event_handlers():
 ## Key Takeaways
 
 - Use `@app.on_event("startup")` / `@app.on_event("shutdown")` for simple startup/shutdown logic
-- Use the **lifespan parameter** (`FastAPI(lifespan=...)`) for paired, cleanable, and ASGI-compliant lifecycle management — the recommended approach since FastAPI 0.93+
+- Use the **lifespan parameter** (`FastAPI(lifespan=...)`) for paired, cleanable, and ASGI-compliant lifecycle management - the recommended approach since FastAPI 0.93+
 - Store initialized resources on `app.state` (e.g., `app.state.db_pool`) to access them in route handlers
 - Always clean up connections (DB pools, Redis, HTTP clients) on shutdown to avoid resource leaks
-- Do not mix `@app.on_event()` and the lifespan parameter — choose one pattern
+- Do not mix `@app.on_event()` and the lifespan parameter - choose one pattern
 - `TestClient` handles lifespan context managers automatically when used as a context manager

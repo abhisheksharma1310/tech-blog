@@ -1,0 +1,236 @@
+---
+title: "Unions"
+description: "Unions in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Unions"]
+slug: "c-unions"
+author: "Abhishek Sharma"
+order: 3
+---
+
+# Unions
+
+A **union** is a user-defined data type in C that allows you to store different data types in the same memory location. Unlike a `struct` where each member has its own memory, all members of a union **share the same memory space**. At any given time, only one member can hold a value.
+
+Think of a union like a parking spot - you can park a car, a bike, or a truck there, but only one vehicle at a time. A `struct` is like a multi-story parking garage where each vehicle gets its own spot.
+
+```c
+union Data {
+    int i;
+    float f;
+    char str[20];
+};
+```
+
+## Declaring a Union
+
+The syntax is similar to a struct, but the behavior is very different.
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+union Data {
+    int i;
+    float f;
+    char str[20];
+};
+
+int main() {
+    union Data data;
+
+    printf("Size of union: %zu bytes\n", sizeof(data));
+    // Size is 20 (largest member: str[20]), not 4 + 4 + 20 = 28
+
+    return 0;
+}
+```
+
+A union's size is determined by its **largest member**. All members share the same starting memory address.
+
+## Union vs Struct - Memory Comparison
+
+```c
+#include <stdio.h>
+
+struct StructData {
+    int i;
+    float f;
+    char str[20];
+};
+
+union UnionData {
+    int i;
+    float f;
+    char str[20];
+};
+
+int main() {
+    printf("Struct size: %zu bytes\n", sizeof(struct StructData));
+    printf("Union size:  %zu bytes\n", sizeof(union UnionData));
+
+    return 0;
+}
+```
+
+Output (on a typical 64-bit system):
+```
+Struct size: 28 bytes
+Union size:  20 bytes
+```
+
+The struct allocates space for **all** members (with padding). The union allocates space only for the **largest** member - all members overlap in memory.
+
+## Accessing Union Members
+
+Use the dot operator (`.`) just like a struct. But remember: writing to one member overwrites the others.
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+union Data {
+    int i;
+    float f;
+    char str[20];
+};
+
+int main() {
+    union Data data;
+
+    data.i = 42;
+    printf("data.i: %d\n", data.i);
+
+    data.f = 3.14;          // Overwrites data.i
+    printf("data.f: %.2f\n", data.f);
+
+    strcpy(data.str, "hello");  // Overwrites data.f
+    printf("data.str: %s\n", data.str);
+
+    // ⚠️ data.i and data.f are now garbage
+    printf("data.i after str: %d\n", data.i);  // Unpredictable
+
+    return 0;
+}
+```
+
+Only the **last written** member contains valid data. Reading any other member gives garbage.
+
+## When to Use Unions
+
+Unions are useful when you need to store one of several possible types but only one at a time. A common pattern is a **tagged union** - pairing a union with an enum to track which member is active.
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+enum DataType { TYPE_INT, TYPE_FLOAT, TYPE_STRING };
+
+struct TaggedValue {
+    enum DataType type;
+    union {
+        int i;
+        float f;
+        char str[50];
+    } value;
+};
+
+void print_value(struct TaggedValue tv) {
+    switch (tv.type) {
+        case TYPE_INT:
+            printf("Integer: %d\n", tv.value.i);
+            break;
+        case TYPE_FLOAT:
+            printf("Float: %.2f\n", tv.value.f);
+            break;
+        case TYPE_STRING:
+            printf("String: %s\n", tv.value.str);
+            break;
+    }
+}
+
+int main() {
+    struct TaggedValue v1 = { TYPE_INT, .value.i = 100 };
+    struct TaggedValue v2 = { TYPE_FLOAT, .value.f = 99.99 };
+    struct TaggedValue v3 = { TYPE_STRING };
+    strcpy(v3.value.str, "Hello, Union!");
+
+    print_value(v1);
+    print_value(v2);
+    print_value(v3);
+
+    return 0;
+}
+```
+
+This is the foundation of how many dynamic typing systems work - even in languages like Python or JavaScript, under the hood.
+
+## Arrays of Unions
+
+You can create an array of unions where each element holds a different type:
+
+```c
+#include <stdio.h>
+
+union Value {
+    int i;
+    float f;
+};
+
+int main() {
+    union Value arr[3];
+
+    arr[0].i = 10;
+    arr[1].f = 3.14;
+    arr[2].i = -5;
+
+    for (int i = 0; i < 3; i++) {
+        printf("arr[%d] as int: %d\n", i, arr[i].i);
+    }
+
+    return 0;
+}
+```
+
+⚠️ Again, interpret the data as the correct type based on your own tracking.
+
+## Union Inside a Struct
+
+Unions are often embedded inside structs to save memory when a field has mutually exclusive options.
+
+```c
+#include <stdio.h>
+
+struct Employee {
+    int id;
+    char name[50];
+    int role;  // 0 = hourly, 1 = salaried
+    union {
+        double hourly_wage;
+        double annual_salary;
+    } pay;
+};
+
+int main() {
+    struct Employee e1 = {1, "Alice", 0, .pay.hourly_wage = 25.50};
+    struct Employee e2 = {2, "Bob", 1, .pay.annual_salary = 75000.0};
+
+    printf("%s earns $%.2f per hour\n", e1.name, e1.pay.hourly_wage);
+    printf("%s earns $%.2f per year\n", e2.name, e2.pay.annual_salary);
+
+    return 0;
+}
+```
+
+This is more memory-efficient than using a struct with both `hourly_wage` and `annual_salary` as separate members, since an employee only ever has one type of pay.
+
+## Key Differences: struct vs union
+
+| Feature | struct | union |
+|---------|--------|-------|
+| Memory | Allocates memory for **all** members | Allocates memory for **largest** member |
+| Member access | All members valid simultaneously | Only one member valid at a time |
+| Use case | Group related data | Store one of several possible types |
+| Size | Sum of all members + padding | Size of largest member |
+| Initialization | Can initialize all members | Can only initialize first member |

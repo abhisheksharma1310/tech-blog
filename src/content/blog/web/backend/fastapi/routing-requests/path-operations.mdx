@@ -1,6 +1,6 @@
 ---
 title: "Path Operations & Decorators"
-description: "Understand how @app.get() and friends work under the hood — path operation decorators, parameters like tags/summary/description, and OpenAPI metadata generation"
+description: "Understand how @app.get() and friends work under the hood - path operation decorators, parameters like tags/summary/description, and OpenAPI metadata generation"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Routing & Requests"]
 tags: ["FastAPI", "Path Operations", "Decorators", "OpenAPI", "Routing"]
@@ -99,7 +99,7 @@ def read_item(item_id: int):
 | `operation_id` | Unique ID for OpenAPI | `"getItem"` |
 | `include_in_schema` | Exclude from OpenAPI docs | `False` |
 
-## Tags — Grouping Endpoints
+## Tags - Grouping Endpoints
 
 Tags organize endpoints into sections in the auto-generated docs:
 
@@ -172,7 +172,7 @@ def create_item(payload: ItemCreate):
 
 ## The `response_description` Parameter
 
-Use `response_description` to document what the response contains — this shows up in the OpenAPI response section:
+Use `response_description` to document what the response contains - this shows up in the OpenAPI response section:
 
 ```python
 @app.get(
@@ -284,7 +284,7 @@ Router-level `prefix` and `tags` are inherited by every path operation on that r
 
 - Path operation decorators (`@app.get`, `@app.post`, etc.) register functions in FastAPI's internal routing table and generate OpenAPI metadata
 - Use `tags` to group endpoints into logical sections in the docs
-- `summary`, `description`, and `response_description` enrich the OpenAPI spec — descriptions support Markdown
+- `summary`, `description`, and `response_description` enrich the OpenAPI spec - descriptions support Markdown
 - Mark deprecated endpoints with `deprecated=True`; hide internal endpoints with `include_in_schema=False`
 - `operation_id` overrides the auto-generated ID useful for client SDK generation
 - For modular codebases, use `APIRouter` with `prefix` and `tags` split across files

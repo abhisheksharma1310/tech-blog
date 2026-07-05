@@ -1,0 +1,293 @@
+---
+title: "Keywords"
+description: "Understand Keywords in C programming language."
+date: "2026-05-23"
+category: ["Programming", "C Language", "Basics"]
+tags: ["C", "Programming Basics",]
+slug: "c-keywords"
+author: "Abhishek Sharma"
+order: 3
+---
+
+# Keywords
+
+**Keywords** are reserved words in C that have a special meaning to the compiler. You cannot use them as variable names, function names, or any other kind of identifier. Think of them as the command words of the language - just like you can't name a variable `if` because `if` is how you tell the computer to make a decision.
+
+C has 32 keywords (as per the C89/C90 standard), and later standards added a few more. Every keyword is written in **lowercase**.
+
+```c
+// ✅ These are keywords used the right way:
+if (score > 50) { }
+int count = 10;
+return 0;
+
+// ❌ These would cause errors:
+int if = 5;      // 'if' is a keyword
+float return;    // 'return' is a keyword
+```
+
+## What Happens if We Use a Variable Name Same as a Keyword?
+
+The compiler will throw an error and refuse to compile your program. Keywords are locked by the language - you cannot repurpose them.
+
+```c
+#include <stdio.h>
+
+int main() {
+    int float = 10;    // ❌ ERROR: 'float' is a keyword
+    int for = 5;       // ❌ ERROR: 'for' is a keyword
+    int while = 1;     // ❌ ERROR: 'while' is a keyword
+
+    printf("%d", float);
+    return 0;
+}
+```
+
+If you try to compile this, the compiler will say something like:
+
+```
+error: expected identifier or '(' before 'float'
+```
+
+**Fix:** Use a variation - `float_value`, `for_loop`, `while_condition`.
+
+## C Keywords List
+
+Here are the 32 keywords from the original C standard, grouped by what they do.
+
+### Data Type Keywords
+
+These keywords are used to declare the type of data a variable will hold.
+
+| Keyword | Purpose | Example |
+|---------|---------|---------|
+| `int` | Integer (whole number) | `int age = 25;` |
+| `char` | Single character | `char grade = 'A';` |
+| `float` | Decimal number (single precision) | `float pi = 3.14;` |
+| `double` | Decimal number (double precision) | `double price = 99.99;` |
+| `void` | No type / empty | `void greet() { }` |
+| `struct` | Group related variables | `struct Student { };` |
+| `union` | Overlapping memory for different types | `union Data { };` |
+| `enum` | Named integer constants | `enum Color { RED, GREEN };` |
+| `signed` | Signed integer (default) | `signed int x = -5;` |
+| `unsigned` | Unsigned integer (no negatives) | `unsigned int x = 10;` |
+| `short` | Smaller integer | `short int x = 5;` |
+| `long` | Larger integer | `long int x = 100000;` |
+
+```c
+#include <stdio.h>
+
+int main() {
+    int age = 25;
+    char grade = 'A';
+    float pi = 3.14f;
+    double price = 199.99;
+    unsigned int count = 100;
+
+    printf("Age: %d\n", age);
+    printf("Grade: %c\n", grade);
+    printf("Pi: %.2f\n", pi);
+    printf("Price: %.2lf\n", price);
+    printf("Count: %u\n", count);
+
+    return 0;
+}
+```
+
+### Control Flow Keywords
+
+These keywords control the order in which statements are executed.
+
+| Keyword | Purpose |
+|---------|---------|
+| `if` | Execute code if a condition is true |
+| `else` | Execute code when `if` is false |
+| `switch` | Select one of many code blocks |
+| `case` | A specific value in a `switch` |
+| `default` | Fallback case in a `switch` |
+| `while` | Repeat while a condition is true |
+| `do` | Execute once, then repeat while true |
+| `for` | Loop with initialization, condition, increment |
+| `break` | Exit a loop or `switch` early |
+| `continue` | Skip current iteration, go to next |
+| `return` | Exit a function and optionally return a value |
+| `goto` | Jump to another labeled line (rarely used) |
+
+```c
+#include <stdio.h>
+
+int main() {
+    int score = 85;
+
+    // if-else
+    if (score >= 90) {
+        printf("Grade: A\n");
+    } else if (score >= 75) {
+        printf("Grade: B\n");
+    } else {
+        printf("Grade: C\n");
+    }
+
+    // for loop
+    for (int i = 1; i <= 3; i++) {
+        printf("Count: %d\n", i);
+    }
+
+    // while loop with break
+    int n = 0;
+    while (1) {
+        n++;
+        if (n == 3) break;
+        printf("n = %d\n", n);
+    }
+
+    // switch-case
+    char grade = 'B';
+    switch (grade) {
+        case 'A':
+            printf("Excellent!\n");
+            break;
+        case 'B':
+            printf("Good job!\n");
+            break;
+        default:
+            printf("Keep trying!\n");
+    }
+
+    return 0;
+}
+```
+
+### Storage Class Keywords
+
+These keywords define the scope (where a variable is accessible) and lifetime (how long it lives) of a variable.
+
+| Keyword | Purpose |
+|---------|---------|
+| `auto` | Default storage for local variables (rarely used explicitly) |
+| `register` | Suggest storing the variable in a CPU register for speed |
+| `static` | Preserve value between function calls; limit scope to the file |
+| `extern` | Declare a variable defined in another file |
+
+```c
+#include <stdio.h>
+
+void counter() {
+    static int count = 0;  // Keeps its value between calls
+    count++;
+    printf("Called %d times\n", count);
+}
+
+int main() {
+    counter();  // Called 1 times
+    counter();  // Called 2 times
+    counter();  // Called 3 times
+
+    return 0;
+}
+```
+
+Without `static`, `count` would reset to 0 every time `counter()` is called.
+
+### User-defined Type Keywords
+
+These keywords let you create your own data types - one of C's most powerful features.
+
+| Keyword | Purpose | Example |
+|---------|---------|---------|
+| `struct` | Group different types into one record | `struct Student { char name[50]; int age; };` |
+| `union` | Store different types in the same memory location | `union Value { int i; float f; };` |
+| `enum` | Create a set of named integer constants | `enum Weekday { MON, TUE, WED };` |
+| `typedef` | Create an alias for an existing type | `typedef unsigned long ulong;` |
+
+```c
+#include <stdio.h>
+
+// struct: group related data
+struct Student {
+    char name[50];
+    int age;
+    float marks;
+};
+
+// enum: named constants
+enum Weekday { MON = 1, TUE, WED, THU, FRI };
+
+// typedef: create a shorter alias
+typedef unsigned long ulong;
+
+int main() {
+    struct Student s1 = {"Alice", 20, 92.5};
+    printf("%s is %d years old\n", s1.name, s1.age);
+
+    enum Weekday today = WED;
+    printf("Day number: %d\n", today);   // 3
+
+    ulong bigNumber = 1000000;
+    printf("%lu\n", bigNumber);
+
+    return 0;
+}
+```
+
+### Type Qualifier Keywords
+
+These keywords modify how a variable can be accessed or optimized.
+
+| Keyword | Purpose |
+|---------|---------|
+| `const` | Value cannot be changed after initialization |
+| `volatile` | Tell the compiler the value may change unexpectedly (e.g., hardware registers) |
+| `restrict` | A pointer is the only way to access a data block (optimization hint, C99) |
+
+```c
+#include <stdio.h>
+
+int main() {
+    const float PI = 3.14159;
+    // PI = 3.14;     // ❌ Error: cannot modify a const variable
+
+    int radius = 5;
+    float area = PI * radius * radius;
+    printf("Area: %.2f\n", area);
+
+    return 0;
+}
+```
+
+### Other Keywords
+
+These keywords don't fit neatly into the above categories but are essential.
+
+| Keyword | Purpose |
+|---------|---------|
+| `sizeof` | Get the size (in bytes) of a type or variable |
+| `signed` | Explicitly declare a signed integer |
+| `unsigned` | Declare an unsigned integer |
+| `short` | Declare a short integer |
+| `long` | Declare a long integer |
+
+```c
+#include <stdio.h>
+
+int main() {
+    printf("int size: %zu bytes\n", sizeof(int));
+    printf("char size: %zu bytes\n", sizeof(char));
+    printf("float size: %zu bytes\n", sizeof(float));
+    printf("double size: %zu bytes\n", sizeof(double));
+
+    int x = 42;
+    printf("Variable x size: %zu bytes\n", sizeof(x));
+
+    return 0;
+}
+```
+
+Output:
+```
+int size: 4 bytes
+char size: 1 byte
+float size: 4 bytes
+double size: 8 bytes
+Variable x size: 4 bytes
+```

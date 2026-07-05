@@ -61,7 +61,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 | Stage | Purpose |
 |---|---|
 | `builder` | Install dependencies (cached by Docker layer) |
-| `production` | Minimal runtime image — only code + deps |
+| `production` | Minimal runtime image - only code + deps |
 | Result | Smaller image, fewer CVEs, faster pull times |
 
 ### Optimize with `.dockerignore`
@@ -463,8 +463,8 @@ See [CI/CD Pipelines](/blog/web/backend/fastapi/production/cicd) for the full pi
 
 ## Key Takeaways
 
-- Use a **multi-stage Dockerfile** to produce minimal, secure images — separate build from runtime
+- Use a **multi-stage Dockerfile** to produce minimal, secure images - separate build from runtime
 - Deploy with **docker-compose for simple stacks**, **Kubernetes for orchestration**, and **cloud platforms (Railway/Render/Fly.io) for zero-ops**
 - Place **Nginx as a reverse proxy** in front of FastAPI to handle SSL, static files, and security headers
-- Choose a platform based on your operational complexity tolerance — Railway/Render for simplicity, K8s for control
-- Never hardcode secrets — use Docker secrets, K8s Secrets, or platform-specific secret managers
+- Choose a platform based on your operational complexity tolerance - Railway/Render for simplicity, K8s for control
+- Never hardcode secrets - use Docker secrets, K8s Secrets, or platform-specific secret managers

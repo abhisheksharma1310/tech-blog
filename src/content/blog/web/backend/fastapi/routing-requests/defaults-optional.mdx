@@ -15,7 +15,7 @@ FastAPI determines whether a parameter is required or optional based on its type
 
 | Parameter | Type | Default | Behavior |
 |-----------|------|---------|----------|
-| `item_id: int` | Path | — | Required (path param) |
+| `item_id: int` | Path | - | Required (path param) |
 | `q: str` | Query | No default | **Required** query param |
 | `q: str = None` | Query | `None` | Optional |
 | `q: Optional[str]` | Query | `None` | Optional (same as above) |
@@ -31,7 +31,7 @@ app = FastAPI()
 
 @app.get("/items")
 def list_items(
-    # Required query parameter — no default
+    # Required query parameter - no default
     category: str,
     # Optional with default
     sort: str = "name",
@@ -52,7 +52,7 @@ def list_items(
 
 ## Optional Path Parameters
 
-Path parameters can be made optional by giving them a default — but they must come **after** required path params:
+Path parameters can be made optional by giving them a default - but they must come **after** required path params:
 
 ```python
 @app.get("/users/{user_id}/posts/{post_id}")
@@ -70,7 +70,7 @@ def get_item(
     ...
 ```
 
-> **Path parameters cannot truly be optional** — if the path segment doesn't exist, there's no URL to match. To simulate optional path segments, define multiple routes:
+> **Path parameters cannot truly be optional** - if the path segment doesn't exist, there's no URL to match. To simulate optional path segments, define multiple routes:
 
 ```python
 @app.get("/posts")
@@ -120,7 +120,7 @@ def list_products(
 from typing import Optional, Union
 
 
-# These are equivalent — both mean "str or None"
+# These are equivalent - both mean "str or None"
 def read_item(q: Optional[str] = None): ...
 def read_item(q: Union[str, None] = None): ...
 def read_item(q: str = None): ...
@@ -164,7 +164,7 @@ FastAPI tries each type in order and uses the first one that validates. For quer
 
 ## Mixing Required and Optional
 
-You can freely mix required and optional parameters — required first is convention but not enforced:
+You can freely mix required and optional parameters - required first is convention but not enforced:
 
 ```python
 @app.post("/orders")
@@ -193,13 +193,13 @@ class ItemPrice(BaseModel):
     currency: str = "USD"
 
 
-# Without embed — expects: {"price": 9.99, "currency": "USD"}
+# Without embed - expects: {"price": 9.99, "currency": "USD"}
 @app.put("/items/{item_id}/price")
 def update_price(item_id: int, price: ItemPrice):
     ...
 
 
-# With embed — expects: {"price": {"price": 9.99, "currency": "USD"}}
+# With embed - expects: {"price": {"price": 9.99, "currency": "USD"}}
 @app.put("/items/{item_id}/price-embed")
 def update_price_embed(item_id: int, price: ItemPrice = Body(embed=True)):
     ...
@@ -256,10 +256,10 @@ def get_logs(
 ```
 
 ```python
-# ❌ BAD — same list shared across requests
+# ❌ BAD - same list shared across requests
 def get_logs(tags: list[str] = []): ...
 
-# ✅ GOOD — fresh list per request
+# ✅ GOOD - fresh list per request
 def get_logs(tags: list[str] = Query(default_factory=list)): ...
 ```
 
@@ -281,9 +281,9 @@ def get_logs(tags: list[str] = Query(default_factory=list)): ...
 ## Key Takeaways
 
 - Parameters without defaults are **required**; those with defaults are **optional**
-- `Optional[X]` is sugar for `Union[X, None]` — you still need `= None` to make it optional
+- `Optional[X]` is sugar for `Union[X, None]` - you still need `= None` to make it optional
 - Use `Query()` and `Path()` to add constraints (ge, le, min_length) to optional parameters
 - `Body(embed=True)` wraps a single model field inside a named key in the JSON body
 - Use `default_factory=list` for mutable defaults to avoid shared-state bugs
-- `Union` types let parameters accept multiple input types — FastAPI attempts validation in order
+- `Union` types let parameters accept multiple input types - FastAPI attempts validation in order
 - Multiple body parameters are merged into a single JSON object automatically

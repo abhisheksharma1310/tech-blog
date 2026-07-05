@@ -1,6 +1,6 @@
 ---
 title: "Request Validation with Pydantic"
-description: "Validate incoming request bodies with Pydantic — Field constraints, custom validators, nested models, and user-friendly error messages"
+description: "Validate incoming request bodies with Pydantic - Field constraints, custom validators, nested models, and user-friendly error messages"
 date: "2026-06-13"
 category: ["Web Development", "Backend", "FastAPI", "Routing & Requests"]
 tags: ["FastAPI", "Pydantic", "Validation", "Request Body", "Python"]
@@ -178,7 +178,7 @@ class TagInput(BaseModel):
 
 ## Nested Model Validation
 
-Pydantic handles nested models recursively — validation cascades through every level:
+Pydantic handles nested models recursively - validation cascades through every level:
 
 ```python
 from pydantic import BaseModel, Field
@@ -328,9 +328,9 @@ These behave identically to `Field()` constrained fields but use a shorter synta
 
 ## Key Takeaways
 
-- Pydantic models define the schema and validation rules for request bodies — FastAPI validates automatically and returns 422 on failure
+- Pydantic models define the schema and validation rules for request bodies - FastAPI validates automatically and returns 422 on failure
 - `Field()` provides inline constraints: `min_length`, `max_length`, `ge`, `le`, `gt`, `lt`, `pattern`, `multiple_of`
-- `@validator` runs custom logic — use `pre=True` for raw input, `each_item=True` for lists, `always=True` for defaults
+- `@validator` runs custom logic - use `pre=True` for raw input, `each_item=True` for lists, `always=True` for defaults
 - Validation cascades through nested models automatically: every field at every level is checked
 - Custom error messages come from `raise ValueError("message")` inside validators
 - FastAPI's 422 error response includes `loc` (field path), `msg` (description), and `type` (error category)

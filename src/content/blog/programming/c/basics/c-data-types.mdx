@@ -1,15 +1,15 @@
 ---
-title: "Variables and Data Types"
+title: "Data Types"
 description: "Variables and data types in C."
 date: "2026-05-22"
-category: ["Programming", "C Language"]
+category: ["Programming", "C Language", "Basics"]
 tags: ["C", "Programming Basics", "Variables", "Data Types"]
 slug: "c-variables-and-data-type"
 author: "Abhishek Sharma"
-order: 2
+order: 6
 ---
 
-# Variables and Data Types in C
+# Data Types in C
 
 In C, a variable is a named storage location in memory that can hold a value. Each variable has a specific data type that determines the kind of data it can store and how much memory it occupies. C provides several built-in data types, which can be categorized into the following groups:
 
@@ -33,29 +33,6 @@ In C, a variable is a named storage location in memory that can hold a value. Ea
 
 3. **Enumeration Types**:
  - `enum` for defining a set of named integer constants.
-
-## Example of declaring variables in C:
-```c
-#include <stdio.h>
-int main() {
-    int age = 25; // Integer variable
-    float height = 5.9; // Floating-point variable
-    char grade = 'A'; // Character variable
-
-    printf("Age: %d\n", age);
-    printf("Height: %.1f\n", height);
-    printf("Grade: %c\n", grade);
-
-    return 0;
-}
-```
-In this example, we declare three variables: `age` of type `int`, `height` of type `float`, and `grade` of type `char`. We then print their values using the `printf` function, where `%d` is used for integers, `%.1f` for floating-point numbers with one decimal place, and `%c` for characters.
-
-## Variable Naming Rules in C:
-- Variable names must begin with a letter (A-Z or a-z) or an underscore (_).
-- Variable names can contain letters, digits (0-9), and underscores.
-- Variable names are case-sensitive (e.g., `age` and `Age` are different variables).
-- Variable names cannot be the same as C keywords (e.g., `int`, `float`, `return`, etc.).
 
 ## Data Type Sizes in C:
 The size of each data type can vary depending on the system and compiler, but typically:
@@ -114,51 +91,3 @@ Overflow occurs when a calculation exceeds the maximum limit of a data type, whi
 
 Understanding variables and data types is fundamental to programming in C, as they allow you to store and manipulate data effectively. Always choose the appropriate data type for your variables to optimize memory usage and ensure that your program behaves as expected.
 
-## Variable scope:
-Variable scope refers to the region of a program where a variable is defined and can be accessed. In C, there are three main types of variable scope:
-
-1. **Local Scope**: Variables declared inside a function or block are local to that function or block and cannot be accessed outside of it.
-Example:
-```c
-#include <stdio.h>
-void myFunction() {
-    int localVar = 10; // local variable
-    printf("Local variable: %d\n", localVar);
-}
-int main() {
-    myFunction();
-    // printf("%d", localVar); // This will cause an error because localVar is not accessible here
-    return 0;
-}
-```
-
-2. **Global Scope**: Variables declared outside of all functions are global and can be accessed from any function in the program.
-Example:
-```c
-#include <stdio.h>
-int globalVar = 20; // global variable
-void myFunction() {
-    printf("Global variable: %d\n", globalVar);
-}
-int main() {
-    myFunction();
-    printf("Global variable in main: %d\n", globalVar);
-    return 0;
-}
-```
-
-3. **Static Scope**: Variables declared with the `static` keyword inside a function retain their value between function calls and are only accessible within that function.
-Example:
-```c
-#include <stdio.h>
-void myFunction() {
-    static int staticVar = 0; // static variable
-    staticVar++;
-    printf("Static variable: %d\n", staticVar);
-}
-int main() {
-    myFunction(); // Output: Static variable: 1
-    myFunction(); // Output: Static variable: 2
-    return 0;
-}
-```

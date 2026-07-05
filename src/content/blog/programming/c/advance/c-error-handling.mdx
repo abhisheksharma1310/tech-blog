@@ -1,0 +1,468 @@
+---
+title: "Error Handling"
+description: "Understanding error handling in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Error Handling"]
+slug: "c-error-handling"
+author: "Abhishek Sharma"
+order: 11
+---
+
+# Error Handling in C Programming
+
+Unlike languages like C++ or Java, C does **not** have built-in exception handling (`try`/`catch`). Instead, C relies on return values, a global error variable called `errno`, and helper functions to detect and report errors.
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("nonexistent.txt", "r");
+
+    if (fp == NULL) {
+        printf("Failed to open file\n");
+        return 1;
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+## What is errno?
+
+`errno` is a global integer variable defined in `<errno.h>`. When a standard library function encounters an error, it sets `errno` to a value that indicates what went wrong. Your program can check `errno` to get more details about the error.
+
+```c
+#include <stdio.h>
+#include <errno.h>
+
+int main() {
+    FILE *fp = fopen("nonexistent.txt", "r");
+
+    if (fp == NULL) {
+        printf("errno = %d\n", errno);
+    }
+
+    return 0;
+}
+```
+
+You must check `errno` **immediately** after a function fails - any subsequent function call may overwrite it.
+
+### List of different errno values and their corresponding meaning
+
+| errno | Constant | Meaning |
+|-------|----------|---------|
+| 1 | `EPERM` | Operation not permitted |
+| 2 | `ENOENT` | No such file or directory |
+| 5 | `EIO` | Input/output error |
+| 12 | `ENOMEM` | Out of memory |
+| 13 | `EACCES` | Permission denied |
+| 17 | `EEXIST` | File exists |
+| 22 | `EINVAL` | Invalid argument |
+
+```c
+#include <stdio.h>
+#include <errno.h>
+
+int main() {
+    int *p = (int*) malloc(-1);  // Invalid size
+
+    if (p == NULL) {
+        printf("errno = %d\n", errno);
+        // Likely 12 (ENOMEM) or 22 (EINVAL)
+    }
+
+    return 0;
+}
+```
+
+## Different Methods for Error Handling
+
+### Using if-else
+
+The most basic approach - check return values of functions and handle failures.
+
+```c
+#include <stdio.h>
+
+int divide(int a, int b, int *result) {
+    if (b == 0) {
+        return -1;  // Error: division by zero
+    }
+    *result = a / b;
+    return 0;       // Success
+}
+
+int main() {
+    int result;
+
+    if (divide(10, 0, &result) != 0) {
+        printf("Error: Cannot divide by zero\n");
+    } else {
+        printf("Result: %d\n", result);
+    }
+
+    if (divide(10, 3, &result) == 0) {
+        printf("Result: %d\n", result);
+    }
+
+    return 0;
+}
+```
+
+### perror()
+
+`perror()` prints a descriptive error message to `stderr` based on the current value of `errno`. You provide a custom prefix, and it appends `: ` followed by the error description.
+
+```c
+#include <stdio.h>
+#include <errno.h>
+
+int main() {
+    FILE *fp = fopen("missing.txt", "r");
+
+    if (fp == NULL) {
+        perror("Failed to open file");
+        // Output: Failed to open file: No such file or directory
+        return 1;
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### strerror()
+
+`strerror()` returns a pointer to a string describing the error code, without printing anything itself. This gives you more control over formatting.
+
+```c
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+
+int main() {
+    FILE *fp = fopen("missing.txt", "r");
+
+    if (fp == NULL) {
+        printf("Error %d: %s\n", errno, strerror(errno));
+        // Output: Error 2: No such file or directory
+        return 1;
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### ferror()
+
+`ferror()` checks whether an error occurred during a file operation. It returns non-zero if the error indicator for the stream is set.
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("data.txt", "w");
+    if (fp == NULL) return 1;
+
+    if (ferror(fp)) {
+        printf("An error occurred during a file operation\n");
+    } else {
+        printf("No file errors\n");
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+### feof()
+
+`feof()` checks whether the end-of-file indicator is set. It returns non-zero when EOF has been reached.
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("data.txt", "r");
+    if (fp == NULL) return 1;
+
+    char ch;
+    while ((ch = fgetc(fp)) != EOF) {
+        putchar(ch);
+    }
+
+    if (feof(fp)) {
+        printf("\nReached end of file\n");
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+## clearerr()
+
+`clearerr()` clears the end-of-file and error indicators for a given stream. Without it, `feof()` and `ferror()` would continue to report the old state.
+
+```c
+#include <stdio.h>
+
+int main() {
+    FILE *fp = fopen("data.txt", "r");
+    if (fp == NULL) return 1;
+
+    // Read until EOF
+    while (fgetc(fp) != EOF);
+
+    if (feof(fp)) {
+        printf("EOF reached\n");
+    }
+
+    clearerr(fp);  // Reset EOF and error indicators
+
+    // feof() now returns 0 again
+    if (!feof(fp)) {
+        printf("Indicators cleared - can continue reading\n");
+    }
+
+    fclose(fp);
+    return 0;
+}
+```
+
+## Exit Status
+
+The `exit()` function terminates a program and returns a status code to the operating system. Two standard macros are available:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    FILE *fp = fopen("data.txt", "r");
+
+    if (fp == NULL) {
+        perror("Error");
+        exit(EXIT_FAILURE);  // Returns non-zero (usually 1)
+    }
+
+    printf("File opened successfully\n");
+    fclose(fp);
+
+    exit(EXIT_SUCCESS);  // Returns 0
+}
+```
+
+`EXIT_SUCCESS` (0) means the program ran successfully. `EXIT_FAILURE` (non-zero) signals an error. Shell scripts and other programs use this exit code to decide what to do next.
+
+## Error Handling without Predefined Methods
+
+You can create your own error-handling convention using return codes, enums, and error-checking wrapper functions.
+
+```c
+#include <stdio.h>
+
+typedef enum {
+    SUCCESS = 0,
+    ERR_NULL_POINTER = -1,
+    ERR_DIVISION_BY_ZERO = -2,
+    ERR_OUT_OF_RANGE = -3
+} ErrorCode;
+
+ErrorCode safe_divide(int a, int b, int *result) {
+    if (result == NULL) return ERR_NULL_POINTER;
+    if (b == 0) return ERR_DIVISION_BY_ZERO;
+
+    *result = a / b;
+    return SUCCESS;
+}
+
+void print_error(ErrorCode code) {
+    switch (code) {
+        case ERR_NULL_POINTER:
+            printf("Error: Null pointer provided\n");
+            break;
+        case ERR_DIVISION_BY_ZERO:
+            printf("Error: Division by zero\n");
+            break;
+        case ERR_OUT_OF_RANGE:
+            printf("Error: Value out of range\n");
+            break;
+        default:
+            printf("Unknown error\n");
+    }
+}
+
+int main() {
+    int result;
+    ErrorCode err;
+
+    err = safe_divide(10, 0, &result);
+    if (err != SUCCESS) {
+        print_error(err);
+    }
+
+    err = safe_divide(10, 2, &result);
+    if (err == SUCCESS) {
+        printf("Result: %d\n", result);
+    }
+
+    return 0;
+}
+```
+
+## Using goto for Exception Handling in C
+
+C has no `try`/`catch`, but you can simulate it using `goto` to jump to a cleanup section when an error occurs.
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int *data = NULL;
+    FILE *fp = NULL;
+    int status = 1;  // Assume failure
+
+    fp = fopen("data.txt", "r");
+    if (fp == NULL) {
+        perror("Failed to open file");
+        goto cleanup;
+    }
+
+    data = (int*) malloc(10 * sizeof(int));
+    if (data == NULL) {
+        perror("Failed to allocate memory");
+        goto cleanup;
+    }
+
+    // Main logic
+    for (int i = 0; i < 10; i++) {
+        data[i] = i * i;
+    }
+
+    status = 0;  // Success
+
+cleanup:
+    if (fp) fclose(fp);
+    if (data) free(data);
+
+    if (status != 0) {
+        printf("Program failed\n");
+    }
+
+    return status;
+}
+```
+
+### Limitations of goto in Exception Handling
+
+- **Scoping issues**: Variables declared after the `goto` label or inside blocks may not be accessible at the cleanup point.
+- **Readability**: Too many `goto` labels can make code hard to follow - known as "spaghetti code."
+- **No automatic cleanup**: Unlike C++ destructors or Java `finally`, you must manually free each resource.
+- **Cannot jump across functions**: `goto` only works within the same function.
+
+## Error Handling During File Operations
+
+File operations are the most common source of runtime errors. Always validate the return value before using a file pointer.
+
+```c
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+
+int main() {
+    FILE *fp = fopen("config.txt", "r");
+
+    if (fp == NULL) {
+        printf("Error %d: %s\n", errno, strerror(errno));
+        return 1;
+    }
+
+    // Read and process file
+    char line[256];
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (ferror(fp)) {
+            printf("Error reading file\n");
+            clearerr(fp);
+            break;
+        }
+    }
+
+    if (fclose(fp) != 0) {
+        perror("Error closing file");
+        return 1;
+    }
+
+    return 0;
+}
+```
+
+## Handling Exception in File Processing
+
+For robust file processing, check for errors at every stage - open, read/write, and close - and handle each appropriately.
+
+```c
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+
+int process_file(const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Cannot open %s: %s\n", filename, strerror(errno));
+        return -1;
+    }
+
+    char line[256];
+    int line_num = 0;
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        line_num++;
+
+        // Remove trailing newline
+        size_t len = strlen(line);
+        if (len > 0 && line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+        }
+
+        // Simulate processing - check for empty line as "error"
+        if (strlen(line) == 0) {
+            fprintf(stderr, "Warning: Empty line %d skipped\n", line_num);
+            continue;
+        }
+
+        printf("Line %d: %s\n", line_num, line);
+    }
+
+    if (ferror(fp)) {
+        fprintf(stderr, "Error reading %s at line %d\n", filename, line_num);
+        fclose(fp);
+        return -1;
+    }
+
+    if (fclose(fp) != 0) {
+        fprintf(stderr, "Error closing %s: %s\n", filename, strerror(errno));
+        return -1;
+    }
+
+    return 0;  // Success
+}
+
+int main() {
+    if (process_file("data.txt") != 0) {
+        printf("File processing failed\n");
+        return EXIT_FAILURE;
+    }
+
+    printf("File processed successfully\n");
+    return EXIT_SUCCESS;
+}
+```
+
+This pattern - validate every step, report specific errors, and propagate the failure - is the closest C gets to structured exception handling, and it's what production C code uses in practice.

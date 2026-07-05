@@ -114,7 +114,7 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-# In development — serve static files directly
+# In development - serve static files directly
 if settings.ENVIRONMENT == "development":
     app.mount("/static", StaticFiles(directory="static"), name="static")
 ```
@@ -147,7 +147,7 @@ async def upload_file(file: UploadFile):
 ### N+1 Query Problem
 
 ```python
-# ❌ N+1 — makes N+1 database calls
+# ❌ N+1 - makes N+1 database calls
 async def get_authors_with_books():
     authors = await db.fetch_all("SELECT * FROM authors")
     for author in authors:
@@ -158,7 +158,7 @@ async def get_authors_with_books():
     return authors
 
 
-# ✅ Eager loading — 2 queries total
+# ✅ Eager loading - 2 queries total
 async def get_authors_with_books():
     authors = await db.fetch_all("SELECT * FROM authors")
     author_ids = [a["id"] for a in authors]
@@ -189,7 +189,7 @@ CREATE INDEX idx_posts_author_published ON posts (author_id, published_at DESC);
 ### Pagination (Keyset vs Offset)
 
 ```python
-# ❌ Offset pagination — slow on large datasets
+# ❌ Offset pagination - slow on large datasets
 @app.get("/posts")
 async def get_posts(offset: int = 0, limit: int = 20):
     return await db.fetch_all(
@@ -198,7 +198,7 @@ async def get_posts(offset: int = 0, limit: int = 20):
     )
 
 
-# ✅ Keyset pagination — fast, stable
+# ✅ Keyset pagination - fast, stable
 @app.get("/posts")
 async def get_posts(cursor: int | None = None, limit: int = 20):
     if cursor:
@@ -290,7 +290,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 | Setting | Effect |
 |---|---|
 | `minimum_size=1000` | Only compress responses > 1 KB |
-| **Trade-off** | CPU vs bandwidth — compress on the fly or offload to Nginx/CDN |
+| **Trade-off** | CPU vs bandwidth - compress on the fly or offload to Nginx/CDN |
 
 For production, prefer Nginx's `gzip` module over app-level compression:
 
@@ -373,7 +373,7 @@ Rule of thumb: `workers = 2 * CPU_COUNT + 1` for most workloads. Tune based on p
 from fastapi import BackgroundTasks
 
 def send_welcome_email(email: str):
-    # Slow I/O — runs in a background thread
+    # Slow I/O - runs in a background thread
     ...
 
 
@@ -413,9 +413,9 @@ async def run_cpu_bound(data: bytes) -> bytes:
 
 ## Key Takeaways
 
-- **Cache aggressively with Redis** — use TTL-based caching for read-heavy endpoints and write-through invalidation for consistency
-- **Offload static assets to a CDN** — Nginx, Cloudflare, or S3 + CloudFront — never serve static files from the Python process
-- **Optimize database queries** — avoid N+1 with eager loading, add indexes, and prefer keyset pagination over offset for large datasets
+- **Cache aggressively with Redis** - use TTL-based caching for read-heavy endpoints and write-through invalidation for consistency
+- **Offload static assets to a CDN** - Nginx, Cloudflare, or S3 + CloudFront - never serve static files from the Python process
+- **Optimize database queries** - avoid N+1 with eager loading, add indexes, and prefer keyset pagination over offset for large datasets
 - **Use connection pooling** with `pool_pre_ping=True` to reuse connections and detect stale ones
-- **Profile before optimizing** — use cProfile, py-spy, or OpenTelemetry to identify real bottlenecks rather than guessing
+- **Profile before optimizing** - use cProfile, py-spy, or OpenTelemetry to identify real bottlenecks rather than guessing
 - **Offload CPU-bound work** to a process pool and I/O-bound work to background tasks or external queues (Celery, RabbitMQ)

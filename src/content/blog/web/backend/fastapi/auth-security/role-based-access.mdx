@@ -11,7 +11,7 @@ order: 3
 
 ## Why Role-Based Access Control?
 
-**RBAC (Role-Based Access Control)** restricts access based on a user's role. Instead of checking permissions per-user, you assign roles and grant access by role — making authorization scalable and auditable.
+**RBAC (Role-Based Access Control)** restricts access based on a user's role. Instead of checking permissions per-user, you assign roles and grant access by role - making authorization scalable and auditable.
 
 | Role | Permissions |
 |------|-------------|
@@ -182,7 +182,7 @@ async def check_disabled_users(request: Request, call_next):
     return await call_next(request)
 ```
 
-- Middleware runs on **every request** — keep it lightweight
+- Middleware runs on **every request** - keep it lightweight
 - Use it for cross-cutting concerns, not granular permission checks
 - For route-specific checks, prefer the `RoleChecker` dependency
 
@@ -226,9 +226,9 @@ This allows a compact API: `role_at_least(UserRole.USER)` covers both `user` and
 ## Key Takeaways
 
 - Define roles as a `str, Enum` for type safety and database compatibility
-- Use `RoleChecker` — a callable class — as a reusable dependency for role verification
+- Use `RoleChecker` - a callable class - as a reusable dependency for role verification
 - Router-level dependencies enforce roles on entire route groups; endpoint-level for granular control
 - Ownership checks combine role and resource ID comparison
 - Middleware is for global cross-cutting checks (disabled users, IP whitelist)
-- Always return `403 Forbidden` (not `401`) for insufficient permissions — the user is authenticated but not authorized
+- Always return `403 Forbidden` (not `401`) for insufficient permissions - the user is authenticated but not authorized
 - Prefer a `RoleChecker` class over inline conditionals for DRY permission logic

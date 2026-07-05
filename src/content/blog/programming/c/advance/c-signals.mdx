@@ -1,0 +1,425 @@
+---
+title: "Signals in C"
+description: "Understanding signals in C programming."
+date: "2026-05-22"
+category: ["Programming", "C Language", "Advanced"]
+tags: ["C", "Programming Basics", "Signals"]
+slug: "c-signals"
+author: "Abhishek Sharma"
+order: 13
+---
+
+# Signals in C Programming
+
+A **signal** is a software interrupt delivered to a process by the operating system. Signals notify a program that an event has occurred - like a user pressing Ctrl+C, a division by zero, or a timer expiring.
+
+When a signal arrives, the operating system interrupts normal execution. The program can either handle the signal with a custom function, ignore it, or let the default behavior take effect.
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+
+int main() {
+    while (1) {
+        printf("Running...\n");
+        sleep(1);
+    }
+    return 0;
+}
+```
+
+Press **Ctrl+C** while this runs - the process terminates immediately. That's the default action for the `SIGINT` signal.
+
+## Signal Handling in C
+
+The `signal()` function registers a handler for a specific signal. It is defined in `<signal.h>`.
+
+```c
+void (*signal(int sig, void (*handler)(int)))(int);
+```
+
+Simplified, you can think of it as:
+
+```c
+signal(signal_number, handler_function);
+```
+
+- `signal_number`: which signal to handle (e.g., `SIGINT`, `SIGTERM`)
+- `handler_function`: a pointer to a function that takes an `int` (the signal number) and returns `void`
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+
+void handle_sigint(int sig) {
+    printf("\nCaught signal %d (SIGINT)\n", sig);
+    printf("But I won't exit! Press Ctrl+\\ to quit.\n");
+}
+
+int main() {
+    signal(SIGINT, handle_sigint);  // Register handler for Ctrl+C
+
+    while (1) {
+        printf("Running...\n");
+        sleep(1);
+    }
+
+    return 0;
+}
+```
+
+Now pressing Ctrl+C no longer terminates the program - your handler runs instead.
+
+## Default Signal Handlers
+
+Every signal has a default behavior. You can restore the default handler using `SIG_DFL` or ignore a signal using `SIG_IGN`.
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+
+int main() {
+    signal(SIGINT, SIG_IGN);   // Ignore Ctrl+C
+    signal(SIGTERM, SIG_IGN);  // Ignore termination requests
+
+    printf("Try pressing Ctrl+C - nothing will happen!\n");
+    printf("Press Ctrl+\\ to quit.\n");
+
+    while (1) {
+        printf("Still running...\n");
+        sleep(1);
+    }
+
+    return 0;
+}
+```
+
+| Macro | Meaning |
+|-------|---------|
+| `SIG_DFL` | Apply the default action for the signal |
+| `SIG_IGN` | Ignore the signal entirely |
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+
+void handler(int sig) {
+    printf("Signal %d caught\n", sig);
+    signal(SIGINT, SIG_DFL);  // Restore default after first catch
+}
+
+int main() {
+    signal(SIGINT, handler);
+
+    // First Ctrl+C -> handler runs, then default restored
+    // Second Ctrl+C -> program exits normally
+
+    while (1) {
+        printf("Running...\n");
+        sleep(1);
+    }
+
+    return 0;
+}
+```
+
+## Custom Signal Handlers
+
+A custom signal handler is a function you write that is called when a specific signal arrives. It must accept an `int` (the signal number) and return `void`.
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+void cleanup(int sig) {
+    printf("\nReceived signal %d. Cleaning up...\n", sig);
+    // Perform cleanup: close files, free memory, etc.
+    printf("Goodbye!\n");
+    exit(0);
+}
+
+int main() {
+    signal(SIGINT, cleanup);   // Ctrl+C
+    signal(SIGTERM, cleanup);  // kill command
+
+    printf("PID: %d\n", getpid());
+    printf("Press Ctrl+C or run 'kill %d' from another terminal\n", getpid());
+
+    while (1) {
+        printf("Working...\n");
+        sleep(1);
+    }
+
+    return 0;
+}
+```
+
+### Important restrictions in signal handlers
+
+Signal handlers run asynchronously - they can interrupt your program at any point. This means:
+
+- **Only call async-signal-safe functions** inside a handler (e.g., `write`, `_exit`). Do **not** call `printf`, `malloc`, `free`, or most library functions.
+- **Global variables** accessed in handlers should be declared `volatile sig_atomic_t` to guarantee atomic access.
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+volatile sig_atomic_t flag = 0;
+
+void handle_sigint(int sig) {
+    flag = 1;  // Safe: sig_atomic_t and no library calls
+}
+
+int main() {
+    signal(SIGINT, handle_sigint);
+
+    printf("Press Ctrl+C to set flag\n");
+
+    while (1) {
+        if (flag) {
+            write(STDOUT_FILENO, "Flag was set!\n", 14);
+            flag = 0;
+        }
+        // Do other work...
+        sleep(1);
+    }
+
+    return 0;
+}
+```
+
+## Generate Signals Manually
+
+### raise()
+
+`raise()` sends a signal to the **current process** (your own program).
+
+```c
+int raise(int sig);
+```
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+
+void handler(int sig) {
+    printf("Caught signal %d\n", sig);
+    exit(0);
+}
+
+int main() {
+    signal(SIGUSR1, handler);
+
+    printf("Raising SIGUSR1...\n");
+    raise(SIGUSR1);
+
+    printf("This line never prints\n");
+    return 0;
+}
+```
+
+### kill()
+
+`kill()` sends a signal to **another process** (or a group of processes).
+
+```c
+int kill(pid_t pid, int sig);
+```
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main() {
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        // Child process: wait for signal
+        printf("Child (PID %d) waiting for signal...\n", getpid());
+        pause();  // Wait for any signal
+        printf("Child woke up!\n");
+    } else {
+        // Parent: send signal to child
+        sleep(2);
+        printf("Parent sending SIGUSR1 to child (PID %d)\n", pid);
+        kill(pid, SIGUSR1);
+    }
+
+    return 0;
+}
+```
+
+To send a signal from the command line:
+
+```bash
+kill -SIGTERM 1234    # Send SIGTERM to process 1234
+kill -9 1234          # Send SIGKILL (cannot be caught/ignored)
+kill -USR1 1234       # Send custom signal
+```
+
+## Signal Types in C
+
+| Signal | Value | Default Action | Description |
+|--------|-------|----------------|-------------|
+| `SIGABRT` | 6 | Terminate (core dump) | Abort - called by `abort()` |
+| `SIGFPE` | 8 | Terminate (core dump) | Floating-point exception (e.g., divide by zero) |
+| `SIGHUP` | 1 | Terminate | Hangup - terminal closed |
+| `SIGILL` | 4 | Terminate (core dump) | Illegal instruction |
+| `SIGINT` | 2 | Terminate | Interrupt - Ctrl+C |
+| `SIGKILL` | 9 | Terminate | **Cannot be caught or ignored** |
+| `SIGPIPE` | 13 | Terminate | Broken pipe - write to closed socket/pipe |
+| `SIGSEGV` | 11 | Terminate (core dump) | Segmentation fault - invalid memory access |
+| `SIGSTOP` | 19 | Stop | **Cannot be caught or ignored** - suspends process |
+| `SIGTERM` | 15 | Terminate | Termination request - `kill` without flags |
+| `SIGUSR1` | 10 | Terminate | User-defined signal 1 |
+| `SIGUSR2` | 12 | Terminate | User-defined signal 2 |
+| `SIGALRM` | 14 | Terminate | Timer expired (`alarm()`) |
+| `SIGCONT` | 18 | Continue | Resume a stopped process |
+
+```c
+#include <stdio.h>
+#include <signal.h>
+
+int main() {
+    // SIGKILL and SIGSTOP cannot be caught
+    if (signal(SIGKILL, SIG_IGN) == SIG_ERR) {
+        printf("Cannot ignore SIGKILL\n");
+    }
+
+    if (signal(SIGSTOP, SIG_IGN) == SIG_ERR) {
+        printf("Cannot ignore SIGSTOP\n");
+    }
+
+    // These can:
+    signal(SIGTERM, SIG_IGN);
+    signal(SIGINT, SIG_IGN);
+
+    printf("SIGTERM and SIGINT are now ignored\n");
+    printf("But SIGKILL and SIGSTOP still work\n");
+
+    while (1) sleep(1);
+
+    return 0;
+}
+```
+
+## OS Structures for Signals
+
+For more advanced signal handling, POSIX provides `sigaction()` which gives you finer control than the basic `signal()` function.
+
+```c
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
+volatile sig_atomic_t flag = 0;
+
+void handler(int sig) {
+    flag = 1;
+}
+
+int main() {
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);   // No additional signals blocked
+    sa.sa_flags = 0;
+
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("sigaction");
+        return 1;
+    }
+
+    printf("Press Ctrl+C to set flag\n");
+
+    while (1) {
+        if (flag) {
+            write(STDOUT_FILENO, "Interrupt received!\n", 20);
+            flag = 0;
+        }
+        usleep(100000);  // 100ms
+    }
+
+    return 0;
+}
+```
+
+### sigaction vs signal
+
+| Feature | signal() | sigaction() |
+|---------|----------|-------------|
+| Portability | Works on all POSIX systems | POSIX standard |
+| Reliability | Behavior may vary across Unix versions | Consistent and predictable |
+| Signal masking | Cannot control which signals are blocked during handler | `sa_mask` lets you block other signals |
+| Flags | No flags | `sa_flags` for advanced behavior (e.g., `SA_RESTART`) |
+| Get current handler | Cannot read existing handler | Can query the old handler |
+
+### Signal sets
+
+POSIX provides functions to manipulate sets of signals:
+
+```c
+#include <stdio.h>
+#include <signal.h>
+
+int main() {
+    sigset_t set;
+
+    sigemptyset(&set);          // Clear all signals
+    sigaddset(&set, SIGINT);    // Add SIGINT
+    sigaddset(&set, SIGTERM);   // Add SIGTERM
+
+    if (sigismember(&set, SIGINT)) {
+        printf("SIGINT is in the set\n");
+    }
+
+    sigdelset(&set, SIGINT);    // Remove SIGINT
+
+    // Block signals in the set (they will be pending, not delivered)
+    sigprocmask(SIG_BLOCK, &set, NULL);
+
+    printf("SIGTERM is now blocked. Send it - it will be pending.\n");
+    printf("Press Ctrl+\\ to quit.\n");
+
+    sleep(5);
+
+    // Unblock - pending signals are delivered now
+    sigprocmask(SIG_UNBLOCK, &set, NULL);
+
+    printf("Unblocked - SIGTERM delivered above if sent\n");
+
+    return 0;
+}
+```
+
+### Key signal-related functions
+
+| Function | Description |
+|----------|-------------|
+| `signal(sig, handler)` | Register a handler for a signal |
+| `raise(sig)` | Send a signal to the current process |
+| `kill(pid, sig)` | Send a signal to another process |
+| `sigaction(sig, new, old)` | Advanced signal registration |
+| `sigemptyset(set)` | Clear all signals from a set |
+| `sigfillset(set)` | Add all signals to a set |
+| `sigaddset(set, sig)` | Add a signal to a set |
+| `sigdelset(set, sig)` | Remove a signal from a set |
+| `sigismember(set, sig)` | Check if a signal is in a set |
+| `sigprocmask(how, set, old)` | Block or unblock signals |
+| `pause()` | Wait for any signal |
+| `alarm(sec)` | Schedule a `SIGALRM` after `sec` seconds |
+| `abort()` | Send `SIGABRT` to self (terminate with core dump) |
